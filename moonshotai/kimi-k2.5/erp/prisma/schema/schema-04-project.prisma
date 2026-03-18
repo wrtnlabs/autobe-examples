@@ -1,0 +1,130 @@
+/// Work initiatives within an organization that serve as containers for
+/// tasks and time tracking.
+///
+/// Projects represent organizational work efforts with defined scope,
+/// timelines, and team assignments. Each project belongs to a single
+/// organization and can have multiple members assigned through {@link
+/// erp_hrm_project_members}. Projects contain tasks ({@link erp_hrm_tasks})
+/// and accumulate time entries ({@link erp_hrm_timelogs}) from assigned
+/// members.
+///
+/// Projects progress through a lifecycle status: active (receiving new
+/// work), archived (temporarily inactive), and completed (finished). Only
+/// active projects can receive new timelogs. Archived projects may be
+/// reactivated, while completed projects represent final closure.
+///
+/// Planning attributes include budget hours for capacity planning and
+/// optional start/end dates for scheduling. The color code provides visual
+/// identification in user interfaces.
+///
+/// @namespace Project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belongs to {@link erp_hrm_organizations.id}.
+  organization_id String
+  
+  /// Project name identifying the work initiative.
+  name String
+  
+  /// Hex color code for visual identification in UI.
+  color_code String?
+  
+  /// Detailed description of project scope and objectives.
+  description String?
+  
+  /// Lifecycle status: active, archived, or completed.
+  status String
+  
+  /// Planned budget hours for capacity planning.
+  budget_hours Float?
+  
+  /// Scheduled project start date.
+  start_date DateTime?
+  
+  /// Scheduled project end date.
+  end_date DateTime?
+  
+  /// Timestamp when the project was created.
+  created_at DateTime
+  
+  /// Timestamp when the project was last modified.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  projectMembers erp_hrm_project_members[]
+  tasks erp_hrm_tasks[]
+  timelogs erp_hrm_timelogs[]
+  timers erp_hrm_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([organization_id, created_at])
+  @@index([status])
+}
+
+/// Links organization members to projects with role designation, enabling
+/// project team composition. Each record represents an employee's assignment
+/// to a project with their specific role within that project context.
+/// Project member roles are independent of organization-level roles.
+///
+/// @namespace Project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_project_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged project's {@link erp_hrm_projects.id}.
+  project_id String
+  
+  /// Assigned organization member's {@link erp_hrm_organization_members.id}.
+  organization_member_id String
+  
+  /// Project-specific role designation. Valid values: 'member' (standard
+  /// participation rights) or 'project-lead' (task management authority within
+  /// the project).
+  role String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null if record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project erp_hrm_projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  organizationMember erp_hrm_organization_members @relation(fields: [organization_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([project_id, organization_member_id])
+  @@index([organization_member_id, created_at])
+}

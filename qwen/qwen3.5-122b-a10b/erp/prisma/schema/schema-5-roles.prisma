@@ -1,0 +1,161 @@
+/// Role definitions per organization including built-in (Owner, Manager,
+/// Employee) and custom roles. Built-in roles cannot be deleted, while
+/// custom roles can be removed only when no employees are assigned. Each
+/// employee in an organization is assigned exactly one role via the
+/// hrm_platform_employees table.
+///
+/// @namespace Roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link hrm_platform_organizations.id}.
+  hrm_platform_organization_id String
+  
+  /// Unique role code within organization for programmatic reference.
+  code String
+  
+  /// Role display name shown to users.
+  name String
+  
+  /// Optional role description explaining permissions and purpose.
+  description String?
+  
+  /// Whether this is a built-in system role (Owner, Manager, Employee) that
+  /// cannot be deleted.
+  is_builtin Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for custom roles only. Built-in roles are never
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employeeAssignments hrm_platform_employees[]
+  employeeSnapshots hrm_platform_employee_snapshots[]
+  permissions hrm_platform_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_platform_organization_id, code])
+  @@unique([hrm_platform_organization_id, name])
+  @@index([hrm_platform_organization_id])
+  @@index([is_builtin])
+}
+
+/// Permission assignments mapping roles to available permissions like
+/// org:manage, employee:manage, project:view. This junction table implements
+/// the many-to-many relationship between roles and permissions, allowing
+/// roles to have multiple permissions and permissions to be assigned to
+/// multiple roles.
+///
+/// @namespace Roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target role's {@link hrm_platform_roles.id}.
+  hrm_platform_role_id String
+  
+  /// Target permission's {@link hrm_platform_permissions.id}.
+  hrm_platform_permission_id String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_platform_roles @relation(fields: [hrm_platform_role_id], references: [id], onDelete: Cascade)
+  permission hrm_platform_permissions @relation(fields: [hrm_platform_permission_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_role_id, hrm_platform_permission_id], map: "hrm_platform_role_permissions_hrm_platform_role_id_hrm_13211dc7")
+  @@index([hrm_platform_role_id])
+  @@index([hrm_platform_permission_id])
+}
+
+/// Available permission definitions that can be assigned to roles, including
+/// org:manage, employee:manage, project:view, time:approve, and other access
+/// control rights. This is a reference table containing predefined
+/// permissions that roles can be granted. Permissions support soft deletion
+/// for audit trail and recovery purposes.
+///
+/// @namespace Roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique permission code identifier (e.g., 'org:manage', 'employee:view',
+  /// 'time:approve'). Used as the reference key in role_permissions table.
+  code String
+  
+  /// Human-readable name of the permission for UI display.
+  name String
+  
+  /// Detailed description explaining what this permission allows users to do.
+  description String?
+  
+  /// Permission category grouping (e.g., 'org', 'employee', 'project', 'time',
+  /// 'report') for organizational purposes.
+  category String?
+  
+  /// Timestamp when this permission definition was created.
+  created_at DateTime
+  
+  /// Timestamp when this permission definition was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this permission definition was soft deleted. Null
+  /// indicates active permission.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  roleAssignments hrm_platform_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([code])
+  @@index([category])
+}

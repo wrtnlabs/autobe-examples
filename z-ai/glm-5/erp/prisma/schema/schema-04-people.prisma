@@ -1,0 +1,354 @@
+/// Employee records linking authenticated users to organizations with role
+/// assignment, optional department membership, position title, employment
+/// type classification, and activation status.
+///
+/// Each employee represents a user's membership in a specific organization
+/// with an assigned role that determines their permissions. An employee
+/// belongs to exactly one organization and has exactly one role within that
+/// organization at any given time. Employees may optionally be assigned to a
+/// department for organizational grouping.
+///
+/// The employment type field categorizes the worker relationship (full-time,
+/// part-time, contractor, intern) for reporting and payroll purposes. The
+/// status field tracks whether the employee is active and can log time, or
+/// deactivated with preserved historical data.
+///
+/// Users with employee management permission can create, edit, and
+/// deactivate employee records. Employees can view their own profile and
+/// other employees in their organization based on their role permissions.
+/// All employee data is strictly isolated by organization boundary.
+///
+/// Key relationships:
+/// - {@link hrm_time_tracking_members} - The user account this employee
+/// record belongs to
+/// - {@link hrm_time_tracking_organizations} - The organization this
+/// employee works in
+/// - {@link hrm_time_tracking_roles} - The role assigned to this employee
+/// determining permissions
+/// - {@link hrm_time_tracking_departments} - Optional department this
+/// employee belongs to
+///
+/// @namespace People
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user account this employee record belongs to. Each user can have one
+  /// employee record per organization. {@link hrm_time_tracking_members.id}.
+  member_id String
+  
+  /// The organization this employee belongs to. All employee data is scoped to
+  /// this organization. {@link hrm_time_tracking_organizations.id}.
+  organization_id String
+  
+  /// The role assigned to this employee, determining their permissions within
+  /// the organization. Each employee has exactly one role at any given time.
+  /// {@link hrm_time_tracking_roles.id}.
+  role_id String
+  
+  /// Optional department this employee belongs to for organizational grouping.
+  /// Department membership is optional and can be changed. {@link
+  /// hrm_time_tracking_departments.id}.
+  department_id String?
+  
+  /// Job position or title for this employee within the organization, such as
+  /// 'Software Engineer' or 'Project Manager'. Optional field that can be
+  /// updated by users with employee management permission.
+  position String?
+  
+  /// Employment type classification for payroll and reporting purposes. Valid
+  /// values: 'full-time', 'part-time', 'contractor', 'intern'. This field is
+  /// required and determines how the employee's time and compensation are
+  /// tracked.
+  employment_type String
+  
+  /// Current status of the employee record. Valid values: 'active',
+  /// 'deactivated'. Active employees can log time and submit timesheets.
+  /// Deactivated employees cannot log time but their historical data is
+  /// preserved. Can be reactivated by users with employee management
+  /// permission.
+  status String
+  
+  /// Timestamp when the employee record was created. Set automatically when an
+  /// employee is added to the organization.
+  created_at DateTime
+  
+  /// Timestamp when the employee record was last modified. Updated
+  /// automatically when any field is changed.
+  updated_at DateTime
+  
+  /// Timestamp when the employee was soft-deleted. Null if the employee is
+  /// active or deactivated. Soft delete preserves historical timelog and
+  /// timesheet data for auditing purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_time_tracking_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  organization hrm_time_tracking_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  role hrm_time_tracking_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  department hrm_time_tracking_departments? @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  contracts hrm_time_tracking_contracts[]
+  projectMembers hrm_time_tracking_project_members[]
+  assignedTasks hrm_time_tracking_tasks[]
+  timelogs hrm_time_tracking_timelogs[]
+  timesheets hrm_time_tracking_timesheets[]
+  timers hrm_time_tracking_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([role_id])
+  @@index([department_id])
+  @@unique([member_id, organization_id])
+  @@index([organization_id, status])
+}
+
+/// Pending invitations for new employees sent by email before account creation.
+///
+/// When a user with employee management permission invites someone by email,
+/// this table tracks the invitation if the email has no existing account.
+/// The invitation stores the assigned role and optional department that will
+/// be applied when the invited user signs up. Once the user creates an
+/// account with the invited email, they are automatically added to the
+/// organization with the specified role, and the invitation status
+/// transitions to 'accepted'.
+///
+/// Related entities:
+/// - {@link hrm_time_tracking_organizations} - Organization the invitation
+/// belongs to
+/// - {@link hrm_time_tracking_roles} - Role to assign when employee is created
+/// - {@link hrm_time_tracking_departments} - Optional department assignment
+/// - {@link hrm_time_tracking_members} - Member who sent the invitation
+///
+/// @namespace People
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_employee_invitations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization to which the invited employee will belong. {@link
+  /// hrm_time_tracking_organizations.id}.
+  organization_id String
+  
+  /// The role that will be assigned to the employee when they accept the
+  /// invitation. {@link hrm_time_tracking_roles.id}.
+  role_id String
+  
+  /// Optional department that will be assigned to the employee upon joining.
+  /// {@link hrm_time_tracking_departments.id}.
+  department_id String?
+  
+  /// The member who sent the invitation. {@link hrm_time_tracking_members.id}.
+  member_id String
+  
+  /// Email address of the invited person. When they sign up with this email,
+  /// the invitation will be automatically accepted.
+  email String
+  
+  /// Current status of the invitation: 'pending' (awaiting signup), 'accepted'
+  /// (user has signed up and joined), 'expired' (invitation no longer valid).
+  status String
+  
+  /// Timestamp when the invitation was created and sent.
+  created_at DateTime
+  
+  /// Timestamp when the invitation was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the invitation was soft deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_tracking_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  assignedRole hrm_time_tracking_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  department hrm_time_tracking_departments? @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  inviter hrm_time_tracking_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([role_id])
+  @@index([department_id])
+  @@index([member_id])
+  // spellchecker: ignore-next-line
+  @@unique([organization_id, email], map: "hrm_time_tracking_employee_invitations_organization_id_16479272")
+  // spellchecker: ignore-next-line
+  @@index([organization_id, status], map: "hrm_time_tracking_employee_invitations_organization_id_c477bce5")
+}
+
+/// Employment contracts tracking pay rate, pay period, working hours, and
+/// duration for each employee.
+///
+/// Each contract represents the formal employment terms between an
+/// organization and an employee for a defined period. Contracts serve as
+/// historical records of compensation agreements and expected work
+/// commitments. An employee can have multiple contracts over time, but only
+/// one contract can be active at any given time.
+///
+/// Past contracts (those with end_date in the past) are immutable historical
+/// records and cannot be modified. Only the current active contract can be
+/// edited by users with appropriate permissions.
+///
+/// Relationships:
+/// - Belongs to {@link hrm_time_tracking_employees} (required)
+/// - Supports historical employment tracking through start_date and end_date
+/// fields
+///
+/// @namespace People
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The employee who holds this contract. Each contract belongs to exactly
+  /// one employee. {@link hrm_time_tracking_employees.id}
+  hrm_time_tracking_employee_id String
+  
+  /// The date when the employment terms take effect. Required field indicating
+  /// when the contract period begins.
+  start_date DateTime
+  
+  /// The date when the employment terms expire. When not specified (null), the
+  /// contract represents an ongoing employment arrangement with no
+  /// predetermined conclusion. When specified, it marks when the employment
+  /// terms end.
+  end_date DateTime?
+  
+  /// The numeric compensation amount as specified in the contract. The actual
+  /// meaning (hourly rate, daily rate, etc.) is determined by the pay_period
+  /// field.
+  pay_rate Float
+  
+  /// How frequently compensation is calculated and paid. Allowed values:
+  /// 'hourly' (compensation calculated per hour worked), 'daily' (compensation
+  /// calculated per day worked), 'weekly' (compensation calculated per week),
+  /// 'monthly' (compensation calculated per month).
+  pay_period String
+  
+  /// The expected working hours per week as specified in the contract.
+  /// Establishes the standard time commitment for the employee (e.g., 40
+  /// hours).
+  working_hours_per_week Int
+  
+  /// Optional additional information about the employment terms, special
+  /// conditions, or other relevant details.
+  notes String?
+  
+  /// Timestamp when the contract record was created.
+  created_at DateTime
+  
+  /// Timestamp when the contract record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the contract was soft-deleted. Null if the contract is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_tracking_employees @relation(fields: [hrm_time_tracking_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_employee_id, created_at], map: "hrm_time_tracking_contracts_hrm_time_tracking_employee_96aa3220")
+  @@index([end_date])
+}
+
+/// Organizational departments within multi-tenant organizations that group
+/// employees by functional area.
+///
+/// Each department belongs to exactly one organization and supports one
+/// level of nesting through an optional parent department reference. This
+/// allows for hierarchical department structures like Engineering > Backend
+/// Team.
+///
+/// Departments are managed by users with org:manage permission. When a
+/// department is deleted, employees assigned to that department have their
+/// department reference cleared (set to null) but are not deleted
+/// themselves.
+///
+/// Related entities: {@link hrm_time_tracking_employees} can optionally
+/// belong to a department.
+///
+/// @namespace People
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization this department belongs to. Departments are strictly
+  /// isolated per organization. {@link hrm_time_tracking_organizations.id}
+  organization_id String
+  
+  /// Optional parent department for one-level nesting hierarchy. Enables
+  /// structures like 'Engineering > Backend Team'. Null for top-level
+  /// departments. {@link hrm_time_tracking_departments.id}
+  parent_department_id String?
+  
+  /// Department name, unique within the organization. Examples: 'Engineering',
+  /// 'Marketing', 'Human Resources'.
+  name String
+  
+  /// Optional description of the department's purpose and responsibilities.
+  description String?
+  
+  /// Timestamp when the department was created.
+  created_at DateTime
+  
+  /// Timestamp when the department was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the department was soft-deleted. Null if the department is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_tracking_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  parentDepartment hrm_time_tracking_departments? @relation("recursive", fields: [parent_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_time_tracking_employees[]
+  employeeInvitations hrm_time_tracking_employee_invitations[]
+  subDepartments hrm_time_tracking_departments[] @relation("recursive")
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_department_id])
+  @@unique([organization_id, name])
+  @@index([organization_id, created_at])
+}

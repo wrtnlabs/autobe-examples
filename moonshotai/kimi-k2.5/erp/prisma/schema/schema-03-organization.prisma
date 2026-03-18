@@ -1,0 +1,339 @@
+/// Employee records linking global users to specific organizations. Each
+/// record represents a membership that connects a user account to an
+/// organizational context, enabling the user to perform work within that
+/// organization. Contains role assignment for access control, optional
+/// department placement for organizational structure, position/title for
+/// hierarchy identification, employment type classification, and activation
+/// status for lifecycle management. Serves as the bridge entity that makes
+/// all work data (timelogs, timesheets, project assignments)
+/// organization-scoped.
+///
+/// Key business relationships:
+/// - Belongs to {@link erp_hrm_organizations} via organization_id
+/// - Links to global {@link erp_hrm_members} via user_id
+/// - Assigned {@link erp_hrm_roles} for permissions
+/// - Optionally belongs to {@link erp_hrm_departments}
+/// - Has many {@link erp_hrm_contracts}, {@link erp_hrm_project_members},
+/// {@link erp_hrm_timelogs}, {@link erp_hrm_timesheets}, {@link
+/// erp_hrm_timers}
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_organization_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link erp_hrm_organizations.id}.
+  organization_id String
+  
+  /// Linked global user's {@link erp_hrm_members.id}.
+  user_id String
+  
+  /// Assigned role's {@link erp_hrm_roles.id} determining permissions.
+  role_id String
+  
+  /// Optional department assignment's {@link erp_hrm_departments.id}.
+  department_id String?
+  
+  /// Optional job title or position within the organization (e.g., 'Senior
+  /// Developer', 'Project Manager').
+  position String?
+  
+  /// Classification of working relationship: 'full_time', 'part_time',
+  /// 'contractor', or 'intern'.
+  employment_type String
+  
+  /// Activation status indicating whether the member can perform work
+  /// activities. true=active, false=deactivated.
+  is_active Boolean
+  
+  /// Timestamp when the membership was created.
+  created_at DateTime
+  
+  /// Timestamp of last membership update.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for preserving historical work records.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user erp_hrm_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role erp_hrm_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  department erp_hrm_departments? @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  contracts erp_hrm_contracts[]
+  projectMembers erp_hrm_project_members[]
+  assignedTasks erp_hrm_tasks[]
+  timelogs erp_hrm_timelogs[]
+  timesheets erp_hrm_timesheets[] @relation("erp_hrm_timesheets_of_organization_member_id")
+  reviewedTimesheets erp_hrm_timesheets[] @relation("erp_hrm_timesheets_of_reviewed_by_id")
+  timers erp_hrm_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@index([role_id])
+  @@index([department_id])
+  @@unique([organization_id, user_id])
+  @@index([organization_id, is_active])
+}
+
+/// Permission sets defined within an organization. Includes built-in roles
+/// (Owner, Manager, Employee) and custom roles with configurable
+/// permissions. Assigned to organization members to control access rights.
+/// Each role belongs to exactly one organization and role names must be
+/// unique within that organization.
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link erp_hrm_organizations.id}.
+  organization_id String
+  
+  /// Role name (e.g., Owner, Manager, Employee, or custom role name).
+  name String
+  
+  /// Optional description of the role's purpose and responsibilities.
+  description String?
+  
+  /// Whether this is a system-defined built-in role (Owner, Manager, Employee)
+  /// or a custom user-defined role.
+  is_builtin Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if role is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  organizationMembers erp_hrm_organization_members[]
+  rolePermissions erp_hrm_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([organization_id, is_builtin])
+}
+
+/// Organizational hierarchy structure representing functional divisions or
+/// departments within a company.
+///
+/// Departments provide the organizational structure needed to categorize
+/// employees and reflect the company's internal hierarchy. Each department
+/// belongs to exactly one organization and can optionally have a parent
+/// department, supporting single-level parent-child nesting for department
+/// trees.
+///
+/// Departments are used for employee classification, organizational
+/// reporting, and filtering employee lists. Employees may be optionally
+/// assigned to a single department within their organization, reflecting
+/// their placement within the organizational structure.
+///
+/// The department hierarchy enables organizational chart visualization and
+/// department-based grouping for management and reporting purposes.
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link erp_hrm_organizations.id}.
+  organization_id String
+  
+  /// Parent department's {@link erp_hrm_departments.id} for hierarchical
+  /// department structure. Null for top-level departments.
+  parent_department_id String?
+  
+  /// Department name (e.g., 'Engineering', 'Sales', 'Human Resources').
+  name String
+  
+  /// Optional description providing additional context about the department's
+  /// purpose and responsibilities.
+  description String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if department is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  parentDepartment erp_hrm_departments? @relation("recursive", fields: [parent_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  organizationMembers erp_hrm_organization_members[]
+  children erp_hrm_departments[] @relation("recursive")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([organization_id])
+  @@index([parent_department_id])
+  @@index([deleted_at])
+}
+
+/// Employment contract records for organization members. Tracks formal
+/// employment agreements including compensation terms, working hours, and
+/// employment periods. Maintains complete historical record of all contracts
+/// with only one active contract per member at any time. Supports payroll
+/// processing, labor cost calculations, and compliance audit trails.
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization member's {@link erp_hrm_organization_members.id}.
+  organization_member_id String
+  
+  /// Belonged organization's {@link erp_hrm_organizations.id} for data
+  /// isolation.
+  organization_id String
+  
+  /// Type of employment. Values: 'full-time', 'part-time', 'contract'.
+  employment_type String
+  
+  /// Compensation amount per pay period (salary) or per hour (hourly).
+  pay_rate Float
+  
+  /// Payment frequency. Values: 'hourly', 'daily', 'weekly', 'bi-weekly',
+  /// 'monthly'.
+  pay_period String
+  
+  /// Expected working hours per week for capacity planning and availability
+  /// forecasting.
+  working_hours_per_week Float
+  
+  /// Date when the contract terms take effect.
+  start_date DateTime
+  
+  /// Date when the contract terms end. Null for currently active contracts.
+  end_date DateTime?
+  
+  /// Additional terms, special conditions, or contextual information about the
+  /// agreement not captured in structured fields.
+  notes String?
+  
+  /// Whether this is the currently active contract for the member. Only one
+  /// contract per member can be active at a time.
+  is_active Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organizationMember erp_hrm_organization_members @relation(fields: [organization_member_id], references: [id], onDelete: Cascade)
+  organization erp_hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_member_id, is_active])
+  @@index([organization_id, created_at])
+  @@index([organization_member_id, start_date])
+}
+
+/// Individual permission assignments for roles in normalized form. Each
+/// record represents one permission granted to a role, satisfying 1NF
+/// compliance by decomposing permissions into atomic values rather than
+/// storing as arrays. This table enables fine-grained permission management
+/// and efficient permission lookups for access control decisions.
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged role's {@link erp_hrm_roles.id}. The role this permission is
+  /// assigned to.
+  role_id String
+  
+  /// The permission identifier (e.g., 'organization.manage',
+  /// 'employee.manage', 'project.view', etc.). Represents a specific
+  /// functional capability granted to the role.
+  permission String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Null if record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role erp_hrm_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([role_id, permission])
+}

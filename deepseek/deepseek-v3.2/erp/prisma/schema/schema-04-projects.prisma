@@ -1,0 +1,484 @@
+/// Main project entity representing work initiatives within an organization.
+///
+/// Projects organize work efforts with budgets, timelines, and visual
+/// identification. Each project has a status lifecycle (active, archived,
+/// completed) and can contain multiple tasks. Projects are assigned to
+/// employees through project memberships with specific roles (member or
+/// project-lead).
+///
+/// Budget hours track estimated vs actual time consumption, while start and
+/// end dates define the project timeline. Color codes provide visual
+/// identification in user interfaces. Projects are strictly scoped to their
+/// parent organization ensuring multi-tenancy data isolation.
+///
+/// Related entities: {@link erp_time_track_organizations} (parent
+/// organization), {@link erp_time_track_project_memberships} (employee
+/// assignments), {@link erp_time_track_tasks} (contained work items).
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_time_track_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent organization that owns this project. {@link
+  /// erp_time_track_organizations.id}.
+  organization_id String
+  
+  /// Project name for identification and reference.
+  name String
+  
+  /// Detailed project description explaining purpose, scope, and objectives.
+  description String?
+  
+  /// Hexadecimal color code (e.g., #FF5733) for visual identification in user
+  /// interfaces.
+  color_code String
+  
+  /// Current lifecycle status: 'active' (accepting time entries), 'archived'
+  /// (historical reference only), or 'completed' (finished work).
+  status String
+  
+  /// Total estimated hours budgeted for the project. Null indicates no budget
+  /// tracking.
+  budget_hours Float?
+  
+  /// Planned project start date for timeline reference.
+  start_date DateTime?
+  
+  /// Planned project end date for timeline reference.
+  end_date DateTime?
+  
+  /// Timestamp when the project was created.
+  created_at DateTime
+  
+  /// Timestamp when the project was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the project was soft-deleted. Null indicates active record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_time_track_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots erp_time_track_project_snapshots[]
+  tasks erp_time_track_tasks[]
+  projectMemberships erp_time_track_project_memberships[]
+  timelogs erp_time_track_timelogs[]
+  timers erp_time_track_timers[]
+  projectTimeTotals erp_time_track_project_time_totals[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([organization_id, status])
+  @@index([organization_id, start_date])
+  @@index([organization_id, end_date])
+}
+
+/// Point-in-time snapshots of project data for audit trail and historical
+/// reference.
+///
+/// Captures the complete state of a project at a specific moment in time,
+/// including all business fields denormalized from the main project entity.
+/// Used for auditing changes, historical analysis, and compliance reporting.
+/// Each snapshot is immutable and append-only, preserving the project's
+/// configuration, status, and timeline details as they existed when the
+/// snapshot was created.
+///
+/// This snapshot table includes denormalized copies of parent project fields
+/// including organization reference for complete audit trail. Fields are
+/// captured as they existed at snapshot creation time, enabling historical
+/// queries and change tracking.
+///
+/// {@link erp_time_track_projects}
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_time_track_project_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent project. {@link erp_time_track_projects.id}
+  erp_time_track_project_id String
+  
+  /// Project name as recorded at snapshot time.
+  name String
+  
+  /// Project description as recorded at snapshot time.
+  description String?
+  
+  /// Visual color identification for UI display.
+  color_code String
+  
+  /// Project status: active, archived, or completed.
+  status String
+  
+  /// Total estimated hours budgeted for the project.
+  budget_hours Float?
+  
+  /// Project start date.
+  start_date DateTime?
+  
+  /// Project end date.
+  end_date DateTime?
+  
+  /// Denormalized organization reference from parent project for audit
+  /// completeness. {@link erp_time_track_organizations.id}
+  organization_id String
+  
+  /// Denormalized updated timestamp from parent project at snapshot time.
+  updated_at DateTime
+  
+  /// Denormalized soft deletion timestamp from parent project at snapshot time.
+  deleted_at DateTime?
+  
+  /// Timestamp when the snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project erp_time_track_projects @relation(fields: [erp_time_track_project_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([erp_time_track_project_id, created_at], map: "erp_time_track_project_snapshots_erp_time_track_projec_117174c7")
+  // spellchecker: ignore-next-line
+  @@index([organization_id, status, created_at], map: "erp_time_track_project_snapshots_organization_id_statu_f187aac3")
+  @@index([created_at])
+}
+
+/// Individual work units within projects representing specific assignments
+/// with status, priority, estimates, and due dates.
+///
+/// Tasks break down project work into manageable units that can be assigned
+/// to employees. Each task belongs to exactly one project and may optionally
+/// be assigned to an employee who is a member of that project. Tasks support
+/// hierarchical relationships with one level of nesting for subtasks.
+///
+/// Status progression follows: open → in-progress → completed → closed.
+/// Priority levels indicate urgency for scheduling and resource allocation.
+/// Estimated hours and due dates help with project planning and tracking.
+///
+/// Tasks are the foundation for time tracking, as employees log time against
+/// specific tasks. {@link erp_time_track_projects.id} {@link
+/// erp_time_track_employees.id}
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_time_track_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The parent project containing this task. {@link
+  /// erp_time_track_projects.id}
+  erp_time_track_project_id String
+  
+  /// The employee assigned to work on this task, must be a member of the
+  /// parent project. {@link erp_time_track_employees.id}
+  assigned_employee_id String?
+  
+  /// Parent task for hierarchical relationships (one-level nesting only).
+  /// {@link erp_time_track_tasks.id}
+  parent_task_id String?
+  
+  /// Short, descriptive title of the task summarizing the work to be done.
+  title String
+  
+  /// Detailed explanation of the task requirements, acceptance criteria, or
+  /// context.
+  description String?
+  
+  /// Current progress state of the task.
+  ///
+  /// Allowed values:
+  /// - 'open': New task, not yet started
+  /// - 'in-progress': Actively being worked on
+  /// - 'completed': Work finished, awaiting verification
+  /// - 'closed': Finalized and verified
+  ///
+  /// Status changes are recorded in {@link erp_time_track_task_histories}.
+  status String
+  
+  /// Urgency level for scheduling and resource allocation.
+  ///
+  /// Allowed values:
+  /// - 'low': Minor importance, can be deferred
+  /// - 'medium': Standard priority
+  /// - 'high': Important, should be addressed soon
+  /// - 'urgent': Critical, requires immediate attention
+  priority String
+  
+  /// Estimated number of hours required to complete the task, used for
+  /// planning and tracking project budgets.
+  estimated_hours Float?
+  
+  /// Target completion date for this task.
+  due_date DateTime?
+  
+  /// Timestamp when the task was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the task was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the task was soft deleted, or null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project erp_time_track_projects @relation(fields: [erp_time_track_project_id], references: [id], onDelete: Cascade)
+  assignedEmployee erp_time_track_employees? @relation(fields: [assigned_employee_id], references: [id], onDelete: Cascade)
+  parentTask erp_time_track_tasks? @relation("recursive", fields: [parent_task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childTasks erp_time_track_tasks[] @relation("recursive")
+  statusHistories erp_time_track_task_histories[]
+  childTaskRelations erp_time_track_task_parent_children[] @relation("erp_time_track_task_parent_children_of_parent_task_id")
+  parentTaskRelations erp_time_track_task_parent_children[] @relation("erp_time_track_task_parent_children_of_child_task_id")
+  timelogs erp_time_track_timelogs[]
+  timers erp_time_track_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([erp_time_track_project_id, status, priority], map: "erp_time_track_tasks_erp_time_track_project_id_status__ffdc0822")
+  @@index([assigned_employee_id, status])
+  @@index([parent_task_id])
+  @@index([due_date])
+  @@index([created_at])
+}
+
+/// Tracks historical status changes for tasks, recording audit trails of
+/// workflow transitions.
+///
+/// Each time a task's status changes (e.g., from 'open' to 'in-progress', or
+/// 'in-progress' to 'completed'), this table records the old status, new
+/// status, who made the change, and when it occurred. This provides a
+/// complete audit trail for task lifecycle management, enabling review of
+/// task progress over time and supporting compliance requirements.
+///
+/// These records are created automatically whenever task status updates
+/// occur and are typically read-only for audit purposes. The description
+/// field allows for optional notes about why the status change occurred,
+/// such as 'Task completed ahead of schedule' or 'Reopened due to new
+/// requirements'.
+///
+/// {@link erp_time_track_tasks} serve as the parent entities for these
+/// histories, with each task having multiple historical status change
+/// records. {@link erp_time_track_members} represent the users who performed
+/// the status changes, which may be task assignees, project leads, or
+/// managers with appropriate permissions.
+///
+/// Includes standard temporal fields for audit trail completeness:
+/// created_at records when the status change occurred, updated_at tracks any
+/// modifications to the history record, and deleted_at supports soft
+/// deletion for compliance purposes.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_time_track_task_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Task whose status changed. {@link erp_time_track_tasks.id}.
+  erp_time_track_task_id String
+  
+  /// Member user who performed the status change. {@link
+  /// erp_time_track_members.id}.
+  erp_time_track_member_id String
+  
+  /// Task status before the change occurred. Valid values correspond to task
+  /// status lifecycle: 'open', 'in-progress', 'completed', 'closed'.
+  old_status String
+  
+  /// Task status after the change occurred. Valid values correspond to task
+  /// status lifecycle: 'open', 'in-progress', 'completed', 'closed'.
+  new_status String
+  
+  /// Optional description of why the status change occurred, providing context
+  /// for the workflow transition.
+  description String?
+  
+  /// Timestamp when the status change was recorded. This serves as the audit
+  /// trail timestamp for the historical record.
+  created_at DateTime
+  
+  /// Timestamp when this history record was last modified. Supports audit
+  /// trail completeness for any corrections or annotations to historical
+  /// status changes.
+  updated_at DateTime
+  
+  /// Timestamp when this history record was soft-deleted, supporting
+  /// compliance and data retention requirements while preserving referential
+  /// integrity.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  task erp_time_track_tasks @relation(fields: [erp_time_track_task_id], references: [id], onDelete: Cascade)
+  changedBy erp_time_track_members @relation(fields: [erp_time_track_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([erp_time_track_task_id, created_at], map: "erp_time_track_task_histories_erp_time_track_task_id_c_46fa1647")
+  // spellchecker: ignore-next-line
+  @@index([erp_time_track_member_id, created_at], map: "erp_time_track_task_histories_erp_time_track_member_id_1a166f0e")
+}
+
+/// Hierarchical relationships between parent and child tasks, enforcing
+/// one-level nesting constraints.
+///
+/// This junction table establishes parent-child relationships between tasks
+/// within the same project. A task can have multiple child tasks (subtasks),
+/// and a child task can have only one parent, implementing a one-level
+/// nesting hierarchy as specified in requirements. The relationship is
+/// constrained to prevent circular references and ensure proper hierarchical
+/// structure.
+///
+/// Parent-child relationships are managed through task operations rather
+/// than directly, making this a supporting entity for the task hierarchy
+/// system. When tasks are deleted, their associated parent-child
+/// relationships are automatically removed via cascade constraints.
+///
+/// {@link erp_time_track_tasks.id}
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_time_track_task_parent_children {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent task reference. {@link erp_time_track_tasks.id}
+  parent_task_id String
+  
+  /// Child task reference. {@link erp_time_track_tasks.id}
+  child_task_id String
+  
+  /// Timestamp when the parent-child relationship was established.
+  created_at DateTime
+  
+  /// Timestamp when the relationship was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parentTask erp_time_track_tasks @relation("erp_time_track_task_parent_children_of_parent_task_id", fields: [parent_task_id], references: [id], onDelete: Cascade)
+  childTask erp_time_track_tasks @relation("erp_time_track_task_parent_children_of_child_task_id", fields: [child_task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([parent_task_id, child_task_id], map: "erp_time_track_task_parent_children_parent_task_id_chi_64f1c92a")
+  @@index([parent_task_id])
+  @@index([child_task_id])
+}
+
+/// Junction table linking employees to projects with specific roles within
+/// projects.
+///
+/// This table implements a many-to-many relationship between employees and
+/// projects, allowing employees to be assigned to multiple projects and
+/// projects to have multiple assigned employees. Each assignment includes a
+/// role that determines the employee's level of responsibility within that
+/// specific project.
+///
+/// **Project Roles:**
+/// - **member**: Standard project participant who can work on tasks and log
+/// time within the project.
+/// - **project-lead**: Project leader who can manage tasks within their
+/// assigned project in addition to standard member capabilities.
+///
+/// **Business Context:** Users with project management permission can assign
+/// employees to projects and set their roles. Project leads have task
+/// management permissions within their assigned projects. When an employee
+/// is removed from a project, the record is soft-deleted to preserve
+/// historical assignment data. {@link erp_time_track_employees.id} and
+/// {@link erp_time_track_projects.id}
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_time_track_project_memberships {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Assigned employee's {@link erp_time_track_employees.id}.
+  employee_id String
+  
+  /// Project the employee is assigned to {@link erp_time_track_projects.id}.
+  project_id String
+  
+  /// Project role of the employee within this specific project. Determines
+  /// permissions and responsibilities. Allowed values: 'member' for standard
+  /// participants, 'project-lead' for task managers.
+  role String
+  
+  /// Timestamp when this project assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when this project assignment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this project assignment was soft-deleted. Null indicates
+  /// active assignment.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee erp_time_track_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  project erp_time_track_projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([employee_id, project_id])
+  @@index([employee_id])
+  @@index([project_id])
+  @@index([role])
+  @@index([deleted_at])
+}

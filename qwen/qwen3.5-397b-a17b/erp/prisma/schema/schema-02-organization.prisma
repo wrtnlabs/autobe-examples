@@ -1,0 +1,76 @@
+/// Core organization entity representing a multi-tenant workspace. Each
+/// organization operates independently with its own employees, projects,
+/// departments, and data. Organizations are owned by members who can
+/// configure settings, manage members, and control the organization
+/// lifecycle. When deleted, all associated business data (employees,
+/// projects, tasks, timelogs, timesheets) is permanently removed while the
+/// owner's member account remains intact.
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner member's {@link hrm_platform_members.id}. The member who created
+  /// and owns this organization. Can transfer ownership or delete the
+  /// organization.
+  owner_id String
+  
+  /// Organization name displayed in the UI and used for identification.
+  name String
+  
+  /// Optional description explaining the organization's purpose or business
+  /// context.
+  description String?
+  
+  /// URL to the organization's logo image for branding and UI display.
+  logo_url String?
+  
+  /// ISO 4217 currency code (e.g., USD, EUR, KRW) used for financial
+  /// calculations and reporting within the organization.
+  currency String
+  
+  /// IANA timezone identifier (e.g., Asia/Seoul, America/New_York) used for
+  /// date/time calculations and timesheet week boundaries.
+  timezone String
+  
+  /// Month number (1-12) when the organization's fiscal year begins, used for
+  /// annual reporting and budget cycles.
+  fiscal_start_month Int
+  
+  /// Timestamp when the organization was created.
+  created_at DateTime
+  
+  /// Timestamp when the organization was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the organization was soft-deleted. Null if active. Used
+  /// for cascade deletion tracking.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner hrm_platform_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_platform_employees[]
+  departments hrm_platform_departments[]
+  roles hrm_platform_roles[]
+  projects hrm_platform_projects[]
+  activityLogs hrm_platform_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([owner_id])
+  @@index([deleted_at])
+}

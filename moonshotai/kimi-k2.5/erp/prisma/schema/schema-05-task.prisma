@@ -1,0 +1,145 @@
+/// Work items representing units of work within projects. Tasks support a
+/// status workflow (Open, In-Progress, Completed, Closed), priority
+/// classification (Low, Medium, High, Critical), assignment to organization
+/// members, and single-level parent-child hierarchy for basic work breakdown
+/// structures. Each task belongs to a {@link erp_hrm_projects} and can
+/// optionally reference a parent task for sub-task relationships. Task
+/// assignment is optional via {@link erp_hrm_organization_members}. Tasks
+/// serve as the primary work tracking entity that timelogs are recorded
+/// against.
+///
+/// @namespace Task
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged project's {@link erp_hrm_projects.id}. The project this task
+  /// belongs to.
+  project_id String
+  
+  /// Assigned member's {@link erp_hrm_organization_members.id}. The
+  /// organization member responsible for completing this task. Null if
+  /// unassigned.
+  assigned_to_id String?
+  
+  /// Parent task's {@link erp_hrm_tasks.id}. For sub-tasks, references the
+  /// parent task. Limited to single-level nesting - child tasks cannot have
+  /// their own children. Null for top-level tasks.
+  parent_task_id String?
+  
+  /// Task title or name. Brief summary of the work to be performed.
+  title String
+  
+  /// Detailed description of the task. May include requirements, acceptance
+  /// criteria, or additional context.
+  description String?
+  
+  /// Current status of the task. Allowed values: 'Open', 'In-Progress',
+  /// 'Completed', 'Closed'. Open indicates ready to start, In-Progress
+  /// indicates actively being worked, Completed indicates finished but not yet
+  /// closed, Closed indicates archived or no longer active.
+  status String
+  
+  /// Priority level of the task. Allowed values: 'Low', 'Medium', 'High',
+  /// 'Critical'. Determines relative importance and urgency for work planning.
+  priority String
+  
+  /// Optional deadline for task completion. When specified, indicates when the
+  /// task should be finished.
+  due_date DateTime?
+  
+  /// Optional estimated effort in hours required to complete the task. Used
+  /// for planning and capacity management.
+  estimated_hours Float?
+  
+  /// Timestamp when the task was created.
+  created_at DateTime
+  
+  /// Timestamp when the task was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete. Null if task is active, set when task is
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project erp_hrm_projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  assignee erp_hrm_organization_members? @relation(fields: [assigned_to_id], references: [id], onDelete: Cascade)
+  parentTask erp_hrm_tasks? @relation("recursive", fields: [parent_task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childTasks erp_hrm_tasks[] @relation("recursive")
+  histories erp_hrm_task_histories[]
+  timelogs erp_hrm_timelogs[]
+  timers erp_hrm_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_task_id])
+  @@index([project_id, status])
+  @@index([assigned_to_id, status])
+  @@index([due_date])
+  @@index([created_at])
+}
+
+/// Immutable audit trail recording status changes for tasks. Captures the
+/// complete history of task state transitions including previous and new
+/// status values, the user who performed the change, optional reason for the
+/// change, and precise timestamp. This append-only table ensures full
+/// accountability and compliance for task workflow tracking. References
+/// {@link erp_hrm_tasks} as the subject task and {@link erp_hrm_members} as
+/// the user who made the change.
+///
+/// @namespace Task
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_task_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target task's {@link erp_hrm_tasks.id}.
+  erp_hrm_task_id String
+  
+  /// Member who performed the change's {@link erp_hrm_members.id}.
+  erp_hrm_member_id String
+  
+  /// Task status before the change occurred (e.g., 'open', 'in_progress',
+  /// 'completed').
+  previous_status String
+  
+  /// Task status after the change occurred (e.g., 'open', 'in_progress',
+  /// 'completed').
+  new_status String
+  
+  /// Optional explanation or reason for the status change.
+  change_reason String?
+  
+  /// Timestamp when the status change was recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  task erp_hrm_tasks @relation(fields: [erp_hrm_task_id], references: [id], onDelete: Cascade)
+  changedByMember erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_task_id, created_at])
+  @@index([erp_hrm_member_id])
+}

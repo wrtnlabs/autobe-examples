@@ -1,0 +1,145 @@
+/// Project work containers within organizations for tracking work
+/// initiatives, budget utilization, and team assignments.
+///
+/// Projects serve as the primary work containers that employees are assigned
+/// to through project memberships. Each project has a lifecycle status
+/// (active, archived, or completed) that controls whether new timelogs can
+/// be recorded. Active projects accept new time entries, while archived or
+/// completed projects preserve historical data but prevent new timelogs.
+///
+/// Projects reference {@link hrm_platform_organizations} for multi-tenancy
+/// isolation and are linked to employees through the {@link
+/// hrm_platform_project_members} junction table. Project leads (members with
+/// project-lead role) can manage tasks within their assigned projects.
+///
+/// Key business constraints:
+/// - Projects can only be deleted if they have no associated timelogs
+/// - Color codes enable visual identification in UI components
+/// - Budget hours support budget vs. actual tracking in reports
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link hrm_platform_organizations.id}.
+  organization_id String
+  
+  /// Project name for identification.
+  name String
+  
+  /// Optional detailed description of project scope and objectives.
+  description String?
+  
+  /// Hex color code for UI display and visual identification.
+  color_code String
+  
+  /// Project lifecycle status: active, archived, or completed. Active projects
+  /// accept new timelogs; archived/completed projects preserve historical data
+  /// only.
+  status String
+  
+  /// Optional total estimated budget hours for tracking budget utilization
+  /// percentage.
+  budget_hours Float?
+  
+  /// Optional project start date for timeline tracking.
+  started_at DateTime?
+  
+  /// Optional project end date or actual completion date.
+  ended_at DateTime?
+  
+  /// Timestamp when the project was created.
+  created_at DateTime
+  
+  /// Timestamp when the project was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the project was soft deleted. Null means active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  members hrm_platform_project_members[]
+  tasks hrm_platform_tasks[]
+  timelogs hrm_platform_timelogs[]
+  timers hrm_platform_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([organization_id, status])
+  @@index([organization_id, created_at])
+}
+
+/// Junction table associating employees with projects, storing role
+/// assignment that determines task management permissions within the
+/// project.
+///
+/// Each record represents an employee's membership in a project with a
+/// specific role. The role field distinguishes between regular members and
+/// project-leads, where project-leads have permission to manage tasks within
+/// their assigned project.
+///
+/// An employee can be assigned to multiple projects, and each project can
+/// have multiple members. The combination of employee and project is unique
+/// to prevent duplicate assignments.
+///
+/// Related entities: {@link hrm_platform_employees} for employee
+/// information, {@link hrm_platform_projects} for project details.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_project_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged employee's {@link hrm_platform_employees.id}.
+  hrm_platform_employee_id String
+  
+  /// Belonged project's {@link hrm_platform_projects.id}.
+  hrm_platform_project_id String
+  
+  /// Role within the project, either 'member' or 'project-lead'. Project-leads
+  /// can manage tasks within their project while regular members cannot.
+  role String
+  
+  /// Timestamp when the project membership was created.
+  created_at DateTime
+  
+  /// Timestamp when the project membership was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the project membership was soft deleted for audit trail
+  /// and data recovery.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  project hrm_platform_projects @relation(fields: [hrm_platform_project_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_project_id])
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_employee_id, hrm_platform_project_id], map: "hrm_platform_project_members_hrm_platform_employee_id__5f10afcf")
+}

@@ -1,0 +1,107 @@
+import { TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia from "typia";
+
+import { IHrmsOrganization } from "../../../../../api/structures/IHrmsOrganization";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
+import { getHrmsMemberDashboardOrganization } from "../../../../../providers/getHrmsMemberDashboardOrganization";
+
+@Controller("/hrms/member/dashboard/organization")
+export class HrmsMemberDashboardOrganizationController {
+  /**
+   * Retrieve the organization dashboard displaying key metrics for management oversight.
+   *
+   * This endpoint provides a comprehensive view of organization-wide activity and performance indicators. The dashboard includes the total count of active employees currently in the organization (excluding deactivated employees), the aggregate sum of all hours logged by all employees during the current week (Monday to Sunday), the count of pending timesheets awaiting manager approval, projects approaching budget limits (utilization over 80%), and the top 5 employees ranked by hours logged this week.
+   *
+   * The dashboard is scoped to the user's currently selected organization context and only includes data from that organization. Users must have report viewing permission to access organization-level metrics. The data is calculated on-demand at query time, not cached, ensuring the dashboard always reflects current organization state.
+   *
+   * Key metrics calculated:
+   * - Active employee count from hrms_employees where status is 'active'
+   * - Total hours from hrms_timelogs for the current week (sum of duration_minutes converted to hours)
+   * - Pending timesheets count from hrms_timesheets where status is 'submitted'
+   * - Budget utilization calculated from hrms_projects comparing logged hours against budget_hours
+   * - Top employees ranking by summing timelogs per employee for the current week
+   *
+   * This operation is used by organization managers and owners to monitor team productivity, track project budgets, identify high-workload employees, and oversee approval workflows.
+   *
+   * @param connection
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Query and aggregate data from multiple entity tables to build organization dashboard.
+   *
+   * 1. Verify user has report:view permission for their current organization context.
+   *
+   * 2. Calculate total active employees:
+   *    - Query hrms_employees where status = 'active'
+   *    - Count records (exclude where deleted_at is not null)
+   *    - Use hrms_organization_id from request context (selected organization)
+   *
+   * 3. Calculate total hours this week:
+   *    - Determine current week boundaries: Monday to Sunday of current week
+   *    - Query hrms_timelogs where:
+   *      - employee_id belongs to active employees in current organization
+   *      - date >= week_start AND date <= week_end
+   *      - deleted_at is null
+   *    - Sum duration_minutes, divide by 60 to get hours
+   *    - Use ROUND to 2 decimal places
+   *
+   * 4. Calculate pending timesheets count:
+   *    - Query hrms_timesheets where:
+   *      - hrms_employee_id belongs to active employees in current organization
+   *      - status = 'submitted'
+   *      - deleted_at is null
+   *    - Count matching records
+   *
+   * 5. Calculate projects with budget over 80%:
+   *    - Query hrms_projects where:
+   *      - hrms_organization_id matches current organization
+   *      - status = 'active' or status = 'archived' (include both for visibility)
+   *      - budget_hours is NOT NULL
+   *      - budget_hours > 0
+   *    - For each project, calculate logged hours from hrms_timelogs (same week filter)
+   *    - Calculate utilization = (logged_hours / budget_hours) * 100
+   *    - Filter where utilization > 80
+   *    - Return project_id, name, budget_hours, logged_hours, utilization_percentage
+   *    - Exclude projects with zero budget hours
+   *
+   * 6. Get top 5 employees by hours:
+   *    - Query hrms_timelogs for current week (same as total hours calculation)
+   *    - Group by employee_id, SUM(duration_minutes) per employee
+   *    - JOIN with hrms_employees to get employee details (display_name)
+   *    - Filter active employees only
+   *    - ORDER BY total_hours DESC
+   *    - LIMIT 5
+   *    - Return employee_id, display_name, total_hours (rounded to 2 decimals)
+   *
+   * 7. Build response object:
+   *    - totalActiveEmployees: integer count
+   *    - totalHoursThisWeek: float (2 decimal places)
+   *    - pendingTimesheetsCount: integer count
+   *    - projectsOverBudget: array of project summaries
+   *    - topEmployees: array of employee summaries (max 5)
+   *    - generatedAt: current UTC timestamp
+   *
+   * 8. Error handling:
+   *    - 403 Forbidden if user lacks report:view permission
+   *    - 404 Not Found if current organization doesn't exist
+   *    - 500 Internal Server Error for calculation failures
+   *
+   * Transaction: Use database read-only transaction for consistent snapshots if needed.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get()
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+  ): Promise<IHrmsOrganization> {
+    try {
+      return await getHrmsMemberDashboardOrganization({
+        member,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

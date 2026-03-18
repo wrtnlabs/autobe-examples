@@ -1,0 +1,520 @@
+/// Organization owner account identities with email/password credentials and
+/// account lifecycle metadata.
+///
+/// This table stores the global authenticated identity for owner actors in
+/// the HRM time tracking platform. It is intentionally limited to credential
+/// and account-state information and does not duplicate organization
+/// membership, workspace selection, or profile presentation data.
+///
+/// Owner-specific login sessions are stored in {@link
+/// hrm_time_tracking_owner_sessions}, and password recovery records are
+/// stored in {@link hrm_time_tracking_owner_password_resets}.
+/// Organization-scoped workforce and tenant relationships are modeled in
+/// other components rather than this actor table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_owners {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used as the owner account login identifier.
+  email String
+  
+  /// Hashed password for authenticating the owner account.
+  password_hash String
+  
+  /// Timestamp of the most recent successful login for the owner account.
+  last_login_at DateTime?
+  
+  /// Timestamp when the owner account was deactivated from active use while
+  /// preserving historical references.
+  deactivated_at DateTime?
+  
+  /// Timestamp when the owner account was created.
+  created_at DateTime
+  
+  /// Timestamp when the owner account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion of the owner account.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions hrm_time_tracking_owner_sessions[]
+  passwordResets hrm_time_tracking_owner_password_resets[]
+  taskHistoryActorLinks hrm_time_tracking_task_history_of_owners[]
+  activityLogAttributions hrm_time_tracking_activity_log_of_owners[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// Authentication sessions for organization owner accounts.
+///
+/// This table stores each owner login session together with connection
+/// metadata, expiry time, and the currently selected organization context
+/// used to scope requests in the multi-tenant ERP platform. It belongs to
+/// {@link hrm_time_tracking_owners} and references the active organization
+/// workspace through {@link hrm_time_tracking_organizations}, allowing
+/// owners to work within a selected tenant context during a session.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_owner_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner account that owns this session. {@link hrm_time_tracking_owners.id}.
+  hrm_time_tracking_owner_id String
+  
+  /// Currently selected organization context for this session. {@link
+  /// hrm_time_tracking_organizations.id}.
+  hrm_time_tracking_organization_id String
+  
+  /// IP address from which the owner session was established.
+  ip String
+  
+  /// Application URL associated with the session creation context.
+  href String
+  
+  /// Referrer URL captured when the session was created.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and is no longer valid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner hrm_time_tracking_owners @relation(fields: [hrm_time_tracking_owner_id], references: [id], onDelete: Cascade)
+  organization hrm_time_tracking_organizations @relation(fields: [hrm_time_tracking_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_owner_id, created_at], map: "hrm_time_tracking_owner_sessions_hrm_time_tracking_own_b8ba185d")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_organization_id, expired_at], map: "hrm_time_tracking_owner_sessions_hrm_time_tracking_org_94b1f0b2")
+}
+
+/// One-time password reset requests for organization owner accounts.
+///
+/// This table stores reset tokens issued to {@link hrm_time_tracking_owners}
+/// together with expiration and consumption tracking so password recovery
+/// can be securely validated and audited. Multiple reset requests may exist
+/// for the same owner over time, but each token is unique and may be
+/// consumed only once.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_owner_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner account that requested the password reset. {@link
+  /// hrm_time_tracking_owners.id}.
+  hrm_time_tracking_owner_id String
+  
+  /// Unique password reset token issued to validate a password recovery
+  /// request.
+  token String
+  
+  /// Timestamp after which the password reset token is no longer valid.
+  expired_at DateTime
+  
+  /// Timestamp when the password reset token was consumed. Null means the
+  /// token has not been used yet.
+  used_at DateTime?
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when this password reset record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this password reset record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner hrm_time_tracking_owners @relation(fields: [hrm_time_tracking_owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_owner_id, created_at], map: "hrm_time_tracking_owner_password_resets_hrm_time_track_f8ba0552")
+  @@index([expired_at, used_at])
+}
+
+/// Authenticated manager account records for the HRM time tracking platform.
+///
+/// This actor table stores the login identity and credential state for
+/// manager users who can access organization-scoped management features
+/// through separate session records. It intentionally contains only core
+/// authentication and lifecycle fields, while organization membership,
+/// employee business records, role assignment, profile data, active
+/// organization context, password reset flows, and sessions are handled by
+/// other dedicated tables such as session, human resources, and
+/// profile-related models.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_managers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used as the manager account sign-in identifier.
+  email String
+  
+  /// Hashed password for authenticating the manager account.
+  password_hash String
+  
+  /// Timestamp when the manager account was created.
+  created_at DateTime
+  
+  /// Timestamp when the manager account was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp set when the manager account is deleted or
+  /// deactivated from authentication use.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions hrm_time_tracking_manager_sessions[]
+  passwordResets hrm_time_tracking_manager_password_resets[]
+  taskHistoryActorLinks hrm_time_tracking_task_history_of_managers[]
+  activityLogActorLinks hrm_time_tracking_activity_log_of_managers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Login session records for authenticated manager accounts.
+///
+/// This table stores connection context and session lifetime information for
+/// {@link hrm_time_tracking_managers} authentication events. Each record
+/// belongs to exactly one manager account and supports auditability and
+/// session expiration handling within the HRM time-tracking platform.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_manager_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Authenticated manager account's {@link hrm_time_tracking_managers.id}.
+  hrm_time_tracking_manager_id String
+  
+  /// IP address from which the manager session was created.
+  ip String
+  
+  /// Application URL associated with the session creation request.
+  href String
+  
+  /// Referrer URL recorded when the manager session was created.
+  referrer String
+  
+  /// Timestamp when the manager session was created.
+  created_at DateTime
+  
+  /// Timestamp when the manager session expires and is no longer valid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  manager hrm_time_tracking_managers @relation(fields: [hrm_time_tracking_manager_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_manager_id, created_at], map: "hrm_time_tracking_manager_sessions_hrm_time_tracking_m_b2371065")
+}
+
+/// One-time password reset requests issued for {@link
+/// hrm_time_tracking_managers} accounts.
+///
+/// This table stores reset token values, expiration timing, and consumption
+/// state for manager password recovery flows. Each record belongs to exactly
+/// one manager account and preserves auditability for issued and consumed
+/// reset requests without duplicating manager identity data.
+///
+/// The model supports secure password reset processing by enforcing unique
+/// token values, tracking expiry deadlines, and recording when a token has
+/// been used. Multiple reset requests may exist for the same manager over
+/// time.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_manager_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Manager account that owns this password reset request. {@link
+  /// hrm_time_tracking_managers.id}.
+  hrm_time_tracking_manager_id String
+  
+  /// Unique password reset token value issued to prove control of the reset
+  /// flow.
+  token String
+  
+  /// Timestamp after which the password reset token is no longer valid.
+  expired_at DateTime
+  
+  /// Timestamp when the password reset token was used successfully. Null means
+  /// the token has not been used yet.
+  consumed_at DateTime?
+  
+  /// Timestamp when this password reset request was issued.
+  created_at DateTime
+  
+  /// Timestamp when this password reset record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion of this password reset record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  manager hrm_time_tracking_managers @relation(fields: [hrm_time_tracking_manager_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_manager_id, created_at], map: "hrm_time_tracking_manager_password_resets_hrm_time_tra_2a6f7174")
+  // spellchecker: ignore-next-line
+  @@index([expired_at, consumed_at], map: "hrm_time_tracking_manager_password_resets_expired_at_c_0c842988")
+}
+
+/// Authenticated employee account identities for the HRM time tracking
+/// platform.
+///
+/// This actor table stores the login credentials and global authentication
+/// state used when an employee signs in with email and password. It is the
+/// parent identity record for employee authentication flows and is
+/// referenced by employee session and password reset records.
+///
+/// This table intentionally excludes organization-scoped workforce
+/// attributes such as department, role assignment, employment type, and
+/// employee status because those belong to the human-resources domain model
+/// rather than the authentication boundary. It also excludes active
+/// organization context because that state belongs to session records, not
+/// the root actor identity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used by the employee to sign in.
+  email String
+  
+  /// Hashed password for employee authentication.
+  password_hash String
+  
+  /// Timestamp when the employee email address was verified.
+  email_verified_at DateTime?
+  
+  /// Timestamp of the employee's most recent successful sign-in.
+  last_logged_in_at DateTime?
+  
+  /// Timestamp when this employee account was created.
+  created_at DateTime
+  
+  /// Timestamp when this employee account was last updated.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for this employee account.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions hrm_time_tracking_employee_sessions[]
+  passwordResets hrm_time_tracking_employee_password_resets[]
+  contracts hrm_time_tracking_employee_contracts[]
+  projectMemberships hrm_time_tracking_project_memberships[]
+  assignedTasks hrm_time_tracking_tasks[]
+  taskHistoryStatusChanges hrm_time_tracking_task_history_of_employees[]
+  timer hrm_time_tracking_timers?
+  timelogs hrm_time_tracking_timelogs[]
+  timesheets hrm_time_tracking_timesheets[]
+  weeklySummaries hrm_time_tracking_employee_weekly_summaries[]
+  activityLogs hrm_time_tracking_activity_log_of_employees[]
+  reportEmployeeFilters hrm_time_tracking_report_employee_filters[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// Login sessions for authenticated employee accounts.
+///
+/// This table records each employee sign-in event together with connection
+/// metadata, the currently selected organization workspace, session
+/// expiration, and logout state. It belongs to {@link
+/// hrm_time_tracking_employees} and may reference the active organization
+/// context in {@link hrm_time_tracking_organizations} so multi-organization
+/// users can work within one selected tenant during a session.
+///
+/// The model is used by authentication and authorization flows rather than
+/// standalone business management. Session rows preserve auditability for
+/// login history and support explicit logout control without denormalizing
+/// employee or organization attributes into the session record.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_employee_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Authenticated employee account's {@link hrm_time_tracking_employees.id}.
+  hrm_time_tracking_employee_id String
+  
+  /// Currently selected organization workspace's {@link
+  /// hrm_time_tracking_organizations.id}.
+  hrm_time_tracking_organization_id String?
+  
+  /// IP address observed when the employee session was created.
+  ip String
+  
+  /// Application URL from which the employee initiated the authenticated
+  /// session.
+  href String
+  
+  /// HTTP referrer captured at login time for audit and security review.
+  referrer String
+  
+  /// Timestamp when the session was explicitly logged out. Null means the
+  /// session has not been explicitly terminated yet.
+  logged_out_at DateTime?
+  
+  /// Timestamp when the employee session was created.
+  created_at DateTime
+  
+  /// Timestamp when the employee session becomes invalid and must no longer be
+  /// accepted.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_tracking_employees @relation(fields: [hrm_time_tracking_employee_id], references: [id], onDelete: Cascade)
+  organization hrm_time_tracking_organizations? @relation(fields: [hrm_time_tracking_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_employee_id, created_at], map: "hrm_time_tracking_employee_sessions_hrm_time_tracking__b7c2e651")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_organization_id, expired_at], map: "hrm_time_tracking_employee_sessions_hrm_time_tracking__f6325e0e")
+}
+
+/// One-time password reset requests for {@link hrm_time_tracking_employees}
+/// accounts.
+///
+/// This table stores issued reset tokens, their expiration deadlines, and
+/// whether the token has already been consumed. It supports employee account
+/// recovery flows while preserving a historical record of reset issuance and
+/// usage for security review and operational auditing.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_employee_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Employee account that owns this reset request. {@link
+  /// hrm_time_tracking_employees.id}.
+  hrm_time_tracking_employee_id String
+  
+  /// Unique password reset token issued to prove reset authorization.
+  token String
+  
+  /// Timestamp when the reset token was consumed. Null means the token has not
+  /// been used yet.
+  used_at DateTime?
+  
+  /// Timestamp after which the reset token is no longer valid.
+  expired_at DateTime
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when this password reset record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_tracking_employees @relation(fields: [hrm_time_tracking_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_employee_id, created_at], map: "hrm_time_tracking_employee_password_resets_hrm_time_tr_acb90920")
+  // spellchecker: ignore-next-line
+  @@index([expired_at, used_at], map: "hrm_time_tracking_employee_password_resets_expired_at__8a77e46a")
+}

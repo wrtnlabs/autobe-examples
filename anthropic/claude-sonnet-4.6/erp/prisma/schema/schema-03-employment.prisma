@@ -1,0 +1,83 @@
+/// Formal employment contract records for each organization member within
+/// the ERP HRM system.
+///
+/// Each record captures the agreed-upon employment terms at a specific point
+/// in time: the pay rate, pay period granularity (e.g., hourly, monthly),
+/// contracted working hours per week, contract start date, optional end
+/// date, and any supplementary notes. Only one contract per {@link
+/// erp_hrm_organization_members} member can be marked active at a time; all
+/// past contracts are preserved as an immutable historical audit trail for
+/// payroll processing and HR reporting.
+///
+/// Contracts are never deleted or modified after creation. When employment
+/// terms change, the current active contract is deactivated and a new
+/// contract record is created, preserving the full history of employment
+/// agreements.
+///
+/// @namespace Employment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_employee_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization member this contract belongs to. References {@link
+  /// erp_hrm_organization_members.id}.
+  organization_member_id String
+  
+  /// The agreed monetary compensation amount per pay period unit. Represents
+  /// the raw numeric value in the organization's base currency.
+  pay_rate Float
+  
+  /// The frequency or granularity of payment. Valid values are: 'hourly',
+  /// 'daily', 'weekly', 'bi_weekly', 'monthly', 'annually'. Determines how
+  /// pay_rate is interpreted for payroll calculations.
+  pay_period String
+  
+  /// The contracted number of working hours per week for this employment
+  /// agreement. Used for calculating full-time equivalence and tracking
+  /// overtime.
+  working_hours_per_week Float
+  
+  /// The date on which this employment contract becomes effective. Marks the
+  /// beginning of the employment terms defined in this record.
+  start_date DateTime
+  
+  /// The date on which this employment contract expires or is terminated. Null
+  /// indicates the contract is open-ended with no predetermined end date.
+  end_date DateTime?
+  
+  /// Indicates whether this contract is currently the active employment
+  /// agreement for the member. At most one contract per organization member
+  /// may be active at a time. When a new contract is created, the previous
+  /// active contract must be deactivated.
+  is_active Boolean
+  
+  /// Optional supplementary notes or remarks about this employment contract,
+  /// such as special conditions, benefits, or HR comments.
+  notes String?
+  
+  /// Timestamp when this contract record was created. Since contracts are
+  /// immutable, this also represents the effective record date.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this contract record. Typically
+  /// changes only when the is_active flag is toggled during contract
+  /// transitions.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organizationMember erp_hrm_organization_members @relation(fields: [organization_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([organization_member_id, is_active])
+  // spellchecker: ignore-next-line
+  @@index([organization_member_id, created_at], map: "erp_hrm_employee_contracts_organization_member_id_crea_d8b6b48b")
+}

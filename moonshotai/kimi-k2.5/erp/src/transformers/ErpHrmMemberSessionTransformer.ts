@@ -1,0 +1,45 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
+import { IErpHrmMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMemberSession";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import typia, { tags } from "typia";
+
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ErpHrmMemberAtSummaryTransformer } from "./ErpHrmMemberAtSummaryTransformer";
+
+export namespace ErpHrmMemberSessionTransformer {
+  export type Payload = Prisma.erp_hrm_member_sessionsGetPayload<
+    ReturnType<typeof select>
+  >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        access_token: true,
+        refresh_token: true,
+        ip: true,
+        href: true,
+        referrer: true,
+        created_at: true,
+        expired_at: true,
+        member: ErpHrmMemberAtSummaryTransformer.select(),
+      },
+    } satisfies Prisma.erp_hrm_member_sessionsFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IErpHrmMemberSession> {
+    return {
+      id: input.id,
+      accessToken: input.access_token,
+      refreshToken: input.refresh_token,
+      ip: input.ip,
+      href: input.href,
+      referrer: input.referrer,
+      createdAt: input.created_at.toISOString(),
+      expiredAt: input.expired_at.toISOString(),
+      member: await ErpHrmMemberAtSummaryTransformer.transform(input.member),
+    };
+  }
+}

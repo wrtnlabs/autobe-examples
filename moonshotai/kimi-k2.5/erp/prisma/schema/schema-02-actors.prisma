@@ -1,0 +1,330 @@
+/// Temporary guest accounts for unauthenticated visitors before
+/// registration. Guests are identified by device fingerprint and have
+/// limited access to pre-authentication features. Guest accounts are
+/// temporary and expire after a set duration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique device fingerprint identifying the guest's device/browser. Used to
+  /// recognize returning guests before registration.
+  device_fingerprint String
+  
+  /// Timestamp when the guest account was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest account expires. Used for automatic cleanup of
+  /// stale guest accounts.
+  expired_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions erp_hrm_guest_sessions[]
+  activityLogs erp_hrm_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_at])
+  @@index([expired_at])
+}
+
+/// Temporary session tokens for guest access to pre-authentication features.
+/// Guest sessions allow unauthenticated visitors to interact with the system
+/// before registration. Each session tracks connection metadata (IP,
+/// referrer) and has an expiration for security. Sessions are append-only
+/// audit records of guest access.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest's {@link erp_hrm_guests.id}.
+  guest_id String
+  
+  /// Client IP address at session creation.
+  ip String
+  
+  /// URL where the guest session was initiated.
+  href String
+  
+  /// Referrer URL indicating the source of the guest session.
+  referrer String?
+  
+  /// Creation time of the session.
+  created_at DateTime
+  
+  /// Session expiration time. After this time, the session is no longer valid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest erp_hrm_guests @relation(fields: [guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([guest_id, created_at])
+}
+
+/// Global member identity representing registered users with email/password
+/// credentials. This is the canonical identity record that spans across all
+/// organizations - a single user account can belong to multiple
+/// organizations via {@link erp_hrm_organization_members}. Contains
+/// authentication credentials and profile information.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for authentication and communication. Must be
+  /// valid email format.
+  email String
+  
+  /// Bcrypt hashed password for authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// Member's first name for profile display.
+  first_name String
+  
+  /// Member's last name for profile display.
+  last_name String
+  
+  /// Optional URL to member's profile avatar image.
+  avatar_url String?
+  
+  /// Member's preferred timezone for displaying dates and times. Defaults to
+  /// organization timezone if not set.
+  timezone String?
+  
+  /// Member's preferred language locale (e.g., 'en-US', 'ko-KR') for localized
+  /// content.
+  locale String?
+  
+  /// Timestamp when email was verified. Null if not yet verified.
+  email_verified_at DateTime?
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if account is active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions erp_hrm_member_sessions[]
+  passwordResets erp_hrm_member_password_resets[]
+  emailVerifications erp_hrm_member_email_verifications[]
+  ownedOrganizations erp_hrm_organizations[]
+  organizationMembers erp_hrm_organization_members[]
+  taskHistories erp_hrm_task_histories[]
+  activityLogs erp_hrm_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// JWT session tokens for authenticated member sessions. Tracks active login
+/// sessions with access tokens, refresh tokens, and connection metadata (IP,
+/// referrer). Each session belongs to a member and expires after a defined
+/// period for security. Sessions are append-only audit records of member
+/// authentication events.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link erp_hrm_members.id}.
+  erp_hrm_member_id String
+  
+  /// JWT access token for API authentication.
+  access_token String
+  
+  /// JWT refresh token for obtaining new access tokens.
+  refresh_token String
+  
+  /// Client IP address from which the session was initiated.
+  ip String
+  
+  /// URL or endpoint where the authentication request originated.
+  href String
+  
+  /// HTTP referrer header indicating the source of the authentication request.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires. Used for security to limit session
+  /// lifetime.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_member_id, created_at])
+}
+
+/// Temporary password reset tokens for member account recovery.
+///
+/// Each record represents a single password reset request initiated by a
+/// member. The system generates a unique token that is delivered to the
+/// member's registered email address. The token has a limited validity
+/// period defined by expires_at. Once used successfully, the consumed_at
+/// timestamp is set to prevent replay attacks.
+///
+/// Password reset tokens are single-use and expire automatically after a
+/// configured time period (typically 24 hours). Members can request multiple
+/// reset tokens, but only the most recent unexpired token is valid for use.
+/// This table maintains an audit trail of all password reset attempts for
+/// security monitoring purposes.
+///
+/// {@link erp_hrm_members}
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link erp_hrm_members.id}. The member who requested
+  /// the password reset.
+  erp_hrm_member_id String
+  
+  /// Unique cryptographically secure random token sent to the member's email
+  /// for password reset verification. Must be unpredictable and single-use.
+  token String
+  
+  /// Timestamp when the reset token becomes invalid. Tokens past this datetime
+  /// cannot be used for password reset regardless of consumption status.
+  expires_at DateTime
+  
+  /// Timestamp when the token was successfully used to reset the password.
+  /// Once consumed, the token is permanently invalidated to prevent replay
+  /// attacks. Null if not yet consumed.
+  consumed_at DateTime?
+  
+  /// Timestamp when the password reset was requested and this record was
+  /// created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this record. Typically set when the token
+  /// is consumed.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  @@index([erp_hrm_member_id, created_at])
+}
+
+/// Email verification tokens for member registration confirmation.
+///
+/// Stores verification tokens sent to users during the registration process
+/// to confirm ownership of their email address. Each token is time-limited
+/// for security purposes and becomes invalid after expiration or upon
+/// successful verification.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member account awaiting email verification. {@link erp_hrm_members.id}
+  erp_hrm_member_id String
+  
+  /// Cryptographically secure verification token sent to the user's email
+  /// address. Must be unique and unpredictable.
+  token String
+  
+  /// The email address being verified. Stored to ensure the verified email
+  /// matches the token recipient.
+  email String
+  
+  /// Timestamp when the verification token becomes invalid. Tokens are
+  /// typically valid for a limited time (e.g., 24 hours) for security.
+  expires_at DateTime
+  
+  /// Timestamp when the email was successfully verified. Null until
+  /// verification is completed.
+  verified_at DateTime?
+  
+  /// Timestamp when the verification token was created.
+  created_at DateTime
+  
+  /// Timestamp when the verification record was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_member_id, created_at], map: "erp_hrm_member_email_verifications_erp_hrm_member_id_c_642cbc93")
+  @@index([email, created_at])
+  @@index([expires_at])
+}

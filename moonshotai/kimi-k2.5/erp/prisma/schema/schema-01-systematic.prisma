@@ -1,0 +1,84 @@
+/// Root tenant entity representing companies/organizations in the erpHrm
+/// system.
+///
+/// This table serves as the aggregate root for all organization-scoped data
+/// isolation. Each organization contains identity information (name,
+/// description, logo) and configuration settings (currency, timezone, fiscal
+/// calendar) that define how the organization operates within the system.
+///
+/// Organizations are owned by a User (referenced via owner_id) who has
+/// administrative control. All other domain entities (members, roles,
+/// departments, projects, tasks, etc.) belong to an organization and are
+/// isolated from other organizations.
+///
+/// Soft deletion is supported via deleted_at to allow for data recovery and
+/// maintain referential integrity with historical records.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner user's {@link erp_hrm_members.id}. The user who created and owns
+  /// this organization.
+  owner_id String
+  
+  /// Organization name. Display name for the company/organization.
+  name String
+  
+  /// Optional organization description. Brief summary of the organization's
+  /// purpose or business.
+  description String?
+  
+  /// Optional URL to the organization's logo image.
+  logo_url String?
+  
+  /// Default currency for the organization in ISO 4217 format (e.g., USD, EUR,
+  /// KRW). Used for financial calculations and reporting.
+  currency String
+  
+  /// Organization's default timezone in IANA format (e.g., America/New_York,
+  /// Asia/Seoul). Used for datetime localization.
+  timezone String
+  
+  /// Month when the fiscal year starts (1-12). Used for financial reporting
+  /// and analytics.
+  fiscal_year_start_month Int
+  
+  /// Timestamp when the organization was created.
+  created_at DateTime
+  
+  /// Timestamp when the organization was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if active, set when organization is deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner erp_hrm_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  organizationMembers erp_hrm_organization_members[]
+  roles erp_hrm_roles[]
+  departments erp_hrm_departments[]
+  contracts erp_hrm_contracts[]
+  projects erp_hrm_projects[]
+  activityLogs erp_hrm_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([owner_id])
+  @@index([created_at])
+}

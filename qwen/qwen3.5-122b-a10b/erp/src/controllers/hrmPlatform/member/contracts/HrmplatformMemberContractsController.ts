@@ -1,0 +1,269 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IHrmPlatformContract } from "../../../../api/structures/IHrmPlatformContract";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
+import { getHrmPlatformMemberContractsContractId } from "../../../../providers/getHrmPlatformMemberContractsContractId";
+import { postHrmPlatformMemberContracts } from "../../../../providers/postHrmPlatformMemberContracts";
+import { putHrmPlatformMemberContractsContractId } from "../../../../providers/putHrmPlatformMemberContractsContractId";
+
+@Controller("/hrmPlatform/member/contracts")
+export class HrmplatformMemberContractsController {
+  /**
+   * Retrieve detailed information for a specific employment contract by its unique identifier. This operation provides complete contract details including employment period, compensation terms, and working conditions.
+   *
+   * **Authorization Requirements**
+   *
+   * This endpoint supports two types of authorized access:
+   *
+   * 1. **Contract Holder Access**: The employee who holds this contract can view all their own contracts (both active and historical) at any time.
+   *
+   * 2. **Manager/Admin Access**: Users with the `employee:view` permission within the same organization can view any employee's contracts within their organization scope.
+   *
+   * All access is strictly scoped to the organization context. Cross-organization access is prohibited.
+   *
+   * **Contract Information**
+   *
+   * The response includes comprehensive contract details:
+   *
+   * - **Employment Period**: Start date and optional end date defining the contract duration
+   * - **Compensation Terms**: Pay rate amount and pay period type (hourly, daily, weekly, monthly)
+   * - **Working Conditions**: Weekly working hours as defined in the employment agreement
+   * - **Additional Notes**: Optional contract notes or supplementary employment terms
+   *
+   * **Contract State Determination**
+   *
+   * Contracts do not have explicit status fields. The active state is determined by date range:
+   *
+   * - An **active contract** has a start date in the past and either no end date or an end date in the future
+   * - An **inactive contract** has an end date that has passed (terminated/historical)
+   *
+   * **Historical Records**
+   *
+   * Past contracts serve as immutable historical records. Once a contract is terminated (by end date or by a new contract replacing it), its information is preserved as-is and cannot be modified through any API operation.
+   *
+   * **Related Operations**
+   *
+   * - `PATCH /employees/{employeeId}/contracts` - List all contracts for an employee
+   * - `POST /employees/{employeeId}/contracts` - Create a new contract (requires employee:manage permission)
+   * - `PUT /contracts/{contractId}` - Update the currently active contract (requires employee:manage permission)
+   *
+   * **Error Scenarios**
+   *
+   * - **404 Not Found**: Contract ID does not exist or is soft-deleted
+   * - **403 Forbidden**: User lacks permission to view this contract (not the contract holder and no employee:view permission)
+   * - **400 Bad Request**: Invalid contract ID format (not a valid UUID)
+   *
+   * @param connection
+   * @param contractId Target contract's unique identifier (UUID format)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Implement contract retrieval with organization-scoped authorization checks.
+   *
+   * **Query Logic**
+   *
+   * 1. Validate contractId is a valid UUID format
+   * 2. Query hrm_platform_contracts table by id where deleted_at IS NULL
+   * 3. If contract not found, return 404 Not Found
+   * 4. Extract contract's hrm_platform_employee_id for authorization check
+   * 5. Load associated employee record to verify organization context
+   *
+   * **Authorization Checks**
+   *
+   * Perform one of the following authorization validations:
+   *
+   * **Option 1: Contract Holder Access**
+   * - Verify authenticated user's ID matches employee's hrm_platform_user_id
+   * - If match, allow access
+   *
+   * **Option 2: Manager/Admin Access**
+   * - Verify user has employee:view permission in the employee's organization
+   * - If permission exists, allow access
+   *
+   * If neither condition is met, return 403 Forbidden.
+   *
+   * **Organization Context**
+   *
+   * All data access must be scoped to the organization context from the authenticated session. Cross-organization access is prohibited.
+   *
+   * **Response Construction**
+   *
+   * Return complete contract object with all fields:
+   * - id, hrm_platform_employee_id, start_date, end_date
+   * - pay_rate, pay_period, working_hours_per_week, notes
+   * - created_at, updated_at (exclude deleted_at from response)
+   *
+   * **Performance Considerations**
+   *
+   * - Use indexed query on id (primary key)
+   * - Include employee lookup for authorization check
+   * - Consider caching for frequently accessed contracts
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":contractId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("contractId")
+    contractId: string & tags.Format<"uuid">,
+  ): Promise<IHrmPlatformContract> {
+    try {
+      return await getHrmPlatformMemberContractsContractId({
+        member,
+        contractId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing employment contract for an employee within the organization.
+   *
+   * This operation allows authorized users to modify the details of a currently active employment contract. The contract is identified by its unique contract ID in the path parameter.
+   *
+   * **Security and Permissions**
+   *
+   * Only users with the `employee:manage` permission can update contracts. This permission is typically granted to organization owners, managers, and HR administrators. Employees can view their own contracts but cannot modify them.
+   *
+   * **Contract Editability Rules**
+   *
+   * Only the currently active contract for an employee can be edited. An active contract is identified by having a null `end_date` value. Past contracts (those with an `end_date` set) are immutable historical records that cannot be modified under any circumstances. This preserves the integrity of employment history for compliance and auditing purposes.
+   *
+   * If a user attempts to update a contract that has already been terminated (has an end_date), the system will reject the request with an appropriate error indicating the contract is no longer editable.
+   *
+   * **Updatable Fields**
+   *
+   * The following contract fields can be updated:
+   * - `endDate`: The contract end date. Setting this value terminates the contract, making it a historical record.
+   * - `payRate`: The compensation rate amount for the employee.
+   * - `payPeriod`: The pay period type (hourly, daily, weekly, or monthly).
+   * - `workingHoursPerWeek`: The number of working hours per week as defined in the contract.
+   * - `notes`: Optional notes or additional information about employment terms.
+   *
+   * **Business Logic**
+   *
+   * When the `endDate` is set to terminate a contract, this operation does not automatically create a replacement contract. A separate contract creation operation must be used to establish a new active contract for the employee. The system enforces that only one contract per employee can be active at any given time.
+   *
+   * **Related Operations**
+   *
+   * - `GET /contracts/{contractId}`: Retrieve detailed contract information before updating
+   * - `PATCH /employees/{employeeId}/contracts`: List all contracts for an employee
+   * - `POST /employees/{employeeId}/contracts`: Create a new contract (which will automatically terminate the previous active contract)
+   *
+   * **Validation and Error Handling**
+   *
+   * The system validates that the contract exists, the user has appropriate permissions, and the contract is currently active (editable). Attempting to update a terminated contract, accessing a non-existent contract, or lacking required permissions will result in appropriate error responses.
+   *
+   * @param connection
+   * @param contractId The unique identifier of the contract to update (UUID format)
+   * @param body The contract fields to update. Only active contracts (end_date is null) can be modified.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Implement contract update with the following logic:
+   *
+   * 1. **Authorization Check**: Verify the authenticated user has `employee:manage` permission for the organization context.
+   *
+   * 2. **Contract Retrieval**: Query the `hrm_platform_contracts` table by `id` (UUID). Include the related employee record to verify organization context.
+   *
+   * 3. **Organization Context Validation**: Ensure the contract belongs to an employee within the user's selected organization. Reject if organization mismatch.
+   *
+   * 4. **Editability Check**: Verify the contract is currently active by checking `end_date IS NULL`. If `end_date` is set (contract is terminated/historical), reject with error indicating the contract cannot be modified.
+   *
+   * 5. **Update Fields**: Apply the following updates from the request body:
+   *    - `endDate` (DateTime?, optional): Set to terminate contract or null for ongoing
+   *    - `payRate` (Float, optional): Update compensation rate
+   *    - `payPeriod` (String, optional): Update pay period type (validate against enum: hourly, daily, weekly, monthly)
+   *    - `workingHoursPerWeek` (Int, optional): Update weekly working hours
+   *    - `notes` (String?, optional): Update contract notes
+   *
+   * 6. **Timestamp Update**: Set `updated_at` to current timestamp.
+   *
+   * 7. **Response**: Return the updated contract object with all fields.
+   *
+   * 8. **Error Cases**:
+   *    - 404: Contract not found
+   *    - 403: User lacks employee:manage permission or contract is in different organization
+   *    - 400: Contract is terminated (end_date is set) and cannot be edited
+   *    - 400: Invalid pay_period value
+   *    - 400: Invalid data types or constraints (e.g., negative pay_rate)
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":contractId")
+  public async update(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("contractId")
+    contractId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IHrmPlatformContract.IUpdate,
+  ): Promise<IHrmPlatformContract> {
+    try {
+      return await putHrmPlatformMemberContractsContractId({
+        member,
+        contractId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new employment contract for an employee within the organization.
+   *
+   * This operation establishes a new employment contract record with specified compensation terms, including start date, pay rate, pay period, and working hours per week. The contract becomes the active contract for the employee, automatically ending any previously active contract by setting its end date to the day before the new contract's start date.
+   *
+   * Contract creation is restricted to users with employee:manage permission within the organization. The employee must exist and belong to the current organization context. All contract details including pay rate, pay period type, and working hours are recorded for compliance and payroll processing purposes.
+   *
+   * When a new contract is created, the system automatically creates an immutable snapshot record for audit trail purposes. This snapshot captures the complete state of the contract at creation time, enabling historical verification and compliance tracking. An activity log entry is also created with action type 'contract.created' to record the transaction for audit purposes. These are system-side effects triggered by the contract creation, not direct API responsibilities.
+   *
+   * The new contract becomes immediately active and is the only active contract for the employee. Past contracts (those with end dates) are immutable and cannot be edited, preserving the historical record of employment terms and compensation changes over time.
+   *
+   * @param connection
+   * @param body Contract creation information including start date, compensation details, and working hours
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Create a new employment contract for an employee with the following implementation logic:
+   *
+   * 1. Validate user has employee:manage permission for the employee's organization
+   * 2. Verify employee exists and belongs to the current organization
+   * 3. Check if employee has an active contract (end_date IS NULL)
+   * 4. If active contract exists, update its end_date to one day before the new contract's start_date
+   * 5. Create new contract record with provided start_date, pay_rate, pay_period, working_hours_per_week, and notes
+   * 6. Automatically create initial snapshot record in hrm_platform_contract_snapshots table
+   * 7. Create activity log entry with action type 'contract.created' including creating user, target employee, contract start date, and pay rate
+   * 8. Return the newly created contract with all fields
+   *
+   * Transaction requirements: Steps 4-6 must be in a single transaction to ensure atomicity. If any step fails, rollback all changes.
+   *
+   * Validation rules:
+   * - start_date must be in the past or today
+   * - pay_rate must be positive
+   * - pay_period must be one of: hourly, daily, weekly, monthly
+   * - working_hours_per_week must be positive integer
+   * - employee must not have overlapping contracts (start_date cannot be before existing active contract's end_date)
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedBody()
+    body: IHrmPlatformContract.ICreate,
+  ): Promise<IHrmPlatformContract> {
+    try {
+      return await postHrmPlatformMemberContracts({
+        member,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

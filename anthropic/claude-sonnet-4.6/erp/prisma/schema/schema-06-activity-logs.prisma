@@ -1,0 +1,102 @@
+/// Immutable organizational audit trail entries recording all significant
+/// business events within an organization.
+///
+/// Each entry is created automatically by the system in response to a
+/// meaningful business action; users cannot manually create, edit, or delete
+/// activity log entries. Once written, an entry is permanent and immutable,
+/// ensuring the historical record accurately reflects what happened and
+/// cannot be altered after the fact.
+///
+/// The audit log is scoped strictly to a single organization via {@link
+/// erp_hrm_organizations.id}. Each entry references the {@link
+/// erp_hrm_organization_members.id} who performed the action (recorded at
+/// the time of the action and never updated), a categorized action type
+/// drawn from a fixed set of recognized business events, the type and ID of
+/// the target entity that was affected, and an optional details field
+/// carrying supplementary context.
+///
+/// Covered action types include employee lifecycle events (invited,
+/// deactivated, reactivated), contract events (created, edited), project
+/// events (created, archived, completed, deleted), task events (status
+/// changed), timesheet events (submitted, approved, rejected), and role
+/// events (assigned or changed). Only actions within this defined set
+/// generate activity log entries.
+///
+/// Because entries are append-only and never modified or deleted
+/// individually, this table has only a created_at timestamp and no
+/// updated_at or deleted_at columns.
+///
+/// @namespace ActivityLogs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization this audit log entry belongs to. References {@link
+  /// erp_hrm_organizations.id}. Each organization maintains its own
+  /// independent audit history.
+  organization_id String
+  
+  /// The organization member who performed the logged action. References
+  /// {@link erp_hrm_organization_members.id}. Recorded at the moment the
+  /// action occurs and never updated even if the member's profile changes
+  /// later.
+  organization_member_id String
+  
+  /// Categorized label identifying the kind of business event that occurred.
+  /// Drawn from a fixed set of recognized action types: 'employee_invited',
+  /// 'employee_deactivated', 'employee_reactivated', 'contract_created',
+  /// 'contract_edited', 'project_created', 'project_archived',
+  /// 'project_completed', 'project_deleted', 'task_status_changed',
+  /// 'timesheet_submitted', 'timesheet_approved', 'timesheet_rejected',
+  /// 'role_assigned_or_changed'. The set is fixed and not configurable by
+  /// organizations.
+  action_type String
+  
+  /// The type of business entity that was affected by the action. Indicates
+  /// which domain object the target_entity_id refers to. Possible values
+  /// include 'member', 'contract', 'project', 'task', 'timesheet', 'role'.
+  /// Used together with target_entity_id to identify the specific object acted
+  /// upon.
+  target_entity_type String
+  
+  /// The UUID of the specific business entity that was affected by the action.
+  /// Used in conjunction with target_entity_type to form a polymorphic
+  /// reference to the target object (e.g., a specific project, task, contract,
+  /// or member record). Stored as a plain UUID field rather than a typed
+  /// foreign key because the target can be any of several different entity
+  /// types.
+  target_entity_id String
+  
+  /// Optional supplementary context relevant to the specific action. For
+  /// example, a role change entry might include the name of the old role and
+  /// the new role; a timesheet rejection entry might include the rejection
+  /// reason. This field is informational and supplements the action type
+  /// without replacing it. Null when no additional context is needed.
+  details String?
+  
+  /// The exact moment the action occurred, recorded by the system at the time
+  /// the event is processed. Establishes the precise chronological position of
+  /// the entry within the organization's audit history. This is the only
+  /// timestamp field because entries are immutable and never updated or
+  /// deleted.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  performer erp_hrm_organization_members @relation(fields: [organization_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([organization_id, created_at])
+  @@index([organization_id, action_type])
+  @@index([organization_member_id, created_at])
+  @@index([target_entity_type, target_entity_id])
+}

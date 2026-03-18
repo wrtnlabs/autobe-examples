@@ -1,0 +1,184 @@
+/// File metadata for organization logos, user avatars, and document
+/// attachments with storage path and organization context.
+///
+/// This table serves as the central repository for all uploaded files in the
+/// system, including organization logos, user profile avatars, and document
+/// attachments. Files are associated with organizations for multi-tenancy
+/// isolation and can be owned by different entity types (organizations or
+/// members) through polymorphic ownership.
+///
+/// The table supports the complete file upload workflow from temporary
+/// validation to permanent storage. Each file record includes validation
+/// status tracking, MIME type detection, and size constraints to ensure data
+/// integrity and security. Files are soft-deleted to preserve historical
+/// references while marking them as inaccessible.
+///
+/// @namespace FileStorage
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrms_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization that owns this file. All files are scoped to their
+  /// parent organization for multi-tenancy isolation.
+  organization_id String
+  
+  /// Polymorphic owner reference for files. When owner_type is 'member',
+  /// references a user's profile avatar via {@link hrms_members.id}. When
+  /// null, the file belongs to the organization directly (e.g., organization
+  /// logo, shared documents).
+  owner_id String?
+  
+  /// Original filename as uploaded by the user, preserved for display purposes.
+  filename String
+  
+  /// Internal storage path or URL where the file content is stored, used for
+  /// retrieval.
+  storage_path String
+  
+  /// MIME type of the file detected during upload (e.g., image/jpeg,
+  /// application/pdf).
+  mime_type String
+  
+  /// File size in bytes, recorded at upload time.
+  file_size Int
+  
+  /// Category classification: 'organization_logo' for org logos, 'user_avatar'
+  /// for profile pictures, 'document' for general attachments.
+  file_category String
+  
+  /// Type of owner for polymorphic association: 'member' for user avatars,
+  /// null for organization-owned files.
+  owner_type String?
+  
+  /// Current validation status: 'pending' (awaiting virus scan), 'validated'
+  /// (passed security checks), 'rejected' (failed validation).
+  validation_status String
+  
+  /// Timestamp when the file was created and initially stored.
+  created_at DateTime
+  
+  /// Timestamp when the file record was last updated with new metadata.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When null, file is active. When set, file is
+  /// marked for deletion but retained for historical references.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrms_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  owner hrms_members? @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  uploadHistory hrms_file_uploads?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, filename])
+  @@index([organization_id, created_at])
+  @@index([owner_id, created_at])
+  @@index([file_category])
+}
+
+/// Tracks the file upload workflow from temporary storage to permanent
+/// storage, including validation status and ownership assignment.
+///
+/// This table supports the file upload process by maintaining:
+/// - Original filename and upload metadata
+/// - Temporary and permanent storage paths
+/// - Upload state (pending, validating, completed, failed)
+/// - Error tracking for failed uploads
+///
+/// When a file is uploaded:
+/// 1. A record is created with pending state
+/// 2. File is scanned and validated
+/// 3. Upon success, file metadata is stored in hrms_files and upload record
+/// is updated to completed
+/// 4. If validation fails, upload state is set to failed with error message
+///
+/// Referenced by:
+/// - {@link hrms_files} - The uploaded file's permanent metadata
+/// - {@link hrms_organizations} - Organization context for the upload
+/// - {@link hrms_members} - Member who initiated the upload
+///
+/// @namespace FileStorage
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrms_file_uploads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization context for the file upload. {@link hrms_organizations.id}
+  organization_id String
+  
+  /// Member who initiated the file upload. {@link hrms_members.id}
+  member_id String
+  
+  /// The uploaded file's permanent metadata after successful validation.
+  /// {@link hrms_files.id}
+  file_id String?
+  
+  /// Original filename provided by the user during upload.
+  original_filename String
+  
+  /// MIME type of the uploaded file (e.g., image/png, application/pdf).
+  file_type String
+  
+  /// File size in bytes.
+  file_size Int
+  
+  /// Validation result: pending, valid, invalid. Used for virus scanning and
+  /// content validation.
+  validation_status String
+  
+  /// Path to temporary storage location before permanent storage is assigned.
+  temporary_storage_path String
+  
+  /// Path to permanent storage location after successful upload and validation.
+  permanent_storage_path String?
+  
+  /// Current upload workflow state: pending, validating, completed, failed.
+  upload_state String
+  
+  /// Error description if upload or validation failed.
+  error_message String?
+  
+  /// Upload request timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrms_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  member hrms_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  file hrms_files? @relation(fields: [file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([file_id])
+  // spellchecker: ignore-next-line
+  @@unique([organization_id, member_id, upload_state, created_at], map: "hrms_file_uploads_organization_id_member_id_upload_sta_d861c188")
+  @@index([organization_id, created_at])
+  @@index([member_id, created_at])
+  @@index([upload_state, created_at])
+}

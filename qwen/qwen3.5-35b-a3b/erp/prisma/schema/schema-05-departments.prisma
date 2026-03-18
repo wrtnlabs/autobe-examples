@@ -1,0 +1,72 @@
+/// Organizational department units with parent-child hierarchy support
+/// within each organization.
+///
+/// Departments represent the organizational structure of an organization,
+/// allowing departments to be organized in a hierarchy with optional
+/// parent-child relationships (one level of nesting). Each department
+/// belongs to exactly one organization and can have an optional parent
+/// department, creating a two-level organizational chart.
+///
+/// Key relationships:
+/// - Belongs to {@link hrms_organizations} via organization_id
+/// - Parent-department relationship via parent_id (self-referencing FK)
+/// - Employees reference this table via hrms_employees.department_id
+///
+/// Behavioral notes:
+/// - When a department is deleted, all employee records in that department
+/// have their department_id set to NULL
+/// - Department names must be unique within each organization
+/// - Supports soft delete via deleted_at for audit purposes
+///
+/// @namespace Departments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrms_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization this department belongs to. {@link hrms_organizations.id}
+  organization_id String
+  
+  /// Parent department for hierarchy (one level nesting). {@link
+  /// hrms_departments.id}
+  parent_id String?
+  
+  /// Department name. Must be unique within the organization.
+  name String
+  
+  /// Optional department description or details.
+  description String?
+  
+  /// Timestamp when the department was created.
+  created_at DateTime
+  
+  /// Timestamp when the department was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the department was soft deleted (nullable = not deleted).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrms_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  parent hrms_departments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrms_employees[]
+  children hrms_departments[] @relation("recursive")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([organization_id])
+  @@index([parent_id])
+}

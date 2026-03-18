@@ -1,0 +1,278 @@
+/// Multi-tenant organization entities with settings and owner reference.
+///
+/// Organizations represent independent tenants in the system, each with its
+/// own employees, projects, tasks, and data. Organizations are created by
+/// users during initial sign-up and operate as isolated units with
+/// organization-specific settings including currency, timezone, and fiscal
+/// calendar.
+///
+/// Organizations are owned by a single user (organization owner) who has
+/// full control over organization settings, member management, and role
+/// configuration. Owners can delete organizations only when all pending
+/// timesheets are resolved and no active employee contracts exist. When an
+/// organization is deleted, all associated employees, projects, tasks,
+/// timelogs, and timesheets are permanently deleted, but the owner's account
+/// remains (unassociated with any organization).
+///
+/// Related entities: {@link hrms_organization_members}, {@link
+/// hrms_organization_roles}, {@link hrms_employees}, {@link hrms_projects}
+///
+/// @namespace Organizations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrms_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization owner's member account reference. The owner has full control
+  /// over organization settings and member management.
+  owner_id String
+  
+  /// Organization display name. Must be unique across all organizations.
+  name String
+  
+  /// Optional organization description.
+  description String?
+  
+  /// Organization logo image URL.
+  logo_uri String?
+  
+  /// Organization currency code (e.g., USD, EUR, KRW).
+  currency String
+  
+  /// Organization timezone (e.g., Asia/Seoul, America/New_York).
+  timezone String
+  
+  /// Fiscal year start month (1-12, where 1=January).
+  fiscal_start_month Int
+  
+  /// Organization creation timestamp.
+  created_at DateTime
+  
+  /// Organization last update timestamp.
+  updated_at DateTime
+  
+  /// Organization soft delete timestamp (null if not deleted).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner hrms_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberSessions hrms_member_sessions[]
+  activityLogs hrms_activity_logs[]
+  organizationMembers hrms_organization_members[]
+  roles hrms_organization_roles[]
+  departments hrms_departments[]
+  projects hrms_projects[]
+  files hrms_files[]
+  fileUploads hrms_file_uploads[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([owner_id])
+}
+
+/// Links users (members) to organizations with role assignment, supporting
+/// multi-organization membership.
+///
+/// Each organization member represents a user's participation in a specific
+/// organization with an assigned role. Users can belong to multiple
+/// organizations, each with potentially different roles and permissions.
+///
+/// Key relationships:
+/// - {@link hrms_members} — The user account this membership belongs to
+/// - {@link hrms_organizations} — The organization this membership is for
+/// - {@link hrms_organization_roles} — The role assigned within this
+/// organization
+///
+/// Business rules:
+/// - A member can only have one membership per organization (enforced by
+/// unique constraint)
+/// - Role determines the permissions and access level within the organization
+/// - Deactivated employees are still linked via this table but with status
+/// flag in hrms_employees
+///
+/// @namespace Organizations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrms_organization_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's {@link hrms_members.id}. The user account this organization
+  /// membership belongs to.
+  hrms_member_id String
+  
+  /// Organization's {@link hrms_organizations.id}. The organization this
+  /// membership is for.
+  hrms_organization_id String
+  
+  /// Role's {@link hrms_organization_roles.id}. The role assigned to this
+  /// member within the organization.
+  hrms_organization_role_id String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means active, non-null means deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrms_members @relation(fields: [hrms_member_id], references: [id], onDelete: Cascade)
+  organization hrms_organizations @relation(fields: [hrms_organization_id], references: [id], onDelete: Cascade)
+  organizationRole hrms_organization_roles @relation(fields: [hrms_organization_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrms_employees[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrms_organization_id, hrms_member_id], map: "hrms_organization_members_hrms_organization_id_hrms_me_224eba7e")
+  @@index([hrms_member_id])
+  @@index([hrms_organization_id])
+  @@index([hrms_organization_role_id])
+  @@index([deleted_at])
+}
+
+/// Custom role definitions within each organization, including built-in
+/// roles (Owner, Manager, Employee) and user-created custom roles.
+///
+/// Each organization maintains its own set of roles with permission sets.
+/// Organization owners can create, edit, and delete custom roles. Built-in
+/// roles (Owner, Manager, Employee) cannot be deleted. Each organization
+/// member is assigned exactly one role from this organization's role set.
+///
+/// This table supports the multi-tenancy architecture where permissions and
+/// roles are organization-specific. Related entities include {@link
+/// hrms_organization_members} (which references roles), {@link
+/// hrms_organizations} (parent organization), and {@link
+/// hrms_organization_role_permissions} (normalized permission storage).
+///
+/// @namespace Organizations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrms_organization_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonging organization's {@link hrms_organizations.id}. Each organization
+  /// has its own independent set of roles.
+  organization_id String
+  
+  /// Role name (e.g., Owner, Manager, Employee, or custom name). Must be
+  /// unique within the organization.
+  name String
+  
+  /// Whether this is a built-in role (Owner, Manager, Employee) that cannot be
+  /// deleted. Custom roles have this set to false.
+  is_builtin Boolean
+  
+  /// Role creation timestamp.
+  created_at DateTime
+  
+  /// Last role update timestamp.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrms_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  organizationMembers hrms_organization_members[]
+  permissions hrms_organization_role_permissions[]
+  employees hrms_employees[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([organization_id])
+}
+
+/// Normalized storage of role permissions for 1NF compliance.
+///
+/// Stores one permission code per row (e.g., "employee:manage",
+/// "time:approve") to avoid storing arrays or JSON in the role table. Each
+/// role can have multiple permissions, enabling flexible permission sets per
+/// custom role.
+///
+/// **Relationships**:
+/// - Belongs to a single {@link hrms_organization_roles} - each permission
+/// is associated with exactly one role
+/// - Permissions are managed exclusively through the role entity, not
+/// independently
+///
+/// **Data Integrity**:
+/// - Unique constraint prevents duplicate permissions for the same role
+/// - All permission codes follow the format "category:action" (e.g.,
+/// "org:manage", "employee:view")
+///
+/// @namespace Organizations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrms_organization_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Role's {@link hrms_organization_roles.id}. Each permission belongs to
+  /// exactly one role.
+  hrms_organization_role_id String
+  
+  /// Permission code following the format "category:action" (e.g.,
+  /// "org:manage", "employee:view", "time:approve", "project:manage",
+  /// "report:view"). Defines a specific action a role can perform.
+  permission String
+  
+  /// Timestamp when this permission record was created.
+  created_at DateTime
+  
+  /// Timestamp when this permission record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrms_organization_roles @relation(fields: [hrms_organization_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrms_organization_role_id, permission], map: "hrms_organization_role_permissions_hrms_organization_r_706829ac")
+  // spellchecker: ignore-next-line
+  @@index([hrms_organization_role_id], map: "hrms_organization_role_permissions_hrms_organization_r_0e7fa6e6")
+}
