@@ -1,0 +1,365 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IMultiUserTodoEditHistoryEntry } from "../../../../../api/structures/IMultiUserTodoEditHistoryEntry";
+import { IPageIMultiUserTodoEditHistoryEntry } from "../../../../../api/structures/IPageIMultiUserTodoEditHistoryEntry";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
+import { deleteMultiUserTodoMemberTodosTodoIdEditHistoryEntriesEditHistoryEntryId } from "../../../../../providers/deleteMultiUserTodoMemberTodosTodoIdEditHistoryEntriesEditHistoryEntryId";
+import { getMultiUserTodoMemberTodosTodoIdEditHistoryEntriesEditHistoryEntryId } from "../../../../../providers/getMultiUserTodoMemberTodosTodoIdEditHistoryEntriesEditHistoryEntryId";
+import { patchMultiUserTodoMemberTodosTodoIdEditHistoryEntries } from "../../../../../providers/patchMultiUserTodoMemberTodosTodoIdEditHistoryEntries";
+import { postMultiUserTodoMemberTodosTodoIdEditHistoryEntries } from "../../../../../providers/postMultiUserTodoMemberTodosTodoIdEditHistoryEntries";
+import { putMultiUserTodoMemberTodosTodoIdEditHistoryEntriesEditHistoryEntryId } from "../../../../../providers/putMultiUserTodoMemberTodosTodoIdEditHistoryEntriesEditHistoryEntryId";
+
+@Controller("/multiUserTodo/member/todos/:todoId/editHistoryEntries")
+export class MultiusertodoMemberTodosEdithistoryentriesController {
+  /**
+   * Creates a new edit history entry for a specific todo owned by the requesting member.
+   *
+   * This operation is the write-side companion to viewing a todo’s full edit history. Each call records that an edit occurred at a specific business timestamp and stores a field-granular change set. The system persists the history entry in `multi_user_todo_edit_history_entries` (identified by `multi_user_todo_id`) and persists one row per changed field into `multi_user_todo_edit_history_entry_changes`.
+   *
+   * Security and privacy are enforced strictly: the acting member must be the owner of the target todo. If the todo does not belong to the authenticated acting user, the system rejects the request and does not modify any private data.
+   *
+   * Validation and business rules: the request must provide a consistent change set for the edit history entry. Each changed item specifies the field name that changed and the before/after values. When the request fails validation or represents an edit that is not allowed in the current todo lifecycle state, the system rejects the request with a clear business explanation and leaves existing history intact.
+   *
+   * On success, the operation returns the created edit history entry (including its recorded edited timestamp and the associated field-level changes).
+   *
+   * @param connection
+   * @param todoId Target todo identifier (UUID). The edit history entry will be created only for this todo if it is owned by the authenticated acting member.
+   * @param body Creation payload for a todo edit history entry. Contains the business edited timestamp and a set of per-field change records (field name plus before/after values) that will be persisted into the normalized edit history change table.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification 1) Input validation
+   * - Verify `todoId` is a valid UUID string.
+   * - Validate request body fields:
+   *   - Ensure `editedAt` is present if the DTO requires it; otherwise ignore client time and set editedAt using server time.
+   *   - Ensure `changes` is a non-empty array.
+   *   - For each change item:
+   *     - Validate `changedField` is a non-empty string.
+   *     - Validate `fromValue` and `toValue` can be null as permitted by the DTO; ensure the pair is consistent for the target field change representation.
+   * - Ensure there are no duplicate `changedField` values within the same history entry (matches the DB uniqueness constraint `@@unique([multi_user_todo_edit_history_entry_id, changed_field])`).
+   *
+   * 2) Authorization / ownership enforcement
+   * - Load the todo by id from `multi_user_todo` (entity represented by `multi_user_todo_id` in `multi_user_todo_edit_history_entries`).
+   * - If the todo is not found, reject.
+   * - If the todo’s owning member is not the authenticated acting member, reject.
+   *
+   * 3) Business constraints
+   * - Confirm that the current todo state allows recording an edit history entry (for example, restore/permanent delete workflows may restrict edit recording). If not allowed, reject.
+   *
+   * 4) Persistence (transaction)
+   * - Begin a DB transaction.
+   * - Create `multi_user_todo_edit_history_entries` with:
+   *   - `multi_user_todo_id` = todoId
+   *   - `edited_at` = request editedAt or server time
+   * - Create `multi_user_todo_edit_history_entry_changes` rows for each requested change:
+   *   - `multi_user_todo_edit_history_entry_id` = created history entry id
+   *   - `changed_field` = change.changedField
+   *   - `from_value` = change.fromValue
+   *   - `to_value` = change.toValue
+   *   - `created_at/updated_at` set by DB defaults or server.
+   * - Commit transaction.
+   *
+   * 5) Response mapping
+   * - Return the created edit history entry DTO including its field changes in the same shape used by the request DTO.
+   *
+   * 6) Error handling
+   * - If any DB uniqueness constraint fails (duplicate changed_field per entry), reject with a clear business explanation.
+   * - If any step fails, roll back and return an error that indicates the request failed and why in business terms.
+   *
+   * Notes
+   * - Keep the operation strictly private to the owning member; never leak other users’ history.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("todoId")
+    todoId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IMultiUserTodoEditHistoryEntry.ICreate,
+  ): Promise<IMultiUserTodoEditHistoryEntry> {
+    try {
+      return await postMultiUserTodoMemberTodosTodoIdEditHistoryEntries({
+        member,
+        todoId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a paginated, filterable list of edit history entries for a specific todo.
+   *
+   * This endpoint returns the sequence of audit records stored in `multi_user_todo_edit_history_entries`, where each entry records when the todo was edited via the required `edited_at` timestamp and uses `multi_user_todo_id` as the parent foreign key.
+   *
+   * This endpoint must only include edit history entries for the todo owned by the acting member. If the `todoId` does not belong to the authenticated member (or the request is missing valid member ownership context), the system must deny the operation and reject the request. This prevents cross-user visibility of private todos and their edit history.
+   *
+   * The list ordering is expected to be newest-first based on the business rule that edit history entries are ordered per-todo newest to oldest (using `edited_at` as the business timestamp).
+   *
+   * For each history entry in the response summary, the API exposes the entry identity and its business timestamp and/or record timestamps as defined by the corresponding DTO schema. The field-level changes for each edit (stored in `multi_user_todo_edit_history_entry_changes` with `changed_field`, `from_value`, and `to_value`) are represented in the domain model as normalized child records. This endpoint is designed to list the parent history entries; callers that need per-field change details should use a dedicated endpoint that targets an individual history entry (if available in the API set).
+   *
+   * Validation and error handling:
+   *
+   * - If the request fails validation, the system rejects the request.
+   * - If the `todoId` targets a todo that does not exist or is not accessible to the acting member, the system rejects the request.
+   * - If an unexpected server failure occurs after any partial processing, the system must ensure no inconsistent state is produced and must respond with a generic business-level error without exposing sensitive internal details.
+   *
+   * Related operations:
+   *
+   * - Use the todo endpoints to fetch the todo details or to list the user’s current/trashed todos.
+   * - Use the todo edit history entry detail/change endpoints (if implemented) to obtain field-level change records (`multi_user_todo_edit_history_entry_changes`) for a specific history entry.
+   *
+   * @param connection
+   * @param todoId Target todo identifier whose edit history entries are being listed.
+   * @param body Search and pagination criteria for edit history entries under the specified todo.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification 1) Authorization & ownership scope
+   * - Resolve the authenticated member identity from the session context.
+   * - Load the todo by `todoId` and verify it belongs to the acting member. If not found or not owned, reject with the appropriate business-level denial.
+   *
+   * 2) Query construction
+   * - Query `multi_user_todo_edit_history_entries` filtered by `multi_user_todo_id = todoId`.
+   * - Exclude any entries that should not be visible according to the platform’s retention policy (only if the DTO/state definition requires it; this operation itself does not implement any deletion logic).
+   *
+   * 3) Ordering
+   * - Order results newest-first by `edited_at` (and apply a stable tie-breaker by `id` if the implementation layer requires deterministic ordering).
+   *
+   * 4) Pagination and optional filtering
+   * - Use request-body criteria to apply pagination (page/limit or cursor strategy) and optional filtering if provided by `I...IRequest`.
+   * - Materialize list items as `ISummary` DTOs.
+   *
+   * 5) Response mapping
+   * - Return an `IPage...ISummary` payload including pagination metadata and the list of history entry summaries.
+   *
+   * 6) Error handling
+   * - For validation errors or ownership mismatches, reject with a business explanation.
+   * - For unexpected errors, ensure no partial state updates occur (read-only operation) and return a generic error message.
+   *
+   * Note: This endpoint performs read-only operations; it must not create/update/delete `multi_user_todo_edit_history_entries` or `multi_user_todo_edit_history_entry_changes` records because those are audit records produced by todo edit actions.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("todoId")
+    todoId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IMultiUserTodoEditHistoryEntry.IRequest,
+  ): Promise<IPageIMultiUserTodoEditHistoryEntry.ISummary> {
+    try {
+      return await patchMultiUserTodoMemberTodosTodoIdEditHistoryEntries({
+        member,
+        todoId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a single recorded edit history entry for a specific todo owned by the authenticated member.
+   *
+   * This operation lets a member inspect one edit event from the history of a todo they own. Access is restricted to the owning member scope: the server must ensure that the requested `editHistoryEntryId` belongs to the requested `todoId`, and that the todo itself is owned by the acting member.
+   *
+   * Returned data represents the selected edit-history record and the field-level changes captured for that edit, as defined by the underlying edit history entry entity and its per-field change rows. For data privacy, if the todo or the edit history entry does not match the requested scope, the request must be rejected without revealing existence details.
+   *
+   * Related operations: members typically browse todo lists and then view a todo’s full edit history before selecting a single entry with this endpoint.
+   *
+   * @param connection
+   * @param todoId Target todo ID whose edit history entry is being viewed. Access is restricted to the acting member who owns this todo.
+   * @param editHistoryEntryId Edit history entry ID within the specified todo whose details are being viewed. Access is restricted to the acting member who owns the todo, and the entry must belong to the given todoId.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Implementation steps:
+   *
+   * 1) Authorize and scope by todo ownership
+   * - Use the authenticated acting member identity.
+   * - Query `multi_user_todo_edit_history_entries` (join/where by `id = editHistoryEntryId` and `multi_user_todo_id = todoId`).
+   * - Ensure that `todoId` is owned by the acting member by joining through the todo entity ownership model (the todo model is not included in the loaded schema set here, but the implementation must enforce the ownership boundary defined in requirements).
+   *
+   * 2) Privacy-safe rejection
+   * - If the todo is not owned by the acting member, or if the edit history entry is not found under that todoId, reject the request without revealing existence details.
+   *
+   * 3) Load payload data
+   * - Load the edit history entry row fields, including:
+   *   - `edited_at` for ordering semantics and display.
+   *   - The identifier `id`.
+   * - Load associated field-level change rows from `multi_user_todo_edit_history_entry_changes` where `multi_user_todo_edit_history_entry_id = editHistoryEntryId`.
+   * - Represent each change with `changed_field`, `from_value`, `to_value`, and its `created_at` (for internal consistency) as exposed by the API response DTO.
+   *
+   * 4) Soft-deletion handling
+   * - Use the domain behavior that permanently deleted edit history entries are not available after permanent deletion from trash. Concretely, when loading rows, exclude records that have been permanently removed from the database (they will not exist). If any nullable `deleted_at` exists in the tables and is used by the system to hide records, apply the same visibility rules used in edit history list/detail operations (do not return unavailable entries).
+   *
+   * 5) Response
+   * - Return a single DTO representing the selected edit history entry and its associated field-level changes.
+   *
+   * Edge cases:
+   * - Missing todo or edit history entry for the given todoId => reject.
+   * - Entry exists but belongs to a different todoId => reject.
+   * - Acting member does not own the todo => reject with privacy-safe wording.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":editHistoryEntryId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("todoId")
+    todoId: string & tags.Format<"uuid">,
+    @TypedParam("editHistoryEntryId")
+    editHistoryEntryId: string & tags.Format<"uuid">,
+  ): Promise<IMultiUserTodoEditHistoryEntry> {
+    try {
+      return await getMultiUserTodoMemberTodosTodoIdEditHistoryEntriesEditHistoryEntryId(
+        {
+          member,
+          todoId,
+          editHistoryEntryId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a specific todo edit history entry associated with a given todo.
+   *
+   * This operation targets the edit audit trail represented by `multi_user_todo_edit_history_entries`, which records when a todo was edited (`edited_at`) and uses `multi_user_todo_edit_history_entry_changes` to store per-field change markers (`changed_field`, `from_value`, `to_value`). Because the edit history is part of the todo’s private ownership boundary, this endpoint enforces that the acting authenticated member is allowed to access only their own todo data.
+   *
+   * Security and ownership enforcement are mandatory: if the authenticated member does not own the todo identified by `todoId`, or if the edit history entry identified by `editHistoryEntryId` does not belong to that todo, the system must reject the request and must not leak whether the target record exists.
+   *
+   * Validation rules: the request must include update information that results in a coherent edit history entry. The system must persist field-granular changes in `multi_user_todo_edit_history_entry_changes` such that each entry-level record is internally consistent and that the set of changes reflects the intended edits for the todo at the recorded `edited_at` moment. If the update inputs violate validation requirements for the intended operation, the system rejects the request with a clear business explanation.
+   *
+   * Behavioral guarantees: on success, the endpoint returns the updated edit history entry representation so clients can display the latest audit state. On rejection, the system does not partially persist changes; the update is applied atomically as a single operation at the service layer.
+   *
+   * Related operations: clients typically obtain todo edit history entries using the corresponding todo edit history listing/details operations before calling this endpoint for updates. After a permanent todo removal or account deletion, the system must prevent access to related private data as described in the overall account lifecycle behavior.
+   *
+   * @param connection
+   * @param todoId Target todo ID whose edit history entry will be updated. The authenticated member must own this todo.
+   * @param editHistoryEntryId Target edit history entry ID within the specified todo. The entry must belong to the provided todo.
+   * @param body Update payload for the specified todo edit history entry, including the updated edit timestamp and the intended per-field change markers stored in edit history entry changes.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Implementation steps:
+   * 1) Authenticate requester as `member` and resolve their own identity/session. If no active session exists, deny access.
+   * 2) Validate `todoId` and load the `multi_user_todo_todo` record (must exist and be owned by the authenticated member). If not found or not owned, reject.
+   * 3) Load `multi_user_todo_edit_history_entries` by `id = editHistoryEntryId` and verify `multi_user_todo_id` equals the provided `todoId`. If mismatch/not found, reject.
+   * 4) Validate requestBody update DTO:
+   *    - Ensure any provided `edited_at` timestamp is present/valid per DTO rules.
+   *    - If the update includes changed fields, map them into `multi_user_todo_edit_history_entry_changes` rows:
+   *      - Set `changed_field` strings.
+   *      - Set `from_value` and `to_value` (nullable allowed by schema) according to request.
+   *    - Enforce uniqueness constraint at persistence time: `(multi_user_todo_edit_history_entry_id, changed_field)` must be unique.
+   * 5) Apply update transactionally:
+   *    - Update the parent `multi_user_todo_edit_history_entries` fields (e.g., `edited_at`).
+   *    - Replace or upsert corresponding `multi_user_todo_edit_history_entry_changes` rows as dictated by the update DTO semantics:
+   *      - If DTO provides a complete change set, delete missing changed_field rows for this entry and insert new ones.
+   *      - If DTO provides partial updates, update matching rows and insert new rows, ensuring uniqueness.
+   *    - Update `updated_at` timestamps for modified rows.
+   *    - Do not create any new edit history entry; this operation updates the specified existing one.
+   * 6) After commit, query the updated entry with its changes (and any required relations for the response DTO) and return the mapped `I...` entity response.
+   * 7) Error handling:
+   *    - For validation failures or ownership/state mismatches, reject with clear business errors and ensure the transaction is rolled back so no partial changes remain.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":editHistoryEntryId")
+  public async update(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("todoId")
+    todoId: string & tags.Format<"uuid">,
+    @TypedParam("editHistoryEntryId")
+    editHistoryEntryId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IMultiUserTodoEditHistoryEntry.IUpdate,
+  ): Promise<IMultiUserTodoEditHistoryEntry> {
+    try {
+      return await putMultiUserTodoMemberTodosTodoIdEditHistoryEntriesEditHistoryEntryId(
+        {
+          member,
+          todoId,
+          editHistoryEntryId,
+          body,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently removes a specific edit history entry for a todo owned by the authenticated member.
+   *
+   * This operation targets the edit history entry identified by both `todoId` and `editHistoryEntryId`. The system must ensure the edit history entry belongs to the specified todo and that both are within the authenticated member’s private scope.
+   *
+   * It is intended for the trash workflow retention behavior where edit history content must be removed when the todo is permanently removed from the user’s trash. In addition, this endpoint provides an explicit deletion path for the edit history entry resource, while still enforcing the same privacy and availability rules described for todo deletion workflows.
+   *
+   * Security and authorization are enforced strictly: the guest actor is not allowed to access this operation, and a member actor can only remove edit history entries that belong to their own todos. If the todo or the edit history entry is not available due to its deletion state, or if it does not belong to the authenticated member, the system must deny the operation (treat as “not available”) and must not expose whether the target exists.
+   *
+   * Validation and error handling follow the unified behavior for already deleted/unavailable resources: repeated deletion attempts for already permanently removed entries must be rejected as not available, and attempts on entries that are unavailable must be denied without leaking additional information.
+   *
+   * @param connection
+   * @param todoId The identifier of the target todo whose edit history entry will be deleted. The todo must be owned by the authenticated member.
+   * @param editHistoryEntryId The identifier of the target todo edit history entry to permanently remove. It must belong to the todo specified by `todoId` and be within the authenticated member’s private scope.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Authenticate request as member; reject guests.
+   *
+   * Parameters:
+   * - todoId: locate the todo record owned by the authenticated member.
+   * - editHistoryEntryId: locate the edit history entry record by id, and verify it belongs to the located todo (multi_user_todo_id = todoId).
+   *
+   * Availability checks:
+   * - If the todo is not available for edit history deletion due to its deletion state, reject as “the todo is not available” (do not reveal existence).
+   * - If the edit history entry is not available (e.g., already permanently removed / deleted), reject as “the todo is not available” or “edit history entry is not available” per the service’s unified error mapping for unavailable resources.
+   *
+   * Deletion behavior:
+   * - Permanently remove the edit history entry record.
+   * - Rely on database-level cascading rules to remove associated field-level change rows in multi_user_todo_edit_history_entry_changes (relationship is configured with onDelete: Cascade from edit history entry to changes).
+   *
+   * Transaction:
+   * - Perform the lookup, ownership verification, and deletion inside a single transaction.
+   *
+   * Edge cases:
+   * - If editHistoryEntryId does not correspond to any entry under the given todoId and member, deny the request as not available.
+   * - If the member attempts to delete an entry that belongs to another member’s todo, deny as not available.
+   *
+   * Return:
+   * - No response body (204/empty payload semantics) on success, represented as null responseBody in the API contract.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":editHistoryEntryId")
+  public async erase(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("todoId")
+    todoId: string & tags.Format<"uuid">,
+    @TypedParam("editHistoryEntryId")
+    editHistoryEntryId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteMultiUserTodoMemberTodosTodoIdEditHistoryEntriesEditHistoryEntryId(
+        {
+          member,
+          todoId,
+          editHistoryEntryId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

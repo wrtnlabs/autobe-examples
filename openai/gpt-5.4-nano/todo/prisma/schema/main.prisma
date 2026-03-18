@@ -1,0 +1,14 @@
+generator client {
+  provider        = "prisma-client"
+  previewFeatures = ["postgresqlExtensions", "views"]
+  output          = "../../src/prisma"
+  moduleFormat    = "cjs"
+}
+datasource db {
+  provider   = "postgresql"
+  extensions = [pg_trgm]
+}
+generator markdown {
+  provider = "prisma-markdown"
+  output   = "../../docs/ERD.md"
+}

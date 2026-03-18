@@ -1,0 +1,92 @@
+/// Stores the private user profile identity for the owning member. Contains
+/// the editable display name used for personal customization while
+/// preserving a strict privacy boundary so other users cannot access this
+/// profile’s private data.
+///
+/// @namespace UserProfiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Belonged member’s {@link multi_user_todo_members.id} record.
+  multi_user_todo_member_id String @db.Uuid
+  
+  /// User-customized display name for personalization and human-friendly
+  /// labeling within the user’s private scope.
+  display_name String
+  
+  /// Record creation timestamp.
+  created_at DateTime @db.Timestamptz
+  
+  /// Record last update timestamp.
+  updated_at DateTime @db.Timestamptz
+  
+  /// Soft delete timestamp. When set, the profile is considered unavailable
+  /// until restored (if the application supports restore).
+  deleted_at DateTime? @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([multi_user_todo_member_id])
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, deleted_at], map: "multi_user_todo_user_profiles_multi_user_todo_member_i_afb03c18")
+  @@index([display_name(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+/// Point-in-time audit records for a member’s private user profile.
+///
+/// Each snapshot captures the display name (and any other current profile
+/// attributes required to reconstruct the past state) at the moment the
+/// profile was changed. Snapshots support recovery/retention behavior by
+/// preserving historical profile values even after subsequent edits and
+/// after soft-deletion of the owning profile data is initiated.
+///
+/// @namespace UserProfiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_user_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Belonged member (owner of the profile) {@link multi_user_todo_members.id}.
+  multi_user_todo_member_id String @db.Uuid
+  
+  /// The member’s display name captured at the time of this profile snapshot.
+  display_name String
+  
+  /// Creation timestamp of this profile snapshot record.
+  created_at DateTime @db.Timestamptz
+  
+  /// Last update timestamp for this snapshot record (typically unchanged after
+  /// creation).
+  updated_at DateTime @db.Timestamptz
+  
+  /// Soft delete timestamp for this snapshot record (nullable).
+  deleted_at DateTime? @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  // spellchecker: ignore-next-line
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade, map: "multi_user_todo_user_profile_snapshots_multi_user_todo_6f64bd47")
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, created_at], map: "multi_user_todo_user_profile_snapshots_multi_user_todo_6a583ee1")
+}

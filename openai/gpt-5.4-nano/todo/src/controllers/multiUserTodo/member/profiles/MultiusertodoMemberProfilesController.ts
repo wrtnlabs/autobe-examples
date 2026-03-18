@@ -1,0 +1,338 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IMultiUserTodoUserProfile } from "../../../../api/structures/IMultiUserTodoUserProfile";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
+import { deleteMultiUserTodoMemberProfilesProfileId } from "../../../../providers/deleteMultiUserTodoMemberProfilesProfileId";
+import { getMultiUserTodoMemberProfilesProfileId } from "../../../../providers/getMultiUserTodoMemberProfilesProfileId";
+import { patchMultiUserTodoMemberProfiles } from "../../../../providers/patchMultiUserTodoMemberProfiles";
+import { postMultiUserTodoMemberProfiles } from "../../../../providers/postMultiUserTodoMemberProfiles";
+import { putMultiUserTodoMemberProfilesProfileId } from "../../../../providers/putMultiUserTodoMemberProfilesProfileId";
+
+@Controller("/multiUserTodo/member/profiles")
+export class MultiusertodoMemberProfilesController {
+  /**
+   * Create the authenticated member’s private user profile record.
+   *
+   * This endpoint is responsible for creating (or initializing) the member-scoped profile that stores the user-customized `display_name` used for human-friendly labeling within the member’s private scope. The underlying persistence model is `multi_user_todo_user_profiles`, which belongs to a single `multi_user_todo_members` record via `multi_user_todo_member_id`, and contains `display_name`, `created_at`, `updated_at`, and `deleted_at`.
+   *
+   * Security and privacy boundary are enforced at the data access layer: a member can only create or view profile information that belongs to their own authenticated identity. The system must block any attempt that would affect another member’s profile and must not reveal any information about other members’ profiles. This aligns with the requirements that a member actor is restricted to the member’s own profile only, and that profile visibility must never expose other users’ identity details.
+   *
+   * Validation and business behavior should follow profile domain expectations: the request must provide a `display_name` suitable for the profile record; the service should persist it in `multi_user_todo_user_profiles` associated with the authenticated member. If the member already has an available profile record, the service must decide behavior consistent with the domain’s profile lifecycle (e.g., create should typically be idempotent or must return a clear error); implementation should check existing `multi_user_todo_user_profiles` rows for the member (scoped by `multi_user_todo_member_id`) and handle conflicts deterministically.
+   *
+   * The response returns the created profile object so the client can immediately display the saved `display_name` in the UI.
+   *
+   * Related operations: the created profile can be retrieved via the corresponding profile read endpoint(s) (not defined here) and any profile update behavior should operate on the member-scoped `multi_user_todo_user_profiles` record, never by accepting a foreign profile identifier from the client.
+   *
+   * @param connection
+   * @param body Profile creation input for the authenticated member, providing the user-customized display name to store in the private profile record.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification 1) Authorization & actor scope
+   * - Require authenticated member actor.
+   * - Derive the authenticated member id from the session/auth context.
+   * - Never accept or trust a member id from the request body.
+   *
+   * 2) Input handling
+   * - Validate request body fields per IProfile.ICreate schema (at minimum: display_name required).
+   *
+   * 3) Uniqueness / existing profile handling
+   * - Query multi_user_todo_user_profiles where multi_user_todo_member_id = authenticated member id.
+   * - Consider deleted_at: treat records with deleted_at != null as unavailable (unless the domain specifies restore; implement according to business rules).
+   * - If an available profile already exists:
+   *   - Either return a conflict-style error or return the existing profile (implementation must be deterministic and consistent with the overall domain design). Prefer conflict if create semantics are strict.
+   *
+   * 4) Create transaction
+   * - Insert a new multi_user_todo_user_profiles row with multi_user_todo_member_id and display_name.
+   * - created_at and updated_at should be set by the application or database defaults (consistent with ORM conventions).
+   * - Ensure deleted_at is null on insertion.
+   *
+   * 5) Response mapping
+   * - Return the created multi_user_todo_user_profiles fields mapped to IProfile entity response DTO.
+   *
+   * 6) Error handling
+   * - Access denied if actor is not authenticated member.
+   * - Access denied style outcome if a request would target another member’s profile (not applicable here because no member id is provided; still ensure no cross-tenant reads happen).
+   * - Conflict/validation errors for invalid display_name or existing active profile per step (3).
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async createProfile(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedBody()
+    body: IMultiUserTodoUserProfile.ICreate,
+  ): Promise<IMultiUserTodoUserProfile> {
+    try {
+      return await postMultiUserTodoMemberProfiles({
+        member,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update the authenticated member’s private profile information.
+   *
+   * This operation lets a member change the profile’s `display_name` that is stored in the `multi_user_todo_user_profiles` table. The profile is private to the owning member; the system must ensure that the acting authenticated identity is the owner of the profile data being updated.
+   *
+   * Because the endpoint path does not include any profile identifier, the server derives the target profile record from the current member session. This prevents a member from attempting to access or modify another member’s profile by supplying any other identifiers; any attempt to act on non-owned profile data must be blocked and must not reveal other users’ profile details.
+   *
+   * Validation rules apply to the `display_name` update: the updated value must represent a meaningful non-blank display name (blank or whitespace-only values are rejected). When the request is rejected due to validation failures or access-denial conditions, the member’s previously stored profile values must remain unchanged.
+   *
+   * After a successful update, the server returns the updated profile payload reflecting the persisted `display_name` values from `multi_user_todo_user_profiles`.
+   *
+   * This operation is closely related to:
+   * - The member profile viewing operation (to confirm the privacy boundary and the returned fields match what was stored in `multi_user_todo_user_profiles`).
+   * - The member account deletion workflow, because account deletion makes the profile unavailable (so updates should be rejected when the account is unavailable).
+   *
+   * @param connection
+   * @param body Profile update payload for the authenticated member. Contains the new `displayName` to persist into `multi_user_todo_user_profiles.display_name`.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Implementation steps for Realize Agent:
+   *
+   * 1) Authorization and target resolution
+   * - Require an active authenticated member session.
+   * - Determine the acting member’s `multi_user_todo_member` identity from the session.
+   * - Load the member’s own profile row from `multi_user_todo_user_profiles` using the member id stored by the session flow (the table has `multi_user_todo_member_id` as a unique key via @@unique([multi_user_todo_member_id]) ).
+   *
+   * 2) Request validation
+   * - Read `displayName` from the request body.
+   * - Validate that `displayName` is present and not empty after trimming; reject blank/whitespace-only values.
+   * - If validation fails, do not perform any database update and return a rejected outcome.
+   *
+   * 3) Update transaction
+   * - In a transaction, update `multi_user_todo_user_profiles.display_name` and set `updated_at`.
+   * - Do not modify `multi_user_todo_member_id`.
+   * - If the profile record is unavailable because the member account is unavailable, reject the operation.
+   *
+   * 4) Privacy boundary handling
+   * - If the member’s session cannot confirm ownership of the profile (e.g., acting member differs from the profile’s owner), reject without returning profile details.
+   *
+   * 5) Response
+   * - Return the updated profile representation.
+   *
+   * Edge cases
+   * - Repeated saves with the same (valid) display name should persist consistently.
+   * - Any rejected request must leave all profile data unchanged.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async updateProfile(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedBody()
+    body: IMultiUserTodoUserProfile.IUpdate,
+  ): Promise<IMultiUserTodoUserProfile> {
+    try {
+      return await patchMultiUserTodoMemberProfiles({
+        member,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve the authenticated member’s private profile by identifier.
+   *
+   * This endpoint is the detail-view counterpart to profile list/browse capabilities (if any). It returns the requesting member’s own profile information, centered on the display name stored in the private user profile record.
+   *
+   * Security and privacy requirements are strict: the system must ensure the member actor can only access their own profile information. A member must not be able to view other users’ profiles, even if they attempt to access a profile indirectly via an identifier. If the requested profile does not belong to the authenticated user, the system must block the request and respond with an access-denied style outcome without revealing any profile details for other users.
+   *
+   * Under the hood, the operation reads from the private profile table that stores a member-scoped display name and a soft-deletion timestamp. The implementation must join or verify the belonged member identifier for the requested profile record against the authenticated member’s identity and must treat any unavailable profile state according to the profile table’s deleted_at semantics (e.g., record considered unavailable when deleted_at is set, unless the application supports restore elsewhere).
+   *
+   * Validation and error handling:
+   * - If the profileId does not exist, the endpoint should not leak whether the profile exists for other users; it should respond with an access-denied style outcome.
+   * - If the profile exists but is not owned by the authenticated member, the same access-denied style outcome is returned.
+   * - For any unexpected internal failures, return a generic server error.
+   *
+   * Related operations that are commonly used together:
+   * - The authenticated user creates/updates their profile display name through other profile modification endpoints.
+   * - The member’s todos and todo edit history operate within the same authenticated identity boundary and must not expose other users’ data.
+   *
+   * @param connection
+   * @param profileId Target profile identifier. Access is restricted to the authenticated member; other users’ profiles must not be revealed.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Implementation steps:
+   * 1) Authenticate requester and resolve the authenticated member identity (memberId).
+   * 2) Parse `profileId` from path.
+   * 3) Query `multi_user_todo_user_profiles` for the row with primary key `id = profileId`.
+   *    - Select at minimum: `id`, `multi_user_todo_member_id`, `display_name`, `created_at`, `updated_at`, and `deleted_at` (as available).
+   * 4) Ownership enforcement:
+   *    - If no row is found, do NOT distinguish between 'not found' and 'not owned'; return access-denied style response.
+   *    - If `multi_user_todo_member_id != memberId`, return access-denied style response.
+   * 5) Availability enforcement:
+   *    - If `deleted_at` is set (profile considered unavailable), treat as access-denied/not available per privacy rules unless restore is explicitly supported by other operations.
+   * 6) Map the database row to response DTO `IMultiUserTodoUserProfile` (or the closest available profile DTO for a single detail view).
+   * 7) Return 200 with the profile DTO.
+   *
+   * Database considerations:
+   * - Use a single indexed primary-key lookup on `multi_user_todo_user_profiles.id`.
+   * - No transaction is required because this is a read-only operation.
+   *
+   * Error handling:
+   * - Normalize all unauthorized/ownership failures into an access-denied outcome.
+   * - Do not leak other users’ profile details via error messages.
+   *
+   * Authorization:
+   * - Enforce member-only access; guests are blocked from private profile reads.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":profileId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("profileId")
+    profileId: string & tags.Format<"uuid">,
+  ): Promise<IMultiUserTodoUserProfile> {
+    try {
+      return await getMultiUserTodoMemberProfilesProfileId({
+        member,
+        profileId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Updates the authenticated member’s private profile display name.
+   *
+   * This operation is the write counterpart to profile viewing: it allows a member to change only their own profile’s display name that is stored in the private profile record. The system must enforce the privacy boundary that a member cannot view or modify another user’s profile information. If the target profile does not belong to the authenticated member, the operation must be denied and must not reveal whether the other profile exists.
+   *
+   * The request targets the database entity `multi_user_todo_user_profiles`, which stores the editable `display_name` for a member-scoped private profile. Because the authenticated member is determined by the active session, the implementation must ensure the update applies only to a profile record owned by the authenticated member, even when the caller provides an arbitrary `profileId`.
+   *
+   * Validation rules: the submitted display name must be present and must not be blank. If validation fails (blank or missing input), the system must reject the update without partially updating the profile; the existing `display_name` must remain unchanged.
+   *
+   * After successful validation and update, the system must persist the new display name and the client must be able to observe the updated display name immediately in the response. If a validation failure occurs for any reason, the existing display name must be preserved to avoid inconsistent intermediate state.
+   *
+   * Related behaviors: profile snapshots exist to capture the display name when changes are made. This operation should create the appropriate snapshot record corresponding to the update so historical recovery behavior (if supported elsewhere) remains consistent.
+   *
+   * Authorization expectations: access denial for a profile update must follow an access-denied style response and must not disclose details about another user’s profile.
+   *
+   * Expected error handling:
+   * - If the profile belongs to a different member, respond with an access-denied outcome without revealing existence.
+   * - If the submitted display name is blank or missing, reject and preserve current display name.
+   * - If the account is unavailable due to account deletion, treat the profile as unavailable and reject safely.
+   *
+   * @param connection
+   * @param profileId The identifier of the private profile record to update. The system must verify that this profile belongs to the authenticated member.
+   * @param body Update request for the authenticated member’s profile display name.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification 1) Authenticate and resolve ownership
+   * - Read the authenticated member identity from the active session (member scope).
+   * - Load `multi_user_todo_user_profiles` by `id = profileId`.
+   * - Enforce ownership: ensure the loaded record’s `multi_user_todo_member_id` equals the authenticated member id.
+   * - If no record is found under that ownership scope, return an access-denied outcome (do not distinguish not-found vs unauthorized to avoid leaking existence).
+   *
+   * 2) Validate request payload
+   * - From request body, read the proposed new `display_name` value.
+   * - Reject if `display_name` is missing or blank/empty after trimming, per business rule: blank or missing input must not update.
+   * - Do not modify the existing record if validation fails.
+   *
+   * 3) Persist changes atomically
+   * - Begin a transaction.
+   * - Update `multi_user_todo_user_profiles.display_name` to the validated value.
+   * - Update `multi_user_todo_user_profiles.updated_at` (as per ORM behavior).
+   * - Create a `multi_user_todo_user_profile_snapshots` record capturing the prior (or current, depending on snapshot semantics defined in the implementation layer) display name at the moment of change, using `multi_user_todo_member_id` from the profile.
+   * - Commit the transaction.
+   *
+   * 4) Build response
+   * - Return the updated `multi_user_todo_user_profiles` data mapped to `IMultiUserTodoUserProfile` (or the corresponding API response DTO used by the codebase).
+   *
+   * 5) Edge cases
+   * - If the profile is marked as deleted via `deleted_at` (non-null), treat the profile as unavailable and reject safely according to the system’s account/profile availability rules.
+   * - Ensure the operation is idempotent when `display_name` equals the current value: handle gracefully as a no-op or as a consistent save without causing errors.
+   * - Ensure that on any failure after partial steps, rollback the transaction to prevent inconsistent display name state.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":profileId")
+  public async update(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("profileId")
+    profileId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IMultiUserTodoUserProfile.IUpdate,
+  ): Promise<IMultiUserTodoUserProfile> {
+    try {
+      return await putMultiUserTodoMemberProfilesProfileId({
+        member,
+        profileId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently removes the authenticated member’s private profile data identified by the given profile ID.
+   *
+   * This operation is designed for the user’s own profile management lifecycle in a multi-user todo system where profile data is private and must never be accessible across different members. If the authenticated actor does not own the targeted profile, the system must reject the request without revealing whether the target exists.
+   *
+   * Internally, this operation targets the `multi_user_todo_user_profiles` model, whose primary key is `id` and which stores the member-scoped `display_name` along with timestamps (`created_at`, `updated_at`, and optional `deleted_at`). Because this endpoint is an explicit deletion request, the implementation must ensure the profile record is removed from the set of available profile data for the member after successful completion.
+   *
+   * Validation and authorization rules must enforce the ownership boundary:
+   * - The acting member must be able to map `{profileId}` to a row owned by that member (via `multi_user_todo_member_id`).
+   * - If no such row is found for the acting member, the system must treat it as unavailable and deny access safely (no hints about existence).
+   *
+   * Related behavior consistency:
+   * - After the profile is removed, subsequent profile view attempts must be treated as unavailable, consistent with the project’s requirement that when a member account is deleted the profile becomes unavailable.
+   *
+   * The system should also ensure that this deletion does not affect unrelated members’ data, and should rely on database constraints (e.g., `multi_user_todo_user_profiles.multi_user_todo_member_id` relation) to maintain referential integrity. If the deletion cannot be completed due to missing availability (record not found for the owner), the operation must fail without leaking details about the target identity.
+   *
+   * @param connection
+   * @param profileId Target profile ID to remove from the authenticated member’s private scope.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Authorize: require authenticated member context.
+   *
+   * 1) Parse path param `profileId` as UUID.
+   * 2) Transaction: start a database transaction.
+   * 3) Lookup: query `multi_user_todo_user_profiles` by `id = profileId` AND `multi_user_todo_member_id = actingMemberId`.
+   *    - If not found, rollback and raise an access-denied / not-available style error consistent with safe denial (do not disclose whether profile exists for another member).
+   * 4) Delete: permanently remove the `multi_user_todo_user_profiles` row (use ORM delete). Do not update `display_name`.
+   *    - Note: although the model contains `deleted_at`, this operation is explicitly a delete endpoint; do not implement an update-only behavior.
+   * 5) Commit.
+   * 6) Response: return no content (null response body).
+   *
+   * Edge cases:
+   * - If the authenticated session is absent, the request must be rejected before reaching business logic.
+   * - If concurrent requests delete the profile, treat subsequent calls as unavailable (record not found for the owner).
+   *
+   * Integration/consistency:
+   * - Ensure subsequent profile reads treat the profile as unavailable for this user, aligning with the same safe denial pattern used when a user account has been deleted.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":profileId")
+  public async erase(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("profileId")
+    profileId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteMultiUserTodoMemberProfilesProfileId({
+        member,
+        profileId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}
