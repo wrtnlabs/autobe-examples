@@ -1,0 +1,45 @@
+/// Stores the private profile for one member account, including the account
+/// holder's display name used for in-app identification.
+///
+/// This record is strictly owner-scoped and is not publicly browsable. It
+/// exists separately from authentication credentials so profile data can be
+/// managed without exposing login information, and it is linked one-to-one
+/// with {@link todo_app_members} through a unique ownership relationship.
+///
+/// @namespace UserProfile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Owning member account for this private profile. References {@link
+  /// todo_app_members.id}.
+  todo_app_member_id String @db.Uuid
+  
+  /// Private display name shown within the application for the owning member.
+  display_name String
+  
+  /// When this profile record was created.
+  created_at DateTime @db.Timestamptz
+  
+  /// When this profile record was last updated.
+  updated_at DateTime @db.Timestamptz
+  
+  /// When this profile record was soft deleted. Null when active.
+  deleted_at DateTime? @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_member_id])
+  @@index([display_name(ops: raw("gin_trgm_ops"))], type: Gin)
+}

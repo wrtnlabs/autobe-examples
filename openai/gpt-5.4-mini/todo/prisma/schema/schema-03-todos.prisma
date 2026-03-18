@@ -1,0 +1,69 @@
+/// Stores each member's private todo item, including ownership, title,
+/// optional description, optional start and due dates, completion state, and
+/// soft-delete status.
+///
+/// This table is the current-state record for a todo. It supports private
+/// list browsing, detail viewing, completion toggling, editing, trash
+/// management, restore, and permanent deletion workflows. Edit history is
+/// preserved in the separate {@link todo_app_todo_histories} table, so this
+/// model only contains the latest todo state.
+///
+/// @namespace Todos
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id @db.Uuid
+  
+  /// Owning member account's {@link todo_app_members.id}.
+  todo_app_member_id String @db.Uuid
+  
+  /// Todo title shown in todo lists and detail views.
+  title String
+  
+  /// Optional todo description shown in the detail view.
+  description String?
+  
+  /// Optional start date for the todo.
+  start_at DateTime? @db.Timestamptz
+  
+  /// Optional due date for the todo.
+  due_at DateTime? @db.Timestamptz
+  
+  /// Whether the todo is currently completed.
+  is_completed Boolean
+  
+  /// When this todo record was created.
+  created_at DateTime @db.Timestamptz
+  
+  /// When this todo record was last updated.
+  updated_at DateTime @db.Timestamptz
+  
+  /// When this todo was soft deleted; null means it is active.
+  deleted_at DateTime? @db.Timestamptz
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  histories todo_app_todo_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_member_id, deleted_at, created_at])
+  // spellchecker: ignore-next-line
+  @@index([todo_app_member_id, deleted_at, is_completed, created_at], map: "todo_app_todos_todo_app_member_id_deleted_at_is_comple_b1322872")
+  @@index([todo_app_member_id, deleted_at, start_at])
+  @@index([todo_app_member_id, deleted_at, due_at])
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin)
+}
