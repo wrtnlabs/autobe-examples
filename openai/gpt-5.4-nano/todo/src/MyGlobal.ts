@@ -1,9 +1,11 @@
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/sdk";
 import dotenv from "dotenv";
 import dotenvExpand from "dotenv-expand";
 import { Singleton } from "tstl";
 import typia from "typia";
+
+import { MyConfiguration } from "./MyConfiguration";
 
 /* eslint-disable */
 export class MyGlobal {
@@ -17,19 +19,10 @@ export class MyGlobal {
     return prisma.get();
   }
 }
-
 export namespace MyGlobal {
   export interface IEnvironments {
     API_PORT: `${number}`;
     JWT_SECRET_KEY: string;
-
-    POSTGRES_HOST: string;
-    POSTGRES_PORT: `${number}`;
-    POSTGRES_DATABASE: string;
-    POSTGRES_SCHEMA: string;
-    POSTGRES_USERNAME: string;
-    POSTGRES_PASSWORD: string;
-    POSTGRES_URL: string;
   }
 }
 const environments = new Singleton(() => {
@@ -37,12 +30,12 @@ const environments = new Singleton(() => {
   dotenvExpand.expand(env);
   return typia.assert<MyGlobal.IEnvironments>(process.env);
 });
+
 const prisma = new Singleton(
   () =>
     new PrismaClient({
-      adapter: new PrismaPg(
-        { connectionString: environments.get().POSTGRES_URL },
-        { schema: environments.get().POSTGRES_SCHEMA },
-      ),
+      adapter: new PrismaBetterSqlite3({
+        url: `${MyConfiguration.ROOT}/prisma/db.sqlite`,
+      }),
     }),
 );

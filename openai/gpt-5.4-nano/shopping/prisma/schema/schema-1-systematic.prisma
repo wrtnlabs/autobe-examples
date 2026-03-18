@@ -1,0 +1,192 @@
+/// Generic immutable snapshot records for capturing point-in-time states of
+/// multiple editable domain concepts for audit and dispute resolution. Each
+/// snapshot stores the source discriminator and the minimal linkage keys
+/// back to the originating editable entity (e.g., product, product variant,
+/// order item, review, cancellation request, refund request), while the
+/// snapshot content is stored separately via other snapshot payload tables
+/// in the Systematic component.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Human-readable identifier/code for the snapshot record for referencing in
+  /// logs, UIs, and dispute resolution workflows.
+  snapshot_code String
+  
+  /// Discriminator for which domain concept this snapshot represents (e.g.,
+  /// product, product_variant, order_item, review, cancellation_request,
+  /// refund_request).
+  source_type String
+  
+  /// The primary key of the source entity instance that this snapshot captures
+  /// at creation time.
+  source_entity_id String
+  
+  /// Optional seller linkage for snapshots that are seller-contextual (e.g.,
+  /// order-item purchase context where the seller snapshot at purchase time is
+  /// relevant).
+  source_seller_id String?
+  
+  /// Optional order linkage for snapshots related to order state (e.g., order
+  /// item or associated disputes).
+  source_order_id String?
+  
+  /// Optional order-item linkage for snapshots related to an individual
+  /// purchased line item.
+  source_order_item_id String?
+  
+  /// Optional review linkage for snapshots related to a review edit history.
+  source_review_id String?
+  
+  /// Optional cancellation request linkage for snapshots related to
+  /// cancellation workflows.
+  source_cancellation_request_id String?
+  
+  /// Optional refund request linkage for snapshots related to refund workflows.
+  source_refund_request_id String?
+  
+  /// Optional reference to the member that initiated the change captured by
+  /// this snapshot (when applicable for dispute context).
+  created_by_member_id String?
+  
+  /// Business reason/category describing why this snapshot was created (e.g.,
+  /// edit, workflow transition, dispute creation).
+  reason String
+  
+  /// Snapshot creation timestamp. Used for historical ordering and dispute
+  /// timelines.
+  created_at DateTime
+  
+  /// Last update timestamp for the snapshot record metadata (payload/content
+  /// tables are managed separately).
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for the snapshot record metadata, if the system
+  /// needs to hide invalidated snapshots while preserving referential
+  /// integrity.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshotParties shopping_mall_snapshot_parties[]
+  payload shopping_mall_snapshot_payloads?
+  sellerSnapshotOrderItems shopping_mall_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([snapshot_code])
+  // spellchecker: ignore-next-line
+  @@unique([source_type, source_entity_id, created_at], map: "shopping_mall_snapshots_source_type_source_entity_id_c_c152f846")
+  @@index([source_seller_id, created_at])
+  @@index([source_order_item_id, created_at])
+  @@index([created_at])
+}
+
+/// Junction table that defines which parties are allowed to view a given
+/// snapshot for dispute resolution. Each row represents one visibility
+/// relationship between a snapshot and a single party reference (e.g., an
+/// owner reference or an admin visibility entry).
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_snapshot_parties {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Snapshot that this party visibility entry belongs to {@link
+  /// shopping_mall_snapshots.id}.
+  shopping_mall_snapshot_id String
+  
+  /// Discriminator for what kind of party the stored party_id refers to (e.g.,
+  /// 'owner' for snapshot owner reference, 'admin' for administrative
+  /// visibility).
+  party_type String
+  
+  /// Identifier of the party that can view the snapshot. The meaning depends
+  /// on party_type.
+  party_id String
+  
+  /// Whether the party is allowed to view the snapshot.
+  can_view Boolean
+  
+  /// Creation timestamp of this visibility relationship.
+  created_at DateTime
+  
+  /// Last update timestamp of this visibility relationship.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; when set, the visibility relationship is treated
+  /// as removed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot shopping_mall_snapshots @relation(fields: [shopping_mall_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_snapshot_id, party_type, party_id], map: "shopping_mall_snapshot_parties_shopping_mall_snapshot__4df73baf")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_snapshot_id, can_view], map: "shopping_mall_snapshot_parties_shopping_mall_snapshot__8ea709a9")
+  @@index([party_type, party_id, can_view])
+}
+
+/// Stores the optional payload content for a single {@link
+/// shopping_mall_snapshots.id} snapshot record. This table exists to keep
+/// snapshot content separate from snapshot metadata and to support flexible
+/// payload storage tied strictly 1:1 to a snapshot.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_snapshot_payloads {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged snapshot {@link shopping_mall_snapshots.id} that this payload
+  /// content is attached to.
+  shopping_mall_snapshot_id String
+  
+  /// Serialized snapshot payload content associated with the snapshot record.
+  payload String
+  
+  /// Creation timestamp for this payload record.
+  created_at DateTime
+  
+  /// Last update timestamp for this payload record.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for this payload record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot shopping_mall_snapshots @relation(fields: [shopping_mall_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_snapshot_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_snapshot_id, created_at], map: "shopping_mall_snapshot_payloads_shopping_mall_snapshot_f58abaf4")
+}

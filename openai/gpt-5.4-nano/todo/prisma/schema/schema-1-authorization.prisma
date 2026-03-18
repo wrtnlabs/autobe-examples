@@ -14,21 +14,21 @@ model multi_user_todo_guests {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Client-generated device fingerprint used to correlate a guest identity
   /// across requests while the user remains unauthenticated.
   device_fingerprint String
   
   /// When the guest actor record was created.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// When the guest actor record was last updated.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// When the guest actor record was soft-deleted. Null means the guest is
   /// active.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   //----
   // HAS RELATIONS
@@ -58,32 +58,32 @@ model multi_user_todo_guest_sessions {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Belonged guest's {@link multi_user_todo_guests.id}.
-  multi_user_todo_guest_id String @db.Uuid
+  multi_user_todo_guest_id String
   
   /// IP address where the session was created.
   ip String
   
   /// The URL (href) the client visited when creating the session.
-  href String @db.VarChar(80000)
+  href String
   
   /// Referrer information sent by the client when creating the session.
   referrer String
   
   /// Creation timestamp of the guest session.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// Last update timestamp for the guest session record.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// Soft delete timestamp for the guest session record.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   /// Expiration timestamp of the guest session. Sessions become invalid after
   /// this time.
-  expired_at DateTime @db.Timestamptz
+  expired_at DateTime
   
   //----
   // BELONGED RELATIONS,
@@ -113,7 +113,7 @@ model multi_user_todo_members {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Unique email address used to identify the member account during
   /// registration and login.
@@ -124,14 +124,14 @@ model multi_user_todo_members {
   password_hash String
   
   /// Record creation timestamp.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// Record last update timestamp.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// Soft-delete timestamp. Null when the account is active; set when the
   /// account is deleted.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   //----
   // HAS RELATIONS
@@ -168,25 +168,25 @@ model multi_user_todo_member_sessions {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Belonged member’s session owner {@link multi_user_todo_members.id}.
-  multi_user_todo_member_id String @db.Uuid
+  multi_user_todo_member_id String
   
   /// Client IP address captured when the session was created.
   ip String
   
   /// The request URL (href) captured when the session was created.
-  href String @db.VarChar(80000)
+  href String
   
   /// The HTTP referrer URL captured when the session was created.
-  referrer String @db.VarChar(80000)
+  referrer String
   
   /// When the session record was created.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// When the session becomes invalid for authentication.
-  expired_at DateTime @db.Timestamptz
+  expired_at DateTime
   
   //----
   // BELONGED RELATIONS,
@@ -218,34 +218,33 @@ model multi_user_todo_member_password_resets {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Belonged member that this password reset token targets ({@link
   /// multi_user_todo_members.id}).
-  multi_user_todo_member_id String @db.Uuid
+  multi_user_todo_member_id String
   
   /// Opaque password reset token used by the client to prove the request.
   /// Stored as a generated token value.
   token String
   
   /// Timestamp after which this reset token is no longer valid.
-  expires_at DateTime @db.Timestamptz
+  expires_at DateTime
   
   /// Record creation timestamp.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// Record update timestamp.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// Soft delete timestamp for invalidated or purged reset tokens.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  // spellchecker: ignore-next-line
-  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade, map: "multi_user_todo_member_password_resets_multi_user_todo_460ad6cb")
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
@@ -268,11 +267,11 @@ model multi_user_todo_member_email_verifications {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Belonged member account {@link multi_user_todo_members.id}. This token is
   /// issued for a specific member.
-  multi_user_todo_member_id String @db.Uuid
+  multi_user_todo_member_id String
   
   /// Opaque verification token value presented by the client and redeemed by
   /// the backend to verify the member email ownership.
@@ -288,32 +287,31 @@ model multi_user_todo_member_email_verifications {
   
   /// Link or URL reference associated with this verification token (e.g., the
   /// verification endpoint URL embedded into the email).
-  href String @db.VarChar(80000)
+  href String
   
   /// Referrer information captured at token issuance time for auditing the
   /// request origin.
   referrer String
   
   /// When this verification token record was created.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// When this verification token record was last updated.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// Soft delete timestamp. When set, the token is considered revoked/invalid
   /// for verification purposes.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   /// Expiration time for this token. After this timestamp, the token must be
   /// treated as invalid.
-  expired_at DateTime @db.Timestamptz
+  expired_at DateTime
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  // spellchecker: ignore-next-line
-  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade, map: "multi_user_todo_member_email_verifications_multi_user__78fa1ad6")
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES

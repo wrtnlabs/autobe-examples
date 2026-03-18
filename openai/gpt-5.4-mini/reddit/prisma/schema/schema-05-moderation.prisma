@@ -1,0 +1,125 @@
+/// Community-scoped moderation assignments that grant owner or moderator
+/// authority to a member within a specific community.
+///
+/// This table stores the authorization relationship between a community and
+/// the members who can manage moderation actions there. It supports the
+/// owner-and-moderator hierarchy used to enforce moderation permissions,
+/// including who can add or remove moderators and who can perform
+/// community-level enforcement tasks. Historical removals are preserved
+/// through soft deletion so moderation changes can be audited over time.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_moderation_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community that this moderation assignment belongs to. {@link
+  /// community_platform_communities.id}.
+  community_platform_community_id String
+  
+  /// Member who receives moderation authority in the community. {@link
+  /// community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// Moderation authority level assigned to the member within the community,
+  /// such as owner or moderator.
+  role_type String
+  
+  /// Time when this moderation role assignment was created.
+  created_at DateTime
+  
+  /// Time when this moderation role assignment was last updated.
+  updated_at DateTime
+  
+  /// Time when this moderation role assignment was soft-deleted, if it was
+  /// removed while preserving history.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, community_platform_member_id, role_type], map: "community_platform_moderation_roles_community_platform_c365db47")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, role_type], map: "community_platform_moderation_roles_community_platform_525ca434")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_moderation_roles_community_platform_afc00151")
+}
+
+/// Community-scoped ban records that restrict a member from posting or
+/// commenting in a specific community while preserving read-only access to
+/// content.
+///
+/// Each record stores the enforcement target, the affected community, the
+/// moderation reason, and the ban lifecycle timestamps so the platform can
+/// audit active, expired, and lifted bans. The record is intentionally kept
+/// normalized and does not duplicate community or member profile data. It
+/// relates to {@link community_platform_members} and {@link
+/// community_platform_communities}.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Affected member's {@link community_platform_members.id} who is restricted
+  /// by this ban.
+  community_platform_member_id String
+  
+  /// Target community's {@link community_platform_communities.id} where the
+  /// ban is enforced.
+  community_platform_community_id String
+  
+  /// Moderation reason explaining why the member was banned from the community.
+  reason String
+  
+  /// Timestamp when the ban became effective.
+  started_at DateTime
+  
+  /// Timestamp when the ban ends naturally, if the ban is temporary.
+  ended_at DateTime?
+  
+  /// Timestamp when the ban record was created.
+  created_at DateTime
+  
+  /// Timestamp when the ban record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the ban record was soft deleted, if it was revoked or
+  /// removed from active enforcement.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_platform_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_community_id, community_platform_member_id, started_at], map: "community_platform_bans_community_platform_community_i_29b6623d")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, created_at], map: "community_platform_bans_community_platform_community_i_20495fdc")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_bans_community_platform_member_id_c_ef1204f9")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_community_id, community_platform_member_id, ended_at], map: "community_platform_bans_community_platform_community_i_9c6a2ffe")
+}

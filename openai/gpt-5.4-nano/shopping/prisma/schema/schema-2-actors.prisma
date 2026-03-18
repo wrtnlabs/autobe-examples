@@ -1,0 +1,519 @@
+/// Stores temporary anonymous guest accounts identified by a device
+/// fingerprint for unauthenticated browsing and limited participation where
+/// allowed. Each record represents a single guest identity used across
+/// requests until it is soft-deleted.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Stable device fingerprint used to identify the same anonymous guest
+  /// across requests.
+  fingerprint String
+  
+  /// When the guest identity was created.
+  created_at DateTime
+  
+  /// When the guest identity record was last updated.
+  updated_at DateTime
+  
+  /// When the guest identity was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions shopping_mall_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([fingerprint])
+  @@index([created_at, fingerprint])
+}
+
+/// Temporary guest session tokens used to keep anonymous visitors
+/// authenticated for guest-only browsing and guest access boundaries. Stores
+/// connection metadata (IP and referrer context) and session expiration to
+/// support secure session usage and auditability.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest {@link shopping_mall_guests.id}.
+  shopping_mall_guest_id String
+  
+  /// Client IP address captured at session establishment.
+  ip String
+  
+  /// Request URL or origin link captured when the session was established.
+  href String
+  
+  /// HTTP referrer URL captured when the session was established.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for session records.
+  deleted_at DateTime?
+  
+  /// When the session expires and should be considered invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest shopping_mall_guests @relation(fields: [shopping_mall_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_guest_id, created_at], map: "shopping_mall_guest_sessions_shopping_mall_guest_id_cr_e8846de2")
+}
+
+/// Registered member accounts for authenticated customer/seller access. This
+/// table stores the canonical login identity (email) and password credential
+/// hash for members; it is the parent for member sessions and account
+/// recovery flows handled by separate tables in the Actors component.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used as the login identifier for member accounts.
+  email String
+  
+  /// Hashed password credential for authenticating the member account.
+  password_hash String
+  
+  /// When this member account record was created.
+  created_at DateTime
+  
+  /// When this member account record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the member is treated as
+  /// deleted/disabled while keeping historical records.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions shopping_mall_member_sessions[]
+  passwordResets shopping_mall_member_password_resets[]
+  emailVerifications shopping_mall_member_email_verifications[]
+  oauthConnections shopping_mall_member_oauth_connections[]
+  sellerProducts shopping_mall_products[]
+  wishlists shopping_mall_wishlists[]
+  carts shopping_mall_carts[]
+  orders shopping_mall_orders[]
+  reviews shopping_mall_reviews[]
+  addresses shopping_mall_addresses[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at, updated_at])
+}
+
+/// JWT session tokens for authenticated member access. Each record stores
+/// connection metadata (IP and referring URLs) for auditing and security,
+/// and defines when the session expires.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link shopping_mall_members.id}.
+  shopping_mall_member_id String
+  
+  /// IP address used when establishing the session.
+  ip String
+  
+  /// The URL (href) that the client attempted to access when creating the
+  /// session.
+  href String
+  
+  /// The HTTP referrer URL (if any) associated with the session creation
+  /// request.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp; after this time the session must be treated
+  /// as invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member shopping_mall_members @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_member_id, created_at], map: "shopping_mall_member_sessions_shopping_mall_member_id__06ef1e04")
+}
+
+/// Stores password reset tokens issued to member accounts for account
+/// recovery. Each record ties a reset token to exactly one member and
+/// includes an expiration timestamp so the system can invalidate old tokens.
+/// Soft deletion is supported via deleted_at, and the token is typically
+/// one-time-use and becomes unusable after successful reset.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link shopping_mall_members.id}.
+  shopping_mall_member_id String
+  
+  /// Opaque reset token presented by the member to verify the password reset
+  /// request.
+  token String
+  
+  /// When this reset token becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the token was successfully used for resetting the
+  /// password. Null means unused.
+  used_at DateTime?
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  /// Record last update time.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If set, this reset token record is treated as
+  /// deleted/invalid.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member shopping_mall_members @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_member_id, token], map: "shopping_mall_member_password_resets_shopping_mall_mem_817634e2")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_member_id, created_at], map: "shopping_mall_member_password_resets_shopping_mall_mem_576b888e")
+  @@index([expires_at])
+}
+
+/// Email verification tokens issued to members to confirm ownership of their
+/// registration email address.
+///
+/// This table stores token values along with expiration timestamps and
+/// belongs to {@link shopping_mall_members}. Verification logic should treat
+/// non-expired, non-deleted tokens as eligible; once used (by application
+/// logic), the token record may be soft-deleted to prevent reuse.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member’s {@link
+  /// shopping_mall_member_email_verifications.shopping_mall_member_id} points
+  /// to {@link shopping_mall_members.id}.
+  shopping_mall_member_id String
+  
+  /// Opaque email verification token value presented by the user to confirm
+  /// email ownership.
+  token String
+  
+  /// When this verification token becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when this token was successfully used for verification. Null
+  /// means the token has not been used yet.
+  used_at DateTime?
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  /// Record last update time.
+  updated_at DateTime
+  
+  /// Soft delete timestamp to disable tokens after use or cancellation per
+  /// retention policy.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member shopping_mall_members @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_member_id, expires_at], map: "shopping_mall_member_email_verifications_shopping_mall_78b62d34")
+}
+
+/// Stores optional OAuth/OpenID Connect provider connections for a
+/// registered member account. Each connection links the member to a specific
+/// external identity using the provider identifier and the provider-side
+/// user id, enabling account linking during login.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_member_oauth_connections {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member connection owner {@link shopping_mall_members.id}.
+  shopping_mall_member_id String
+  
+  /// OAuth/OpenID Connect provider identifier (e.g., 'google', 'github').
+  provider String
+  
+  /// User id provided by the OAuth provider for this member connection
+  /// (provider-scoped).
+  provider_user_id String
+  
+  /// Display name retrieved from the OAuth provider at the time of linking
+  /// (may change over time).
+  display_name String?
+  
+  /// Email retrieved from the OAuth provider at the time of linking (may be
+  /// null depending on provider/consent).
+  email String?
+  
+  /// Profile URL at the OAuth provider, if provided during linking.
+  profile_url String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means the connection is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member shopping_mall_members @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([provider, provider_user_id], map: "shopping_mall_member_oauth_connections_provider_provid_95d2e9ba")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_member_id, provider, provider_user_id], map: "shopping_mall_member_oauth_connections_shopping_mall_m_315fa1e4")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_member_id, created_at], map: "shopping_mall_member_oauth_connections_shopping_mall_m_bd008240")
+}
+
+/// Administrator account records for platform governance and elevated access.
+///
+/// These accounts store the canonical administrator identity and
+/// authentication credentials (email and password hash). Administrator
+/// lifecycle operations (create, update profile/credentials, soft delete,
+/// and account access restrictions) are managed through this table, while
+/// login session tokens and password reset tokens are handled in dedicated
+/// child tables: {@link shopping_mall_admin_sessions} and {@link
+/// shopping_mall_admin_password_resets}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator login email address. Must be unique across all
+  /// administrator accounts.
+  email String
+  
+  /// BCrypt/argon2 (or equivalent) hash of the administrator password used for
+  /// authentication.
+  password_hash String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the administrator account is considered
+  /// deleted/disabled.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions shopping_mall_admin_sessions[]
+  passwordResets shopping_mall_admin_password_resets[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// Stores JWT session tokens and connection context for administrator
+/// authentication.
+///
+/// Each record represents an active or historical login session for an
+/// {@link shopping_mall_admins.id} administrator account. The table is used
+/// to track session validity boundaries via expired_at and to retain
+/// connection context (ip, href, referrer) for auditing and troubleshooting.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged administrator's {@link shopping_mall_admins.id}. (Session owner.)
+  shopping_mall_admin_id String
+  
+  /// IP address used when establishing the session.
+  ip String
+  
+  /// Requested URL (href) at the time the session was established.
+  href String
+  
+  /// Referrer URL (referrer) associated with the session establishment request.
+  referrer String
+  
+  /// Time when the session was created.
+  created_at DateTime
+  
+  /// Expiration time of the session. Sessions after this time should be
+  /// treated as invalid.
+  expired_at DateTime
+  
+  /// Time when this record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means the session record is not soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id, created_at], map: "shopping_mall_admin_sessions_shopping_mall_admin_id_cr_39834090")
+}
+
+/// Stores password reset tokens for administrator accounts, including the
+/// token value and its expiration time. This table supports secure account
+/// recovery by allowing administrators to request a reset and then redeem
+/// the token before it expires. Records may be soft-deleted after use or
+/// after cleanup without breaking referential integrity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged administrator account referenced by {@link
+  /// shopping_mall_admins.id}.
+  shopping_mall_admins_id String
+  
+  /// Opaque reset token used to authenticate the password reset attempt.
+  token String
+  
+  /// When this reset token becomes invalid. Token-based reset must be
+  /// completed before this time.
+  expires_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Set when the token is revoked or removed from
+  /// active use.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admins_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admins_id, expires_at], map: "shopping_mall_admin_password_resets_shopping_mall_admi_efee2992")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admins_id, created_at], map: "shopping_mall_admin_password_resets_shopping_mall_admi_dd5e8fb4")
+}

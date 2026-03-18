@@ -1,0 +1,257 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IHrmTimeTrackingEmployee } from "../../../../../api/structures/IHrmTimeTrackingEmployee";
+import { IHrmTimeTrackingEmployeeRole } from "../../../../../api/structures/IHrmTimeTrackingEmployeeRole";
+import { IHrmTimeTrackingEmployeeRoleHistory } from "../../../../../api/structures/IHrmTimeTrackingEmployeeRoleHistory";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
+import { getHrmTimeTrackingMemberEmployeesEmployeeIdRolesEmployeeRoleId } from "../../../../../providers/getHrmTimeTrackingMemberEmployeesEmployeeIdRolesEmployeeRoleId";
+import { getHrmTimeTrackingMemberEmployeesEmployeeIdRolesHistory } from "../../../../../providers/getHrmTimeTrackingMemberEmployeesEmployeeIdRolesHistory";
+import { patchHrmTimeTrackingMemberEmployeesEmployeeIdRoles } from "../../../../../providers/patchHrmTimeTrackingMemberEmployeesEmployeeIdRoles";
+import { postHrmTimeTrackingMemberEmployeesEmployeeIdRoles } from "../../../../../providers/postHrmTimeTrackingMemberEmployeesEmployeeIdRoles";
+import { putHrmTimeTrackingMemberEmployeesEmployeeIdRolesEmployeeRoleId } from "../../../../../providers/putHrmTimeTrackingMemberEmployeesEmployeeIdRolesEmployeeRoleId";
+
+@Controller("/hrmTimeTracking/member/employees/:employeeId/roles")
+export class HrmtimetrackingMemberEmployeesRolesController {
+  /**
+   * Assign a role to an employee within the current organization.
+   *
+   * This endpoint updates the employee’s organization-specific role assignment so that the employee has exactly one active role in that organization. If the employee already has a role, the new assignment replaces the previous one instead of creating a second role membership. The change applies only inside the currently selected organization and does not affect the same user account in any other organization.
+   *
+   * The operation is designed around the organization-scoped employee record described by the platform’s human resources model. An employee belongs to one organization, is linked to one user account, and is assigned one role in that organization at a time. Built-in roles remain fixed capability bundles, while custom roles may be created and managed by the organization owner. This endpoint only performs the employee-to-role assignment step; it does not create roles or modify permission bundles.
+   *
+   * Access to this operation should be restricted to users who can manage employees within the current organization, typically the organization owner or a manager with the appropriate employee-management capability. The server must verify that the target role belongs to the same organization as the employee, and must reject any attempt to assign a role from another tenant boundary. Validation should also ensure that the employee exists in the current organization and that the requested role is assignable in that organization.
+   *
+   * If the employee already has an active role assignment, the service should update the existing assignment transactionally so the employee ends the request with exactly one role in the organization. The response should return the updated employee view, including the newly effective role, so the client can refresh permissions and display state immediately. Related operations include listing roles for the organization, viewing the employee details, and managing custom role definitions separately.
+   *
+   * @param connection
+   * @param employeeId Target employee identifier within the current organization.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Resolve the target employee by employeeId within the current organization context.
+   * Load the employee record together with its current role assignment.
+   * Resolve the requested role from the same organization only; reject the request if the role does not belong to the current organization or is otherwise unavailable.
+   * Enforce the business rule that one employee can have only one active role in an organization.
+   * If the employee already has a role assignment, update that existing assignment to the new role inside a single transaction rather than inserting a second assignment row.
+   * If the employee has no current assignment record, create the assignment record for the employee and role.
+   *
+   * Validate authorization before changing data: require organization-level employee management access, typically owner or manager with employee-management permission.
+   * Validate that the employee belongs to the selected organization context.
+   * Validate that the role belongs to the selected organization context.
+   * If the role is a built-in role, allow assignment but do not alter the built-in permission bundle.
+   * If the role is custom, preserve its existing permissions and only change the employee assignment.
+   *
+   * Return the updated employee-role state after commit, including the effective role information needed by the client.
+   * If the employee or role is missing, return a not-found error.
+   * If the request tries to cross organization boundaries, return a forbidden or validation error depending on the API error convention.
+   * If concurrent updates occur, use a transaction or row lock to ensure the employee ends with a single role assignment.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("employeeId")
+    employeeId: string & tags.Format<"uuid">,
+  ): Promise<IHrmTimeTrackingEmployeeRole> {
+    try {
+      return await postHrmTimeTrackingMemberEmployeesEmployeeIdRoles({
+        member,
+        employeeId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update the role assigned to a specific employee within the current organization.
+   *
+   * Each organization manages its own role set, and this operation applies only inside the selected organization context. The employee must belong to the current organization, and the new role must also belong to that same organization. When the role changes, the system replaces the employee’s existing role assignment so the employee still has exactly one active role in that organization.
+   *
+   * This operation supports organization administration workflows where owners or authorized managers reassign employees between the built-in Owner, Manager, and Employee roles or organization-defined custom roles. Built-in roles remain available in every organization, and custom roles are only valid within the organization that created them. If the requested role does not belong to the current organization, the request must be rejected.
+   *
+   * The endpoint is commonly used together with employee detail retrieval and role listing operations so the client can present the available role options before submitting the change. The response returns the updated employee role assignment state so the user interface can immediately reflect the new access level.
+   *
+   * @param connection
+   * @param employeeId Employee to update within the current organization.
+   * @param body New role assignment for the employee.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Load the target employee by employeeId within the current organization context. Verify the authenticated member has permission to manage organization roles or employee assignments, according to the organization's access rules.
+   *
+   * Validate that the employee exists and belongs to the active organization. Load the requested role from the same organization and reject the request if the role is missing or belongs to another organization. Do not allow cross-organization reassignment.
+   *
+   * Enforce the one-role-per-employee rule by updating the employee's current role reference in a single transaction. The operation must replace the existing role assignment rather than inserting a second active role assignment. If the schema stores role assignment history separately, close or end the current assignment according to the table's effective-period rules, but ensure there is exactly one active role at completion.
+   *
+   * Persist the change and emit any organization activity record required by the system's audit workflow if role changes are tracked. Return the updated employee representation with the new role information. Handle not found, forbidden, and validation errors clearly, especially when the employee or role is outside the current organization or the employee is not allowed to be reassigned.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async patchByEmployeeid(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("employeeId")
+    employeeId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IHrmTimeTrackingEmployeeRole.IUpdate,
+  ): Promise<IHrmTimeTrackingEmployee> {
+    try {
+      return await patchHrmTimeTrackingMemberEmployeesEmployeeIdRoles({
+        member,
+        employeeId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve the role assignment for a specific employee within the selected organization.
+   *
+   * This operation returns the employee-specific role assignment record that represents the employee’s current organizational role. The assignment is interpreted inside the organization boundary, so the same employee may have a different role in another organization without affecting this result. The returned data should include the assignment identity, the linked employee reference, and the linked role information so consumers can understand both the assignment record and the effective role it grants.
+   *
+   * The underlying data model follows the organization-scoped employee and role structure: employees belong to one organization, roles belong to one organization, and each employee has exactly one role at a time in that organization. Because of that business rule, this endpoint must validate that the requested employeeRoleId belongs to the employeeId in the path and that both records belong to the same selected organization context before responding.
+   *
+   * Access is limited to authenticated members operating within an organization context and subject to organization permission rules for employee and role visibility. The operation is read-only and does not modify the employee’s assignment. If the assignment does not exist, belongs to another employee, or falls outside the active organization context, the service should return a not-found or forbidden-style error consistent with the platform’s standard access rules.
+   *
+   * This detail endpoint is commonly used together with employee detail and role management operations. Clients may first load the employee record, then call this endpoint to inspect the current role assignment, or use the organization role list endpoints to compare available roles before changing an assignment elsewhere in the API.
+   *
+   * @param connection
+   * @param employeeId Employee identifier within the current organization context.
+   * @param employeeRoleId Employee role assignment identifier within the current organization context.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Resolve the selected organization context from the authenticated member request before querying any data.
+   *
+   * Fetch the employee role assignment by employeeRoleId and employeeId together, enforcing that the record belongs to the same employee and organization. Use a join or follow-up lookup to load the associated role record so the response can include the role identity and descriptive metadata needed by the client. If the assignment record is not found under the given employee, return a 404-style response.
+   *
+   * Validate that the employee exists in the current organization context before returning the assignment. If the employee exists but the role assignment points to a different employee or different organization, treat it as not found for the caller. Do not infer or synthesize a role assignment, because each employee must have exactly one role in an organization and the endpoint is intended to expose the persisted record only.
+   *
+   * No transaction is required because this is a read-only operation. No pagination, search, or sorting is needed. Do not include mutating fields or role-permission editing behavior. If the system exposes permission details on the role entity, include them through the role relation rather than by expanding unrelated employee data. Ensure the response schema is a single-object detail type, not a page or summary list.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":employeeRoleId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("employeeId")
+    employeeId: string & tags.Format<"uuid">,
+    @TypedParam("employeeRoleId")
+    employeeRoleId: string & tags.Format<"uuid">,
+  ): Promise<IHrmTimeTrackingEmployeeRole> {
+    try {
+      return await getHrmTimeTrackingMemberEmployeesEmployeeIdRolesEmployeeRoleId(
+        {
+          member,
+          employeeId,
+          employeeRoleId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update the role assignment for a specific employee within the current organization.
+   *
+   * This operation changes which organization-scoped role is active for the target employee while preserving the rule that each employee has exactly one role in that organization. The employee record is the core workforce membership entry for an organization, and the role reference on that record must always remain aligned with the employee's current access level inside the tenant boundary.
+   *
+   * The service must verify that the employee belongs to the currently selected organization and that the replacement role also belongs to the same organization. The organization-specific role set is isolated per tenant, so a role from another organization must be rejected. Built-in roles remain fixed choices and custom roles may only be assigned when they already exist in the organization's role set.
+   *
+   * Implementation should treat this as a role transition rather than a simple field overwrite. The current active role assignment should be ended, and a new effective role assignment should be created so the system preserves role history for auditing and future reporting. The update must not create a second active role for the same employee, and it must not move the employee across organizations or alter unrelated employee profile fields such as department, position title, or employment type.
+   *
+   * Use this operation together with employee detail retrieval and role listing operations when the client needs to present valid role choices before submitting the change. If the employee or role does not belong to the current organization, or if the request attempts to violate the one-role-per-employee rule, the service must reject the request with a validation error.
+   *
+   * @param connection
+   * @param employeeId Target employee identifier within the current organization.
+   * @param employeeRoleId Replacement role identifier for the employee within the current organization.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Load the employee by employeeId and ensure it belongs to the current organization context. Load the target role by employeeRoleId and verify that it is a valid role record within the same organization as the employee. Reject the request if either record is missing or cross-organization.
+   *
+   * Determine whether the employee already has an active role assignment. End the current active assignment by setting its effective_to to the new assignment start timestamp, then create a new hrm_time_tracking_employee_roles record with the employee id, the chosen role id, effective_from as now, and effective_to as null. Because the employee schema also stores a current role_id, update that field to the new role in the same transaction so the employee record always reflects the active role.
+   *
+   * Keep the operation transactional to avoid leaving the employee with zero or multiple active roles. If the current role is already the same as the requested role, either no-op safely or return the current employee representation without duplicating history, depending on service conventions, but do not create a duplicate assignment row.
+   *
+   * Validate organization scope before writing, since both employee and role are organization-bound. Do not allow changing department, position title, employment type, or user account link through this endpoint. Return the updated employee with its current role relation populated so clients can refresh the UI after the change.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":employeeRoleId")
+  public async putByEmployeeidAndEmployeeroleid(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("employeeId")
+    employeeId: string & tags.Format<"uuid">,
+    @TypedParam("employeeRoleId")
+    employeeRoleId: string & tags.Format<"uuid">,
+  ): Promise<IHrmTimeTrackingEmployee> {
+    try {
+      return await putHrmTimeTrackingMemberEmployeesEmployeeIdRolesEmployeeRoleId(
+        {
+          member,
+          employeeId,
+          employeeRoleId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve the role assignment history for a single employee within the current organization.
+   *
+   * This endpoint returns the chronological timeline of role assignment records stored in the employee role history table. Each record represents one effective assignment period, including when the role became active and when it ended, so organization managers and other permitted viewers can review how the employee’s organizational role changed over time.
+   *
+   * The data is organization-scoped and must be resolved against the currently selected organization context before any rows are returned. The employee identifier in the path must belong to that organization, and the service must reject requests that try to access an employee from another tenant boundary. The response is derived from the employee role history table, which preserves historical role changes separately from the employee’s current role field, ensuring that current state and historical assignment periods remain consistent.
+   *
+   * Because the endpoint is read-only, it does not alter employee membership, role membership, or any historical assignment row. The operation should return the assignment timeline in reverse chronological order so the most recent effective assignment is easy to inspect first. The response should include the role reference and assignment period fields needed for display and audit review, while avoiding unrelated employee profile data.
+   *
+   * Access to this endpoint should be restricted to authenticated members who are allowed to view employee data in the selected organization. Organization owners and managers should have access by default, and additional employee-self access may be permitted only if organization employee visibility rules allow it. Requests that lack permission, reference an employee outside the current organization, or target a missing employee record should fail with the appropriate authorization or not-found error.
+   *
+   * @param connection
+   * @param employeeId Target employee's ID within the current organization.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Resolve the current organization context from the authenticated member before querying any data.
+   *
+   * Validate that the path employeeId belongs to the current organization by loading the employee row from hrm_time_tracking_employees using the composite organization scope and the employee primary key. Reject the request if the employee is missing or belongs to a different organization.
+   *
+   * Query hrm_time_tracking_employee_roles for all rows matching hrm_time_tracking_employee_id = employeeId, excluding deleted rows when the business layer treats deleted assignment records as inactive history. Order the results by effective_from descending, and optionally by created_at descending as a stable secondary sort.
+   *
+   * Join or hydrate the linked hrm_time_tracking_roles rows so the response includes role identity and presentation fields needed by the UI. Do not include unrelated employee or organization records beyond what is necessary to describe the history row.
+   *
+   * This endpoint is read-only and must not mutate any state. No transaction is required beyond the normal read path unless the service layer uses a transaction for consistent read isolation.
+   *
+   * Enforce authorization before query execution. Organization owners, managers, or users with employee-view permissions should be allowed; if employee-self access is supported by the policy, allow only when employeeId matches the authenticated member’s employee record in the same organization.
+   *
+   * Return a history collection DTO that exposes the assignment period and role details. Preserve null effective_to values to indicate the currently active assignment period.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get("history")
+  public async history(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("employeeId")
+    employeeId: string & tags.Format<"uuid">,
+  ): Promise<IHrmTimeTrackingEmployeeRoleHistory> {
+    try {
+      return await getHrmTimeTrackingMemberEmployeesEmployeeIdRolesHistory({
+        member,
+        employeeId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

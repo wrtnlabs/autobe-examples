@@ -1,0 +1,177 @@
+/// Organization-scoped audit activity entries recording who performed an
+/// action, when it happened, what action type occurred, and which target
+/// entity was affected. This table is used as a cross-domain observability
+/// and audit trail that can reference different business entities through a
+/// typed target reference without duplicating business data. Ownership is
+/// enforced via {@link
+/// erp_hrm_time_tracking_activity_log_entries.organization_id} pointing to
+/// {@link erp_hrm_time_tracking_organizations.id}. The actor performing the
+/// action is stored via {@link
+/// erp_hrm_time_tracking_activity_log_entries.performed_by_member_id}.
+///
+/// Target entity linkage is represented by a typed reference ({@link
+/// erp_hrm_time_tracking_activity_log_entries.target_entity_type} + {@link
+/// erp_hrm_time_tracking_activity_log_entries.target_entity_id}) so the
+/// audit log can cover updates across the whole application without
+/// introducing multiple nullable foreign keys.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_activity_log_entries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization for which this audit entry is recorded {@link
+  /// erp_hrm_time_tracking_organizations.id}.
+  organization_id String
+  
+  /// Member user who performed the action {@link
+  /// erp_hrm_time_tracking_members.id}.
+  performed_by_member_id String
+  
+  /// Logical action key representing what happened (e.g., created, updated,
+  /// approved, rejected) in an application-specific taxonomy.
+  action_type String
+  
+  /// Business entity type name of the affected target (e.g., timesheet,
+  /// timelog, project). Used together with target_entity_id for polymorphic
+  /// targeting.
+  target_entity_type String
+  
+  /// Business entity identifier of the affected target. Combined with
+  /// target_entity_type to form a typed target reference.
+  target_entity_id String
+  
+  /// Human-readable short summary of the activity for auditing and support.
+  /// Kept generic to avoid duplicating full target entity details.
+  summary String
+  
+  /// Optional additional human-readable context explaining the change for
+  /// auditing purposes (e.g., key parameters, notes).
+  details String?
+  
+  /// When the action actually occurred in business time.
+  occurred_at DateTime
+  
+  /// When the audit entry record was created.
+  created_at DateTime
+  
+  /// When the audit entry record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for logically removing the audit entry when
+  /// required by data retention policies.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_time_tracking_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  performedByMember erp_hrm_time_tracking_members @relation(fields: [performed_by_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots erp_hrm_time_tracking_activity_log_entry_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([organization_id, occurred_at], map: "erp_hrm_time_tracking_activity_log_entries_organizatio_a5a1d624")
+  // spellchecker: ignore-next-line
+  @@index([performed_by_member_id, occurred_at], map: "erp_hrm_time_tracking_activity_log_entries_performed_b_5645e48b")
+  // spellchecker: ignore-next-line
+  @@index([target_entity_type, target_entity_id], map: "erp_hrm_time_tracking_activity_log_entries_target_enti_88bbb8a2")
+  // spellchecker: ignore-next-line
+  @@index([action_type, occurred_at], map: "erp_hrm_time_tracking_activity_log_entries_action_type_584d635c")
+}
+
+/// Point-in-time immutable snapshots of {@link
+/// erp_hrm_time_tracking_activity_log_entries} state for audit retention.
+///
+/// Each row captures the full, queryable context of an activity log entry as
+/// it existed at the time the snapshot was created, so historical audit
+/// trails remain available even if referenced domain entities are later
+/// updated or deleted.
+///
+/// This table is append-only in practice and is designed for safe long-term
+/// audit queries by time, actor, and affected target entity.
+///
+/// @namespace Audit
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_activity_log_entry_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged activity log entry that this snapshot represents {@link
+  /// erp_hrm_time_tracking_activity_log_entries.id}.
+  erp_hrm_time_tracking_activity_log_entry_id String
+  
+  /// Belonged organization tenant of this audit snapshot {@link
+  /// erp_hrm_time_tracking_organizations.id}.
+  erp_hrm_time_tracking_organization_id String
+  
+  /// Categorization of the action type that occurred for this activity log
+  /// entry snapshot.
+  snapshot_action_type String
+  
+  /// Human-readable summary of what the activity represents for audit viewing.
+  snapshot_action_summary String
+  
+  /// Actor category that performed the action (e.g., member). Used with
+  /// performer_id for polymorphic performer lookup in application queries.
+  performer_type String
+  
+  /// Actor identifier of the performer for this snapshot. Pair with
+  /// performer_type for polymorphic lookup.
+  performer_id String
+  
+  /// Type/category of the entity affected by this activity log entry snapshot.
+  target_entity_type String
+  
+  /// Identifier of the affected entity. Pair with target_entity_type for
+  /// polymorphic lookup.
+  target_entity_id String
+  
+  /// Optional extra textual details helpful for audit interpretation about the
+  /// target entity at snapshot time (stored as plain text, not structured
+  /// JSON).
+  target_additional_info String?
+  
+  /// Snapshot creation time.
+  created_at DateTime
+  
+  /// Snapshot record update time (should rarely change after creation).
+  updated_at DateTime
+  
+  /// Soft delete timestamp for the snapshot record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  activityLogEntry erp_hrm_time_tracking_activity_log_entries @relation(fields: [erp_hrm_time_tracking_activity_log_entry_id], references: [id], onDelete: Cascade)
+  organization erp_hrm_time_tracking_organizations @relation(fields: [erp_hrm_time_tracking_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_activity_log_entry_id, created_at], map: "erp_hrm_time_tracking_activity_log_entry_snapshots_erp_1e79f589")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_organization_id, created_at], map: "erp_hrm_time_tracking_activity_log_entry_snapshots_erp_8d152686")
+  // spellchecker: ignore-next-line
+  @@index([performer_type, performer_id], map: "erp_hrm_time_tracking_activity_log_entry_snapshots_per_b94c23f5")
+  // spellchecker: ignore-next-line
+  @@index([target_entity_type, target_entity_id], map: "erp_hrm_time_tracking_activity_log_entry_snapshots_tar_acc8a6c7")
+}

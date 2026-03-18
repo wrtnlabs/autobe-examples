@@ -1,0 +1,102 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IHrmTimeTrackingMemberEmailVerification } from "../../../../api/structures/IHrmTimeTrackingMemberEmailVerification";
+import { IPageIHrmTimeTrackingMemberEmailVerification } from "../../../../api/structures/IPageIHrmTimeTrackingMemberEmailVerification";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
+import { getHrmTimeTrackingMemberEmailVerificationsEmailVerificationId } from "../../../../providers/getHrmTimeTrackingMemberEmailVerificationsEmailVerificationId";
+import { patchHrmTimeTrackingMemberEmailVerifications } from "../../../../providers/patchHrmTimeTrackingMemberEmailVerifications";
+
+@Controller("/hrmTimeTracking/member/email-verifications")
+export class HrmtimetrackingMemberEmail_verificationsController {
+  /**
+   * Retrieve a paginated list of member email verification records for account confirmation workflows.
+   *
+   * This operation exposes the verification lifecycle for records stored in the member email verification table, which keeps the verification token, the owning member account reference, the issuance timestamp, the expiration timestamp, the optional verification timestamp, and the update timestamp. It is designed for internal account-management and support workflows that need to inspect whether a member account has a pending verification, a completed verification, or an expired token.
+   *
+   * The underlying member account table stores the global authenticated identity used for login, and the email address is the primary account identity. Because verification records are linked to that account-level identity, the list operation must preserve that relationship and allow filtering by member account, email identity context, verification status, token, and expiration state. The operation should never allow cross-identity leakage and must only return records that are valid for the authenticated member-management context.
+   *
+   * Use this endpoint when the application needs to review verification history, find the most recent issued verification token for a member, or inspect expired and already verified tokens. The request is paginated and filterable so that large verification histories can be searched efficiently. The response is summary-oriented and optimized for list screens rather than for exposing the full secret token value in a detailed record view.
+   *
+   * This operation is part of the account verification lifecycle and is commonly used alongside account sign-up, email verification confirmation, and invitation-to-account matching flows. Validation failures should be returned when the caller provides invalid filter criteria, an unsupported date range, or a token search that does not match the expected verification format.
+   *
+   * @param connection
+   * @param body Search criteria and pagination options for member email verification records.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Implement this as a paginated search endpoint over hrm_time_tracking_member_email_verifications joined to hrm_time_tracking_members for identity-aware filtering.
+   *
+   * Apply request-body criteria for member account ID, email, verification state, expiration state, token search, created-at range, verified-at range, and deleted-at presence only if the service layer explicitly exposes administrative inspection of removed records. Always enforce that the caller can only access records allowed by the authenticated account-management context. Do not expose verification records belonging to unrelated member identities.
+   *
+   * Query strategy: select verification rows ordered by created_at descending, with optional secondary ordering by id for stability. Support limit/offset or cursor pagination consistently with the rest of the API; the request DTO should include pagination fields and sorting controls. For summary responses, include the verification id, member reference, created_at, expired_at, verified_at, updated_at, and a computed status such as pending, verified, or expired. Exclude the raw token from summary responses unless a dedicated internal-use requirement explicitly demands it.
+   *
+   * Validation rules: reject invalid email formats, malformed UUID member identifiers, invalid date ranges, unsupported sort fields, and empty search payloads that violate pagination requirements. If a token filter is supplied, search by exact token or a safe normalized match according to the token format used by the application. When expired_at is in the past and verified_at is null, treat the record as expired in the computed status. If verified_at is present, treat it as verified even if expired_at has passed.
+   *
+   * Error handling: return not found only when a requested filter context is impossible to satisfy in a constrained internal scope; otherwise return an empty page for no matches. Because this is a read/search endpoint, no transaction is required. Ensure the implementation is read-only and does not mutate verification timestamps or member state.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedBody()
+    body: IHrmTimeTrackingMemberEmailVerification.IRequest,
+  ): Promise<IPageIHrmTimeTrackingMemberEmailVerification.ISummary> {
+    try {
+      return await patchHrmTimeTrackingMemberEmailVerifications({
+        member,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a single email verification record by its unique identifier.
+   *
+   * This operation returns the verification entry stored in the member email verification table, including the belonged member reference, the issued token, the expiration timestamp, and the optional verification completion timestamp. It is intended to support email-confirmation and onboarding flows where the system needs to inspect whether a specific verification request is still valid or has already been completed.
+   *
+   * Because the verification record is tied to one member account, the request must be evaluated within the authenticated member context. The platform should confirm that the requested record belongs to the current member unless the call is made by a privileged internal flow. The response should be treated as security-sensitive account lifecycle data, and access must be denied when the record does not belong to the active account or organization context is not applicable.
+   *
+   * The record is identified by the email verification primary key, not by the token itself. The token remains a unique secret used during verification processing, while this endpoint is for direct resource retrieval and status inspection. If the record has already been verified, the response will include the verification timestamp so clients can stop prompting for confirmation; if the record is expired or deleted, the service should return the appropriate not-found or invalid-state error.
+   *
+   * @param connection
+   * @param emailVerificationId Email verification record ID.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Load one record from hrm_time_tracking_member_email_verifications by primary key id.
+   * Validate that emailVerificationId is a UUID path parameter.
+   * Perform a single indexed lookup by id; do not search by token.
+   * If no row exists or the row is logically unavailable to the caller, return not found.
+   * If the authenticated member is not the owner of member_id, reject with authorization failure unless the caller is an internal privileged actor.
+   * Return the record fields needed for verification state inspection: id, member_id, created_at, expired_at, verified_at, updated_at, and deleted_at if the application layer exposes it.
+   * Do not mutate any data.
+   * Do not reveal any additional account profile or organization data through this endpoint.
+   * If the row has expired_at in the past, still return the record only when policy allows inspection; the caller can use the timestamps to decide whether to restart verification.
+   * Ensure response serialization preserves nullable verified_at and deleted_at values.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":emailVerificationId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("emailVerificationId")
+    emailVerificationId: string & tags.Format<"uuid">,
+  ): Promise<IHrmTimeTrackingMemberEmailVerification> {
+    try {
+      return await getHrmTimeTrackingMemberEmailVerificationsEmailVerificationId(
+        {
+          member,
+          emailVerificationId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

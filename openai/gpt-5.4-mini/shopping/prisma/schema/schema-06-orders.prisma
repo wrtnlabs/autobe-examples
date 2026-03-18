@@ -1,0 +1,238 @@
+/// Top-level purchase records for a customer's successful checkout. This
+/// table stores the committed order header, including the order number,
+/// owning customer, monetary totals, lifecycle status, and preserved
+/// shipping destination context used for order history, seller fulfillment,
+/// and legal record keeping. It intentionally does not store line items or
+/// item snapshots, which are handled by {@link shopping_mall_order_items}
+/// and related snapshot tables in other schema calls.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning customer's {@link shopping_mall_customers.id}. The order remains
+  /// associated with the purchaser for history, support, and dispute
+  /// resolution.
+  shopping_mall_customer_id String
+  
+  /// Selected shipping address's {@link shopping_mall_shipping_addresses.id}
+  /// used for this order at checkout time. The reference supports fulfillment
+  /// context while preserving the customer's address ownership model.
+  shipping_address_id String?
+  
+  /// Human-readable order identifier shown to customers, sellers, and
+  /// administrators. This value is generated for external reference and
+  /// support workflows.
+  order_number String
+  
+  /// Overall order lifecycle state derived from its items and fulfillment
+  /// progress. Expected business states include paid, shipped, delivered,
+  /// cancelled, refunded, and partially_completed.
+  status String
+  
+  /// Total amount before shipping fees, discounts, and other adjustments. This
+  /// reflects the monetary value of the purchased items at checkout time.
+  subtotal_amount Float
+  
+  /// Shipping charge applied to the order at checkout time. Stored separately
+  /// from item totals to preserve the committed transaction amount.
+  shipping_fee_amount Float
+  
+  /// Total discount applied to the order at checkout time. This is stored as a
+  /// positive amount representing the reduction from the gross total.
+  discount_amount Float
+  
+  /// Final amount charged for the order after applying shipping fees and
+  /// discounts. This is the authoritative order total used for history and
+  /// reporting.
+  total_amount Float
+  
+  /// Timestamp when the checkout was successfully completed and the order was
+  /// created.
+  placed_at DateTime
+  
+  /// Timestamp when payment was successfully confirmed for the order. Nullable
+  /// only if the order can exist before payment confirmation in the
+  /// integration flow.
+  paid_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for administrative or retention workflows when an
+  /// order record is logically removed from active views while historical
+  /// preservation remains possible.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  shippingAddress shopping_mall_shipping_addresses? @relation(fields: [shipping_address_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems shopping_mall_order_items[]
+  shipments shopping_mall_shipments[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_number])
+  @@index([shopping_mall_customer_id, placed_at])
+  @@index([status, placed_at])
+  @@index([shipping_address_id, placed_at])
+}
+
+/// Purchased product-variant line items within an order. Each record
+/// represents one specific variant purchase, the purchased quantity, and the
+/// current fulfillment state for that line. The table keeps only the live
+/// transactional references and item lifecycle fields; preserved
+/// purchase-state details such as product, variant, and seller profile
+/// snapshots are stored in the dedicated snapshot table {@link
+/// shopping_mall_order_item_snapshots}.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Purchased variant's {@link shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Number of units purchased for this variant in the order line.
+  quantity Int
+  
+  /// Current fulfillment state of the order item. Expected values are paid,
+  /// shipped, delivered, cancelled, or refunded.
+  status String
+  
+  /// Timestamp when this item was marked shipped through a shipment record.
+  shipped_at DateTime?
+  
+  /// Timestamp when this item was marked delivered or auto-completed as
+  /// delivered.
+  delivered_at DateTime?
+  
+  /// Timestamp when this item was cancelled.
+  cancelled_at DateTime?
+  
+  /// Timestamp when this item was refunded.
+  refunded_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for administrative or lifecycle archiving use.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  cancellationRequest shopping_mall_cancellation_requests?
+  refundRequests shopping_mall_refund_requests[]
+  reviews shopping_mall_reviews[]
+  snapshots shopping_mall_order_item_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_order_id, created_at])
+  @@index([shopping_mall_product_variant_id])
+  @@index([status, created_at])
+}
+
+/// Seller-specific fulfillment groups for an order, including carrier and
+/// tracking details for the order items shipped together.
+///
+/// Each shipment belongs to exactly one order and one seller, and is used to
+/// group one or more order items that are dispatched together under the same
+/// tracking context. The table stores the shipment lifecycle state and
+/// delivery timestamps so customers, sellers, and administrators can follow
+/// fulfillment progress without duplicating order item data.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Belonged seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Name of the shipping carrier used for this shipment.
+  carrier_name String
+  
+  /// Tracking number or code assigned by the carrier for package lookup.
+  tracking_number String
+  
+  /// Current shipment state such as created, shipped, delivered, or cancelled,
+  /// used to reflect fulfillment progress.
+  status String
+  
+  /// Timestamp when the shipment was handed over to the carrier or marked as
+  /// shipped.
+  shipped_at DateTime?
+  
+  /// Timestamp when the shipment was confirmed delivered.
+  delivered_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for shipment records that are no longer active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([tracking_number])
+  @@index([shopping_mall_order_id, created_at])
+  @@index([shopping_mall_seller_id, created_at])
+  @@index([status, created_at])
+}

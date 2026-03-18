@@ -1,0 +1,27 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IErpHrmTimeTrackingContract } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingContract";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { ErpHrmTimeTrackingContractTransformer } from "../transformers/ErpHrmTimeTrackingContractTransformer";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+export async function getErpHrmTimeTrackingMemberContractsContractId(props: {
+  member: MemberPayload;
+  contractId: string & tags.Format<"uuid">;
+}): Promise<IErpHrmTimeTrackingContract> {
+  const member = props.member;
+  const contract =
+    await MyGlobal.prisma.erp_hrm_time_tracking_contracts.findUniqueOrThrow({
+      where: { id: props.contractId },
+      ...ErpHrmTimeTrackingContractTransformer.select(),
+    });
+  return await ErpHrmTimeTrackingContractTransformer.transform(contract);
+}

@@ -1,0 +1,186 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { ICommunityPlatformPost } from "../../../../api/structures/ICommunityPlatformPost";
+import { IPageICommunityPlatformPost } from "../../../../api/structures/IPageICommunityPlatformPost";
+import { AdminAuth } from "../../../../decorators/AdminAuth";
+import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { deleteCommunityPlatformAdminPostsPostId } from "../../../../providers/deleteCommunityPlatformAdminPostsPostId";
+import { getCommunityPlatformAdminPostsPostId } from "../../../../providers/getCommunityPlatformAdminPostsPostId";
+import { patchCommunityPlatformAdminPosts } from "../../../../providers/patchCommunityPlatformAdminPosts";
+import { putCommunityPlatformAdminPostsPostId } from "../../../../providers/putCommunityPlatformAdminPostsPostId";
+
+@Controller("/communityPlatform/admin/posts")
+export class CommunityplatformAdminPostsController {
+  /**
+   * Retrieve a paginated list of community posts for feed and browsing views.
+   *
+   * This endpoint returns the collection of posts shown in the platform's feeds, including the home feed for authenticated members, the popular feed for public browsing, and the posts visible within a specific community. Each item is presented as a summary record optimized for list display, with the post title, author identity, community name, vote score, comment count, posting time, and subtype-specific preview information.
+   *
+   * The response is built from the shared post table and its subtype tables. The shared record in community_platform_posts provides the canonical post identity, title, author, community, lifecycle state, and timestamps. The subtype tables community_platform_post_texts, community_platform_post_links, and community_platform_post_images provide the preview content for text, link, and image posts respectively. Author and community display data come from community_platform_members and community_platform_communities, while vote score and comment count are derived from the voting and comment domains.
+   *
+   * Browsing behavior follows the platform's feed rules and sorting rules. Requests can be scoped to the authenticated member's subscribed communities for a home feed, to all communities for a public popular feed, or to a single community for a community-specific feed. Sorting must honor the supported post ordering modes: hot, new, top, and controversial. Top sorting may also be constrained by a time window such as today, this week, this month, this year, or all time. When the request includes search criteria, the implementation should filter by the post title and the appropriate preview text fields while preserving stable pagination.
+   *
+   * This operation is read-only and should not change post ownership, community membership, vote state, or content state. If the request asks for a feed that depends on subscription membership, the service must verify the caller's active membership records before applying the subscriber-scoped filter. If the caller is not authenticated, only public browsing scopes may be used.
+   *
+   * @param connection
+   * @param body Feed scope, search, pagination, and sorting criteria for browsing posts.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Implement a feed/list query over community_platform_posts with joins to author, community, and exactly one subtype table per post variant.
+   *
+   * Accept a request body containing feed scope, optional community identifier or community name filter, keyword search, pagination, sort mode, and top-sort time window. Resolve the caller's identity from the authentication context, then apply access rules: guest callers may only request public or community-scoped browsing, while members may request home-feed browsing limited to communities with an active subscription record in community_platform_community_subscriptions.
+   *
+   * Build the base query from posts that are not deleted and whose parent community is visible for browsing. Join community_platform_members for author display fields and community_platform_communities for community display fields. Join community_platform_comments only for counting visible comments, and join community_platform_votes only for score aggregation. For subtype previews, load the matching one-to-one subtype table by post kind: text body preview from community_platform_post_texts, link domain/title from community_platform_post_links, and image thumbnail/alt text from community_platform_post_images.
+   *
+   * Sorting rules: hot should favor recent posts with strong positive engagement; new should order by created_at descending; top should order by computed vote score descending and apply an optional time boundary; controversial should order by high vote volume with score near zero. Preserve a deterministic tie-breaker, ideally created_at plus id, so pagination remains stable. Use limit/offset or cursor pagination consistently with the platform's list contract, and return pagination metadata alongside the data array.
+   *
+   * Search should match titles and subtype-specific searchable preview fields where available. Community filtering should use the explicit community identifier when provided; if a text name search is required, use the unique community name from community_platform_communities. Validate all enum values and reject unsupported sort or feed options with a clear client error. Do not mutate post status, votes, comments, or subscriptions inside this operation.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedBody()
+    body: ICommunityPlatformPost.IRequest,
+  ): Promise<IPageICommunityPlatformPost.ISummary> {
+    try {
+      return await patchCommunityPlatformAdminPosts({
+        admin,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve the full details for a single community post.
+   *
+   * This operation returns one post resource identified by `postId`, including the post title, author identity, community context, vote score, comment count, and the content needed for the post’s detailed view. The response is intended to support the single-post page described in the requirements, where users can inspect the complete post rather than a feed summary.
+   *
+   * The platform’s post model supports multiple content styles, so this endpoint must resolve the post’s concrete content payload according to its stored type. Text posts expose the full text content, link posts expose the destination URL, and image posts expose the uploaded image reference or display payload. The service should also include the public metadata needed to render the post consistently with feed behavior, such as author username, community name, and the time the post was created.
+   *
+   * Access to this operation follows the platform’s read boundaries for public content. Publicly available posts may be retrieved by guests, while authenticated members and admins may also use the endpoint in normal application flows. The implementation must reject requests for posts that are not available for viewing, including posts that have been removed or are otherwise hidden by platform rules or moderation state.
+   *
+   * This endpoint is complementary to the post feed operations and the comment operations. Clients typically use a feed endpoint to discover posts and then call this operation with the post identifier to load the complete detail view. Comment retrieval and nested reply rendering should be handled by the comment APIs rather than embedded here, so this operation remains focused on the single post resource.
+   *
+   * @param connection
+   * @param postId The target post identifier.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Load one row from community_platform_posts by postId and verify it exists and is viewable.
+   * Resolve the post’s concrete subtype data from the appropriate companion table based on the post’s content kind: community_platform_post_texts for text posts, community_platform_post_links for link posts, and community_platform_post_images for image posts. Include the public post metadata needed by the detail page: title, author identity, community identity, creation time, and any vote/comment aggregates required by the response schema.
+   *
+   * The service should validate that the post belongs to a reachable community context and that the post is not in a state that makes it unavailable for normal viewing. If the post is missing or not accessible, return a not-found style response rather than exposing internal moderation details. Do not compute feed sorting here; this is a direct entity lookup.
+   *
+   * Use a read-only query path with joins or follow-up lookups as appropriate. Avoid loading comments or vote histories in full; only include the aggregated data required for the post detail response. Keep the implementation deterministic so the same postId always resolves to the same canonical post representation unless the post has been deleted or hidden by platform rules.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":postId")
+  public async at(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("postId")
+    postId: string & tags.Format<"uuid">,
+  ): Promise<ICommunityPlatformPost> {
+    try {
+      return await getCommunityPlatformAdminPostsPostId({
+        admin,
+        postId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing community post and its type-specific content payload.
+   *
+   * This operation allows the post author to edit the post title and the content data associated with the post’s classification. The shared post record stores the author, community, title, lifecycle state, and timestamps, while the actual content for a text post, link post, or image post is stored in the corresponding subtype table. The update must keep those two layers consistent so the post remains a valid single-content-type post after editing.
+   *
+   * Only the user who created the post may update it through the standard ownership rule, and community moderation authorities may apply their own policy-based overrides when the moderation workflow requires it. The endpoint does not permit moving the post to another community or changing the author identity, because those relationships are part of the original post ownership context and are not editable fields in the post update flow.
+   *
+   * The server must validate that the submitted content matches the post’s one-and-only-one content classification. A text post update must persist text body changes in the text payload table, a link post update must persist destination URL and link metadata changes in the link payload table, and an image post update must persist image URI and presentation metadata changes in the image payload table. If the payload does not match the existing post type, the request must be rejected to preserve normalized subtype integrity.
+   *
+   * Clients typically use this operation after loading a single post detail view. After a successful update, the returned post representation should be sufficient to refresh the detail screen and any feed cards that show title, author, community, score, comment count, and content preview information.
+   *
+   * @param connection
+   * @param postId Target post ID.
+   * @param body Post update data.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Load the target post by UUID and lock it for update.
+   * Verify the requester is either the post author or an authorized moderation actor for the community, according to the platform’s ownership and moderation rules.
+   * Update only editable shared post fields, primarily title, while preserving author_id, community_id, and lifecycle identity.
+   *
+   * Read the existing post classification by joining the parent post with its subtype record: text, link, or image. Route the request body to the matching subtype table and reject any attempt to switch the content type through this endpoint. For a text post, update the text body row. For a link post, update URL, domain name, and optional title metadata as appropriate. For an image post, update image URL, alt text, and optional presentation dimensions as appropriate.
+   *
+   * Use a transaction so the parent row and the subtype row remain consistent. If the subtype row is missing while the parent post indicates that classification, treat it as a data integrity error. Preserve created_at fields and update updated_at on every changed row. Do not touch vote, comment, report, or community membership tables.
+   *
+   * Return the fully updated post representation after commit. If the post does not exist, has been removed, or the requester is not allowed to edit it, respond with the appropriate not-found or forbidden error. If the request body conflicts with the stored post classification, reject it as invalid input rather than partially updating data.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":postId")
+  public async update(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("postId")
+    postId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: ICommunityPlatformPost.IUpdate,
+  ): Promise<ICommunityPlatformPost> {
+    try {
+      return await putCommunityPlatformAdminPostsPostId({
+        admin,
+        postId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a single community post by its identifier.
+   *
+   * This operation removes a post from the platform after verifying that the requesting member is allowed to delete it. The post is identified by its unique post ID, and the service must load the post record from `community_platform_posts` to confirm its author, community, and current lifecycle state before performing the deletion.
+   *
+   * A member may delete their own post. In addition, a requester with moderation authority in the target community may delete a post within that community when moderation policy allows it. The moderation relationship is defined by `community_platform_moderation_roles`, while the post's ownership and community scope are defined by `community_platform_posts`. The operation must reject attempts to delete another member's post when the requester has neither author ownership nor sufficient moderation authority.
+   *
+   * The post record includes the author member reference, community reference, title, status, timestamps, and deletion timestamp, so deletion must be handled consistently with the platform's content lifecycle rules. If the post is already unavailable or cannot be found, the service should return a not-found response. If the requester is not authorized, the service should return a forbidden response. After a successful deletion, the post should no longer appear in feeds or single-post views.
+   *
+   * @param connection
+   * @param postId Target post ID.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Implementation should load the target post by postId and verify existence first. Then resolve the authenticated actor from the security context and compare it to the post author in community_platform_posts.community_platform_member_id. If the actor is not the author, load community_platform_moderation_roles for the post's community and confirm an active role that grants deletion authority according to moderation policy. The moderation check must be scoped to the post's community and must ignore logically removed moderation assignments if the schema/status rules indicate they are inactive.
+   *
+   * Perform the removal in a transaction because post deletion may require related content cleanup. The transaction should remove the post record and apply the platform's cascading content deletion policy for dependent post-specific child records when applicable. If child records such as text/link/image payloads, files, votes, snapshots, comments, or reports are managed by separate tables in the implementation layer, delete or detach them according to their own retention rules so the database does not retain orphaned records. The post must be unavailable immediately after commit.
+   *
+   * Return the deleted post representation on success so clients can update local state. Handle missing postId, missing record, unauthorized actor, and already-removed content with clear errors. Do not accept request-body overrides for author or community scope; the path and authenticated user context are sufficient and safer for enforcement.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":postId")
+  public async erase(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("postId")
+    postId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteCommunityPlatformAdminPostsPostId({
+        admin,
+        postId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

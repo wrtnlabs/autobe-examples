@@ -1,0 +1,303 @@
+/// Immutable point-in-time snapshots of product state captured whenever a
+/// product is edited. This table preserves the product's historical business
+/// state for audit, dispute resolution, and change review, including the
+/// product identity and the values that were current at the time of capture.
+/// Related product image state is preserved through separate normalized
+/// snapshot child records rather than an array or JSON field.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Product whose state was captured in this snapshot. References {@link
+  /// shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Monotonic version number of this product snapshot for the related
+  /// product, used to order historical captures.
+  snapshot_version Int
+  
+  /// Timestamp when the product state was captured into this immutable
+  /// snapshot.
+  captured_at DateTime
+  
+  /// Product name at the time of the snapshot.
+  name String
+  
+  /// Product description at the time of the snapshot.
+  description_text String
+  
+  /// Base price of the product at the time of the snapshot.
+  base_price Float
+  
+  /// Timestamp when this snapshot record was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  images shopping_mall_product_snapshot_images[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_id, snapshot_version], map: "shopping_mall_product_snapshots_shopping_mall_product__8c10c02c")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_id, captured_at], map: "shopping_mall_product_snapshots_shopping_mall_product__59bc0017")
+}
+
+/// Immutable point-in-time records of product variant state. This table
+/// preserves the exact variant data at the moment a change occurred so
+/// historical product listing, pricing, and availability can be reviewed
+/// later.
+///
+/// Each record captures the snapshot version of a single product variant,
+/// including SKU, option values, price, and stock-related attributes as they
+/// existed at that time. These records are append-only audit artifacts and
+/// are used for product history, dispute resolution, and restored view
+/// generation, without mutating prior versions.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_variant_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced product variant's {@link shopping_mall_product_variants.id}.
+  /// Identifies which variant this historical snapshot belongs to.
+  shopping_mall_product_variant_id String
+  
+  /// Snapshot of the variant SKU code at the time the snapshot was created.
+  sku_code String
+  
+  /// Atomic snapshot text of the variant option values at that point in time,
+  /// such as persisted labels for color and size.
+  option_values String
+  
+  /// Snapshot of the variant price at the time of change. Preserves the
+  /// purchasable amount that applied to this version.
+  price Float
+  
+  /// Snapshot of the variant stock quantity recorded for historical state
+  /// inspection.
+  stock_quantity Int
+  
+  /// Timestamp when this immutable snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_product_variant_snapshots_shopping_mall__1342da62")
+}
+
+/// Immutable point-in-time records of purchased order item state. This table
+/// preserves the checkout-time business context for {@link
+/// shopping_mall_order_items}, including the purchased product, selected
+/// variant, seller storefront identity, quantity, and pricing details
+/// exactly as they existed when the order was placed.
+///
+/// The record is append-only and serves as an audit artifact for historical
+/// review, dispute resolution, and post-purchase integrity checks. It is
+/// designed to outlive changes or deletion in the active product, variant,
+/// or seller profile tables so that past purchases remain understandable
+/// even after the source entities evolve.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Purchased order item's {@link shopping_mall_order_items.id} whose
+  /// checkout-time state is preserved by this snapshot.
+  shopping_mall_order_item_id String
+  
+  /// Snapshot of the product name at the time of purchase.
+  product_name String
+  
+  /// Snapshot of the product description at the time of purchase.
+  product_description String
+  
+  /// Snapshot of the purchased variant SKU code at the time of purchase.
+  variant_sku String
+  
+  /// Snapshot of the purchased variant option values as displayed at checkout.
+  /// This is stored as a normalized textual representation of the historical
+  /// option combination, not as a structured JSON field.
+  variant_option_values String
+  
+  /// Snapshot of the seller storefront name at the time of purchase.
+  seller_shop_name String
+  
+  /// Snapshot of the seller storefront description at the time of purchase.
+  seller_shop_description String
+  
+  /// Snapshot of the seller logo image reference at the time of purchase.
+  seller_logo_image String?
+  
+  /// Quantity of the variant purchased in the order item at the time the
+  /// snapshot was created.
+  quantity Int
+  
+  /// Unit price charged for the purchased variant at the time of checkout.
+  unit_price Float
+  
+  /// Total price for the order item at the time of checkout, derived from
+  /// quantity and unit price for historical preservation.
+  total_price Float
+  
+  /// Timestamp when this historical snapshot record was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_order_item_snapshots_shopping_mall_order_b9451faf")
+}
+
+/// Running inventory movement history for {@link
+/// shopping_mall_product_variants}.
+///
+/// Each record stores a single atomic stock movement event for one product
+/// variant, including the signed quantity change, the business reason for
+/// the movement, and the event timestamp used to reconstruct current stock.
+/// Current stock is calculated from the accumulated movement history rather
+/// than stored directly in this table.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced product variant's {@link shopping_mall_product_variants.id}.
+  /// This identifies which variant received the stock movement.
+  shopping_mall_product_variant_id String
+  
+  /// Signed inventory delta for the movement. Positive values represent stock
+  /// increases such as restocking or stock restoration, while negative values
+  /// represent stock decreases such as sales or manual deductions.
+  quantity_change Int
+  
+  /// Business reason for the inventory movement, such as order deduction,
+  /// restock, cancellation restoration, refund restoration, or manual
+  /// adjustment.
+  reason String
+  
+  /// Timestamp when the inventory movement actually occurred in business
+  /// terms. This is used to reconstruct stock history in event order.
+  occurred_at DateTime
+  
+  /// Record creation timestamp for auditing and chronological listing.
+  created_at DateTime
+  
+  /// Record update timestamp for auditing administrative corrections or system
+  /// maintenance edits.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for retention-aware cleanup. Inventory history is
+  /// typically preserved, so this should remain nullable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, created_at], map: "shopping_mall_inventory_records_shopping_mall_product__00896e55")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id, occurred_at], map: "shopping_mall_inventory_records_shopping_mall_product__9e0f7ef3")
+}
+
+/// Normalized child records that preserve the image state of a product at
+/// the moment a product snapshot was captured. Each row stores exactly one
+/// image reference and its display order within the snapshot, allowing the
+/// system to reconstruct the full product image set for historical review
+/// and dispute resolution.
+///
+/// This table belongs to {@link shopping_mall_product_snapshots} as an
+/// immutable audit child and must not store product-level attributes such as
+/// name, description, category, or price. It exists only to preserve the
+/// snapshot-time image collection in a fully normalized form.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_product_snapshot_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product snapshot's {@link shopping_mall_product_snapshots.id} that
+  /// owns this captured image state.
+  shopping_mall_product_snapshot_id String
+  
+  /// Original image reference captured at the time of the product snapshot.
+  image_uri String
+  
+  /// Zero-based or one-based ordering position of this image within the
+  /// snapshot, used to reconstruct the historical gallery order.
+  display_order Int
+  
+  /// Timestamp when this snapshot-image row was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productSnapshot shopping_mall_product_snapshots @relation(fields: [shopping_mall_product_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_snapshot_id, display_order], map: "shopping_mall_product_snapshot_images_shopping_mall_pr_5cfe4db5")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_product_snapshot_id, image_uri], map: "shopping_mall_product_snapshot_images_shopping_mall_pr_60f165dc")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_snapshot_id, created_at], map: "shopping_mall_product_snapshot_images_shopping_mall_pr_3dbb5250")
+}

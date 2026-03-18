@@ -1,0 +1,176 @@
+/// Stores each organization's tenant boundary and organization-level
+/// identity, including the core profile and operating context used by all
+/// organization-scoped data.
+///
+/// This table is the root record for multi-tenant isolation in the
+/// hrm_time_tracking system. It represents a business organization as an
+/// independent boundary for employees, projects, time tracking, and
+/// governance records. All organization-scoped entities reference this model
+/// to preserve data separation and ensure that each tenant's operational
+/// data remains isolated.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization display name used for tenant identification and user-facing
+  /// navigation.
+  name String
+  
+  /// Optional organization profile text describing the business context or
+  /// internal purpose.
+  description String?
+  
+  /// Optional logo image URL used for branding in the application UI.
+  logo_image_url String?
+  
+  /// Default financial currency code used for organization-level monetary
+  /// values and reporting.
+  currency String
+  
+  /// Default timezone used for organization schedules, dates, and time-based
+  /// reporting.
+  timezone String
+  
+  /// First month of the organization's fiscal year, stored as a numeric month
+  /// value from 1 to 12.
+  fiscal_start_month Int
+  
+  /// Timestamp when the organization record was created.
+  created_at DateTime
+  
+  /// Timestamp when the organization record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the organization record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  invitations hrm_time_tracking_invitations[]
+  departments hrm_time_tracking_departments[]
+  employees hrm_time_tracking_employees[]
+  roles hrm_time_tracking_roles[]
+  projects hrm_time_tracking_projects[]
+  timelogs hrm_time_tracking_timelogs[]
+  timesheets hrm_time_tracking_timesheets[]
+  activityRecords hrm_time_tracking_activity_records[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([deleted_at])
+}
+
+/// Stores the global authenticated user identity for the platform. A single
+/// account can belong to multiple organizations and acts as the shared login
+/// anchor across tenant contexts.
+///
+/// This table contains only account-level identity and credential data,
+/// keeping personal profile details in {@link
+/// hrm_time_tracking_user_profiles} and organization-specific membership
+/// data in separate tables. The account may remain active even when
+/// organization memberships are added, removed, or when an organization is
+/// deleted.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_user_accounts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address used for login and account identity. Must be unique across
+  /// all user accounts.
+  email String
+  
+  /// Hashed password used for authentication. The raw password is never stored.
+  password_hash String
+  
+  /// Timestamp when the account was created.
+  created_at DateTime
+  
+  /// Timestamp when the account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the account was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  userProfile hrm_time_tracking_user_profiles?
+  invitations hrm_time_tracking_invitations[]
+  employeeMemberships hrm_time_tracking_employees[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// Stores the shared personal profile for a user account across the platform.
+///
+/// This table keeps global identity and contact information separate from
+/// organization-scoped membership, employee, and permission data. A profile
+/// belongs to exactly one user account and is reused wherever that account
+/// participates in one or more organizations.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning user account's {@link hrm_time_tracking_user_accounts.id}. This
+  /// creates the global 1:1 profile anchor shared across all organizations.
+  hrm_time_tracking_user_account_id String
+  
+  /// Person's display name shown across the platform.
+  display_name String
+  
+  /// Profile image URL used for the user's global identity representation.
+  avatar_image_url String?
+  
+  /// Person's contact phone number used for profile contact details.
+  phone_number String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for profile retention handling.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  userAccount hrm_time_tracking_user_accounts @relation(fields: [hrm_time_tracking_user_account_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_tracking_user_account_id], map: "hrm_time_tracking_user_profiles_hrm_time_tracking_user_038d93b0")
+  @@index([display_name])
+}

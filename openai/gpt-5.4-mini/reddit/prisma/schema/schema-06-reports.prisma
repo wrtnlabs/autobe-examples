@@ -1,0 +1,71 @@
+/// Stores each user-submitted moderation report against a single post or
+/// comment within a community, including the reporting user, the reported
+/// content reference, the reason text, and the moderation review state.
+///
+/// This table is the authoritative record for the report submission and
+/// review lifecycle. It connects the report to the reporting member and the
+/// owning community, while preserving the moderation decision for downstream
+/// review and enforcement workflows. The reported content itself remains in
+/// the content domain, and this table only stores the moderation case record
+/// and its status.
+///
+/// @namespace Reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning community's {@link community_platform_communities.id} for
+  /// moderator review and scope control.
+  community_id String
+  
+  /// Reporting member's {@link community_platform_members.id} who submitted
+  /// this report.
+  member_id String
+  
+  /// Type of reported content, such as post or comment, to indicate which
+  /// content table the report applies to.
+  target_type String
+  
+  /// Identifier of the reported post or comment record in the content domain.
+  target_id String
+  
+  /// User-provided explanation describing why the content was reported.
+  reason String
+  
+  /// Current moderation review state of the report, such as pending, approved,
+  /// or dismissed.
+  status String
+  
+  /// Timestamp when the report was reviewed by moderation staff, if a review
+  /// decision has been made.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the report was created.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_id, member_id, target_type, target_id], map: "community_platform_reports_community_id_member_id_targ_91d3b6ee")
+  @@index([community_id, status, created_at])
+  @@index([member_id, created_at])
+  @@index([target_type, target_id])
+}

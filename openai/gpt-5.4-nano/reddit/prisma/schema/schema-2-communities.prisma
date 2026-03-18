@@ -1,0 +1,177 @@
+/// Communities are top-level topical spaces that organize posts and
+/// discussions. A community has a unique name, descriptive text, and an icon
+/// reference for UI rendering, and it establishes authority by linking to an
+/// owner account and a set of moderator accounts.
+///
+/// Soft-deletion is supported via deleted_at to preserve historical
+/// references while hiding communities from normal listings.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community owner account ({@link community_platform_members.id}) with
+  /// the highest authority for community-level actions.
+  community_owner_id String
+  
+  /// Unique community display name used for community discovery and browsing.
+  name String
+  
+  /// Text description that explains what the community is about.
+  description String
+  
+  /// Reference URL for the community icon image used in list and detail views.
+  icon_href String
+  
+  /// Timestamp when this community record was created.
+  created_at DateTime
+  
+  /// Timestamp when this community record was last updated.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. When set, the community is treated as removed
+  /// while preserving historical relationships.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner community_platform_members @relation(fields: [community_owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  communitySubscriptions community_platform_community_subscriptions[]
+  communityModerators community_platform_community_moderators[]
+  posts community_platform_posts[]
+  reports community_platform_reports[]
+  communityBans community_platform_community_bans[]
+  communityBanSnapshots community_platform_community_ban_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_owner_id])
+  @@unique([name])
+  @@index([created_at, name])
+  @@index([updated_at, name])
+}
+
+/// Stores the relationship between a member and a community, including when
+/// the member subscribed and whether the subscription is currently active
+/// for participation.
+///
+/// This table enables per-member subscribed-community lists, participation
+/// eligibility checks, and community subscriber counts. Duplicate
+/// relationships for the same member and community are prevented via a
+/// unique composite constraint.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged community {@link community_platform_communities.id}.
+  community_id String
+  
+  /// Belonged member (user identity) {@link community_platform_members.id}.
+  member_id String
+  
+  /// Timestamp meaning when the member subscribed to the community.
+  subscribed_at DateTime
+  
+  /// Whether this subscription is currently active for participation in the
+  /// community and for inclusion in subscribed feed constraints.
+  is_active Boolean
+  
+  /// Creation timestamp for this subscription record.
+  created_at DateTime
+  
+  /// Last update timestamp for this subscription record.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the subscription is treated as removed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([member_id, community_id], map: "community_platform_community_subscriptions_member_id_c_422ac5cb")
+  // spellchecker: ignore-next-line
+  @@index([member_id, created_at], map: "community_platform_community_subscriptions_member_id_c_856ef490")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_community_subscriptions_community_i_bf13bd51")
+  // spellchecker: ignore-next-line
+  @@index([is_active, community_id], map: "community_platform_community_subscriptions_is_active_c_1196110d")
+}
+
+/// Maps which authenticated member accounts are moderators for a specific
+/// community.
+///
+/// This table is a join record between {@link
+/// community_platform_communities} and {@link community_platform_members},
+/// enforcing that a given member cannot be assigned as a moderator for the
+/// same community more than once. It also supports soft deletion and audit
+/// timestamps for moderation assignment history.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community that the member moderates. References {@link
+  /// community_platform_communities.id}.
+  community_id String
+  
+  /// The member account assigned as a moderator. References {@link
+  /// community_platform_members.id}.
+  moderator_user_id String
+  
+  /// When this moderator assignment record was created.
+  created_at DateTime
+  
+  /// When this moderator assignment record was last updated.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for moderator assignments that are no longer active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  moderator community_platform_members @relation(fields: [moderator_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([moderator_user_id])
+  // spellchecker: ignore-next-line
+  @@unique([community_id, moderator_user_id], map: "community_platform_community_moderators_community_id_m_cca174f8")
+  // spellchecker: ignore-next-line
+  @@index([community_id, created_at], map: "community_platform_community_moderators_community_id_c_da618e92")
+}

@@ -1,0 +1,402 @@
+/// Stores seller registration approval requests submitted for administrative
+/// review. Each record represents one seller's current application state,
+/// including the applicant reference, the moderation status, and any
+/// rejection reason, while the immutable review history is stored separately
+/// in {@link shopping_mall_seller_approval_request_reviews}.
+///
+/// This table is the canonical request header for seller onboarding
+/// moderation. It supports queue browsing, status tracking, and lifecycle
+/// management for pending, approved, and rejected applications without
+/// duplicating per-review audit records.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_approval_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Applicant seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Current moderation status of the seller approval request, such as
+  /// pending, approved, or rejected.
+  status String
+  
+  /// Reason provided when the request is rejected. Null while the request is
+  /// pending or approved.
+  rejection_reason String?
+  
+  /// Timestamp when the approval request was created.
+  created_at DateTime
+  
+  /// Timestamp when the approval request was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the approval request was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reviews shopping_mall_seller_approval_request_reviews[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_id], map: "shopping_mall_seller_approval_requests_shopping_mall_s_6aa0000e")
+  @@index([status, created_at])
+  @@index([created_at])
+}
+
+/// Stores immutable review decisions for seller approval requests. Each row
+/// records one administrative review event, including the reviewing
+/// administrator, the decision outcome, and the time the decision was made.
+///
+/// This table functions as a historical audit trail for {@link
+/// shopping_mall_seller_approval_requests} and preserves every review action
+/// independently so the approval process can be traced after the current
+/// request state changes.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_approval_request_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller approval request being reviewed. References {@link
+  /// shopping_mall_seller_approval_requests.id}.
+  shopping_mall_seller_approval_request_id String
+  
+  /// Administrator who performed the review decision. References {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String
+  
+  /// Review outcome for the seller approval request, such as approved or
+  /// rejected.
+  decision String
+  
+  /// Timestamp when the review decision was made.
+  reviewed_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit-preserving removal of the active row, if
+  /// ever used.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  sellerApprovalRequest shopping_mall_seller_approval_requests @relation(fields: [shopping_mall_seller_approval_request_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_approval_request_id, reviewed_at], map: "shopping_mall_seller_approval_request_reviews_shopping_f1d6076f")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, reviewed_at], map: "shopping_mall_seller_approval_request_reviews_shopping_e877764a")
+}
+
+/// Administrator application requests submitted for super-administrator
+/// review. This table stores the canonical request record, the applicant
+/// type-specific linkage, the submitted reason, and the current request
+/// status so the platform can manage pending applications, approvals, and
+/// rejections as independent business records.
+///
+/// The request row is the current-state entity for the application
+/// lifecycle. Applicant ownership must be modeled through a normalized
+/// subtype structure instead of multiple nullable actor foreign keys, while
+/// decision history is stored separately in {@link
+/// shopping_mall_administrator_request_reviews}.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reason provided by the applicant for becoming an administrator.
+  reason String
+  
+  /// Current application status, such as pending, approved, or rejected.
+  status String
+  
+  /// Reason provided when the request is rejected. Nullable because it exists
+  /// only for rejected applications.
+  rejected_reason String?
+  
+  /// Timestamp when the request was created.
+  created_at DateTime
+  
+  /// Timestamp when the request was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the request was soft-deleted, if ever removed from active
+  /// use.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reviews shopping_mall_administrator_request_reviews[]
+  customerApplicant shopping_mall_administrator_request_applicant_customers?
+  sellerApplicant shopping_mall_administrator_request_applicant_sellers?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([status, created_at])
+}
+
+/// Stores the immutable review history for administrator application
+/// requests. Each row records a super administrator's decision on a specific
+/// administrator request, including whether it was approved or rejected and
+/// when the decision was made.
+///
+/// This table is append-only and is used for auditability, dispute review,
+/// and governance traceability. It references {@link
+/// shopping_mall_administrator_requests.id} for the request under review and
+/// {@link shopping_mall_administrators.id} for the reviewing super
+/// administrator.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_request_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator application request being reviewed. References {@link
+  /// shopping_mall_administrator_requests.id}.
+  shopping_mall_administrator_request_id String
+  
+  /// Super administrator who performed the review decision. References {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String
+  
+  /// Review decision outcome for the administrator application request.
+  /// Expected values are approve or reject.
+  decision String
+  
+  /// Timestamp when the review decision was recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorRequest shopping_mall_administrator_requests @relation(fields: [shopping_mall_administrator_request_id], references: [id], onDelete: Cascade)
+  administrator shopping_mall_administrators @relation(fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_request_id, created_at], map: "shopping_mall_administrator_request_reviews_shopping_m_210f5ebb")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_administrator_request_reviews_shopping_m_8fc5456d")
+}
+
+/// Immutable audit history for administrator grade changes, including
+/// promotions and demotions between regular administrator and super
+/// administrator.
+///
+/// Each record preserves who was affected, who performed the change, what
+/// the previous grade was, what the new grade became, and when the change
+/// occurred. This supports accountability, governance review, and historical
+/// reconstruction of administrator privilege changes through {@link
+/// shopping_mall_administrators}.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_grade_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator whose grade changed. References {@link
+  /// shopping_mall_administrators.id}.
+  shopping_mall_administrator_id String
+  
+  /// Administrator who performed the grade change. References {@link
+  /// shopping_mall_administrators.id}.
+  performed_by_administrator_id String
+  
+  /// Administrator grade before the change. Expected values are the platform's
+  /// administrator grades, such as regular administrator or super
+  /// administrator.
+  previous_grade String
+  
+  /// Administrator grade after the change. Expected values are the platform's
+  /// administrator grades, such as regular administrator or super
+  /// administrator.
+  new_grade String
+  
+  /// Human-readable reason or note explaining why the administrator grade was
+  /// changed.
+  reason String?
+  
+  /// Timestamp when this grade change record was created.
+  created_at DateTime
+  
+  /// Timestamp when this grade change record was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. This table is an audit history record and is
+  /// expected to remain retained, so this value is normally unused.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator shopping_mall_administrators @relation("shopping_mall_administrator_grade_histories_of_shoppin_fbcd8f85", fields: [shopping_mall_administrator_id], references: [id], onDelete: Cascade)
+  performedByAdministrator shopping_mall_administrators @relation("shopping_mall_administrator_grade_histories_of_perform_7c923295", fields: [performed_by_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_id, created_at], map: "shopping_mall_administrator_grade_histories_shopping_m_6b53546c")
+  // spellchecker: ignore-next-line
+  @@index([performed_by_administrator_id, created_at], map: "shopping_mall_administrator_grade_histories_performed__5da4afa3")
+}
+
+/// Normalized applicant link table for administrator requests submitted by
+/// customers. Each record connects one administrator request to the customer
+/// who submitted it, allowing the main administrator request table to remain
+/// free of multiple nullable actor foreign keys.
+///
+/// This table is a dependent subtype record used only for
+/// customer-originated administrator applications. It preserves referential
+/// integrity between {@link shopping_mall_administrator_requests} and {@link
+/// shopping_mall_customers} while keeping the ownership model fully
+/// normalized.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_request_applicant_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator request being submitted by the customer. {@link
+  /// shopping_mall_administrator_requests.id}.
+  shopping_mall_administrator_request_id String
+  
+  /// Customer who submitted the administrator request. {@link
+  /// shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Timestamp when the applicant link record was created.
+  created_at DateTime
+  
+  /// Timestamp when the applicant link record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the applicant link record was soft deleted, if ever
+  /// removed from active use.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorRequest shopping_mall_administrator_requests @relation(fields: [shopping_mall_administrator_request_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_administrator_request_id], map: "shopping_mall_administrator_request_applicant_customer_d6a84d58")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_administrator_request_applicant_customer_f5c9acb6")
+}
+
+/// Normalized applicant link table for administrator requests submitted by
+/// sellers. This table stores which seller account is associated with a
+/// given administrator request, allowing the main administrator request
+/// record to remain free of multiple nullable actor foreign keys.
+///
+/// The record exists only to connect {@link
+/// shopping_mall_administrator_requests} with {@link shopping_mall_sellers}
+/// in a 1:1 applicant structure for seller-submitted administrator
+/// applications. It supports the governance workflow while keeping the
+/// request entity normalized and unambiguous.
+///
+/// @namespace Administration
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_request_applicant_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced administrator request {@link
+  /// shopping_mall_administrator_requests.id} for this seller applicant link.
+  shopping_mall_administrator_request_id String
+  
+  /// Referenced seller account {@link shopping_mall_sellers.id} that submitted
+  /// the administrator request.
+  shopping_mall_seller_id String
+  
+  /// Timestamp when this seller applicant link record was created.
+  created_at DateTime
+  
+  /// Timestamp when this seller applicant link record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this seller applicant link record was soft deleted, if
+  /// applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administratorRequest shopping_mall_administrator_requests @relation(fields: [shopping_mall_administrator_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_administrator_request_id], map: "shopping_mall_administrator_request_applicant_sellers__b1c27e69")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_seller_id], map: "shopping_mall_administrator_request_applicant_sellers__79be4f5a")
+  // spellchecker: ignore-next-line
+  @@index([created_at], map: "shopping_mall_administrator_request_applicant_sellers__9fd347c4")
+}

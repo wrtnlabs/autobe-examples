@@ -16,13 +16,13 @@ model todo_app_todo_histories {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Parent todo for this history entry. References {@link todo_app_todos.id}.
-  todo_app_todo_id String @db.Uuid
+  todo_app_todo_id String
   
   /// Timestamp when this history entry was recorded for the todo edit.
-  edited_at DateTime @db.Timestamptz
+  edited_at DateTime
   
   /// Todo title after the edit, if the title was changed as part of this
   /// history entry.
@@ -34,11 +34,11 @@ model todo_app_todo_histories {
   
   /// Todo start date after the edit, if the start date was changed as part of
   /// this history entry.
-  start_date DateTime? @db.Timestamptz
+  start_date DateTime?
   
   /// Todo due date after the edit, if the due date was changed as part of this
   /// history entry.
-  due_date DateTime? @db.Timestamptz
+  due_date DateTime?
   
   //----
   // BELONGED RELATIONS,

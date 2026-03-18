@@ -1,0 +1,206 @@
+/// Projects within an organization. A project represents a
+/// workspace/container for tasks and time logging, with a lifecycle status
+/// used to filter projects and to prevent starting new timelogs after a
+/// project is archived or completed.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization {@link erp_hrm_time_tracking_organizations.id}.
+  erp_hrm_time_tracking_organization_id String
+  
+  /// Project display name used for selection and filtering within an
+  /// organization.
+  name String
+  
+  /// Hex-like or UI color value associated with the project for visual
+  /// identification in the UI.
+  color String
+  
+  /// Lifecycle status of the project (e.g., active, archived, completed) used
+  /// to control allowed time logging and filtering.
+  status String
+  
+  /// When the project record was created.
+  created_at DateTime
+  
+  /// When the project record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means the project is not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_time_tracking_organizations @relation(fields: [erp_hrm_time_tracking_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  projectMemberships erp_hrm_time_tracking_project_memberships[]
+  tasks erp_hrm_time_tracking_tasks[]
+  timelogs erp_hrm_time_tracking_timelogs[]
+  timerSessions erp_hrm_time_tracking_timer_sessions[]
+  reportOutputs erp_hrm_time_tracking_report_outputs[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([erp_hrm_time_tracking_organization_id, name], map: "erp_hrm_time_tracking_projects_erp_hrm_time_tracking_o_5dbb2a91")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_organization_id, status], map: "erp_hrm_time_tracking_projects_erp_hrm_time_tracking_o_d9a43776")
+}
+
+/// Links an Employee to a Project as a single, explicit assignment. This
+/// table is the basis for determining which employees can manage tasks
+/// within a project and for driving the employee’s assigned project list.
+///
+/// Each row represents one employee-to-project membership. The membership
+/// includes a role indicator (for example, regular member vs project-lead)
+/// that drives authorization decisions at the service layer. Soft deletion
+/// is supported so that historical data can be preserved while removing
+/// active access.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_project_memberships {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged project {@link erp_hrm_time_tracking_projects.id}.
+  project_id String
+  
+  /// Belonged employee {@link erp_hrm_time_tracking_members.id}.
+  employee_id String
+  
+  /// Role of the employee within the project (e.g., project-lead vs member).
+  /// Used to drive permission decisions and UI presentation.
+  membership_role String
+  
+  /// When this project membership was created.
+  created_at DateTime
+  
+  /// When this project membership was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means the membership is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project erp_hrm_time_tracking_projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  employee erp_hrm_time_tracking_members @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([project_id, employee_id], map: "erp_hrm_time_tracking_project_memberships_project_id_e_f41c561f")
+  // spellchecker: ignore-next-line
+  @@index([project_id, created_at], map: "erp_hrm_time_tracking_project_memberships_project_id_c_db91fff8")
+  // spellchecker: ignore-next-line
+  @@index([employee_id, created_at], map: "erp_hrm_time_tracking_project_memberships_employee_id__8795eb7e")
+}
+
+/// Tasks are work items inside a project. Each task belongs to exactly one
+/// project, can optionally be nested under a single parent task (one-level
+/// nesting), and can optionally be assigned to an employee who is eligible
+/// for the project via project membership rules.
+///
+/// This table stores task metadata used for planning and execution such as
+/// title, description, workflow status, priority, estimated working hours,
+/// due date, and the optional assignee reference. Lifecycle timestamps
+/// support auditing and soft deletion.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The task's owning project {@link erp_hrm_time_tracking_projects.id}.
+  erp_hrm_time_tracking_project_id String
+  
+  /// Optional parent task for one-level nesting, referencing {@link
+  /// erp_hrm_time_tracking_tasks.id}.
+  parent_task_id String?
+  
+  /// Optional task assignee referencing the employee {@link
+  /// erp_hrm_time_tracking_members.id}. Eligibility is enforced by membership
+  /// rules at the service layer.
+  assigned_employee_id String?
+  
+  /// Human-readable task title.
+  title String
+  
+  /// Optional additional details describing what the task involves.
+  description String?
+  
+  /// Task workflow status (e.g., progress state) used to control how the task
+  /// is handled and displayed.
+  status String
+  
+  /// Task priority level used for ordering and planning.
+  priority String
+  
+  /// Optional estimated effort for the task, expressed in hours for planning
+  /// and reporting context.
+  estimated_hours Float?
+  
+  /// Optional due date for scheduling and reminders. Stored as a datetime.
+  due_date DateTime?
+  
+  /// Timestamp when the task was created.
+  created_at DateTime
+  
+  /// Timestamp when the task was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means the task is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project erp_hrm_time_tracking_projects @relation(fields: [erp_hrm_time_tracking_project_id], references: [id], onDelete: Cascade)
+  parentTask erp_hrm_time_tracking_tasks? @relation("recursive", fields: [parent_task_id], references: [id], onDelete: Cascade)
+  assignedEmployee erp_hrm_time_tracking_members? @relation(fields: [assigned_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childTasks erp_hrm_time_tracking_tasks[] @relation("recursive")
+  timelogs erp_hrm_time_tracking_timelogs[]
+  timerSessions erp_hrm_time_tracking_timer_sessions[]
+  reportOutputs erp_hrm_time_tracking_report_outputs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_task_id])
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_project_id, status], map: "erp_hrm_time_tracking_tasks_erp_hrm_time_tracking_proj_1208ebe5")
+  @@index([assigned_employee_id, due_date])
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_project_id, due_date], map: "erp_hrm_time_tracking_tasks_erp_hrm_time_tracking_proj_989eec71")
+}

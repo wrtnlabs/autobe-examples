@@ -14,16 +14,16 @@ model todo_app_guests {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Time when the guest identity was created.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// Time when the guest identity was last updated.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// Time when the guest identity was soft deleted, if applicable.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   //----
   // HAS RELATIONS
@@ -48,10 +48,10 @@ model todo_app_guest_sessions {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Owning guest's {@link todo_app_guests.id}.
-  todo_app_guest_id String @db.Uuid
+  todo_app_guest_id String
   
   /// IP address observed when the guest session was created.
   ip String
@@ -63,16 +63,16 @@ model todo_app_guest_sessions {
   referrer String
   
   /// Timestamp when the guest session was created.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// Timestamp when the guest session expires.
-  expired_at DateTime @db.Timestamptz
+  expired_at DateTime
   
   /// Timestamp when the guest session record was last updated.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// Timestamp when the guest session was soft deleted, if applicable.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,
@@ -102,7 +102,7 @@ model todo_app_members {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Member login email address used for authentication and account
   /// identification.
@@ -112,13 +112,13 @@ model todo_app_members {
   password_hash String
   
   /// Timestamp when the member account was created.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// Timestamp when the member account was last updated.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// Timestamp when the member account was soft deleted, if applicable.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   //----
   // HAS RELATIONS
@@ -153,10 +153,10 @@ model todo_app_member_sessions {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Belonged member's {@link todo_app_members.id}.
-  todo_app_member_id String @db.Uuid
+  todo_app_member_id String
   
   /// IP address used when the session was created.
   ip String
@@ -168,10 +168,10 @@ model todo_app_member_sessions {
   referrer String
   
   /// Timestamp when the session was created.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// Timestamp when the session becomes invalid and can no longer be used.
-  expired_at DateTime @db.Timestamptz
+  expired_at DateTime
   
   //----
   // BELONGED RELATIONS,
@@ -201,22 +201,22 @@ model todo_app_member_password_resets {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Member account that owns this reset token. {@link todo_app_members.id}.
-  todo_app_member_id String @db.Uuid
+  todo_app_member_id String
   
   /// Secure one-time reset token used to verify password recovery requests.
   token String
   
   /// When this password reset request was created.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// When this password reset token becomes invalid.
-  expired_at DateTime @db.Timestamptz
+  expired_at DateTime
   
   /// When this password reset token was redeemed, if it has been used.
-  used_at DateTime? @db.Timestamptz
+  used_at DateTime?
   
   //----
   // BELONGED RELATIONS,
@@ -249,11 +249,11 @@ model todo_app_member_email_verifications {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Member account that owns this email verification token. {@link
   /// todo_app_members.id}.
-  todo_app_member_id String @db.Uuid
+  todo_app_member_id String
   
   /// Opaque verification token sent to the member for confirming the email
   /// address.
@@ -261,20 +261,20 @@ model todo_app_member_email_verifications {
   
   /// Timestamp when the verification token was successfully consumed and the
   /// email address was confirmed.
-  verified_at DateTime? @db.Timestamptz
+  verified_at DateTime?
   
   /// Timestamp after which the verification token must no longer be accepted.
-  expired_at DateTime @db.Timestamptz
+  expired_at DateTime
   
   /// Record creation timestamp.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// Record last update timestamp.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// Soft delete timestamp for administrative removal or cleanup of obsolete
   /// records.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,

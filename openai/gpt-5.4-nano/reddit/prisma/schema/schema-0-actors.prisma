@@ -1,0 +1,333 @@
+/// Stores guest identity records for unauthenticated visitors who access
+/// public parts of the platform without password-based authentication.
+///
+/// Each row represents a guest identity tied to a stable device/client
+/// fingerprint or similarly derived identifier. Guests can later be
+/// associated with guest sessions in {@link
+/// community_platform_guest_sessions} for connection tracking and logout
+/// behavior.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// When the guest identity record was created.
+  created_at DateTime
+  
+  /// When the guest identity record was last updated.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for the guest identity record. Null means the
+  /// record is active.
+  deleted_at DateTime?
+  
+  /// Stable, client-derived fingerprint used to identify a guest across
+  /// requests (e.g., a device/browser fingerprint hash).
+  device_fingerprint String
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  guestSessions community_platform_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+}
+
+/// Stores login/session tokens for guest (unauthenticated) access.
+///
+/// This table enables stateless guest browsing flows by recording issued
+/// session credentials along with connection context (IP address and request
+/// metadata) and an explicit expiration time for security.
+///
+/// Each guest session belongs to exactly one {@link
+/// community_platform_guests.id} record. Guest sessions are append-only
+/// audit records in typical flows and can be soft-deleted for retention
+/// policies.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest's {@link community_platform_guests.id}.
+  community_platform_guest_id String
+  
+  /// IP address from which the guest session was created.
+  ip String
+  
+  /// Request URI (href) associated with the guest session creation.
+  href String
+  
+  /// HTTP referrer (referrer URL) associated with the guest session creation.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session record update timestamp.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp for the guest session record.
+  deleted_at DateTime?
+  
+  /// When the guest session credential expires and becomes invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest community_platform_guests @relation(fields: [community_platform_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guest_id, created_at], map: "community_platform_guest_sessions_community_platform_g_009bc68c")
+}
+
+/// Stores authenticated member account identity used for registration and
+/// sign-in.
+///
+/// This table is the canonical authenticated actor record for members. It
+/// contains login credentials (email and password hash) and supports account
+/// lifecycle auditing via created_at/updated_at and optional soft deletion
+/// via deleted_at.
+///
+/// Member sessions are tracked in {@link community_platform_member_sessions}
+/// as separate session records referencing this actor.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member email address used to identify the account during registration and
+  /// login.
+  email String
+  
+  /// Hashed password used to verify credentials during member authentication.
+  password_hash String
+  
+  /// When the member account was created.
+  created_at DateTime
+  
+  /// When the member account credentials or profile-related fields were last
+  /// updated.
+  updated_at DateTime
+  
+  /// When the member account was soft deleted. Null means the account is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions community_platform_member_sessions[]
+  userProfile community_platform_user_profiles?
+  ownedCommunities community_platform_communities[]
+  communitySubscriptions community_platform_community_subscriptions[]
+  moderatedCommunities community_platform_community_moderators[]
+  posts community_platform_posts[] @relation("community_platform_posts_of_author_id")
+  editedPosts community_platform_posts[] @relation("community_platform_posts_of_edited_by_id")
+  deletedPosts community_platform_posts[] @relation("community_platform_posts_of_deleted_by_id")
+  comments community_platform_comments[] @relation("community_platform_comments_of_author_id")
+  editedComments community_platform_comments[] @relation("community_platform_comments_of_edited_by_id")
+  deletedComments community_platform_comments[] @relation("community_platform_comments_of_deleted_by_id")
+  commentVotes community_platform_comment_votes[]
+  postVotes community_platform_post_votes[]
+  reports community_platform_reports[]
+  reviewedReportSnapshots community_platform_report_snapshots[]
+  reportResolutions community_platform_report_resolutions[]
+  communityBans community_platform_community_bans[] @relation("community_platform_community_bans_of_banned_user_id")
+  appliedCommunityBans community_platform_community_bans[] @relation("community_platform_community_bans_of_applied_by_moderator_id")
+  communityBanSnapshots community_platform_community_ban_snapshots[] @relation("community_platform_community_ban_snapshots_of_banned_user_id")
+  appliedCommunityBanSnapshots community_platform_community_ban_snapshots[] @relation("community_platform_community_ban_snapshots_of_applied__e270adbb")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// Stores authenticated session records for community members, including
+/// token rotation context and connection metadata.
+///
+/// Each session belongs to exactly one {@link community_platform_members.id}
+/// member. Sessions are used to authenticate member requests and track
+/// session validity over time.
+///
+/// The table supports security/audit needs via connection metadata and
+/// timestamps, and is designed for efficient lookup by member and creation
+/// time.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member identity {@link community_platform_members.id}.
+  community_platform_member_id String
+  
+  /// IP address observed for this member session.
+  ip String
+  
+  /// Request URL or session establishment URL (referer-like target) for this
+  /// session.
+  href String
+  
+  /// HTTP referrer (or equivalent) associated with the session establishment
+  /// request.
+  referrer String
+  
+  /// When the session record was created.
+  created_at DateTime
+  
+  /// When the session record was last updated (e.g., token rotation metadata
+  /// updates).
+  updated_at DateTime
+  
+  /// Soft delete timestamp for revoking/removing the session record without
+  /// hard deletion.
+  deleted_at DateTime?
+  
+  /// When the session expires and should no longer be accepted for
+  /// authentication.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_sessions_community_platform__9260a62c")
+}
+
+/// Stores privileged administrator account records with credential fields
+/// used for admin sign-in and governance capabilities. This table represents
+/// the canonical authentication identity for the admin actor type, while
+/// admin login session tracking is handled by {@link
+/// community_platform_admin_sessions}.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Admin login email address. Used to locate the admin account during
+  /// authentication.
+  email String
+  
+  /// Hashed password used for verifying admin credentials during sign-in.
+  password_hash String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. When set, the admin account is treated as removed.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions community_platform_admin_sessions[]
+  reviewedReportSnapshots community_platform_report_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at, updated_at])
+}
+
+/// Stores authenticated session records for admin actors, enabling secure
+/// tracking of admin login activity and connection metadata (IP and
+/// navigation context).
+///
+/// Each row represents one active or historical session token for a single
+/// {@link community_platform_admins.id} admin. Sessions support auditing and
+/// expiration-based access control.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged admin's {@link community_platform_admins.id} identity.
+  admin_id String
+  
+  /// Client IP address captured at session creation.
+  ip String
+  
+  /// Request URL or location (href) captured at session creation for security
+  /// auditing.
+  href String
+  
+  /// Referrer information captured at session creation for security auditing.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp for this session record (e.g., token rotation
+  /// metadata updates).
+  updated_at DateTime
+  
+  /// When this session expires and should no longer be accepted for
+  /// authentication.
+  expired_at DateTime
+  
+  /// Soft delete timestamp. When set, the session is treated as
+  /// revoked/invalid for authentication.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin community_platform_admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([admin_id, created_at])
+}

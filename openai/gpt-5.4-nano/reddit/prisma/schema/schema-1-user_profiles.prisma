@@ -1,0 +1,54 @@
+/// Stores public user persona information displayed on profile pages,
+/// including display name, biography text, and an avatar image reference.
+/// The profile is linked one-to-one to the authenticated member identity and
+/// follows standard auditing and soft-delete lifecycle via created_at,
+/// updated_at, and deleted_at.
+///
+/// @namespace UserProfiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member identity for this public profile ({@link
+  /// community_platform_members.id}).
+  community_platform_member_id String
+  
+  /// Public display name shown on the user's profile page.
+  display_name String
+  
+  /// Short biography text describing the user. Nullable when the user has not
+  /// provided a bio.
+  bio String?
+  
+  /// URI pointing to the user's avatar image representation. Nullable when no
+  /// avatar is set.
+  avatar_uri String?
+  
+  /// Creation timestamp of the user profile record.
+  created_at DateTime
+  
+  /// Last update timestamp of the user profile record.
+  updated_at DateTime
+  
+  /// Soft delete timestamp indicating the profile is no longer publicly
+  /// visible due to account deletion or removal.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_member_id], map: "community_platform_user_profiles_community_platform_me_598119e2")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_user_profiles_community_platform_me_85c2a7f7")
+}

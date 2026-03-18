@@ -1,0 +1,44 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IErpHrmTimeTrackingActivityLogEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingActivityLogEntry";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import typia, { tags } from "typia";
+
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+export namespace ErpHrmTimeTrackingActivityLogEntryAtSummaryTransformer {
+  export type Payload =
+    Prisma.erp_hrm_time_tracking_activity_log_entriesGetPayload<
+      ReturnType<typeof select>
+    >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        organization_id: true,
+        performed_by_member_id: true,
+        action_type: true,
+        target_entity_type: true,
+        target_entity_id: true,
+        summary: true,
+        details: true,
+        occurred_at: true,
+      },
+    } satisfies Prisma.erp_hrm_time_tracking_activity_log_entriesFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IErpHrmTimeTrackingActivityLogEntry.ISummary> {
+    return {
+      id: input.id,
+      organization_id: input.organization_id,
+      performed_by_member_id: input.performed_by_member_id,
+      action_type: input.action_type,
+      target_entity_type: input.target_entity_type,
+      target_entity_id: input.target_entity_id,
+      summary: input.summary,
+      details: input.details ?? null,
+      occurred_at: input.occurred_at.toISOString(),
+    };
+  }
+}

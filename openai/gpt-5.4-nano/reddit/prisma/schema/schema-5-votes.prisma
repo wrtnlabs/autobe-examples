@@ -1,0 +1,52 @@
+/// Stores each member’s single current vote on a specific post. Enforces one
+/// vote per member per post via a unique constraint, and records when the
+/// vote was cast using voted_at.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged post referenced from {@link community_platform_posts.id}.
+  community_platform_post_id String
+  
+  /// Voting member referenced from {@link community_platform_members.id}.
+  voter_id String
+  
+  /// Vote direction/value for the post (e.g., upvote vs. downvote), stored as
+  /// an integer to keep calculations in queries.
+  vote_value Int
+  
+  /// Timestamp representing when the vote was cast.
+  voted_at DateTime
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means the vote is currently active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  voter community_platform_members @relation(fields: [voter_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([voter_id, community_platform_post_id], map: "community_platform_post_votes_voter_id_community_platf_392b0438")
+  @@index([voted_at])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id, created_at], map: "community_platform_post_votes_community_platform_post__80871491")
+  @@index([voter_id, created_at])
+}

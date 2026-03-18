@@ -13,23 +13,23 @@ model todo_app_user_profiles {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Owning member account for this private profile. References {@link
   /// todo_app_members.id}.
-  todo_app_member_id String @db.Uuid
+  todo_app_member_id String
   
   /// Private display name shown within the application for the owning member.
   display_name String
   
   /// When this profile record was created.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// When this profile record was last updated.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// When this profile record was soft deleted. Null when active.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,
@@ -41,5 +41,4 @@ model todo_app_user_profiles {
   // INDEXES
   //----
   @@unique([todo_app_member_id])
-  @@index([display_name(ops: raw("gin_trgm_ops"))], type: Gin)
 }

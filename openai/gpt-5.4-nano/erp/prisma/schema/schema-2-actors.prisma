@@ -1,0 +1,320 @@
+/// Guest identity records used to correlate anonymous access attempts
+/// without credentials.
+///
+/// This table represents the system’s guest actor identity. It is used as
+/// the parent for guest sessions ({@link
+/// erp_hrm_time_tracking_guest_sessions}) so that protected endpoints can be
+/// gated by a valid session even before a user authenticates.
+///
+/// The guest actor itself is treated as an identity row; session connection
+/// metadata and expiry live in the dedicated guest session table.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address used to identify the guest identity for login correlation.
+  /// This value is unique across all guest identities.
+  email String
+  
+  /// Password hash for guest authentication where guest accounts are allowed
+  /// to authenticate with email/password.
+  password_hash String
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null means the guest identity is active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  guestSessions erp_hrm_time_tracking_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// Guest session records for permissionless entry gating to protected
+/// endpoints. Each row represents a guest authentication/session token
+/// instance with connection context (IP and referrer) and an explicit
+/// expiration time for security auditing.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest identity record {@link erp_hrm_time_tracking_guests.id}.
+  erp_hrm_time_tracking_guest_id String
+  
+  /// Client IP address used when the guest session was created.
+  ip String
+  
+  /// Requested URL or token issuance href associated with this guest session.
+  href String
+  
+  /// HTTP referrer header value recorded at session creation time.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Expiration timestamp for this guest session; used to invalidate tokens
+  /// after expiry.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest erp_hrm_time_tracking_guests @relation(fields: [erp_hrm_time_tracking_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_guest_id, created_at], map: "erp_hrm_time_tracking_guest_sessions_erp_hrm_time_trac_bdd5329e")
+}
+
+/// Registered authenticated member accounts for the ERP HRM time tracking
+/// service.
+///
+/// This table is the canonical identity record for the "member" actor type
+/// and stores credential-based authentication data (email and password
+/// hash). It is the parent for member session and member self-service
+/// workflow tables such as sessions, password resets, and email
+/// verifications (implemented as separate tables in this component).
+///
+/// Soft deletion is supported via deleted_at; business logic should treat
+/// soft-deleted members as unavailable for login and membership-related
+/// operations.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used as the login identifier for member
+  /// authentication.
+  email String
+  
+  /// BCrypt/argon hash of the member's password for credential-based
+  /// authentication.
+  password_hash String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the member is considered deleted and
+  /// should not be authenticated.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions erp_hrm_time_tracking_member_sessions[]
+  passwordResets erp_hrm_time_tracking_member_password_resets[]
+  emailVerifications erp_hrm_time_tracking_member_email_verifications[]
+  contracts erp_hrm_time_tracking_contracts[]
+  contractSnapshots erp_hrm_time_tracking_contract_snapshots[]
+  projectMemberships erp_hrm_time_tracking_project_memberships[]
+  assignedTasks erp_hrm_time_tracking_tasks[]
+  timelogs erp_hrm_time_tracking_timelogs[]
+  timesheets erp_hrm_time_tracking_timesheets[]
+  timerSessions erp_hrm_time_tracking_timer_sessions[]
+  performedActivityLogEntries erp_hrm_time_tracking_activity_log_entries[]
+  createdReportDefinitions erp_hrm_time_tracking_report_definitions[]
+  reportOutputs erp_hrm_time_tracking_report_outputs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// Member login session records used to authenticate member requests and
+/// support security features such as logout/revocation.
+///
+/// Each row represents a single session for exactly one {@link
+/// erp_hrm_time_tracking_members.id} member, storing connection and request
+/// context (IP, href, referrer) along with creation and expiry timestamps
+/// for session validity auditing.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member {@link erp_hrm_time_tracking_members.id}.
+  erp_hrm_time_tracking_members_id String
+  
+  /// IP address observed when the session was created.
+  ip String
+  
+  /// The URL (href) associated with the session creation request.
+  href String
+  
+  /// Referrer header value associated with the session creation request.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp. After this time the session is considered
+  /// invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_time_tracking_members @relation(fields: [erp_hrm_time_tracking_members_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_members_id, created_at], map: "erp_hrm_time_tracking_member_sessions_erp_hrm_time_tra_91b8472a")
+}
+
+/// Stores password reset requests submitted by a member. Each row represents
+/// a single reset token issuance, including the token identifier used by the
+/// client and the expiration timestamp for validity checks.
+///
+/// This table references {@link erp_hrm_time_tracking_members.id} to
+/// associate reset requests with the member who owns the credential reset
+/// flow. Rows may be soft-deleted for retention/compliance without breaking
+/// referential integrity.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member for this password reset request ({@link
+  /// erp_hrm_time_tracking_members.id}).
+  member_id String
+  
+  /// Opaque identifier embedded in the reset link/code, used to locate the
+  /// reset request during verification.
+  token_identifier String
+  
+  /// When this password reset token expires and must no longer be accepted.
+  expired_at DateTime
+  
+  /// When the password reset request was created.
+  created_at DateTime
+  
+  /// When the password reset request was last updated.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp to hide expired/invalidated reset requests while
+  /// preserving auditability.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_time_tracking_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([token_identifier], map: "erp_hrm_time_tracking_member_password_resets_token_ide_073744a1")
+  // spellchecker: ignore-next-line
+  @@index([member_id, created_at], map: "erp_hrm_time_tracking_member_password_resets_member_id_2b9166b7")
+}
+
+/// Stores email verification tokens issued for member accounts so that a
+/// member can confirm ownership of their registered email address. Each
+/// record belongs to exactly one member and is used to validate a provided
+/// token until it expires.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member {@link erp_hrm_time_tracking_members.id}.
+  erp_hrm_time_tracking_member_id String
+  
+  /// Verification token presented by the member during email confirmation.
+  token String
+  
+  /// Verification URL (or route link) associated with this token for
+  /// client-side confirmation.
+  href String
+  
+  /// IP address from which the verification was requested.
+  ip String
+  
+  /// HTTP referrer for audit context when the verification was requested.
+  referrer String
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  /// Record last update time.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Set when this token record is invalidated or
+  /// removed.
+  deleted_at DateTime?
+  
+  /// When this verification token expires and can no longer be used.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_time_tracking_members @relation(fields: [erp_hrm_time_tracking_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_member_id, created_at], map: "erp_hrm_time_tracking_member_email_verifications_erp_h_33942ebd")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_member_id, expired_at], map: "erp_hrm_time_tracking_member_email_verifications_erp_h_1eb1acb8")
+}

@@ -1,0 +1,234 @@
+/// Stores a customer's cancellation request for a single order item. The
+/// record keeps the current cancellation workflow state and the reason
+/// submitted by the customer so sellers and administrators can review active
+/// requests while the immutable decision history is preserved in {@link
+/// shopping_mall_cancellation_request_snapshots}.
+///
+/// @namespace Claims
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order item that this cancellation request belongs to. References {@link
+  /// shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Customer-provided reason for requesting cancellation of the order item.
+  reason String
+  
+  /// Current cancellation request status used to track the seller review
+  /// lifecycle.
+  status String
+  
+  /// Timestamp when the cancellation request was created.
+  created_at DateTime
+  
+  /// Timestamp when the cancellation request was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the cancellation request was soft deleted, if ever removed
+  /// from active views.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_cancellation_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_id], map: "shopping_mall_cancellation_requests_shopping_mall_orde_25d5f1b3")
+  @@index([status, created_at])
+  @@index([created_at])
+}
+
+/// Stores immutable historical snapshots of customer cancellation requests
+/// for order items. Each record preserves the request state at the moment of
+/// change, including the parent request reference, request status, reason,
+/// and seller response context so the full cancellation history can be
+/// reviewed later for audit and dispute resolution.
+///
+/// This table is append-only and represents a point-in-time record rather
+/// than the live request. It exists to preserve the evolving state of {@link
+/// shopping_mall_cancellation_requests} even after the active request
+/// changes or is resolved.
+///
+/// @namespace Claims
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent cancellation request whose state is preserved in this snapshot.
+  /// References {@link shopping_mall_cancellation_requests.id}.
+  shopping_mall_cancellation_request_id String
+  
+  /// Cancellation request status at the time this snapshot was created, such
+  /// as pending, approved, or rejected.
+  request_status String
+  
+  /// Customer-provided reason captured from the cancellation request at the
+  /// time of snapshot creation.
+  reason String
+  
+  /// Seller decision or response text preserved from the request state when
+  /// applicable. This records the review outcome context at the moment of
+  /// change.
+  seller_response String?
+  
+  /// Timestamp when this immutable snapshot record was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [shopping_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cancellation_request_id, created_at], map: "shopping_mall_cancellation_request_snapshots_shopping__802546ef")
+  @@index([created_at])
+}
+
+/// Stores customer refund requests for individual delivered order items,
+/// including the refund reason and current request status.
+///
+/// Each record belongs to one purchased order item and one customer, and it
+/// represents the active refund claim that sellers review. Historical
+/// changes to the request are preserved separately in {@link
+/// shopping_mall_refund_request_snapshots}, so this table only keeps the
+/// current live state needed for workflows and moderation.
+///
+/// @namespace Claims
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Refund-requested order item's {@link shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Requesting customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Customer-provided reason for requesting the refund.
+  reason String
+  
+  /// Current workflow status of the refund request, such as pending, approved,
+  /// rejected, or cancelled.
+  status String
+  
+  /// Timestamp when the request was last reviewed by the seller or
+  /// administrator.
+  reviewed_at DateTime?
+  
+  /// Reason provided when the request was approved or rejected.
+  reviewed_reason String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp used to preserve request history while hiding
+  /// inactive records.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_refund_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_order_item_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_refund_requests_shopping_mall_customer_i_57dc99d2")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, created_at], map: "shopping_mall_refund_requests_shopping_mall_order_item_db19a13c")
+  @@index([status, created_at])
+  @@index([reviewed_at])
+}
+
+/// Immutable point-in-time snapshots of refund request state changes. Each
+/// record preserves the refund request's status, reason, and response
+/// context at the moment a change was recorded so later audits and dispute
+/// reviews can reconstruct the full history of the request.
+///
+/// This table is append-only and belongs to {@link
+/// shopping_mall_refund_requests}. It stores historical state only and must
+/// not be edited in place. The parent refund request remains the live
+/// record, while this table preserves each version of that record over time.
+///
+/// @namespace Claims
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent refund request's {@link shopping_mall_refund_requests.id} whose
+  /// historical state is being preserved in this snapshot.
+  shopping_mall_refund_request_id String
+  
+  /// Refund request status captured at the time this snapshot was created,
+  /// such as pending, approved, or rejected.
+  status String
+  
+  /// Refund reason text preserved from the refund request at the time of the
+  /// snapshot.
+  reason String
+  
+  /// Seller or administrator response message preserved for audit and dispute
+  /// review when the request was decided.
+  response_message String?
+  
+  /// Timestamp when this historical snapshot row was recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_id, created_at], map: "shopping_mall_refund_request_snapshots_shopping_mall_r_7cee8140")
+}

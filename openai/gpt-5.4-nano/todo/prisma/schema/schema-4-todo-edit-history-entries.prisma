@@ -10,25 +10,25 @@ model multi_user_todo_edit_history_entries {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Belonged todo for which this edit history entry was created, {@link
   /// multi_user_todo_edit_history_entries.id}.
-  multi_user_todo_id String @db.Uuid
+  multi_user_todo_id String
   
   /// Business timestamp of when the todo was edited (required for ordering
   /// edit history entries newest to oldest).
-  edited_at DateTime @db.Timestamptz
+  edited_at DateTime
   
   /// Record creation timestamp for this edit history entry.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// Record last update timestamp for this edit history entry.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// Soft deletion timestamp. When the todo is permanently deleted from trash,
   /// this entry is also removed from permanently deleted content.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,
@@ -66,11 +66,11 @@ model multi_user_todo_edit_history_entry_changes {
   // COLUMNS
   //----
   /// Primary Key.
-  id String @id @db.Uuid
+  id String @id
   
   /// Belonged todo edit history entry {@link
   /// multi_user_todo_edit_history_entries.id}.
-  multi_user_todo_edit_history_entry_id String @db.Uuid
+  multi_user_todo_edit_history_entry_id String
   
   /// The name of the todo field that changed (e.g., title, description,
   /// start_date, due_date).
@@ -85,21 +85,20 @@ model multi_user_todo_edit_history_entry_changes {
   to_value String?
   
   /// When this field-level edit change record was created.
-  created_at DateTime @db.Timestamptz
+  created_at DateTime
   
   /// When this field-level edit change record was last updated.
-  updated_at DateTime @db.Timestamptz
+  updated_at DateTime
   
   /// Soft-delete timestamp. When set, the record is considered deleted but
   /// still kept for audit recovery.
-  deleted_at DateTime? @db.Timestamptz
+  deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  // spellchecker: ignore-next-line
-  todoEditHistoryEntry multi_user_todo_edit_history_entries @relation(fields: [multi_user_todo_edit_history_entry_id], references: [id], onDelete: Cascade, map: "multi_user_todo_edit_history_entry_changes_multi_user__601f1203")
+  todoEditHistoryEntry multi_user_todo_edit_history_entries @relation(fields: [multi_user_todo_edit_history_entry_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES

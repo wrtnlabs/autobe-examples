@@ -1,0 +1,379 @@
+/// Recorded time entries for employees within an organization.
+///
+/// Each timelog belongs to an {@link erp_hrm_time_tracking_members.id}
+/// (member/employee within an organization), is attributed to an {@link
+/// erp_hrm_time_tracking_projects.id} (project), and may optionally be
+/// associated with an {@link erp_hrm_time_tracking_tasks.id} (task within
+/// the project). A timelog can also be included in a particular {@link
+/// erp_hrm_time_tracking_timesheets.id} timesheet week when it has been
+/// submitted/approved as part of that timesheet workflow.
+///
+/// This table stores the atomic unit of work captured by the user, including
+/// the worked time window/amount and any optional note. Historical changes
+/// are preserved in {@link erp_hrm_time_tracking_timelog_snapshots} rather
+/// than through inline JSON fields.
+///
+/// Soft deletion is supported via {@code deleted_at}.
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_timelogs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization {@link erp_hrm_time_tracking_organizations.id}.
+  erp_hrm_time_tracking_organization_id String
+  
+  /// Belonged member/employee {@link erp_hrm_time_tracking_members.id}.
+  erp_hrm_time_tracking_employee_id String
+  
+  /// Belonged project {@link erp_hrm_time_tracking_projects.id}.
+  erp_hrm_time_tracking_project_id String
+  
+  /// Optional task attribution within the project {@link
+  /// erp_hrm_time_tracking_tasks.id}.
+  erp_hrm_time_tracking_task_id String?
+  
+  /// Optional timesheet container this timelog is included in {@link
+  /// erp_hrm_time_tracking_timesheets.id}.
+  erp_hrm_time_tracking_timesheet_id String?
+  
+  /// The date/time representing when the work was performed (used for
+  /// timesheet week grouping).
+  work_date DateTime
+  
+  /// Optional start timestamp of the work interval.
+  start_time DateTime?
+  
+  /// Optional end timestamp of the work interval.
+  end_time DateTime?
+  
+  /// Total duration of the worked entry in minutes.
+  duration_minutes Int
+  
+  /// Optional free-form note describing the work performed.
+  note String?
+  
+  /// Record creation time.
+  created_at DateTime
+  
+  /// Record last update time.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means the record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_time_tracking_organizations @relation(fields: [erp_hrm_time_tracking_organization_id], references: [id], onDelete: Cascade)
+  employee erp_hrm_time_tracking_members @relation(fields: [erp_hrm_time_tracking_employee_id], references: [id], onDelete: Cascade)
+  project erp_hrm_time_tracking_projects @relation(fields: [erp_hrm_time_tracking_project_id], references: [id], onDelete: Cascade)
+  task erp_hrm_time_tracking_tasks? @relation(fields: [erp_hrm_time_tracking_task_id], references: [id], onDelete: Cascade)
+  timesheet erp_hrm_time_tracking_timesheets? @relation(fields: [erp_hrm_time_tracking_timesheet_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  timelogSnapshots erp_hrm_time_tracking_timelog_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_organization_id], map: "erp_hrm_time_tracking_timelogs_erp_hrm_time_tracking_o_56d09158")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_employee_id, work_date], map: "erp_hrm_time_tracking_timelogs_erp_hrm_time_tracking_e_f9053a79")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_project_id, work_date], map: "erp_hrm_time_tracking_timelogs_erp_hrm_time_tracking_p_9b0a236e")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_task_id, work_date], map: "erp_hrm_time_tracking_timelogs_erp_hrm_time_tracking_t_78427cc8")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_timesheet_id, work_date], map: "erp_hrm_time_tracking_timelogs_erp_hrm_time_tracking_t_814d2fd4")
+  @@index([work_date])
+}
+
+/// Weekly container that groups an employee’s timelogs for a specific time
+/// period and drives the approval workflow.
+///
+/// Each timesheet belongs to exactly one employee within exactly one
+/// organization and represents one week (or week-like period) identified by
+/// start/end boundaries. Timelogs are associated from the timelog side (via
+/// an optional timesheet reference), while this table stores the workflow
+/// status used to control editing and approval flows.
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_timesheets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization {@link erp_hrm_time_tracking_organizations.id}.
+  erp_hrm_time_tracking_organization_id String
+  
+  /// Belonged member/employee {@link erp_hrm_time_tracking_members.id}.
+  erp_hrm_time_tracking_employee_id String
+  
+  /// Start timestamp of the timesheet week period (inclusive).
+  week_start_at DateTime
+  
+  /// End timestamp of the timesheet week period (inclusive or exclusive based
+  /// on service interpretation).
+  week_end_at DateTime
+  
+  /// Workflow status of the timesheet (e.g., draft, submitted, approved,
+  /// rejected).
+  status String
+  
+  /// Timestamp when the timesheet was submitted for approval.
+  submitted_at DateTime?
+  
+  /// Timestamp when the timesheet was approved.
+  approved_at DateTime?
+  
+  /// Timestamp when the timesheet was rejected.
+  rejected_at DateTime?
+  
+  /// When this timesheet record was created.
+  created_at DateTime
+  
+  /// When this timesheet record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means the record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_time_tracking_organizations @relation(fields: [erp_hrm_time_tracking_organization_id], references: [id], onDelete: Cascade)
+  employee erp_hrm_time_tracking_members @relation(fields: [erp_hrm_time_tracking_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  timelogs erp_hrm_time_tracking_timelogs[]
+  versioningLocks erp_hrm_time_tracking_timesheet_versioning_locks[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([erp_hrm_time_tracking_employee_id, week_start_at], map: "erp_hrm_time_tracking_timesheets_erp_hrm_time_tracking_9baffc56")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_organization_id, status, week_start_at], map: "erp_hrm_time_tracking_timesheets_erp_hrm_time_tracking_83233517")
+}
+
+/// Live tracking session started by an employee while recording time. The
+/// session stores the employee's currently selected project and optional
+/// task, along with a running description used during active tracking.
+///
+/// This table supports concurrency-safe access by limiting active sessions
+/// per employee (only one row marked as active for a given employee). Soft
+/// deletion is supported via {@link
+/// erp_hrm_time_tracking_timer_sessions.deleted_at} for auditability.
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_timer_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization {@link erp_hrm_time_tracking_organizations.id}.
+  organization_id String
+  
+  /// Belonged member/employee {@link erp_hrm_time_tracking_members.id}.
+  employee_id String
+  
+  /// Selected project {@link erp_hrm_time_tracking_projects.id}.
+  project_id String
+  
+  /// Optional selected task {@link erp_hrm_time_tracking_tasks.id}.
+  task_id String?
+  
+  /// Running description text attached to the active tracking session.
+  description String
+  
+  /// When the tracking session started.
+  started_at DateTime
+  
+  /// When the tracking session ended, if it has finished.
+  ended_at DateTime?
+  
+  /// Whether this session is currently active for the employee (only one
+  /// active session per employee).
+  is_active Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Set when the session is removed from active use
+  /// but retained for history/audit.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_time_tracking_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  employee erp_hrm_time_tracking_members @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  project erp_hrm_time_tracking_projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  task erp_hrm_time_tracking_tasks? @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([task_id])
+  @@unique([employee_id, is_active])
+  // spellchecker: ignore-next-line
+  @@index([organization_id, employee_id, created_at], map: "erp_hrm_time_tracking_timer_sessions_organization_id_e_128bcd48")
+  @@index([project_id, created_at])
+}
+
+/// Locks a specific timesheet to prevent concurrent edits during versioning
+/// and workflow-sensitive periods. The lock is owned by an editing actor
+/// context so the system can determine whether an update is allowed and can
+/// safely release the lock when editing is completed.
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_timesheet_versioning_locks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The locked timesheet that this versioning lock applies to ({@link
+  /// erp_hrm_time_tracking_timesheets.id}).
+  timesheet_id String
+  
+  /// The user identifier that holds the lock for the timesheet versioning
+  /// session (used to enforce lock ownership and safe release).
+  locked_by_user_id String
+  
+  /// Human-readable reason or workflow context for why the lock was created
+  /// (e.g., editing, approval preparation).
+  lock_reason String
+  
+  /// When the versioning lock record was created.
+  created_at DateTime
+  
+  /// When the versioning lock record was last updated.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp; set when the lock is released/cancelled and should
+  /// no longer be treated as active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  timesheet erp_hrm_time_tracking_timesheets @relation(fields: [timesheet_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([timesheet_id, deleted_at], map: "erp_hrm_time_tracking_timesheet_versioning_locks_times_ce926aaa")
+}
+
+/// Point-in-time audit history for an employee timelog. Each row captures
+/// the full state of a timelog at the moment of snapshot creation,
+/// preserving historical values even when the live {@link
+/// erp_hrm_time_tracking_timelogs} record is edited or its workflow state
+/// changes.
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_tracking_timelog_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged timelog snapshot owner {@link erp_hrm_time_tracking_timelogs.id}.
+  erp_hrm_time_tracking_timelog_id String
+  
+  /// Organization owning this timelog at the time of the snapshot.
+  organization_id String
+  
+  /// Employee that owns this timelog at the time of the snapshot.
+  employee_id String
+  
+  /// Project associated with the timelog at the time of the snapshot.
+  project_id String
+  
+  /// Optional task associated with the timelog at the time of the snapshot.
+  task_id String?
+  
+  /// Optional timesheet that includes this timelog at the time of the snapshot.
+  timesheet_id String?
+  
+  /// Start timestamp of the work interval recorded in the timelog at the time
+  /// of the snapshot.
+  started_at DateTime
+  
+  /// End timestamp of the work interval recorded in the timelog at the time of
+  /// the snapshot.
+  ended_at DateTime
+  
+  /// Computed duration in minutes for the interval recorded in the timelog at
+  /// the time of the snapshot.
+  duration_minutes Int
+  
+  /// Free-text description/notes of the work for the timelog at the time of
+  /// the snapshot.
+  work_description String
+  
+  /// Optional timer session that produced this timelog at the time of the
+  /// snapshot.
+  source_timer_session_id String?
+  
+  /// Workflow status of the timelog at the time of the snapshot (e.g.,
+  /// draft/submitted/approved/rejected).
+  workflow_status String
+  
+  /// Snapshot creation time.
+  created_at DateTime
+  
+  /// Last update time of the snapshot record metadata.
+  updated_at DateTime
+  
+  /// Soft delete time for snapshot retention and administrative recovery.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  timelog erp_hrm_time_tracking_timelogs @relation(fields: [erp_hrm_time_tracking_timelog_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_tracking_timelog_id, created_at], map: "erp_hrm_time_tracking_timelog_snapshots_erp_hrm_time_t_a1e92c5b")
+  // spellchecker: ignore-next-line
+  @@index([organization_id, project_id, created_at], map: "erp_hrm_time_tracking_timelog_snapshots_organization_i_95602773")
+  // spellchecker: ignore-next-line
+  @@index([organization_id, employee_id, created_at], map: "erp_hrm_time_tracking_timelog_snapshots_organization_i_a9f5291c")
+}

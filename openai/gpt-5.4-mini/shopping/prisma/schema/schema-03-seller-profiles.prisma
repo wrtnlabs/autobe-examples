@@ -1,0 +1,110 @@
+/// Stores the current public storefront identity for each seller, including
+/// the shop name, shop description, and logo image used in customer-facing
+/// views.
+///
+/// This table represents the seller's active profile state only. Historical
+/// changes are preserved separately in {@link
+/// shopping_mall_seller_profile_snapshots}, so this model contains only the
+/// latest editable storefront information and the seller ownership link.
+///
+/// @namespace SellerProfiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning seller's {@link shopping_mall_sellers.id}. Each seller has at most
+  /// one current storefront profile.
+  shopping_mall_seller_id String
+  
+  /// Public storefront name shown to customers on product pages and seller
+  /// profile views.
+  shop_name String
+  
+  /// Public description of the seller's shop and business identity.
+  shop_description String
+  
+  /// URL of the seller's current logo image used in customer-facing views.
+  logo_image_url String
+  
+  /// When this storefront profile record was created.
+  created_at DateTime
+  
+  /// When this storefront profile record was last updated.
+  updated_at DateTime
+  
+  /// When this storefront profile record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_seller_profile_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_seller_id])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+/// Immutable historical versions of seller storefront profile changes. Each
+/// row preserves the seller profile state at a specific point in time so
+/// prior shop identity values remain available for audit, dispute review,
+/// and change history reconstruction.
+///
+/// This table is a snapshot of {@link shopping_mall_seller_profiles} and
+/// stores the captured profile data as it existed when the edit was made. It
+/// is append-only in practice and should not be updated after creation.
+///
+/// @namespace SellerProfiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The current seller profile whose previous state was captured in this
+  /// snapshot. References {@link shopping_mall_seller_profiles.id}.
+  shopping_mall_seller_profile_id String
+  
+  /// Captured shop name value at the time this seller profile snapshot was
+  /// created.
+  shop_name String
+  
+  /// Captured shop description value at the time this seller profile snapshot
+  /// was created.
+  shop_description String
+  
+  /// Captured logo image URI value at the time this seller profile snapshot
+  /// was created.
+  logo_image_uri String?
+  
+  /// Timestamp when this historical snapshot record was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  sellerProfile shopping_mall_seller_profiles @relation(fields: [shopping_mall_seller_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_profile_id, created_at], map: "shopping_mall_seller_profile_snapshots_shopping_mall_s_dc4fe99a")
+}

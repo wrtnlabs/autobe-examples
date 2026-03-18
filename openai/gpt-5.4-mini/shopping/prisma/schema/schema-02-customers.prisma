@@ -1,0 +1,134 @@
+/// Stores the public-facing profile information for a customer account,
+/// including the display name and phone number used for account and checkout
+/// identity. This profile belongs to exactly one customer and is removed
+/// when the customer account is deleted.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning customer's {@link shopping_mall_customers.id}. Each customer has
+  /// exactly one profile record.
+  shopping_mall_customer_id String
+  
+  /// Customer display name shown in account and customer-facing contexts.
+  display_name String
+  
+  /// Customer phone number used for contact and delivery-related communication.
+  phone_number String
+  
+  /// Timestamp when the profile record was created.
+  created_at DateTime
+  
+  /// Timestamp when the profile record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the profile record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shippingAddresses shopping_mall_shipping_addresses[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_customer_id])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Stores one or more shipping addresses owned by a customer profile,
+/// including recipient details and full delivery address components.
+///
+/// These addresses are used during checkout and order fulfillment so
+/// customers can select a destination without re-entering delivery
+/// information. The table is customer-owned, supports a default shipping
+/// address, and keeps the address data normalized into atomic fields for
+/// reliable editing, listing, and deletion.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipping_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner customer's {@link shopping_mall_customer_profiles.id}. This address
+  /// belongs to a single customer profile and is used for checkout and
+  /// delivery selection.
+  shopping_mall_customer_profile_id String
+  
+  /// Name of the person who should receive the shipment at this address.
+  recipient_name String
+  
+  /// Contact phone number for the recipient at the delivery destination.
+  phone_number String
+  
+  /// Street line and detailed delivery location information for this shipping
+  /// address.
+  street_address String
+  
+  /// City or locality component of the delivery address.
+  city String
+  
+  /// State, province, or region component of the delivery address.
+  state_province String
+  
+  /// Postal or ZIP code used for delivery routing.
+  postal_code String
+  
+  /// Country component of the delivery address.
+  country String
+  
+  /// Whether this is the customer's default shipping address for checkout
+  /// convenience.
+  is_default Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the address is treated as deleted while
+  /// preserving history.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customerProfile shopping_mall_customer_profiles @relation(fields: [shopping_mall_customer_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orders shopping_mall_orders[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_profile_id, recipient_name, phone_number, street_address, city, state_province, postal_code, country], map: "shopping_mall_shipping_addresses_shopping_mall_custome_8dfb02d5")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_profile_id, created_at], map: "shopping_mall_shipping_addresses_shopping_mall_custome_36288c40")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_profile_id, is_default], map: "shopping_mall_shipping_addresses_shopping_mall_custome_cc9e2b5a")
+}

@@ -1,0 +1,316 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { ICommunityPlatformCommunitySubscription } from "../../../api/structures/ICommunityPlatformCommunitySubscription";
+import { IPageICommunityPlatformCommunitySubscription } from "../../../api/structures/IPageICommunityPlatformCommunitySubscription";
+import { deleteCommunityPlatformCommunitySubscriptionsCommunitySubscriptionId } from "../../../providers/deleteCommunityPlatformCommunitySubscriptionsCommunitySubscriptionId";
+import { getCommunityPlatformCommunitySubscriptionsCommunitySubscriptionId } from "../../../providers/getCommunityPlatformCommunitySubscriptionsCommunitySubscriptionId";
+import { patchCommunityPlatformCommunitySubscriptions } from "../../../providers/patchCommunityPlatformCommunitySubscriptions";
+import { postCommunityPlatformCommunitySubscriptions } from "../../../providers/postCommunityPlatformCommunitySubscriptions";
+import { putCommunityPlatformCommunitySubscriptionsCommunitySubscriptionId } from "../../../providers/putCommunityPlatformCommunitySubscriptionsCommunitySubscriptionId";
+
+@Controller("/communityPlatform/communitySubscriptions")
+export class CommunityplatformCommunitysubscriptionsController {
+  /**
+   * Retrieve the details of a specific community subscription relationship by its identifier.
+   *
+   * This endpoint returns the per-member subscription state stored in `community_platform_community_subscriptions`, including the timestamps that describe when the member subscribed and whether the subscription is currently active for participation (via `is_active`). It also returns the record identifiers needed to understand the relationship context between the member and the community.
+   *
+   * The operation is intended for an authenticated scope where the caller is allowed to view membership/participation relationships. For authorization, this operation should only be accessible to:
+   * - the member who owns the subscription record (scoped access via `member_id`), and
+   * - administrative actors that manage platform governance.
+   *
+   * Validation and error behavior:
+   * - If `communitySubscriptionId` does not match any existing row in `community_platform_community_subscriptions`, the system should return a not-found error.
+   * - If the caller is not permitted to view the targeted subscription record, the system should return a forbidden/permission-denied error.
+   *
+   * The returned payload is the detailed subscription DTO (not a list summary). Client applications may use it to render subscription status within a member’s community area or to confirm participation eligibility indicators.
+   *
+   * Related operations:
+   * - A list-style retrieval of subscribed communities is handled by a separate operation that queries subscriptions belonging to a user; this endpoint focuses on retrieving one specific subscription record.
+   * - Community identity and community browsing/search are handled by separate community endpoints; this endpoint does not substitute those because it is relationship-focused rather than community-focused.
+   *
+   * @param connection
+   * @param communitySubscriptionId Identifier of the community subscription relationship record to retrieve.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor null
+   * @x-autobe-specification Implementation steps:
+   * 1) Parse `communitySubscriptionId` as UUID and load the row from `community_platform_community_subscriptions` by `id`.
+   * 2) Authorization:
+   *    - Determine caller actor identity.
+   *    - Allow if caller is admin.
+   *    - Allow if caller is the owning member of the loaded row (match caller member identity to `member_id` on the subscription row).
+   *    - Deny otherwise.
+   * 3) If no row exists, return a not-found error.
+   * 4) Map the database row fields to the response DTO:
+   *    - include `id` (communitySubscriptionId), `community_id`, `member_id`, `subscribed_at`, `is_active`, `created_at`, `updated_at`.
+   *    - include `deleted_at` only if the platform DTO exposes it; if DTO omits it, still treat the row as its current record and return only DTO fields.
+   * 5) Return the mapped DTO as JSON with HTTP 200.
+   *
+   * Edge cases:
+   * - Deleted/removed subscription records: the database includes `deleted_at`; the implementation must respect the domain expectation that only active subscriptions participate in subscribed views. For this endpoint, return the row consistently; however, authorization rules should still be applied first. If the product decides this endpoint should hide removed records, implement an additional filter `deleted_at IS NULL` before loading.
+   *
+   * Database query:
+   * - Single-row lookup by primary key `community_platform_community_subscriptions.id`.
+   *
+   * No transaction is needed for a pure read.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":communitySubscriptionId")
+  public async at(
+    @TypedParam("communitySubscriptionId")
+    communitySubscriptionId: string & tags.Format<"uuid">,
+  ): Promise<ICommunityPlatformCommunitySubscription> {
+    try {
+      return await getCommunityPlatformCommunitySubscriptionsCommunitySubscriptionId(
+        {
+          communitySubscriptionId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a member’s community subscription record.
+   *
+   * This operation modifies the existing community subscription identified by the path parameter `communitySubscriptionId`. The subscription is the relationship between a member and a community, including the timestamps when the member subscribed and whether the subscription is currently active for participation (`is_active`).
+   *
+   * This endpoint must be protected so that only the appropriate actor can change subscription state: a guest cannot change subscriptions, and a member can change only their own subscription record within the target community; an admin can perform elevated moderation/maintenance actions according to admin authorization rules.
+   *
+   * The implementation updates the database row in `community_platform_community_subscriptions` and must ensure subscriber-count integrity: when a user subscribes the community’s subscriber count increases, and when a user unsubscribes the count decreases; the count must reflect active subscription status only, and should not change when an operation does not change the effective subscription state.
+   *
+   * Validation rules must reject invalid transitions (for example, when the target record does not exist, or when the caller is not permitted to update that specific member–community subscription association). The operation should return the updated subscription representation so that clients can immediately reflect the new participation eligibility state.
+   *
+   * Related operations: clients typically call the community subscription listing/search operation (to find the subscription id) and then call this operation to apply a state change; in user flows, banning/unbanning may also affect posting eligibility, but this endpoint is focused on updating the subscription record itself.
+   *
+   * @param connection
+   * @param communitySubscriptionId Unique identifier of the community subscription relationship to update.
+   * @param body Update payload for the community subscription record. Changes the active participation state and related fields as allowed by the business rules.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor null
+   * @x-autobe-specification 1) Authorization
+   * - Authenticate caller.
+   * - If caller is guest: return 403.
+   * - If caller is member: allow only when the member owns the subscription record referenced by communitySubscriptionId.
+   * - If caller is admin: allow.
+   *
+   * 2) Validate target record
+   * - Load community_platform_community_subscriptions by id.
+   * - If not found: return 404.
+   *
+   * 3) Validate and apply update
+   * - Accept fields from request body via ICommunityPlatformCommunitySubscription.IUpdate.
+   * - Only permit updates that affect subscription participation state (especially is_active) and related audit timestamps handled by the system.
+   * - If request would not change is_active (effective subscription state unchanged), keep subscriber-count unchanged and do not modify updated_at beyond normal update semantics (implementation choice: still update updated_at if any fields change).
+   *
+   * 4) Subscriber count consistency
+   * - If is_active transitions from false->true: increment subscriber count for the related community.
+   * - If is_active transitions from true->false: decrement subscriber count for the related community.
+   * - If no effective transition: do not change subscriber count.
+   *
+   * 5) Persistence
+   * - Perform the update and subscriber count adjustment in a single database transaction.
+   *
+   * 6) Response
+   * - Return the updated subscription row serialized as ICommunityPlatformCommunitySubscription.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":communitySubscriptionId")
+  public async update(
+    @TypedParam("communitySubscriptionId")
+    communitySubscriptionId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: ICommunityPlatformCommunitySubscription.IUpdate,
+  ): Promise<ICommunityPlatformCommunitySubscription> {
+    try {
+      return await putCommunityPlatformCommunitySubscriptionsCommunitySubscriptionId(
+        {
+          communitySubscriptionId,
+          body,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently removes the community subscription identified by `{communitySubscriptionId}`.
+   *
+   * This operation is intended to support a logged-in member choosing to unsubscribe from a specific community. After the subscription is removed, the member is no longer eligible to create new posts in that community (the subscription status is what gates posting eligibility). The removal does not imply any deletion of the historical posts or comments that the member created earlier; those items remain available according to the platform’s browsing and retention expectations.
+   *
+   * Data model linkage: this endpoint acts on `community_platform_community_subscriptions`, which stores `member_id`, `community_id`, `subscribed_at`, `is_active`, and timestamps including `deleted_at`. The `@@unique([member_id, community_id])` constraint ensures subscription uniqueness per member+community pair, and the `deleted_at` column indicates a removed subscription state at the data layer.
+   *
+   * Authorization and access control: only the authenticated member who owns the subscription should be allowed to remove it. If the subscription ID does not exist, or it exists but is not owned by the caller, the system must reject the request without modifying other membership data. Handle the case where the member tries to unsubscribe when they are already not subscribed by returning a consistent denial or no-op behavior, without impacting other membership relationships.
+   *
+   * Expected behavior: upon successful removal, subsequent requests that depend on an active subscription should treat the member as unsubscribed for that community (for example, they should be blocked from creating new posts).
+   *
+   * @param connection
+   * @param communitySubscriptionId Target community subscription ID to unsubscribe the authenticated member from.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor null
+   * @x-autobe-specification Steps:
+   * 1) Authenticate caller (must be a logged-in member; guests are not allowed).
+   * 2) Validate `communitySubscriptionId` format as UUID.
+   * 3) Load `community_platform_community_subscriptions` row by `id`.
+   * 4) Authorization check: verify the row’s `member_id` matches the authenticated member identity.
+   * 5) Apply removal:
+   *    - If the schema uses `deleted_at` for removed state, set `deleted_at` to current timestamp (timestamptz) and update `is_active` to false as appropriate.
+   *    - Ensure only the targeted subscription row is affected.
+   * 6) Return success with no response body.
+   *
+   * Edge cases:
+   * - If no subscription row exists for the given ID: reject with an appropriate not-found/invalid-id error.
+   * - If the row exists but caller is not the owner: reject with an authorization error.
+   * - Concurrency: ensure the operation is idempotent with respect to rapid unsubscribe actions by re-checking current state before applying changes.
+   *
+   * Transactions:
+   * - Use a transaction for the load+authorization+update to prevent race conditions where ownership/state might change between requests.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":communitySubscriptionId")
+  public async erase(
+    @TypedParam("communitySubscriptionId")
+    communitySubscriptionId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteCommunityPlatformCommunitySubscriptionsCommunitySubscriptionId(
+        {
+          communitySubscriptionId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a community subscription for the currently logged-in member to join a specific community.
+   *
+   * This operation writes a single record into the community_platform_community_subscriptions table, which represents the user’s membership relationship to a community. A subscription is uniquely identified by the pair of member and community (enforced by the composite unique constraint on (member_id, community_id)), so creating a duplicate subscription for the same member and community must be rejected.
+   *
+   * Business rules enforced by the operation:
+   * - The member creating the subscription is the authenticated member (the member_id comes from the session context, not from client input).
+   * - The target community is provided by the client (the community_id references community_platform_communities.id).
+   * - When the subscription already exists for the same member+community pair, the request must be rejected as an invalid creation attempt.
+   *
+   * Security and authorization:
+   * - guest actor must not be able to create subscriptions.
+   * - member actor is allowed to subscribe to communities.
+   * - admin actor may also be allowed depending on the overall actor permission matrix; this operation should be implemented consistently with the platform’s community membership access control.
+   *
+   * Related operations:
+   * - Unsubscribing from a community removes the membership relationship (implemented via the CommunitySubscription removal operation).
+   * - Subscribed communities list uses a read/list operation over community_platform_community_subscriptions to display participation and feed eligibility.
+   *
+   * Expected error handling:
+   * - If community_id does not refer to an existing community, reject the request.
+   * - If a subscription already exists for (member_id, community_id), reject the request with a clear “already subscribed” style error.
+   * - If the caller is not authenticated as a member, reject with an authorization error.
+   *
+   * @param connection
+   * @param body Create request payload for a community subscription. Supplies the target community to subscribe to; the member identity is derived from the authenticated session.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor null
+   * @x-autobe-specification Realize logic for POST /communitySubscriptions.
+   *
+   * 1) Authorization & identity
+   * - Require authenticated actor of kind “member”. Derive member_id from the member session (do not accept member_id in client payload).
+   *
+   * 2) Validate input
+   * - Read community_id from request body.
+   * - Ensure community_id exists in community_platform_communities.id.
+   *
+   * 3) Enforce uniqueness
+   * - Attempt insert into community_platform_community_subscriptions using (member_id, community_id).
+   * - If insert violates @@unique([member_id, community_id]), reject as “already subscribed” (do not create a second row).
+   *
+   * 4) Set business fields
+   * - subscribed_at: set to current timestamp.
+   * - is_active: set to true (so it participates in subscribed-community browsing).
+   * - created_at/updated_at: set to current timestamp.
+   * - deleted_at: leave null (record is considered present).
+   *
+   * 5) Transactionality & consistency
+   * - Wrap the existence check + insert in a transaction, but rely primarily on the unique constraint to handle race conditions.
+   *
+   * 6) Response
+   * - Return the created subscription row mapped into CommunitySubscription DTO fields (including id, member_id (or a client-appropriate representation), community_id, is_active, subscribed_at, created_at, updated_at).
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @TypedBody()
+    body: ICommunityPlatformCommunitySubscription.ICreate,
+  ): Promise<ICommunityPlatformCommunitySubscription> {
+    try {
+      return await postCommunityPlatformCommunitySubscriptions({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a paginated list of community subscription records using complex filter criteria.
+   *
+   * This endpoint targets the `community_platform_community_subscriptions` model, which stores the relationship between a member and a community, including `subscribed_at` and the boolean `is_active` flag that determines whether the subscription is currently active for participation. The operation is designed for browsing subscription lists (e.g., “your subscribed communities”) and for administrative/member management screens that need to search subscription records with multiple constraints.
+   *
+   * Because `community_platform_community_subscriptions` enforces a composite uniqueness constraint on `(member_id, community_id)`, the filters in the request are expected to be scoped by either member, community, or both. The endpoint must treat `is_active` as the effective participation status when filtering, consistent with the requirement that subscriber count reflects active subscription status.
+   *
+   * Security and authorization: a member actor is allowed to view subscription records only within their own scope (i.e., subscription rows that match the acting member). Guest actors must not be able to retrieve subscription lists. Admin actors may retrieve subscriptions across the platform. When an unauthorized scope is detected, the system must reject the request without disclosing other members’ subscription context.
+   *
+   * Validation and error handling: the implementation must validate that the request pagination parameters are within supported bounds, and that any provided identifiers (member_id/community_id) are valid UUIDs. If filters are valid but no rows match, the operation should return an empty paginated result set rather than an error.
+   *
+   * @param connection
+   * @param body Subscription search criteria and pagination/sorting controls.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor null
+   * @x-autobe-specification Build a query over `community_platform_community_subscriptions` with optional filters from ICommunityPlatformCommunitySubscription.IRequest.
+   *
+   * Implementation steps:
+   * 1) Authorization gate:
+   *    - Determine acting actor (guest/member/admin) from the session context.
+   *    - If guest: reject.
+   *    - If member: enforce scope so that only rows where `member_id` equals the acting member id are returned (ignore/override any incoming filters that attempt to broaden scope).
+   *    - If admin: allow filters across any member/community.
+   * 2) Parse request body search criteria:
+   *    - Apply equality filters for `member_id` and/or `community_id` when provided.
+   *    - Apply `is_active` filter when provided; when omitted, do not restrict by `is_active`.
+   *    - (If provided) apply date-range filtering on `subscribed_at`.
+   * 3) Ordering and pagination:
+   *    - Apply sorting based on requested sort field (commonly `created_at` or `subscribed_at`) and direction.
+   *    - Apply pagination via limit/offset or cursor strategy as defined by the platform pagination DTO behavior.
+   * 4) Data selection:
+   *    - Return subscription summary fields for list view, referencing `community_platform_community_subscriptions` columns:
+   *      `id`, `member_id`, `community_id`, `subscribed_at`, `is_active`, `created_at`, `updated_at`, and any other summary fields included by ICommunityPlatformCommunitySubscription.ISummary.
+   * 5) Edge cases:
+   *    - If no rows match, return pagination metadata with empty `data`.
+   *    - If identifiers are malformed UUIDs, return a 400-style validation failure.
+   *
+   * No writes occur; subscriber count updates are not relevant because this is a read-only endpoint.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @TypedBody()
+    body: ICommunityPlatformCommunitySubscription.IRequest,
+  ): Promise<IPageICommunityPlatformCommunitySubscription.ISummary> {
+    try {
+      return await patchCommunityPlatformCommunitySubscriptions({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}
