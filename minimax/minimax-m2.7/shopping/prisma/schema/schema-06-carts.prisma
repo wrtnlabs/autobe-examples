@@ -1,0 +1,89 @@
+/// Shopping carts belonging to customers. Each customer has exactly one cart
+/// enforced by unique constraint on customer_id. Cart items are stored
+/// separately in ecommerce_mall_cart_items table. Carts are created when a
+/// customer adds their first item and are cleared upon successful checkout.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner customer who owns this shopping cart. {@link
+  /// ecommerce_mall_customers.id}.
+  ecommerce_mall_customer_id String
+  
+  /// Timestamp when the cart was created.
+  created_at DateTime
+  
+  /// Timestamp when the cart was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  cartItems ecommerce_mall_cart_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([ecommerce_mall_customer_id])
+}
+
+/// Individual line items within a customer's shopping cart, each
+/// representing a specific product variant and quantity. The same variant
+/// can only appear once per cart - adding the same variant again increases
+/// quantity instead of creating a new line item. Price is derived from the
+/// referenced variant at display or checkout time.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The shopping cart this item belongs to. {@link ecommerce_mall_carts.id}.
+  ecommerce_mall_cart_id String
+  
+  /// The specific product variant added to cart. {@link
+  /// ecommerce_mall_product_variants.id}.
+  ecommerce_mall_product_variant_id String
+  
+  /// Number of units of this variant in the cart. When user adds same variant
+  /// again, quantity increases instead of creating new line item.
+  quantity Int
+  
+  /// Timestamp when the item was added to the cart.
+  created_at DateTime
+  
+  /// Timestamp when the item quantity was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cart ecommerce_mall_carts @relation(fields: [ecommerce_mall_cart_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id], map: "ecommerce_mall_cart_items_ecommerce_mall_product_varia_26d98cb2")
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_cart_id, ecommerce_mall_product_variant_id], map: "ecommerce_mall_cart_items_ecommerce_mall_cart_id_ecomm_80aa4785")
+}

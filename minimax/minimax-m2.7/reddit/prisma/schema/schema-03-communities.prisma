@@ -1,0 +1,310 @@
+/// Main community entity representing a subreddit-like forum where users can
+/// post and discuss content. Each community has a unique name, description
+/// text, and an owner who created it. Communities track denormalized
+/// subscriber_count for efficient listing without expensive joins. Users can
+/// browse all communities, search by name, and subscribe to participate.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner/creator of the community. References the member who created this
+  /// community. {@link reddit_clone_members.id}
+  reddit_clone_member_id String
+  
+  /// Unique community name used for identification and URLs (e.g.,
+  /// 'askreddit', 'funny'). Must be unique across all communities.
+  name String
+  
+  /// Community description text explaining the purpose and rules of the
+  /// community.
+  description String
+  
+  /// Denormalized count of subscribers for efficient display in community
+  /// listings. Updated when users subscribe/unsubscribe.
+  subscriber_count Int
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to community metadata.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null when active, set when community is deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  icon reddit_clone_community_icons?
+  communityModerators reddit_clone_community_moderators[]
+  communityBans reddit_clone_community_bans[]
+  communityReports reddit_clone_community_reports[]
+  subscriptions reddit_clone_subscriptions[]
+  posts reddit_clone_posts[]
+  moderators reddit_clone_moderators[]
+  moderatorSnapshots reddit_clone_moderator_snapshots[]
+  bans reddit_clone_bans[]
+  reports reddit_clone_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+  @@index([reddit_clone_member_id, created_at])
+}
+
+/// Stores icon images for communities as separate file entities. Each
+/// community can have one icon image, establishing a 1:1 relationship. The
+/// icon references an uploaded file from the {@link reddit_clone_files}
+/// entity, following the same file association pattern used across the
+/// platform for avatars and post images.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_icons {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community this icon belongs to. {@link
+  /// reddit_clone_communities.id}
+  reddit_clone_community_id String
+  
+  /// Reference to the uploaded file serving as the community icon. {@link
+  /// reddit_clone_files.id}
+  reddit_clone_file_id String
+  
+  /// Timestamp when this icon was uploaded or assigned to the community.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  file reddit_clone_files @relation(fields: [reddit_clone_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_clone_file_id])
+  @@unique([reddit_clone_community_id])
+}
+
+/// Junction table linking members to communities with moderator roles.
+/// Establishes the community governance hierarchy where each community has
+/// exactly one owner and can have multiple moderators. The owner is
+/// automatically assigned when creating a community. Moderator role
+/// assignments are reversible and tracked via the assigned_by field for
+/// audit purposes.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community where this moderator role applies. {@link
+  /// reddit_clone_communities.id}
+  reddit_clone_community_id String
+  
+  /// The member who holds this moderator role in the community. {@link
+  /// reddit_clone_members.id}
+  reddit_clone_member_id String
+  
+  /// The member who assigned this moderator role. Null for owner
+  /// (self-assigned on community creation). {@link reddit_clone_members.id}
+  assigned_by String?
+  
+  /// The moderator role level. 'owner' is the highest authority who cannot be
+  /// removed. 'moderator' has delegated powers within the community.
+  role String
+  
+  /// Timestamp when this moderator role was assigned.
+  created_at DateTime
+  
+  /// Timestamp when this moderator role was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  member reddit_clone_members @relation("reddit_clone_community_moderators_of_reddit_clone_member_id", fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  assigner reddit_clone_members? @relation("reddit_clone_community_moderators_of_assigned_by", fields: [assigned_by], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  issuedBans reddit_clone_community_bans[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([assigned_by])
+  // spellchecker: ignore-next-line
+  @@unique([reddit_clone_community_id, reddit_clone_member_id], map: "reddit_clone_community_moderators_reddit_clone_communi_ddd5ba71")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_member_id, reddit_clone_community_id], map: "reddit_clone_community_moderators_reddit_clone_member__a68a0ee0")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_community_id, role], map: "reddit_clone_community_moderators_reddit_clone_communi_99032553")
+}
+
+/// Records user bans within communities. Each ban links a banned user to a
+/// specific community, issued by a moderator with a reason and optional
+/// expiration time. Banned users cannot create posts or comments in the
+/// community but can still view content.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community from which the user is banned. {@link
+  /// reddit_clone_communities.id}.
+  reddit_clone_community_id String
+  
+  /// The member who is banned from the community. {@link
+  /// reddit_clone_members.id}.
+  reddit_clone_member_id String
+  
+  /// The moderator who issued this ban. {@link
+  /// reddit_clone_community_moderators.id}.
+  reddit_clone_community_moderator_id String
+  
+  /// Reason for the ban as provided by the moderator.
+  reason String
+  
+  /// Timestamp when the ban was issued.
+  created_at DateTime
+  
+  /// Timestamp when the ban was last updated.
+  updated_at DateTime
+  
+  /// Optional timestamp when the ban expires. Null means permanent ban.
+  expires_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  moderator reddit_clone_community_moderators @relation(fields: [reddit_clone_community_moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_community_moderator_id], map: "reddit_clone_community_bans_reddit_clone_community_mod_feea0b9f")
+  // spellchecker: ignore-next-line
+  @@unique([reddit_clone_community_id, reddit_clone_member_id], map: "reddit_clone_community_bans_reddit_clone_community_id__df59b264")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_member_id, created_at], map: "reddit_clone_community_bans_reddit_clone_member_id_cre_ffb8ad3d")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_community_id, created_at], map: "reddit_clone_community_bans_reddit_clone_community_id__b3bba63e")
+}
+
+/// User-submitted reports targeting posts or comments within a community,
+/// with status for moderator review workflow.
+///
+/// This table stores content reports filed by users against posts or
+/// comments that violate community rules. Reports are scoped to a specific
+/// community so that moderators can access and review them. The polymorphic
+/// target pattern (target_type + target_id) allows a single table to handle
+/// reports for both posts and comments.
+///
+/// Workflow: Users submit reports with a reason. Moderators review pending
+/// reports and either approve (deleting the content) or dismiss (keeping the
+/// content) them. The resolution fields track who resolved the report and
+/// when.
+///
+/// @namespace Communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Community where the reported content exists and where moderators will
+  /// review this report. {@link reddit_clone_communities.id}.
+  reddit_clone_community_id String
+  
+  /// User who filed this report. {@link reddit_clone_members.id}.
+  reporter_id String
+  
+  /// Moderator who resolved this report. {@link reddit_clone_members.id}. Null
+  /// until report is resolved.
+  resolved_by_id String?
+  
+  /// Type of reported content. Values: 'post' or 'comment'.
+  target_type String
+  
+  /// ID of the reported post or comment. Combined with target_type to identify
+  /// the specific content.
+  target_id String
+  
+  /// User-provided reason for the report explaining why the content violates
+  /// community rules.
+  reason String
+  
+  /// Current status of the report. Values: 'pending', 'approved', 'dismissed'.
+  status String
+  
+  /// Optional note from the moderator explaining the resolution decision.
+  resolution_note String?
+  
+  /// Timestamp when the report was resolved by a moderator. Null until
+  /// resolved.
+  resolved_at DateTime?
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  reporter reddit_clone_members @relation("reddit_clone_community_reports_of_reporter_id", fields: [reporter_id], references: [id], onDelete: Cascade)
+  resolvedBy reddit_clone_members? @relation("reddit_clone_community_reports_of_resolved_by_id", fields: [resolved_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([resolved_by_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_community_id, status, created_at], map: "reddit_clone_community_reports_reddit_clone_community__1a57c237")
+  @@index([reporter_id, created_at])
+  @@index([target_type, target_id])
+}

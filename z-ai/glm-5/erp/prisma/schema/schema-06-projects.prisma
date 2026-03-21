@@ -1,0 +1,144 @@
+/// Work containers within organizations that group tasks and track time.
+/// Projects are created by users with project:manage permission and can be
+/// filtered by status. Active projects can receive timelogs; archived or
+/// completed projects preserve existing timelogs but cannot receive new
+/// ones. Each project has optional budget hours for tracking estimated work
+/// against actual time logged.
+///
+/// Projects serve as the primary organizational unit for work management,
+/// with members assigned through the {@link erp_hrm_project_members}
+/// junction table. Project leads (members with lead role) can manage tasks
+/// within their assigned projects.
+///
+/// {@link erp_hrm_organizations} owns projects. {@link erp_hrm_tasks} belong
+/// to projects. {@link erp_hrm_project_members} assign employees to
+/// projects.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization that owns this project. Projects are strictly isolated
+  /// by organization. {@link erp_hrm_organizations.id}
+  organization_id String
+  
+  /// Project name. Required for identification and display in project lists.
+  name String
+  
+  /// Detailed description of the project's purpose and scope. Optional field
+  /// for additional context.
+  description String?
+  
+  /// Hex color code for UI display (e.g., #FF5733). Required for visual
+  /// identification in dashboards and project lists.
+  color_code String
+  
+  /// Project lifecycle status. Active projects can receive new timelogs.
+  /// Archived or completed projects preserve existing data but cannot receive
+  /// new timelogs. Valid values: 'active', 'archived', 'completed'.
+  status String
+  
+  /// Total estimated hours for the project. Optional field used for budget
+  /// tracking and utilization reports. Projects without budget hours are
+  /// excluded from budget utilization reports.
+  budget_hours Float?
+  
+  /// Optional project start date for scheduling and planning purposes.
+  start_date DateTime?
+  
+  /// Optional project end date for scheduling and planning purposes.
+  end_date DateTime?
+  
+  /// Timestamp when the project was created.
+  created_at DateTime
+  
+  /// Timestamp when the project was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Projects can only be deleted if they have no
+  /// associated timelogs.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  projectMembers erp_hrm_project_members[]
+  tasks erp_hrm_tasks[]
+  timelogs erp_hrm_timelogs[]
+  timers erp_hrm_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([organization_id, created_at])
+  @@index([organization_id, status])
+}
+
+/// Junction table establishing many-to-many relationships between employees
+/// and projects with role differentiation. Each record represents a project
+/// membership with an assigned role (member or project-lead). Project leads
+/// have elevated permissions to manage tasks within their assigned project.
+/// This enables employees to participate in multiple projects with different
+/// roles per project. Managed by users with project:manage permission.
+/// References {@link erp_hrm_employees} for membership and {@link
+/// erp_hrm_projects} for project assignment.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_project_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The employee assigned to this project. Each employee can be assigned to
+  /// multiple projects. References {@link erp_hrm_employees.id}.
+  erp_hrm_employee_id String
+  
+  /// The project this membership belongs to. Each project can have multiple
+  /// members with various roles. References {@link erp_hrm_projects.id}.
+  erp_hrm_project_id String
+  
+  /// The role assigned to this employee for this project. 'member' is a
+  /// standard participant who can log time on the project. 'project_lead' has
+  /// elevated permissions to manage tasks within the project including
+  /// creating, editing, and assigning tasks.
+  role String
+  
+  /// Timestamp when the project membership was created.
+  created_at DateTime
+  
+  /// Timestamp when the project membership was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the project membership was soft-deleted. Null if the
+  /// membership is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee erp_hrm_employees @relation(fields: [erp_hrm_employee_id], references: [id], onDelete: Cascade)
+  project erp_hrm_projects @relation(fields: [erp_hrm_project_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([erp_hrm_employee_id, erp_hrm_project_id], map: "erp_hrm_project_members_erp_hrm_employee_id_erp_hrm_pr_536a50d5")
+  @@index([erp_hrm_project_id])
+}

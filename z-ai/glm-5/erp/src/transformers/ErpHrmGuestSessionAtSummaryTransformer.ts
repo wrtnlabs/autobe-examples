@@ -1,0 +1,43 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IErpHrmGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmGuest";
+import { IErpHrmGuestSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmGuestSession";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import typia, { tags } from "typia";
+
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ErpHrmGuestAtSummaryTransformer } from "./ErpHrmGuestAtSummaryTransformer";
+
+export namespace ErpHrmGuestSessionAtSummaryTransformer {
+  export type Payload = Prisma.erp_hrm_guest_sessionsGetPayload<
+    ReturnType<typeof select>
+  >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        ip: true,
+        href: true,
+        referrer: true,
+        created_at: true,
+        expired_at: true,
+        guest: ErpHrmGuestAtSummaryTransformer.select(),
+      },
+    } satisfies Prisma.erp_hrm_guest_sessionsFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IErpHrmGuestSession.ISummary> {
+    const durationMs = input.expired_at.getTime() - input.created_at.getTime();
+    return {
+      id: input.id,
+      ip: input.ip,
+      href: input.href,
+      referrer: input.referrer,
+      duration: Math.floor(durationMs / 1000),
+      created_at: input.created_at.toISOString(),
+      expired_at: input.expired_at.toISOString(),
+      guest: await ErpHrmGuestAtSummaryTransformer.transform(input.guest),
+    };
+  }
+}

@@ -1,0 +1,433 @@
+/// Main product listings owned by sellers with category assignment, base
+/// price, and soft delete support.
+///
+/// Each product represents a sale item created by a seller. Products belong
+/// to exactly one category and have a base price that serves as the default
+/// price for variants. Sellers can edit products, which creates immutable
+/// snapshots in the ProductSnapshot table for audit trail and dispute
+/// resolution.
+///
+/// Products are soft-deleted (hidden from search/listings) when sellers
+/// delete them, but order history preserves the product information through
+/// snapshots. Products without any variants are visible in search but shown
+/// as unavailable.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owning seller's {@link ecommerce_mall_sellers.id}.
+  ecommerce_mall_seller_id String
+  
+  /// Assigned category's {@link ecommerce_mall_categories.id}. Products become
+  /// uncategorized when category is deleted.
+  ecommerce_mall_category_id String
+  
+  /// Product name displayed in listings and search results.
+  name String
+  
+  /// Detailed product description shown on product detail page.
+  description String
+  
+  /// Default price used when variants do not override pricing.
+  base_price Float
+  
+  /// Timestamp when the product was created.
+  created_at DateTime
+  
+  /// Timestamp when the product was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null when active, set when seller deletes product.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  productImages ecommerce_mall_product_images[]
+  variants ecommerce_mall_product_variants[]
+  productSnapshots ecommerce_mall_product_snapshots[]
+  wishlistItems ecommerce_mall_wishlist_items[]
+  orderItems ecommerce_mall_order_items[]
+  reviews ecommerce_mall_reviews[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_mall_category_id])
+  @@index([ecommerce_mall_seller_id, created_at])
+}
+
+/// Product image gallery supporting multiple images per product with display
+/// order for carousel/thumbnail functionality. Images are reorderable by
+/// sellers and automatically included in product snapshots to preserve
+/// historical product state.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated product's {@link ecommerce_mall_products.id}.
+  product_id String
+  
+  /// URL of the product image file stored in file storage.
+  image_url String
+  
+  /// Sort order index for image display in product gallery. Lower values
+  /// appear first. First image (order=0) is used as main thumbnail.
+  display_order Int
+  
+  /// Timestamp when the image was added to the product.
+  created_at DateTime
+  
+  /// Timestamp when the image was last updated or reordered.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([product_id, display_order])
+}
+
+/// Product variants (SKUs) representing specific option combinations for
+/// products. Each variant has a unique SKU code, optional price override
+/// from base price, and current stock quantity. Variants belong to exactly
+/// one product and are the purchasable units in orders. Stock is tracked via
+/// inventory records, and all edits create immutable snapshots for audit
+/// purposes.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product's {@link ecommerce_mall_products.id}. Each variant must
+  /// belong to exactly one product.
+  ecommerce_mall_product_id String
+  
+  /// Unique SKU (Stock Keeping Unit) code identifying this variant across the
+  /// platform. Used in order items for display and inventory tracking. Must be
+  /// unique globally.
+  sku_code String
+  
+  /// Optional price override for this variant. When null, the product's base
+  /// price applies. Allows variants with different prices (e.g., larger size
+  /// costs more).
+  price Float?
+  
+  /// Current available stock quantity for this variant. Represents the
+  /// calculated stock from all inventory records. Starts at 0 when variant is
+  /// created.
+  quantity Int
+  
+  /// Timestamp when the variant was created.
+  created_at DateTime
+  
+  /// Timestamp when the variant was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion. Null when active, set when seller deletes
+  /// the variant.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  optionValues ecommerce_mall_product_variant_option_values[]
+  inventoryRecords ecommerce_mall_inventory_records[]
+  cartItems ecommerce_mall_cart_items[]
+  orderItems ecommerce_mall_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([sku_code])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, created_at], map: "ecommerce_mall_product_variants_ecommerce_mall_product_58e20e33")
+}
+
+/// Immutable point-in-time snapshots of product state captured during
+/// product edits and order placements. Each snapshot preserves the complete
+/// product data including name, description, base price, category name, and
+/// references to seller. Snapshots are created automatically whenever a
+/// seller edits their product and serve as authoritative historical records
+/// for dispute resolution. Once created, snapshots cannot be modified or
+/// deleted.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the product being snapshotted. {@link
+  /// ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Reference to the seller who owns this product snapshot. {@link
+  /// ecommerce_mall_sellers.id}
+  ecommerce_mall_seller_id String
+  
+  /// Product name as it appeared at the time of snapshot creation.
+  name String
+  
+  /// Product description as it appeared at the time of snapshot creation.
+  description String
+  
+  /// Base price of the product as it appeared at the time of snapshot creation.
+  base_price Float
+  
+  /// Category name the product belonged to at the time of snapshot creation.
+  category_name String
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  productSnapshotImages ecommerce_mall_product_snapshot_images[]
+  productSnapshotVariants ecommerce_mall_product_snapshot_variants[]
+  orderItems ecommerce_mall_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, created_at], map: "ecommerce_mall_product_snapshots_ecommerce_mall_produc_fba5f09c")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_id, created_at], map: "ecommerce_mall_product_snapshots_ecommerce_mall_seller_56e486e7")
+  @@index([created_at])
+}
+
+/// Normalized table storing individual option key-value pairs for product
+/// variants. Each row represents one option (e.g., color=Red, size=Large).
+/// This table replaces the JSON option_values field from the parent
+/// product_variants table to comply with First Normal Form (1NF)
+/// requirements. Every product variant can have multiple options, and each
+/// option key must be unique per variant.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_variant_option_values {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product variant's {@link ecommerce_mall_product_variants.id}.
+  ecommerce_mall_product_variant_id String
+  
+  /// Option key name such as 'color', 'size', or any attribute identifier.
+  key String
+  
+  /// Option value such as 'Red', 'Large', or corresponding attribute value.
+  value String
+  
+  /// Timestamp when this option was created.
+  created_at DateTime
+  
+  /// Timestamp when this option was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_variant_id, key], map: "ecommerce_mall_product_variant_option_values_ecommerce_d3a07ff0")
+}
+
+/// Individual product snapshot image records storing URL and display order
+/// for each image in a product snapshot. Decomposed from JSON array to
+/// comply with 1NF. Each image belongs to exactly one product snapshot and
+/// cannot exist independently.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_snapshot_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product snapshot's {@link ecommerce_mall_product_snapshots.id}.
+  ecommerce_mall_product_snapshot_id String
+  
+  /// URL of the image in the product snapshot.
+  url String
+  
+  /// Display order of the image for sorting. Lower values appear first.
+  display_order Int
+  
+  /// Timestamp when the image record was created.
+  created_at DateTime
+  
+  /// Timestamp when the image record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productSnapshot ecommerce_mall_product_snapshots @relation(fields: [ecommerce_mall_product_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_snapshot_id, display_order], map: "ecommerce_mall_product_snapshot_images_ecommerce_mall__f901b0b0")
+}
+
+/// Individual product snapshot variant records storing SKU, option key-value
+/// pairs, price override, and stock quantity for each variant in a product
+/// snapshot. Decomposed from JSON array to comply with 1NF.
+///
+/// This table captures the immutable state of a product variant at the time
+/// a product snapshot is created. Each record represents one variant option
+/// (e.g., color=red, size=large) with its SKU code, price override, and
+/// stock quantity at snapshot time. Option key-value pairs are stored in the
+/// related ecommerce_mall_product_snapshot_variant_option_values table.
+///
+/// This table is always accessed through its parent product_snapshot and
+/// cannot exist independently.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_snapshot_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent product snapshot that captured this variant state. {@link
+  /// ecommerce_mall_product_snapshots.id}.
+  ecommerce_mall_product_snapshot_id String
+  
+  /// Unique SKU code of the product variant at snapshot time.
+  sku String
+  
+  /// Variant-specific price override. Null if using product base price.
+  price_override Float?
+  
+  /// Stock quantity of the variant at snapshot time.
+  stock_quantity Int
+  
+  /// Timestamp when this variant snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productSnapshot ecommerce_mall_product_snapshots @relation(fields: [ecommerce_mall_product_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  optionValues ecommerce_mall_product_snapshot_variant_option_values[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_snapshot_id], map: "ecommerce_mall_product_snapshot_variants_ecommerce_mal_cda5c8af")
+}
+
+/// Individual option key-value pairs for product snapshot variants. Each row
+/// stores one option attribute (e.g., color=Red, size=Large). Decomposed
+/// from JSON array to comply with 1NF normalization. Part of the product
+/// snapshot system that preserves variant option state at purchase/edit time
+/// for dispute resolution.
+///
+/// @namespace Products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_snapshot_variant_option_values {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged product snapshot variant's {@link
+  /// ecommerce_mall_product_snapshot_variants.id}.
+  ecommerce_mall_product_snapshot_variant_id String
+  
+  /// Option name identifying the attribute type such as color, size, or style.
+  key String
+  
+  /// Option value for the specified attribute such as Red, Large, or Cotton.
+  value String
+  
+  /// Timestamp when this option value was captured in the snapshot.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productSnapshotVariant ecommerce_mall_product_snapshot_variants @relation(fields: [ecommerce_mall_product_snapshot_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_product_snapshot_variant_id, key], map: "ecommerce_mall_product_snapshot_variant_option_values__d66c2851")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_snapshot_variant_id, created_at], map: "ecommerce_mall_product_snapshot_variant_option_values__a04b05d2")
+}

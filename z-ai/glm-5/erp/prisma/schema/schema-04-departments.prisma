@@ -1,0 +1,74 @@
+/// Organizational units within each organization for grouping employees by
+/// function, team, or area of responsibility. Supports single-level
+/// hierarchy through optional parent department reference, where a
+/// department with a parent cannot itself have children. Department names
+/// must be unique within the same organization. When a department is
+/// deleted, employees previously assigned to it have their department
+/// reference cleared.
+///
+/// Departments provide the organizational structure that enables
+/// categorizing employees by their functional areas (e.g., Engineering,
+/// Marketing, Human Resources, Finance). The hierarchy feature allows for
+/// both granular team-level departments (e.g., Backend Development as child
+/// of Engineering) and high-level organizational views in reporting.
+///
+/// @namespace Departments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization this department belongs to. Departments are
+  /// organization-scoped and data-isolated per tenant. {@link
+  /// erp_hrm_organizations.id}
+  organization_id String
+  
+  /// Optional parent department reference for single-level hierarchy. When
+  /// set, this department is a child team within the parent department. A
+  /// department with a parent cannot itself have children (enforced by
+  /// application logic). {@link erp_hrm_departments.id}
+  parent_id String?
+  
+  /// The department name that serves as its primary identifier within the
+  /// organization. Must be unique across all departments in the same
+  /// organization. Used in lists, reports, and assignment interfaces.
+  name String
+  
+  /// Optional additional context about the department's purpose, scope, or the
+  /// types of work performed by employees assigned to that department.
+  description String?
+  
+  /// Timestamp when the department was created.
+  created_at DateTime
+  
+  /// Timestamp when the department was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the department is considered deleted but
+  /// preserved for audit and data integrity. Employees assigned to deleted
+  /// departments have their reference cleared.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  parent erp_hrm_departments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees erp_hrm_employees[]
+  children erp_hrm_departments[] @relation("recursive")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([parent_id])
+}

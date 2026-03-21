@@ -1,0 +1,501 @@
+/// Temporary guest accounts identified by device for anonymous access before
+/// registration or login.
+///
+/// This table stores guest user sessions identified by device identifier.
+/// Guest accounts are lightweight, anonymous identities that allow users to
+/// browse or perform limited actions before registering or logging in. Guest
+/// accounts may be converted to full member accounts or discarded. The soft
+/// delete pattern with deleted_at allows cleanup of stale guest records.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique device identifier used for anonymous guest identification and
+  /// session binding.
+  device_identifier String
+  
+  /// Timestamp when the guest account was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest account was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions erp_hrm_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_identifier])
+  @@index([created_at])
+}
+
+/// Temporary session tokens for guest access with expiration. Stores
+/// connection metadata (IP address, requested URL, referrer) for audit trail
+/// and session management. Each session belongs to one guest and
+/// automatically expires based on the configured session duration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged guest's {@link erp_hrm_guests.id}.
+  erp_hrm_guest_id String
+  
+  /// Client IP address from the request for security audit and geographic
+  /// tracking.
+  ip String
+  
+  /// Requested URL path for session activity tracking.
+  href String
+  
+  /// HTTP referrer header indicating the previous page URL.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp when the session becomes invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest erp_hrm_guests @relation(fields: [erp_hrm_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_guest_id, created_at])
+}
+
+/// Registered user accounts with email and password credentials for
+/// authentication. Users can belong to multiple organizations via Employee
+/// records (erp_hrm_employees), with a shared global profile across all
+/// organizations they belong to. This is the canonical identity record for
+/// authenticated member actors in the system.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for login and account identification.
+  email String
+  
+  /// Bcrypt hashed password for secure authentication.
+  password_hash String
+  
+  /// User's display name shown across all organizations.
+  display_name String
+  
+  /// URI to user's avatar image file.
+  avatar_uri String?
+  
+  /// User's phone number for contact purposes.
+  phone String?
+  
+  /// Timestamp when the account was created.
+  created_at DateTime
+  
+  /// Timestamp when the account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion. Null if account is active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberSessions erp_hrm_member_sessions[]
+  passwordResets erp_hrm_member_password_resets[]
+  emailVerifications erp_hrm_member_email_verifications[]
+  ownedOrganization erp_hrm_organizations?
+  activityLogs erp_hrm_activity_logs[]
+  generatedReports erp_hrm_reports[]
+  employees erp_hrm_employees[]
+  taskHistories erp_hrm_task_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// JWT session tokens for member authentication with access and refresh
+/// token support. Tracks member login sessions including client metadata,
+/// token validity, and session lifecycle. Each session belongs to one member
+/// via erp_hrm_member_id. Sessions are created on login and invalidated on
+/// logout or expiration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged member's {@link erp_hrm_members.id}.
+  erp_hrm_member_id String
+  
+  /// Client IP address from the login request.
+  ip String
+  
+  /// Current request URL when session was created.
+  href String
+  
+  /// HTTP referrer header from the login request.
+  referrer String
+  
+  /// JWT access token string for authenticated API requests.
+  access_token String
+  
+  /// JWT refresh token string for obtaining new access tokens.
+  refresh_token String
+  
+  /// Expiration timestamp of the access token.
+  token_expired_at DateTime
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_member_id, created_at])
+}
+
+/// Password reset tokens for member accounts with expiration and usage
+/// tracking. Each token is linked to a specific member and can only be used
+/// once to reset their password. Supports soft deletion for audit trail
+/// compliance.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who requested the password reset. {@link erp_hrm_members.id}.
+  erp_hrm_member_id String
+  
+  /// Hashed reset token string for security. Tokens should be hashed before
+  /// storage.
+  token String
+  
+  /// Expiration timestamp after which the token becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the token was successfully used to reset password. Null if
+  /// unused.
+  used_at DateTime?
+  
+  /// Timestamp when the password reset was requested.
+  created_at DateTime
+  
+  /// Timestamp of last update to this record.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for audit trail. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  @@index([erp_hrm_member_id, created_at])
+}
+
+/// Email verification tokens for member registration email verification.
+/// Stores temporary tokens sent to new members during registration to
+/// confirm email ownership. Tokens have expiration timestamps and are marked
+/// as verified once the member completes the verification process.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member whose email is being verified. {@link erp_hrm_members.id}
+  erp_hrm_member_id String
+  
+  /// Unique verification token string sent to the member's email for
+  /// verification.
+  token String
+  
+  /// Timestamp when this verification token expires and becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when this verification token was successfully verified by the
+  /// member. Null if not yet verified.
+  verified_at DateTime?
+  
+  /// Timestamp when this verification record was created.
+  created_at DateTime
+  
+  /// Timestamp when this verification record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_member_id, created_at], map: "erp_hrm_member_email_verifications_erp_hrm_member_id_c_642cbc93")
+}
+
+/// Administrator accounts with elevated privileges for organization
+/// management. Admin users have full access to organization settings,
+/// employee management, project oversight, and time tracking approvals. Each
+/// admin has their own authentication credentials separate from regular
+/// member accounts.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address used for authentication. Must be unique across all admin
+  /// accounts.
+  email String
+  
+  /// Bcrypt hashed password for secure authentication.
+  password_hash String
+  
+  /// Admin's display name shown in the interface and activity logs.
+  display_name String
+  
+  /// URL to the admin's profile avatar image.
+  avatar_uri String?
+  
+  /// Contact phone number for the admin.
+  phone String?
+  
+  /// Timestamp when the admin account was created.
+  created_at DateTime
+  
+  /// Timestamp when the admin account was last updated.
+  updated_at DateTime
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions erp_hrm_admin_sessions[]
+  adminPasswordReset erp_hrm_admin_password_resets?
+  auditLogs erp_hrm_admin_audit_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens for administrator authentication with access and
+/// refresh token support. Each session records the admin's login context
+/// including IP address, navigation history, and expiration time. Sessions
+/// are created upon admin login and invalidated upon logout or expiration.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged administrator's {@link erp_hrm_admins.id}.
+  erp_hrm_admin_id String
+  
+  /// Client IP address from which the session was created.
+  ip String
+  
+  /// Current request URL path for session tracking.
+  href String
+  
+  /// HTTP referrer header indicating the previous page URL.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and becomes invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin erp_hrm_admins @relation(fields: [erp_hrm_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_admin_id, created_at])
+}
+
+/// Password reset tokens for administrator password recovery. Stores hashed
+/// reset tokens with expiration timestamps, supporting single-use token
+/// semantics. Each admin can have only one active password reset request at
+/// a time.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The administrator requesting password reset. {@link erp_hrm_admins.id}
+  erp_hrm_admin_id String
+  
+  /// Hashed password reset token for security.
+  token_hash String
+  
+  /// Expiration timestamp of the reset token. After this time, the token is
+  /// invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the token was used to reset the password. Null if not yet
+  /// used.
+  used_at DateTime?
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  /// Timestamp when the record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin erp_hrm_admins @relation(fields: [erp_hrm_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([erp_hrm_admin_id])
+  @@index([created_at])
+}
+
+/// Immutable audit trail recording administrative actions performed by
+/// administrators within the system for security compliance and
+/// accountability purposes. Each record captures the admin who performed the
+/// action, the action type, the target entity that was affected, and
+/// additional metadata in JSON format. Action types include: employee
+/// invited/deactivated/reactived, contract created/edited, project
+/// created/archived/completed/deleted, task status changed, timesheet
+/// submitted/approved/rejected, and role assigned/changed.
+///
+/// @namespace Actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_admin_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the administrator who performed this action. {@link
+  /// erp_hrm_admins.id}.
+  erp_hrm_admin_id String
+  
+  /// Type of administrative action performed (e.g., employee_invited,
+  /// employee_deactivated, contract_created, project_archived,
+  /// timesheet_approved).
+  action_type String
+  
+  /// Type of entity that was affected by this action (e.g., employee,
+  /// contract, project, task, timesheet, role).
+  target_entity String
+  
+  /// UUID of the entity that was affected by this action.
+  target_id String
+  
+  /// JSON-formatted additional context about the action such as old/new
+  /// values, reason for rejection, or other relevant details.
+  metadata String?
+  
+  /// IP address from which the admin performed this action for security
+  /// auditing.
+  ip_address String?
+  
+  /// Timestamp when this action was performed. Audit records are immutable.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin erp_hrm_admins @relation(fields: [erp_hrm_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_admin_id, created_at])
+  @@index([action_type, created_at])
+  @@index([target_entity, target_id])
+}

@@ -1,0 +1,189 @@
+/// Main post entity storing common attributes for all post types with
+/// polymorphic type discriminator. Each post belongs to a community and is
+/// authored by a member. Posts support three content types (text, link,
+/// image) via separate child tables following 1:1 relationship pattern.
+/// Denormalized vote_score and comment_count fields enable efficient feed
+/// queries without expensive aggregations at query time.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author of the post. {@link reddit_clone_members.id}.
+  reddit_clone_member_id String
+  
+  /// Community where the post belongs. {@link reddit_clone_communities.id}.
+  reddit_clone_community_id String
+  
+  /// Title of the post. Required for all post types.
+  title String
+  
+  /// Post type discriminator indicating content type: 'text' for text posts,
+  /// 'link' for URL posts, 'image' for image posts.
+  type String
+  
+  /// Denormalized vote score (upvotes minus downvotes) for efficient feed
+  /// sorting without aggregation at query time.
+  vote_score Int
+  
+  /// Denormalized comment count for efficient display without counting at
+  /// query time.
+  comment_count Int
+  
+  /// Timestamp when the post was created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  postTextContent reddit_clone_post_text_contents?
+  link reddit_clone_post_links?
+  image reddit_clone_post_images?
+  comments reddit_clone_comments[]
+  postVotes reddit_clone_post_votes[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_clone_community_id, created_at])
+  @@index([reddit_clone_member_id, created_at])
+  @@index([created_at])
+  @@index([vote_score, created_at])
+}
+
+/// Stores the full body text content for text-type posts in the Reddit-like
+/// platform. This table maintains a strict 1:1 relationship with the parent
+/// post entity via a unique foreign key constraint, ensuring each post can
+/// only have one text content record. The body field contains the main
+/// textual content of text posts and supports full-text search through GIN
+/// indexing.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_post_text_contents {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post this text content belongs to. {@link
+  /// reddit_clone_posts.id}
+  reddit_clone_post_id String
+  
+  /// The full textual body content of the text post.
+  body String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_clone_post_id])
+}
+
+/// Stores the external URL for link-type posts. This table maintains a
+/// one-to-one relationship with the main posts table, where each link post
+/// has exactly one URL record. When a post is deleted, the associated link
+/// content is cascade deleted.
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_post_links {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated post this link belongs to. {@link reddit_clone_posts.id}
+  reddit_clone_post_id String
+  
+  /// External URL pointing to the linked resource.
+  url String
+  
+  /// Timestamp when the link was created.
+  created_at DateTime
+  
+  /// Timestamp when the link was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_clone_post_id])
+}
+
+/// Stores image file references for image post type. Each image post has
+/// exactly one image file associated with it through a 1:1 relationship. The
+/// actual image file data is stored in {@link reddit_clone_files}, while
+/// this table links the image to the parent post. This design follows the
+/// polymorphic content pattern used for different post types (text, link,
+/// image).
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post this image belongs to. Enforces 1:1
+  /// relationship - each image post has exactly one image. {@link
+  /// reddit_clone_posts.id}.
+  reddit_clone_post_id String
+  
+  /// Reference to the uploaded image file in the file storage. {@link
+  /// reddit_clone_files.id}.
+  reddit_clone_file_id String
+  
+  /// Timestamp when the image was associated with the post.
+  created_at DateTime
+  
+  /// Timestamp when the image association was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  file reddit_clone_files @relation(fields: [reddit_clone_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_clone_post_id])
+  @@index([reddit_clone_file_id])
+}

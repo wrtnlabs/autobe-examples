@@ -1,0 +1,332 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { IEcommerceMallRefundRequest } from "../../../../api/structures/IEcommerceMallRefundRequest";
+import { IPageIEcommerceMallRefundRequest } from "../../../../api/structures/IPageIEcommerceMallRefundRequest";
+import { SellerAuth } from "../../../../decorators/SellerAuth";
+import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
+import { getEcommerceMallSellerRefundRequestsRequestId } from "../../../../providers/getEcommerceMallSellerRefundRequestsRequestId";
+import { patchEcommerceMallSellerRefundRequests } from "../../../../providers/patchEcommerceMallSellerRefundRequests";
+import { postEcommerceMallSellerRefundRequestsRequestIdApprove } from "../../../../providers/postEcommerceMallSellerRefundRequestsRequestIdApprove";
+import { postEcommerceMallSellerRefundRequestsRequestIdReject } from "../../../../providers/postEcommerceMallSellerRefundRequestsRequestIdReject";
+import { putEcommerceMallSellerRefundRequestsRequestId } from "../../../../providers/putEcommerceMallSellerRefundRequestsRequestId";
+
+@Controller("/ecommerceMall/seller/refund-requests")
+export class EcommercemallSellerRefund_requestsController {
+  /**
+   * Retrieve a filtered and paginated list of refund requests for the authenticated seller's products.
+   *
+   * This endpoint provides comprehensive search capabilities for sellers to view and manage refund requests related to their products. Sellers can filter by status, date range, or search by reason keywords. The operation supports cursor-based pagination for efficient browsing of large result sets.
+   *
+   * Security and Authorization:
+   * This endpoint requires authentication via JWT session token. Only authenticated sellers can access this endpoint. The system automatically filters refund requests to show only those related to the seller's products. Customers should use the customer-specific endpoint to view their own refund requests.
+   *
+   * Database Relationships:
+   * This operation queries the ecommerce_mall_refund_requests table which links to ecommerce_mall_customers (the requesting customer), ecommerce_mall_sellers (the responding seller), and ecommerce_mall_order_items (the order item being refunded). Related refund request snapshots may be included for audit purposes.
+   *
+   * Response Format:
+   * The response returns a paginated list of refund request summaries optimized for list displays, including essential information such as status, reason preview, creation date, and references to the associated order item and product. For detailed refund request information, use the GET /refund-requests/{refundRequestId} endpoint.
+   *
+   * Error Handling:
+   * If the user session is invalid or expired, return 401 Unauthorized. If the user is not a seller or the session does not belong to the seller on the refund request, return 403 Forbidden.
+   *
+   * @param connection
+   * @param body Search criteria and pagination parameters for filtering refund requests
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Query the ecommerce_mall_refund_requests table with the following implementation details:
+   *
+   * 1. Authentication Validation:
+   *    - Extract JWT session token from Authorization header
+   *    - Validate token and retrieve user identity and role (customer/seller/admin/super_admin)
+   *    - Return 401 Unauthorized if token is invalid or expired
+   *
+   * 2. Role-Based Query Filtering:
+   *    - If actor is 'customer': Filter by ecommerce_mall_customer_id matching the authenticated customer
+   *    - If actor is 'seller': Filter by ecommerce_mall_seller_id matching the authenticated seller
+   *    - If actor is 'admin' or 'super_admin': No automatic filtering (can see all)
+   *
+   * 3. Search Criteria (from request body):
+   *    - status: Filter by refund request status (pending, approved, rejected)
+   *    - customer_id: Filter by specific customer UUID
+   *    - seller_id: Filter by specific seller UUID
+   *    - order_item_id: Filter by specific order item UUID
+   *    - created_at_from: Filter by minimum creation timestamp
+   *    - created_at_to: Filter by maximum creation timestamp
+   *    - reason_keyword: Full-text search on reason field
+   *
+   * 4. Pagination:
+   *    - Extract page/pageSize or cursor from request
+   *    - Default page size: 20, maximum: 100
+   *    - Return total count and pagination metadata
+   *
+   * 5. Sorting:
+   *    - Default sort: created_at DESC (newest first)
+   *    - Optional: created_at ASC, status
+   *
+   * 6. Response Construction:
+   *    - Return paginated list of refund request summaries
+   *    - Include: id, status, reason (truncated to 200 chars), created_at, customer_id, seller_id, order_item_id
+   *    - Include order item reference for navigation
+   *
+   * 7. Error Handling:
+   *    - On database connection failure: Return 500 with generic error
+   *    - Log error details for administrator review
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedBody()
+    body: IEcommerceMallRefundRequest.IRequest,
+  ): Promise<IPageIEcommerceMallRefundRequest.ISummary> {
+    try {
+      return await patchEcommerceMallSellerRefundRequests({
+        seller,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve detailed information about a specific refund request by its unique identifier.
+   *
+   * This endpoint provides complete refund request details including the associated order item reference, customer who initiated the request, seller who owns the product, the reason text provided by the customer, current status (pending, approved, or rejected), and seller response timestamps.
+   *
+   * The refund request must belong to an order item with status 'delivered' as per business rules. Refund requests can only be submitted within seven days of the item being marked as delivered. Sellers can approve or reject these requests based on their evaluation of the customer's claim.
+   *
+   * Authorization rules: Customers can retrieve refund requests they submitted; Sellers can retrieve refund requests for their products; Administrators can retrieve any refund request. Unauthorized access attempts return 403 Forbidden.
+   *
+   * Related operations: PATCH /refund-requests for listing with filters, POST /refund-requests for creating new requests.
+   *
+   * @param connection
+   * @param requestId Unique identifier of the refund request to retrieve
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification 1. Extract requestId from path parameter (UUID format).
+   * 2. Validate requestId is a valid UUID format - return 400 if invalid.
+   * 3. Query ecommerce_mall_refund_requests table filtering by id matching requestId.
+   * 4. Check soft delete status - return 404 if deleted_at is set.
+   * 5. Verify authorization:
+   *    - If authenticated as customer: verify refund request's ecommerce_mall_customer_id matches authenticated customer ID
+   *    - If authenticated as seller: verify refund request's ecommerce_mall_seller_id matches authenticated seller ID
+   *    - If authenticated as admin: allow access
+   *    - Otherwise return 403 Forbidden.
+   * 6. Join with ecommerce_mall_order_items to get order_id for context.
+   * 7. Join with ecommerce_mall_customers to get customer email for display.
+   * 8. Join with ecommerce_mall_sellers to get seller email for display.
+   * 9. Return complete refund request data including:
+   *    - id: UUID primary key
+   *    - order_item_id: reference to the order item
+   *    - customer_id and customer_email
+   *    - seller_id and seller_email
+   *    - reason: customer-provided text
+   *    - status: pending/approved/rejected
+   *    - seller_response_at: timestamp when seller responded
+   *    - created_at: when request was created
+   *    - updated_at: last modification timestamp
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":requestId")
+  public async at(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("requestId")
+    requestId: string & tags.Format<"uuid">,
+  ): Promise<IEcommerceMallRefundRequest> {
+    try {
+      return await getEcommerceMallSellerRefundRequestsRequestId({
+        seller,
+        requestId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update the status of a refund request by approving or rejecting it.
+   *
+   * This endpoint allows sellers to process customer refund requests by changing the status from pending to either approved or rejected. When a seller responds, the system records the response timestamp and creates an immutable snapshot of the request state for audit purposes.
+   *
+   * The refund request must belong to the authenticated seller. The status transition follows the workflow: pending -> approved or pending -> rejected. Once a response is recorded, the refund request moves to the corresponding final state.
+   *
+   * Approved refund requests trigger refund processing for the customer and inventory restoration for the seller. Rejected requests remain in rejected status with no further action taken. Both outcomes create a snapshot preserving the complete request state at response time for dispute resolution.
+   *
+   * This operation requires the seller to be authenticated and the refund request to be in pending status.
+   *
+   * @param connection
+   * @param requestId Unique identifier of the refund request
+   * @param body Seller's response to the refund request including new status
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Update the refund request status by executing the following steps:
+   *
+   * 1. Extract refundRequestId from path parameter (UUID format)
+   * 2. Extract status and optional responseNotes from request body
+   * 3. Validate seller authentication via session token
+   * 4. Verify status is one of: approved, rejected (cannot be pending)
+   * 5. Fetch the refund request from ecommerce_mall_refund_requests table where id equals refundRequestId
+   * 6. Verify the refund request belongs to the authenticated seller (ecommerce_mall_seller_id matches session seller)
+   * 7. Verify current status is pending
+   * 8. Update status to the new value and set seller_response_at to current timestamp
+   * 9. Create a refund_request_snapshot record capturing the complete state at response time
+   * 10. If status is approved: initiate refund processing for the customer and restore inventory for the product variant
+   * 11. Return the updated refund request entity
+   *
+   * Edge cases:
+   * - Return 404 if refund request not found
+   * - Return 403 if refund request belongs to different seller
+   * - Return 400 if status is already approved/rejected (non-pending)
+   * - Return 400 if status is invalid value
+   * - Handle transaction rollback on snapshot creation failure
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":requestId")
+  public async update(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("requestId")
+    requestId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IEcommerceMallRefundRequest.IUpdate,
+  ): Promise<IEcommerceMallRefundRequest> {
+    try {
+      return await putEcommerceMallSellerRefundRequestsRequestId({
+        seller,
+        requestId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Approve a pending refund request submitted by a customer for a delivered order item.
+   *
+   * This endpoint allows sellers to approve customer refund requests that fall within the allowed 7-day window after delivery. When a seller approves a refund request, the system creates an immutable snapshot recording the complete state of the request including the original reason, status at snapshot time, and the seller's approval decision. The approval triggers a refund to the customer for the specific order item and restores the product variant inventory through an inventory record.
+   *
+   * The refund request must be in "pending" status for approval to succeed. Only the seller who owns the product associated with the refund request can approve it. The operation validates that the requesting seller matches the seller assigned to the refund request.
+   *
+   * Upon successful approval, the refund request status changes from "pending" to "approved", the seller_response_at timestamp is recorded, and a refund_request_snapshot is automatically created capturing the complete state for audit and dispute resolution purposes.
+   *
+   * Inventory restoration adds the refunded item quantity back to the product variant stock. If all items in an order have been refunded, the overall order status transitions to "refunded".
+   *
+   * @param connection
+   * @param requestId Unique identifier of the refund request to approve
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification 1. Extract refund request ID from path parameter {requestId}
+   * 2. Retrieve the authenticated seller from session
+   * 3. Query ecommerce_mall_refund_requests table to find the refund request by ID
+   * 4. Validate the refund request exists and is not soft-deleted (deleted_at IS NULL)
+   * 5. Validate the refund request status is "pending"
+   * 6. Validate the requesting seller matches ecommerce_mall_seller_id on the refund request
+   * 7. Begin database transaction
+   * 8. Update the refund request: set status to "approved", seller_response_at to current timestamp
+   * 9. Create new record in ecommerce_mall_refund_request_snapshots with:
+   *    - id: new UUID
+   *    - ecommerce_mall_refund_request_id: the refund request ID
+   *    - ecommerce_mall_customer_id: from refund request
+   *    - ecommerce_mall_seller_id: from refund request
+   *    - snapshot_reason: copy of reason field from refund request
+   *    - snapshot_status: "approved"
+   *    - seller_response: "approved"
+   *    - seller_response_reason: null
+   *    - created_at: current timestamp
+   *    - updated_at: current timestamp
+   * 10. Retrieve the associated order_item to get product variant information
+   * 11. Create inventory record in ecommerce_mall_inventory_records with type "refund" to restore stock
+   * 12. Commit transaction
+   * 13. Return the updated refund request entity with snapshot information
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post(":requestId/approve")
+  public async approve(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("requestId")
+    requestId: string & tags.Format<"uuid">,
+  ): Promise<IEcommerceMallRefundRequest> {
+    try {
+      return await postEcommerceMallSellerRefundRequestsRequestIdApprove({
+        seller,
+        requestId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reject a pending refund request submitted by a customer for a delivered order item.
+   *
+   * This endpoint allows sellers to reject refund requests that have been submitted by customers for their products. When a seller rejects a refund request, the system creates an immutable snapshot of the refund request state at that moment, preserving the customer's stated reason, the pending status, and the seller's rejection decision with their explanation. This snapshot serves as the authoritative audit trail for dispute resolution.
+   *
+   * The seller can only reject refund requests that are in 'pending' status. If the refund request has already been approved or rejected, the system returns an error. The seller must provide a rejection reason explaining why the refund is being denied.
+   *
+   * The refund request must belong to the authenticated seller. Customers cannot reject their own refund requests - only sellers can respond to them. If the order item has not been delivered or has already been cancelled or refunded, the associated refund request would not exist in a pending state.
+   *
+   * Upon successful rejection, the refund request status changes from 'pending' to 'rejected' and the customer is notified of the decision. The customer may view the rejection reason through their order history.
+   *
+   * @param connection
+   * @param requestId Unique identifier of the refund request to reject (global scope)
+   * @param body Rejection reason provided by the seller explaining why the refund request is denied
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Validate that the authenticated user is a seller.
+   * Query the ecommerce_mall_refund_requests table to find the refund request by requestId.
+   * Verify the refund request exists and is not soft-deleted (deleted_at is null).
+   * Verify the refund request status is 'pending' - reject if already approved or rejected.
+   * Verify the authenticated seller owns this refund request (ecommerce_mall_seller_id matches the seller's ID) - return 403 Forbidden if not owner.
+   *
+   * Create a new ecommerce_mall_refund_request_snapshots record:
+   * - id: Generate new UUID
+   * - ecommerce_mall_refund_request_id: Copy from the refund request
+   * - ecommerce_mall_customer_id: Copy from the refund request
+   * - ecommerce_mall_seller_id: Copy from the refund request
+   * - snapshot_reason: Copy the reason from the refund request
+   * - snapshot_status: Copy 'pending' from the refund request status
+   * - seller_response: Set to 'rejected'
+   * - seller_response_reason: Set from request body seller_response_reason
+   * - created_at: Current timestamp
+   * - updated_at: Current timestamp
+   *
+   * Update the ecommerce_mall_refund_requests record:
+   * - status: Change from 'pending' to 'rejected'
+   * - seller_response_at: Current timestamp
+   * - updated_at: Current timestamp
+   *
+   * Return the updated refund request entity with the newly created snapshot included.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post(":requestId/reject")
+  public async reject(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("requestId")
+    requestId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IEcommerceMallRefundRequest.IReject,
+  ): Promise<IEcommerceMallRefundRequest> {
+    try {
+      return await postEcommerceMallSellerRefundRequestsRequestIdReject({
+        seller,
+        requestId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

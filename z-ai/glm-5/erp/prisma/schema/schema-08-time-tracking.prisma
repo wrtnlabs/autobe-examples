@@ -1,0 +1,298 @@
+/// Individual time entries recording work sessions performed by employees.
+/// Each timelog captures the date when work occurred, duration in minutes,
+/// the project worked on, an optional task assignment, optional description
+/// of work performed, and a billable flag indicating invoicing eligibility.
+///
+/// Timelogs are owned by employees and can be included in weekly timesheets
+/// for approval. Once a timesheet is approved, all included timelogs become
+/// locked and cannot be modified or deleted. Timelogs can be filtered by
+/// date range, project, task, and billable status.
+///
+/// Related entities: {@link erp_hrm_employees} (owner), {@link
+/// erp_hrm_projects} (required assignment), {@link erp_hrm_tasks}
+/// (optional), {@link erp_hrm_timesheet_timelogs} (junction for timesheet
+/// inclusion).
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_timelogs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The employee who logged this time entry. Each employee can only create
+  /// timelogs for themselves. {@link erp_hrm_employees.id}
+  employee_id String
+  
+  /// The project this time was logged against. The employee must be assigned
+  /// to this project before logging time. {@link erp_hrm_projects.id}
+  project_id String
+  
+  /// The optional task this time was logged against. If specified, the task
+  /// must belong to the selected project. {@link erp_hrm_tasks.id}
+  task_id String?
+  
+  /// The date when the work was performed. Required for all timelogs and used
+  /// for weekly timesheet aggregation and date range filtering.
+  date DateTime
+  
+  /// The total time spent in minutes. Records how long the work session
+  /// lasted. Required for all timelogs.
+  duration Int
+  
+  /// Optional notes documenting what work was performed during the recorded
+  /// time. Allows employees to provide context for their time entries.
+  description String?
+  
+  /// Whether this time entry should be considered billable for invoicing
+  /// purposes. Defaults to true for new timelogs. Non-billable timelogs
+  /// represent internal work or administrative tasks.
+  billable Boolean
+  
+  /// Timestamp when the timelog was created.
+  created_at DateTime
+  
+  /// Timestamp when the timelog was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the timelog was soft-deleted. Null for active timelogs.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee erp_hrm_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  project erp_hrm_projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  task erp_hrm_tasks? @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  timesheetTimelogs erp_hrm_timesheet_timelogs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([employee_id, date])
+  @@index([project_id])
+  @@index([task_id])
+  @@index([billable])
+}
+
+/// Weekly timesheet aggregations (Monday to Sunday) for approval workflow.
+/// Each timesheet represents a collection of timelogs for a specific week,
+/// owned by an employee, and progresses through
+/// draft/submitted/approved/rejected status states. Submitted timesheets
+/// require manager approval and become locked upon approval. Rejected
+/// timesheets return to draft status for revision. Supports filtering by
+/// status and date range with pagination.
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_timesheets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Employee who owns this timesheet and whose timelogs are aggregated.
+  /// {@link erp_hrm_employees.id}
+  employee_id String
+  
+  /// User who reviewed (approved or rejected) this timesheet. Set when status
+  /// transitions to approved or rejected. {@link erp_hrm_members.id}
+  reviewer_id String?
+  
+  /// Start date of the timesheet week (Monday). This defines the beginning of
+  /// the weekly period being aggregated.
+  week_start_date DateTime
+  
+  /// End date of the timesheet week (Sunday). This defines the end of the
+  /// weekly period being aggregated.
+  week_end_date DateTime
+  
+  /// Current workflow status of the timesheet. Valid values: 'draft' (editable
+  /// by employee), 'submitted' (awaiting approval), 'approved' (locked, cannot
+  /// be modified), 'rejected' (returned to draft for revision).
+  status String
+  
+  /// Total hours calculated from all included timelogs. Sum of
+  /// duration_minutes/60 for all linked timelogs.
+  total_hours Float
+  
+  /// Timestamp when the timesheet was submitted for approval. Set when status
+  /// transitions from draft to submitted.
+  submitted_at DateTime?
+  
+  /// Timestamp when the timesheet was reviewed (approved or rejected). Set
+  /// when status transitions to approved or rejected.
+  reviewed_at DateTime?
+  
+  /// Explanation for why the timesheet was rejected. Required when status is
+  /// 'rejected' and a manager provides feedback for the employee to address.
+  rejection_reason String?
+  
+  /// Timestamp when the timesheet was created.
+  created_at DateTime
+  
+  /// Timestamp when the timesheet was last updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp. Set when the timesheet is deleted but preserved
+  /// for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee erp_hrm_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  reviewer erp_hrm_members? @relation(fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  timesheetTimelogs erp_hrm_timesheet_timelogs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reviewer_id])
+  @@unique([employee_id, week_start_date])
+  @@index([status])
+  @@index([week_start_date])
+  @@index([employee_id, status])
+}
+
+/// Junction table connecting timesheets to their included timelogs, enabling
+/// the many-to-many relationship between weekly timesheet aggregations and
+/// individual time entries. This table supports draft management where
+/// employees can add or remove timelogs from a draft timesheet before
+/// submission. Once a timesheet is approved, the timelog associations become
+/// locked and cannot be modified, preventing edits to the underlying
+/// timelogs.
+///
+/// Each association represents one timelog entry that is included in a
+/// specific timesheet for a particular week. The relationship is managed
+/// through the timesheet lifecycle: draft timesheets allow modifications,
+/// while approved timesheets enforce immutability for both the timesheet and
+/// its associated timelogs.
+///
+/// **Related Entities:**
+/// - {@link erp_hrm_timesheets} — Parent timesheet aggregations
+/// - {@link erp_hrm_timelogs} — Individual time entry records
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_timesheet_timelogs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the timesheet that includes this timelog. Part of the
+  /// timesheet-timelog association for weekly time aggregation. {@link
+  /// erp_hrm_timesheets.id}
+  timesheet_id String
+  
+  /// Reference to the timelog entry included in this timesheet. Each timelog
+  /// can be included in at most one timesheet per week. {@link
+  /// erp_hrm_timelogs.id}
+  timelog_id String
+  
+  /// Timestamp when this timesheet-timelog association was created. Records
+  /// when the timelog was added to the timesheet.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  timesheet erp_hrm_timesheets @relation(fields: [timesheet_id], references: [id], onDelete: Cascade)
+  timelog erp_hrm_timelogs @relation(fields: [timelog_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([timesheet_id, timelog_id])
+  @@index([timelog_id])
+}
+
+/// Real-time tracking sessions for employees to record work time as it
+/// happens. Each timer captures the start timestamp when tracking begins,
+/// the project being worked on, and optional task and description. An
+/// employee can have at most one active timer at any time - this constraint
+/// is enforced at the application layer. When stopped, the timer duration is
+/// calculated and converted to a timelog entry. Timers can also be discarded
+/// without creating a timelog. Historical timer records are preserved
+/// through soft deletion.
+///
+/// The timer enables real-time productivity tracking and automatic duration
+/// calculation, supporting flexible work recording without requiring
+/// employees to remember exact start/end times.
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_timers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The employee who owns and started this timer. Each employee can have at
+  /// most one active timer at any given time. {@link erp_hrm_employees.id}
+  erp_hrm_employee_id String
+  
+  /// The project being tracked by this timer. Must be a project the employee
+  /// is assigned to as a project member. {@link erp_hrm_projects.id}
+  erp_hrm_project_id String
+  
+  /// Optional task within the project being tracked. If specified, must belong
+  /// to the same project and the employee must be a project member. {@link
+  /// erp_hrm_tasks.id}
+  erp_hrm_task_id String?
+  
+  /// The timestamp when the timer was started. This marks the beginning of the
+  /// work session and is used to calculate duration when the timer is stopped.
+  started_at DateTime
+  
+  /// Optional notes describing what work is being performed during this
+  /// tracking session. Can be edited while the timer is running.
+  description String?
+  
+  /// Timestamp when the timer record was created. Coincides with started_at
+  /// for new timers.
+  created_at DateTime
+  
+  /// Timestamp when the timer record was last modified, such as when editing
+  /// the description or project/task assignment.
+  updated_at DateTime
+  
+  /// Timestamp when the timer was stopped or discarded. A null value indicates
+  /// the timer is currently active. Stopped timers convert to timelog entries,
+  /// while discarded timers simply end without creating a timelog.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee erp_hrm_employees @relation(fields: [erp_hrm_employee_id], references: [id], onDelete: Cascade)
+  project erp_hrm_projects @relation(fields: [erp_hrm_project_id], references: [id], onDelete: Cascade)
+  task erp_hrm_tasks? @relation(fields: [erp_hrm_task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_project_id])
+  @@index([erp_hrm_task_id])
+  @@index([erp_hrm_employee_id, created_at])
+}

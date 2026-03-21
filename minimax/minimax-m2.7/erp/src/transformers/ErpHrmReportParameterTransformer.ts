@@ -1,0 +1,56 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmDepartment";
+import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
+import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
+import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
+import { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
+import { IErpHrmReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmReport";
+import { IErpHrmReportParameter } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmReportParameter";
+import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
+import { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import typia, { tags } from "typia";
+
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ErpHrmReportAtSummaryTransformer } from "./ErpHrmReportAtSummaryTransformer";
+
+export namespace ErpHrmReportParameterTransformer {
+  export type Payload = Prisma.erp_hrm_report_parametersGetPayload<
+    ReturnType<typeof select>
+  >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        start_date: true,
+        end_date: true,
+        employee_id: true,
+        project_id: true,
+        task_id: true,
+        billable: true,
+        group_by: true,
+        created_at: true,
+        updated_at: true,
+        report: ErpHrmReportAtSummaryTransformer.select(),
+      },
+    } satisfies Prisma.erp_hrm_report_parametersFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IErpHrmReportParameter> {
+    return {
+      id: input.id,
+      start_date: input.start_date.toISOString(),
+      end_date: input.end_date.toISOString(),
+      billable: input.billable,
+      group_by: input.group_by as "employee" | "project" | "task",
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      report: await ErpHrmReportAtSummaryTransformer.transform(input.report),
+      employee: null,
+      project: null,
+      task: null,
+    };
+  }
+}

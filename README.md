@@ -6,13 +6,14 @@ AI Model | Success | Score | FCSR | Status
 :--------|---------|------:|-----:|:------:
 [`anthropic/claude-sonnet-4.6`](#anthropicclaude-sonnet-46) | 4 | 100 | 82% | 🟢
 [`openai/gpt-5.4`](#openaigpt-54) | 4 | 100 | 80% | 🟢
+[`z-ai/glm-5`](#z-aiglm-5) | 4 | 100 | 88% | 🟢
 [`moonshotai/kimi-k2.5`](#moonshotaikimi-k25) | 2 | 99.87 | 58% | 🟡
 [`qwen/qwen3.5-122b-a10b`](#qwenqwen35-122b-a10b) | 3 | 99.62 | 84% | 🟢
 [`qwen/qwen3.5-397b-a17b`](#qwenqwen35-397b-a17b) | 1 | 99.57 | 88% | 🟡
 [`openai/gpt-5.4-mini`](#openaigpt-54-mini) | 2 | 99.2 | 86% | 🟡
 [`qwen/qwen3.5-35b-a3b`](#qwenqwen35-35b-a3b) | 1 | 99.1 | 76% | 🟡
 [`openai/gpt-5.4-nano`](#openaigpt-54-nano) | 1 | 98.85 | 81% | 🟡
-[`z-ai/glm-5`](#z-aiglm-5) | 3 | 86.25 | 88% | 🟢
+[`minimax/minimax-m2.7`](#minimaxminimax-m27) | 1 | 98.01 | 78% | 🟡
 [`deepseek/deepseek-v3.2`](#deepseekdeepseek-v32) | 1 | 65.86 | 72% | 🟡
 
 - FCSR: Function Calling Success Rate
@@ -173,6 +174,83 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Interface | `operations`: 154, `schemas`: 158 | 100.65M | 32m 12s | 68%
 🟢 Test | `functions`: 446 | 41.05M | 38m 25s | 98%
 🟢 Realize | `functions`: 223 | 18.80M | 22m 25s | 78%
+
+
+## `z-ai/glm-5`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./z-ai/glm-5/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./z-ai/glm-5/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`shopping`](./z-ai/glm-5/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`erp`](./z-ai/glm-5/erp/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+
+### `z-ai/glm-5` - `todo`
+
+- Source Code: [`z-ai/glm-5/todo`](./z-ai/glm-5/todo/)
+- Score: 100
+- Elapsed Time: 1h 11m 24s
+- Token Usage: 18.48M
+- Function Calling Success Rate: 93.56%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 357.6K | 9m 7s | 100%
+🟢 Database | `namespaces`: 2, `models`: 7 | 940.7K | 7m 23s | 100%
+🟢 Interface | `operations`: 20, `schemas`: 26 | 11.10M | 30m 28s | 89%
+🟢 Test | `functions`: 66 | 4.27M | 11m 59s | 97%
+🟢 Realize | `functions`: 29 | 1.81M | 12m 24s | 90%
+
+
+### `z-ai/glm-5` - `reddit`
+
+- Source Code: [`z-ai/glm-5/reddit`](./z-ai/glm-5/reddit/)
+- Score: 100
+- Elapsed Time: 2h 50m 43s
+- Token Usage: 77.83M
+- Function Calling Success Rate: 90.00%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 859.0K | 33m 32s | 95%
+🟢 Database | `namespaces`: 7, `models`: 18 | 2.50M | 18m 3s | 96%
+🟢 Interface | `operations`: 58, `schemas`: 60 | 53.03M | 58m 45s | 90%
+🟢 Test | `functions`: 183 | 13.17M | 26m 55s | 94%
+🟢 Realize | `functions`: 83 | 8.27M | 33m 26s | 78%
+
+
+### `z-ai/glm-5` - `shopping`
+
+- Source Code: [`z-ai/glm-5/shopping`](./z-ai/glm-5/shopping/)
+- Score: 100
+- Elapsed Time: 8h 37m 29s
+- Token Usage: 169.28M
+- Function Calling Success Rate: 86.05%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 6 | 3.63M | 2h 0m 17s | 96%
+🟢 Database | `namespaces`: 9, `models`: 32 | 7.91M | 25m 52s | 99%
+🟢 Interface | `operations`: 123, `schemas`: 137 | 93.00M | 2h 32m 40s | 82%
+🟢 Test | `functions`: 337 | 42.81M | 1h 29m 27s | 94%
+🟢 Realize | `functions`: 180 | 21.92M | 2h 9m 12s | 76%
+
+
+### `z-ai/glm-5` - `erp`
+
+- Source Code: [`z-ai/glm-5/erp`](./z-ai/glm-5/erp/)
+- Score: 100
+- Elapsed Time: 5h 11m 55s
+- Token Usage: 349.57M
+- Function Calling Success Rate: 90.77%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 1.73M | 1h 5m 11s | 96%
+🟢 Database | `namespaces`: 10, `models`: 21 | 4.06M | 22m 27s | 92%
+🟢 Interface | `operations`: 92, `schemas`: 124 | 303.84M | 2h 5m 16s | 88%
+🟢 Test | `functions`: 281 | 25.15M | 57m 51s | 95%
+🟢 Realize | `functions`: 140 | 14.80M | 41m 8s | 88%
 
 
 ## `moonshotai/kimi-k2.5`
@@ -637,81 +715,81 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟡 Realize | `functions`: 186, `errors`: 1 | 19.19M | 44m 19s | 81%
 
 
-## `z-ai/glm-5`
+## `minimax/minimax-m2.7`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./z-ai/glm-5/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`reddit`](./z-ai/glm-5/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`shopping`](./z-ai/glm-5/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`erp`](./z-ai/glm-5/erp/) | 45 | 🟢 | 🟢 | 🟡 | ❌ | ❌
+[`todo`](./minimax/minimax-m2.7/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./minimax/minimax-m2.7/reddit/) | 96.31 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`shopping`](./minimax/minimax-m2.7/shopping/) | 97.86 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`erp`](./minimax/minimax-m2.7/erp/) | 97.87 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
 
-### `z-ai/glm-5` - `todo`
+### `minimax/minimax-m2.7` - `todo`
 
-- Source Code: [`z-ai/glm-5/todo`](./z-ai/glm-5/todo/)
+- Source Code: [`minimax/minimax-m2.7/todo`](./minimax/minimax-m2.7/todo/)
 - Score: 100
-- Elapsed Time: 1h 11m 24s
-- Token Usage: 18.48M
-- Function Calling Success Rate: 93.56%
+- Elapsed Time: 1h 24m 41s
+- Token Usage: 18.34M
+- Function Calling Success Rate: 87.24%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 357.6K | 9m 7s | 100%
-🟢 Database | `namespaces`: 2, `models`: 7 | 940.7K | 7m 23s | 100%
-🟢 Interface | `operations`: 20, `schemas`: 26 | 11.10M | 30m 28s | 89%
-🟢 Test | `functions`: 66 | 4.27M | 11m 59s | 97%
-🟢 Realize | `functions`: 29 | 1.81M | 12m 24s | 90%
+🟢 Analyze | `actors`: 2, `documents`: 6 | 673.4K | 22m 44s | 96%
+🟢 Database | `namespaces`: 2, `models`: 8 | 651.0K | 5m 1s | 96%
+🟢 Interface | `operations`: 17, `schemas`: 22 | 11.41M | 34m 53s | 76%
+🟢 Test | `functions`: 54 | 4.15M | 12m 4s | 95%
+🟢 Realize | `functions`: 24 | 1.46M | 9m 57s | 86%
 
 
-### `z-ai/glm-5` - `reddit`
+### `minimax/minimax-m2.7` - `reddit`
 
-- Source Code: [`z-ai/glm-5/reddit`](./z-ai/glm-5/reddit/)
-- Score: 100
-- Elapsed Time: 2h 50m 43s
-- Token Usage: 77.83M
-- Function Calling Success Rate: 90.00%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 859.0K | 33m 32s | 95%
-🟢 Database | `namespaces`: 7, `models`: 18 | 2.50M | 18m 3s | 96%
-🟢 Interface | `operations`: 58, `schemas`: 60 | 53.03M | 58m 45s | 90%
-🟢 Test | `functions`: 183 | 13.17M | 26m 55s | 94%
-🟢 Realize | `functions`: 83 | 8.27M | 33m 26s | 78%
-
-
-### `z-ai/glm-5` - `shopping`
-
-- Source Code: [`z-ai/glm-5/shopping`](./z-ai/glm-5/shopping/)
-- Score: 100
-- Elapsed Time: 8h 37m 29s
-- Token Usage: 169.28M
-- Function Calling Success Rate: 86.05%
+- Source Code: [`minimax/minimax-m2.7/reddit`](./minimax/minimax-m2.7/reddit/)
+- Score: 96.31
+- Elapsed Time: 3h 41m 9s
+- Token Usage: 116.13M
+- Function Calling Success Rate: 81.47%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 6 | 3.63M | 2h 0m 17s | 96%
-🟢 Database | `namespaces`: 9, `models`: 32 | 7.91M | 25m 52s | 99%
-🟢 Interface | `operations`: 123, `schemas`: 137 | 93.00M | 2h 32m 40s | 82%
-🟢 Test | `functions`: 337 | 42.81M | 1h 29m 27s | 94%
-🟢 Realize | `functions`: 180 | 21.92M | 2h 9m 12s | 76%
+🟢 Analyze | `actors`: 2, `documents`: 6 | 1.17M | 33m 30s | 94%
+🟢 Database | `namespaces`: 9, `models`: 28 | 2.97M | 11m 30s | 93%
+🟢 Interface | `operations`: 91, `schemas`: 90 | 66.71M | 51m 20s | 73%
+🟢 Test | `functions`: 277 | 26.02M | 34m 49s | 93%
+🟡 Realize | `functions`: 130, `errors`: 8 | 19.26M | 1h 29m 59s | 75%
 
 
-### `z-ai/glm-5` - `erp`
+### `minimax/minimax-m2.7` - `shopping`
 
-- Source Code: [`z-ai/glm-5/erp`](./z-ai/glm-5/erp/)
-- Score: 45
-- Elapsed Time: 1h 27m 17s
-- Token Usage: 5.65M
-- Function Calling Success Rate: 99.20%
+- Source Code: [`minimax/minimax-m2.7/shopping`](./minimax/minimax-m2.7/shopping/)
+- Score: 97.86
+- Elapsed Time: 7h 10m 24s
+- Token Usage: 342.22M
+- Function Calling Success Rate: 77.40%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 1.47M | 1h 3m 58s | 100%
-🟢 Database | `namespaces`: 7, `models`: 24 | 4.17M | 23m 19s | 98%
-🔴 Interface |  | 3.65M | 0s | 95%
-⚪ Test |  |  |  | 
-⚪ Realize |  |  |  | 
+🟢 Analyze | `actors`: 5, `documents`: 6 | 3.25M | 1h 30m 24s | 96%
+🟢 Database | `namespaces`: 12, `models`: 54 | 6.47M | 11m 9s | 94%
+🟢 Interface | `operations`: 209, `schemas`: 214 | 199.33M | 1h 35m 43s | 66%
+🟢 Test | `functions`: 619 | 86.95M | 1h 46m 16s | 88%
+🟡 Realize | `functions`: 308, `errors`: 11 | 46.22M | 2h 6m 50s | 76%
+
+
+### `minimax/minimax-m2.7` - `erp`
+
+- Source Code: [`minimax/minimax-m2.7/erp`](./minimax/minimax-m2.7/erp/)
+- Score: 97.87
+- Elapsed Time: 4h 20m 55s
+- Token Usage: 200.92M
+- Function Calling Success Rate: 77.52%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 6 | 1.76M | 51m 18s | 97%
+🟢 Database | `namespaces`: 6, `models`: 28 | 3.03M | 9m 3s | 94%
+🟢 Interface | `operations`: 143, `schemas`: 131 | 118.88M | 58m 45s | 64%
+🟢 Test | `functions`: 426 | 47.36M | 54m 34s | 91%
+🟡 Realize | `functions`: 197, `errors`: 7 | 29.89M | 1h 27m 13s | 77%
 
 
 ## `deepseek/deepseek-v3.2`

@@ -1,0 +1,44 @@
+/// User votes on posts with one-vote-per-content constraint. Vote types are
+/// upvote (+1) or downvote (-1). Vote direction adjusts author's karma. Each
+/// user can only have one vote per post, and changing vote direction updates
+/// the record.
+///
+/// @namespace Votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who cast this vote. {@link reddit_clone_members.id}
+  reddit_clone_member_id String
+  
+  /// The post being voted on. {@link reddit_clone_posts.id}
+  reddit_clone_post_id String
+  
+  /// Vote direction: 'upvote' (+1) or 'downvote' (-1).
+  direction String
+  
+  /// When the vote was cast.
+  created_at DateTime
+  
+  /// When the vote was last changed (direction change).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_clone_member_id, reddit_clone_post_id], map: "reddit_clone_post_votes_reddit_clone_member_id_reddit__8bf8ff1c")
+  @@index([reddit_clone_post_id, created_at])
+  @@index([reddit_clone_member_id, created_at])
+}

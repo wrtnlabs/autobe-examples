@@ -1,0 +1,225 @@
+/// Centralized file storage table for all uploaded content in the platform.
+/// This table stores file metadata for user avatars, community icons, and
+/// post images. Files are associated with entities through the {@link
+/// reddit_clone_file_associations} table which provides polymorphic linking
+/// to users, communities, and posts. Each file tracks its original name,
+/// storage details, MIME type, size, and processing status.
+///
+/// @namespace Files
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member who uploaded the file. {@link reddit_clone_members.id}.
+  uploader_id String
+  
+  /// Original filename as uploaded by the user.
+  original_filename String
+  
+  /// Generated unique filename used for storage, ensuring no collisions.
+  stored_filename String
+  
+  /// MIME type of the file (e.g., image/jpeg, image/png).
+  mime_type String
+  
+  /// File size in bytes.
+  file_size Int
+  
+  /// Path in the storage system where the file is stored.
+  storage_path String
+  
+  /// Processing status: pending (awaiting virus scan), processed (safe),
+  /// failed (scan failed or processing error).
+  status String
+  
+  /// Timestamp when the file was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when the file metadata was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  uploader reddit_clone_members @relation(fields: [uploader_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  communityIcons reddit_clone_community_icons[]
+  postImages reddit_clone_post_images[]
+  scans reddit_clone_file_scans[]
+  thumbnails reddit_clone_file_thumbnails[]
+  fileAssociation reddit_clone_file_associations?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([stored_filename])
+  @@index([uploader_id, created_at])
+}
+
+/// Audit records for virus scan results linked to uploaded files. Each
+/// record captures the outcome of a virus/malware scan performed on a file,
+/// including the scanner used, scan timestamp, status
+/// (clean/infected/error), and any threat details if malicious content was
+/// detected. This table is append-only for audit trail purposes.
+///
+/// @namespace Files
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_file_scans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The uploaded file that was scanned. {@link reddit_clone_files.id}
+  reddit_clone_file_id String
+  
+  /// Timestamp when the virus scan was performed.
+  scanned_at DateTime
+  
+  /// Name and version of the virus scanner used (e.g., 'ClamAV 0.103.0').
+  scanner String
+  
+  /// Result status of the scan: 'clean' (no threats), 'infected' (malware
+  /// detected), or 'error' (scan failed).
+  status String
+  
+  /// Name of the detected threat if the file is infected (e.g.,
+  /// 'Eicar.Test.File', 'Trojan.Generic'). Null if status is not 'infected'.
+  threat_name String?
+  
+  /// Additional details from the scanner output, such as signature matches or
+  /// remediation recommendations. May be null for clean scans.
+  details String?
+  
+  /// Timestamp when this scan record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this scan record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  file reddit_clone_files @relation(fields: [reddit_clone_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_clone_file_id, scanned_at])
+}
+
+/// Stores generated thumbnail variants for images with different sizes. Each
+/// thumbnail is associated with a parent image from {@link
+/// reddit_clone_files} and contains metadata about dimensions and variant
+/// type. Multiple thumbnail sizes can be generated per image (e.g., 100x100,
+/// 300x300, 600x600) for different display contexts.
+///
+/// @namespace Files
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_file_thumbnails {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original image this thumbnail was generated from. {@link
+  /// reddit_clone_files.id}
+  reddit_clone_file_id String
+  
+  /// Thumbnail width in pixels.
+  width Int
+  
+  /// Thumbnail height in pixels.
+  height Int
+  
+  /// Thumbnail variant identifier such as 'small', 'medium', 'large', or
+  /// specific dimension labels like '100x100'.
+  variant String
+  
+  /// File path or storage reference where the thumbnail image is stored.
+  thumbnail_path String
+  
+  /// Timestamp when the thumbnail was generated.
+  created_at DateTime
+  
+  /// Timestamp when the thumbnail metadata was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  file reddit_clone_files @relation(fields: [reddit_clone_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_clone_file_id, variant])
+}
+
+/// Polymorphic associations linking uploaded files to their owning entities.
+/// This table enables the file storage system to track which files are used
+/// as user avatars, community icons, or post images. Each file can be
+/// associated with exactly one entity, and each entity can have one file per
+/// association type. The polymorphic pattern with target_type discriminator
+/// allows a single table to handle all file-to-entity relationships
+/// efficiently.
+///
+/// @namespace Files
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_file_associations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the associated file. {@link reddit_clone_files.id}
+  reddit_clone_file_id String
+  
+  /// Type discriminator indicating the entity this file is associated with.
+  /// Values: 'user' for avatar, 'community' for icon, 'post' for image post.
+  target_type String
+  
+  /// UUID of the owning entity (user, community, or post).
+  target_id String
+  
+  /// Timestamp when the file association was created.
+  created_at DateTime
+  
+  /// Timestamp when the file association was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  file reddit_clone_files @relation(fields: [reddit_clone_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  userProfileAvatar reddit_clone_user_profiles?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_clone_file_id])
+  @@unique([target_type, target_id])
+}

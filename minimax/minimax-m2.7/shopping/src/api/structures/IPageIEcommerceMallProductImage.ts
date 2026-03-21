@@ -1,0 +1,46 @@
+import { IEcommerceMallProductImage } from "./IEcommerceMallProductImage";
+import { IPage } from "./IPage";
+
+export namespace IPageIEcommerceMallProductImage {
+  /**
+   * A page.
+   *
+   * Collection of records with pagination information.
+   */
+  export type ISummary = {
+    /**
+     * Page information.
+     *
+     * @x-autobe-specification Pagination information for the page.
+     */
+    pagination: IPage.IPagination;
+
+    /**
+     * List of records.
+     *
+     * @x-autobe-specification List of records of type IEcommerceMallProductImage.ISummary.
+     */
+    data: IEcommerceMallProductImage.ISummary[];
+  };
+
+  /**
+   * A page.
+   *
+   * Collection of records with pagination information.
+   */
+  export type IProtocol = {
+    /**
+     * Page information.
+     *
+     * @x-autobe-specification Pagination information for the page.
+     */
+    pagination: IPage.IPagination;
+
+    /**
+     * List of records.
+     *
+     * @x-autobe-specification List of records of type IEcommerceMallProductImage.IProtocol.
+     */
+    data: IEcommerceMallProductImage.IProtocol[];
+  };
+}

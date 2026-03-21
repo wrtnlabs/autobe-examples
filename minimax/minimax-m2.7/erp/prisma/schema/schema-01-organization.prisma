@@ -1,0 +1,264 @@
+/// Main tenant container entity representing an organization with its
+/// identity and configuration settings. This is the fundamental isolation
+/// boundary in the multi-tenant erp_hrm system. All employees, projects,
+/// departments, roles, and time tracking data belong to an organization.
+/// Each organization has one owner (a member) who has full administrative
+/// control including editing settings and deleting the organization.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization owner who has full administrative control. {@link
+  /// erp_hrm_members.id}.
+  owner_id String
+  
+  /// Organization display name shown throughout the application.
+  name String
+  
+  /// Optional description of the organization.
+  description String?
+  
+  /// URL to the organization's logo image.
+  logo_uri String?
+  
+  /// Organization's primary currency code for billing and reports (e.g., USD,
+  /// EUR, KRW).
+  currency String
+  
+  /// Organization's timezone for time tracking and scheduling (e.g.,
+  /// Asia/Seoul, America/New_York).
+  timezone String
+  
+  /// Month (1-12) when the organization's fiscal year starts.
+  fiscal_start_month Int
+  
+  /// Timestamp when the organization was created.
+  created_at DateTime
+  
+  /// Timestamp when the organization was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner erp_hrm_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  activityLogs erp_hrm_activity_logs[]
+  reports erp_hrm_reports[]
+  employees erp_hrm_employees[]
+  roles erp_hrm_roles[]
+  departments erp_hrm_departments[]
+  projects erp_hrm_projects[]
+  invitations erp_hrm_invitations[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([owner_id])
+  @@index([currency, timezone])
+}
+
+/// Organization-level activity audit trail recording significant actions
+/// performed by users within the organization. Each log entry creates a
+/// permanent record of what happened, who performed it, when it occurred,
+/// and what was affected. Activity logs support historical review of
+/// organizational changes and help administrators trace entity history back
+/// to source actions. Logs are append-only; once recorded, an activity log
+/// entry cannot be modified or deleted. All logs are strictly scoped to
+/// their organization ensuring complete data isolation between tenants.
+/// Logged actions include employee management events (invited, deactivated,
+/// reactivated), contract lifecycle (created, edited), project lifecycle
+/// (created, archived, completed, deleted), task status changes, timesheet
+/// workflow (submitted, approved, rejected), and role assignments.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization to which this activity log belongs. {@link
+  /// erp_hrm_organizations.id}.
+  erp_hrm_organization_id String
+  
+  /// Member who performed this action. {@link erp_hrm_members.id}.
+  erp_hrm_member_id String
+  
+  /// Category of the action performed. Values: employee_invited,
+  /// employee_deactivated, employee_reactivated, contract_created,
+  /// contract_edited, project_created, project_archived, project_completed,
+  /// project_deleted, task_status_changed, timesheet_submitted,
+  /// timesheet_approved, timesheet_rejected, role_assigned, role_changed.
+  action_type String
+  
+  /// Type of the entity that was affected by this action. Examples: employee,
+  /// contract, project, task, timesheet, role.
+  target_entity_type String
+  
+  /// UUID of the entity that was affected by this action.
+  target_entity_id String
+  
+  /// Additional context about the action in JSON format. Contains specific
+  /// change information such as old/new values, affected fields, or
+  /// supplementary notes.
+  details String?
+  
+  /// Timestamp when the action occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [erp_hrm_organization_id], references: [id], onDelete: Cascade)
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_member_id])
+  @@index([erp_hrm_organization_id, action_type])
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_organization_id, erp_hrm_member_id], map: "erp_hrm_activity_logs_erp_hrm_organization_id_erp_hrm__f991b54c")
+  @@index([erp_hrm_organization_id, created_at])
+}
+
+/// Stored reports generated for the organization including time reports,
+/// project budget reports, and weekly summary reports with their filter
+/// criteria and metadata.
+///
+/// Each report is scoped to a single organization and contains the
+/// parameters used to generate it (date range, filtering criteria, grouping
+/// preferences). Reports are generated on-demand by authorized users and
+/// stored for later reference. The report_type field determines the type of
+/// analysis: time reports show hours logged with billable breakdown, project
+/// budget reports compare estimated vs actual hours, and weekly summary
+/// reports provide rolling week-by-week metrics.
+///
+/// This table references {@link erp_hrm_organizations} for the tenant
+/// context and {@link erp_hrm_members} for the user who generated the
+/// report.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization this report belongs to. {@link erp_hrm_organizations.id}.
+  erp_hrm_organization_id String
+  
+  /// The member who generated this report. {@link erp_hrm_members.id}.
+  generated_by_erp_hrm_member_id String
+  
+  /// Type of report determining the analysis format. Values: time_report,
+  /// project_budget_report, weekly_summary_report.
+  report_type String
+  
+  /// Optional display name for the report.
+  name String?
+  
+  /// Timestamp when the report was generated.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [erp_hrm_organization_id], references: [id], onDelete: Cascade)
+  generatedByMember erp_hrm_members @relation(fields: [generated_by_erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  parameter erp_hrm_report_parameters?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([generated_by_erp_hrm_member_id])
+  @@index([erp_hrm_organization_id, created_at])
+  @@index([report_type, erp_hrm_organization_id])
+}
+
+/// Normalized filter parameters for reports, replacing JSON parameters field
+/// with proper columns for date range, employee/project/task filters,
+/// grouping preferences, and billable status. Each report has exactly one
+/// set of parameters in a 1:1 relationship with erp_hrm_reports.
+///
+/// @namespace Systematic
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_report_parameters {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Associated report's {@link erp_hrm_reports.id}. Each report has exactly
+  /// one set of parameters in a 1:1 relationship.
+  erp_hrm_report_id String
+  
+  /// Start date of the report date range filter.
+  start_date DateTime
+  
+  /// End date of the report date range filter.
+  end_date DateTime
+  
+  /// Optional filter for specific employee. When null, report includes all
+  /// employees.
+  employee_id String?
+  
+  /// Optional filter for specific project. When null, report includes all
+  /// projects.
+  project_id String?
+  
+  /// Optional filter for specific task. When null, report includes all tasks.
+  task_id String?
+  
+  /// Filter for billable status. True = billable only, False = non-billable
+  /// only, Null = include all.
+  billable Boolean?
+  
+  /// Grouping preference for the report: 'employee', 'project', or 'task'.
+  group_by String
+  
+  /// Timestamp when the parameters were created.
+  created_at DateTime
+  
+  /// Timestamp when the parameters were last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report erp_hrm_reports @relation(fields: [erp_hrm_report_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([erp_hrm_report_id])
+  @@index([start_date, end_date])
+}

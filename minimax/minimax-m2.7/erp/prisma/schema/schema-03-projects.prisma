@@ -1,0 +1,252 @@
+/// Work containers that organize time tracking and task management within an
+/// organization.
+///
+/// Each project serves as a central hub for grouping related work items and
+/// time entries. Projects support lifecycle management through status
+/// transitions (active, archived, completed) and can optionally include
+/// budget tracking and date boundaries. All project data is strictly
+/// isolated within the owning organization.
+///
+/// Projects have relationships with project members (employee assignments
+/// with roles), tasks (work items that can be assigned to members), and
+/// timelogs (time entries logged against the project). The color code
+/// enables visual differentiation in UI displays.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization that owns this project. {@link erp_hrm_organizations.id}
+  erp_hrm_organization_id String
+  
+  /// Project name displayed in the UI and used for identification.
+  name String
+  
+  /// Optional detailed description explaining the project's purpose and scope.
+  description String?
+  
+  /// Hex color code for UI visual differentiation (e.g., #FF5733).
+  color String
+  
+  /// Project lifecycle status. Values: active (receiving timelogs), archived
+  /// (no new timelogs), completed (no new timelogs).
+  status String
+  
+  /// Total estimated hours for the project. Used for budget tracking reports.
+  budget_hours Float?
+  
+  /// Optional planned start date for the project.
+  start_date DateTime?
+  
+  /// Optional planned end date for the project.
+  end_date DateTime?
+  
+  /// Timestamp when the project was created.
+  created_at DateTime
+  
+  /// Timestamp when the project was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [erp_hrm_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  projectMemberships erp_hrm_project_members[]
+  tasks erp_hrm_tasks[]
+  timelogs erp_hrm_timelogs[]
+  timers erp_hrm_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([erp_hrm_organization_id, name])
+  @@index([status])
+  @@index([erp_hrm_organization_id, created_at])
+}
+
+/// Links employees to projects with assigned roles, enabling employee
+/// participation in multiple projects. Each record represents an employee's
+/// membership in a project with a specific role (member or project-lead)
+/// that determines their permissions within that project.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_project_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Linked employee who is assigned to the project. {@link
+  /// erp_hrm_employees.id}.
+  erp_hrm_employee_id String
+  
+  /// Linked project that the employee is assigned to. {@link
+  /// erp_hrm_projects.id}.
+  erp_hrm_project_id String
+  
+  /// Role assigned to the employee in this project. Values: 'member' (regular
+  /// project member) or 'project_lead' (manages tasks in the project).
+  assigned_role String
+  
+  /// Timestamp when the employee was assigned to the project.
+  created_at DateTime
+  
+  /// Timestamp when the project membership was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee erp_hrm_employees @relation(fields: [erp_hrm_employee_id], references: [id], onDelete: Cascade)
+  project erp_hrm_projects @relation(fields: [erp_hrm_project_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([erp_hrm_employee_id, erp_hrm_project_id], map: "erp_hrm_project_members_erp_hrm_employee_id_erp_hrm_pr_536a50d5")
+  @@index([erp_hrm_employee_id, created_at])
+  @@index([erp_hrm_project_id, created_at])
+}
+
+/// Work items within a project for task assignment and tracking. Tasks
+/// support one level of subtasking via optional parent task reference. Each
+/// task has status (open, in-progress, completed, closed) and priority (low,
+/// medium, high, urgent) for workflow management. Task status changes are
+/// recorded in {@link erp_hrm_task_histories} for audit trail.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Project this task belongs to. {@link erp_hrm_projects.id}.
+  erp_hrm_project_id String
+  
+  /// Employee assigned to this task. {@link erp_hrm_employees.id}. Optional -
+  /// must be a project member.
+  erp_hrm_employee_id String?
+  
+  /// Parent task for subtasking. {@link erp_hrm_tasks.id}. Optional - one
+  /// level of nesting only.
+  parent_id String?
+  
+  /// Task title describing the work to be done.
+  title String
+  
+  /// Detailed description of the task.
+  description String?
+  
+  /// Task workflow status. Values: open, in-progress, completed, closed.
+  status String
+  
+  /// Task priority level. Values: low, medium, high, urgent.
+  priority String
+  
+  /// Estimated hours to complete the task.
+  estimated_hours Float?
+  
+  /// Task due date for deadline tracking.
+  due_date DateTime?
+  
+  /// Timestamp when the task was created.
+  created_at DateTime
+  
+  /// Timestamp when the task was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project erp_hrm_projects @relation(fields: [erp_hrm_project_id], references: [id], onDelete: Cascade)
+  assignee erp_hrm_employees? @relation(fields: [erp_hrm_employee_id], references: [id], onDelete: Cascade)
+  parent erp_hrm_tasks? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subtasks erp_hrm_tasks[] @relation("recursive")
+  taskHistories erp_hrm_task_histories[]
+  timelogs erp_hrm_timelogs[]
+  timers erp_hrm_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_project_id, status])
+  @@index([erp_hrm_project_id, priority])
+  @@index([erp_hrm_employee_id, status])
+  @@index([parent_id])
+  @@index([due_date])
+  @@index([created_at])
+}
+
+/// Immutable audit trail that records each status transition made to a task
+/// throughout its lifecycle. Every time a task changes from one status to
+/// another, a new history entry is automatically created to document that
+/// change. The history serves as an immutable record that tracks the
+/// complete progression of a task from its initial status through all
+/// subsequent changes until completion. This record cannot be modified,
+/// deleted, or reordered once created. Users can review this history to
+/// understand the progression of work on a task, identify when specific
+/// status transitions occurred, and determine who was responsible for each
+/// change. {@link erp_hrm_tasks} owns this audit trail through the task_id
+/// foreign key.
+///
+/// @namespace Projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_task_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The task whose status was changed. {@link erp_hrm_tasks.id}
+  erp_hrm_task_id String
+  
+  /// The member who initiated the status change. {@link erp_hrm_members.id}
+  erp_hrm_member_id String
+  
+  /// The status value the task held before the change was initiated.
+  previous_status String
+  
+  /// The status value the task now holds after the change was completed.
+  new_status String
+  
+  /// Timestamp when the status change occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  task erp_hrm_tasks @relation(fields: [erp_hrm_task_id], references: [id], onDelete: Cascade)
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_task_id, created_at])
+  @@index([erp_hrm_member_id, created_at])
+}

@@ -1,132 +1,120 @@
-/// Temporary guest accounts for unauthenticated visitors performing
-/// authentication operations.
+/// Temporary guest accounts for tracking pre-authentication visitors
+/// identified by device fingerprint.
 ///
-/// Guests exist exclusively during the authentication lifecycle: signing up
-/// for new accounts, logging in to existing accounts, or accepting
-/// invitations to join organizations. Once authenticated, guests transition
-/// to members and operate within an organization context.
+/// Guests represent unauthenticated users who have not yet signed into the
+/// platform or do not have an account. The guest actor represents the
+/// initial state of all users before they complete authentication. Guests
+/// have no identity within the platform until they either create a new
+/// account through sign-up or authenticate with an existing account through
+/// login.
 ///
-/// The email address must be unique across the entire platform, ensuring no
-/// duplicate accounts exist. Guests have no access to organization-specific
-/// data or features until they become authenticated members.
+/// Once authenticated, they transition to the member actor status. This
+/// table provides the foundation for session tracking and enables the
+/// platform to maintain state for browsing visitors.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model hrm_time_tracking_guests {
+model erp_hrm_guests {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Email address for authentication. Must be unique across the entire
-  /// platform. Used for both sign-up and login operations.
-  email String
+  /// Device fingerprint used to identify and track unique visitors before
+  /// authentication. Provides a consistent identity for session tracking and
+  /// visitor analytics across page visits.
+  fingerprint String
   
-  /// Hashed password for authentication. Required for account creation during
-  /// sign-up and verification during login.
-  password_hash String
-  
-  /// Timestamp when the guest account was created.
+  /// Timestamp when the guest record was created.
   created_at DateTime
   
-  /// Timestamp when the guest account was last updated.
+  /// Timestamp when the guest record was last updated.
   updated_at DateTime
   
-  /// Timestamp when the guest account was soft-deleted. Null if the account is
-  /// active.
+  /// Timestamp when the guest record was soft-deleted. Used for cleanup of
+  /// expired guest records.
   deleted_at DateTime?
   
   //----
   // HAS RELATIONS
   //   - format: (propertyKey targetModel)
   //----
-  session hrm_time_tracking_guest_sessions?
+  sessions erp_hrm_guest_sessions[]
   
   //----
   // INDEXES
   //----
-  @@unique([email])
+  @@unique([fingerprint])
+  @@index([created_at])
 }
 
-/// Temporary session tokens for guest access during signup, login, and
-/// invitation acceptance flows.
-///
-/// Each guest session tracks the connection context (IP address, current
-/// URL, referrer) and maintains temporal boundaries through creation and
-/// expiration timestamps. Sessions are created when an unauthenticated
-/// visitor interacts with authentication flows and expire after a defined
-/// period for security purposes.
-///
-/// Related to {@link hrm_time_tracking_guests} as the actor whose session is
-/// being tracked.
+/// Session tracking for guest actor temporary access. Records connection
+/// context (IP, href, referrer) and expiration for pre-authentication
+/// visitors browsing the platform before signup. Each guest can have
+/// multiple concurrent sessions across devices.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model hrm_time_tracking_guest_sessions {
+model erp_hrm_guest_sessions {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The guest actor who owns this session. {@link hrm_time_tracking_guests.id}
-  guest_id String
+  /// Guest actor who owns this session. {@link erp_hrm_guests.id}.
+  erp_hrm_guest_id String
   
-  /// IP address of the client connection initiating the guest session.
+  /// IP address of the client connection. Used for security audit and fraud
+  /// detection.
   ip String
   
-  /// Current URL path where the guest session was initiated, useful for
-  /// redirecting after authentication.
+  /// URL path the guest accessed. Records the entry point or current location
+  /// in the application.
   href String
   
-  /// Referrer URL indicating where the guest came from before initiating the
-  /// session.
+  /// HTTP referrer header indicating where the guest came from. Nullable as
+  /// referrer may not be present.
   referrer String?
   
-  /// Timestamp when the guest session was created.
+  /// Timestamp when the session was created. Marks the beginning of the
+  /// guest's visit.
   created_at DateTime
   
-  /// Timestamp when the guest session expires. Sessions must have a defined
-  /// expiration for security.
+  /// Timestamp when the session expires. Required for security - sessions must
+  /// have a defined lifetime.
   expired_at DateTime
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  guest hrm_time_tracking_guests @relation(fields: [guest_id], references: [id], onDelete: Cascade)
+  guest erp_hrm_guests @relation(fields: [erp_hrm_guest_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
   //----
-  @@unique([guest_id])
-  @@index([guest_id, created_at])
+  @@index([erp_hrm_guest_id, created_at])
 }
 
-/// Registered user accounts representing individual persons who access the
-/// ERP platform.
+/// Authenticated user accounts that serve as the primary identity for
+/// accessing the ERP HRM platform. Each member is uniquely identified by
+/// their email address and authenticates using password credentials.
 ///
-/// Each member authenticates with a globally unique email address and
-/// password. Members can belong to multiple organizations simultaneously,
-/// with their global profile (display name, avatar, phone) shared across all
+/// Members maintain a global profile (display name, avatar image, phone
+/// number) that is shared across all organizations they belong to. When
+/// logging in, members select an organization context, and all subsequent
+/// actions are scoped to that organization.
+///
+/// This is the root actor entity - referenced by session tables
+/// (erp_hrm_member_sessions, erp_hrm_member_password_resets) and employee
+/// membership records (erp_hrm_employees) that link members to specific
 /// organizations.
-///
-/// When logging in, members select an organization context, after which all
-/// actions are scoped to that organization. Members can switch between
-/// organizations without logging out.
-///
-/// Related entities:
-/// - {@link hrm_time_tracking_member_sessions} - Session tokens for
-/// authentication
-/// - {@link hrm_time_tracking_member_password_resets} - Password recovery
-/// tokens
-/// - {@link hrm_time_tracking_employees} - Organization memberships linking
-/// users to organizations
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model hrm_time_tracking_members {
+model erp_hrm_members {
   //----
   // COLUMNS
   //----
@@ -134,70 +122,72 @@ model hrm_time_tracking_members {
   id String @id
   
   /// Unique email address serving as the primary identifier for
-  /// authentication. Must be unique across the entire platform; no two users
-  /// can share the same email address.
+  /// authentication. Must be unique across the entire platform - no two users
+  /// can share the same email. Used for login and organization invitations.
   email String
   
-  /// Hashed password for authentication. The password can be changed by the
-  /// user at any time after logging in.
-  password_hash String
+  /// Hashed password credential for account authentication. Users create this
+  /// password during registration and can change it through account settings.
+  /// Stored securely using industry-standard hashing algorithms.
+  password String
   
-  /// The name shown to other users within organizations. This is how the user
-  /// is identified in collaborative features such as task assignments,
-  /// timesheet reviews, and team views. Shared across all organizations the
-  /// user belongs to.
+  /// Human-readable name that identifies the member to others within
+  /// organizations. Appears in all interactions such as viewing employees,
+  /// timelogs, or task assignments. Required field shared across all
+  /// organizational memberships.
   display_name String
   
-  /// Optional URL to the user's profile picture that appears alongside their
-  /// display name throughout the platform interface. Changes are immediately
-  /// reflected across all organizations.
+  /// Optional URL to the member's avatar image for visual identification.
+  /// Helps team members recognize each other in collaborative contexts. Shared
+  /// across all organizations the member belongs to.
   avatar_image String?
   
-  /// Optional contact number that can be shared with organization members.
+  /// Optional contact phone number stored as text. Allows organizations to
+  /// reach the member if needed. Shared across all organizational memberships.
   phone_number String?
   
-  /// Timestamp when the user account was created during initial sign-up.
+  /// Timestamp when the member account was created. Records the initial
+  /// sign-up moment.
   created_at DateTime
   
-  /// Timestamp when the user account was last modified, including profile
-  /// updates and password changes.
+  /// Timestamp when the member account was last updated. Updated on profile
+  /// changes or password changes.
   updated_at DateTime
   
-  /// Timestamp when the user account was soft-deleted. Null for active
-  /// accounts. When set, the user can no longer authenticate.
+  /// Timestamp when the member account was soft-deleted. Null for active
+  /// accounts. When deleted, the member can no longer authenticate or access
+  /// organizations, but their historical data (timelogs, timesheets) is
+  /// preserved.
   deleted_at DateTime?
   
   //----
   // HAS RELATIONS
   //   - format: (propertyKey targetModel)
   //----
-  sessions hrm_time_tracking_member_sessions[]
-  passwordResets hrm_time_tracking_member_password_resets[]
-  ownedOrganizations hrm_time_tracking_organizations[]
-  createdRoles hrm_time_tracking_roles[]
-  employees hrm_time_tracking_employees[]
-  sentEmployeeInvitations hrm_time_tracking_employee_invitations[]
-  taskHistories hrm_time_tracking_task_histories[]
-  reviewedTimesheets hrm_time_tracking_timesheets[]
-  activityLogs hrm_time_tracking_activity_logs[]
+  sessions erp_hrm_member_sessions[]
+  passwordResets erp_hrm_member_password_resets[]
+  ownedOrganizations erp_hrm_organizations[]
+  employees erp_hrm_employees[]
+  taskHistories erp_hrm_task_histories[]
+  reviewedTimesheets erp_hrm_timesheets[]
+  activityLogs erp_hrm_activity_logs[]
   
   //----
   // INDEXES
   //----
   @@unique([email])
-  @@index([created_at])
 }
 
-/// JWT session tokens for authenticated members tracking login sessions with
-/// connection metadata for security auditing. Each session belongs to a
-/// member and records IP address, current URL, referrer, creation timestamp,
-/// and expiration time. Organization context for multi-tenancy is managed at
-/// the application layer through the member's organization membership.
-/// Sessions are automatically invalidated when expired_at is reached.
+/// JWT session tokens for authenticated members supporting organization
+/// context switching. Each session tracks the member's authentication state,
+/// connection metadata (IP address, current URL, referrer), and currently
+/// selected organization context. Sessions expire based on the expired_at
+/// timestamp and can be refreshed. The organization_id field allows members
+/// to switch between organizations they belong to without re-authentication.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model hrm_time_tracking_member_sessions {
+model erp_hrm_member_sessions {
   //----
   // COLUMNS
   //----
@@ -205,97 +195,95 @@ model hrm_time_tracking_member_sessions {
   id String @id
   
   /// The authenticated member this session belongs to. {@link
-  /// hrm_time_tracking_members.id}
-  member_id String
+  /// erp_hrm_members.id}.
+  erp_hrm_member_id String
   
-  /// IP address from which the member logged in, used for security auditing
-  /// and session validation.
+  /// The currently selected organization context for this session. Nullable
+  /// because the member may not have selected an organization yet, or may have
+  /// been removed from all organizations. Members can switch organizations
+  /// without logging out by updating this field. {@link
+  /// erp_hrm_organizations.id}.
+  erp_hrm_organization_id String?
+  
+  /// IP address of the client that initiated this session. Used for security
+  /// logging and fraud detection.
   ip String
   
-  /// The URL the member was accessing when the session was created, typically
-  /// the login redirect target.
+  /// The URL path the member was accessing when the session was created or
+  /// last active. Used for session tracking and security auditing.
   href String
   
-  /// HTTP referrer header from the login request, useful for tracking session
-  /// origin and security analysis.
+  /// The HTTP Referrer header value when the session was created. Used for
+  /// tracking session origin and security analysis.
   referrer String
   
-  /// Timestamp when the session was created, marking the beginning of the
-  /// authenticated session.
+  /// Timestamp when this session was created (login time).
   created_at DateTime
   
-  /// Timestamp when the session expires. Always set to enforce session
-  /// security and prevent indefinite sessions.
+  /// Timestamp when this session was last updated (e.g., when switching
+  /// organization context or refreshing tokens).
+  updated_at DateTime
+  
+  /// Timestamp when this session expires. Sessions must be refreshed before
+  /// this time to remain valid. Security-critical field - session tokens are
+  /// invalid after this timestamp.
   expired_at DateTime
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  member hrm_time_tracking_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  member erp_hrm_members @relation(fields: [erp_hrm_member_id], references: [id], onDelete: Cascade)
+  organization erp_hrm_organizations? @relation(fields: [erp_hrm_organization_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
   //----
-  @@index([member_id, created_at])
+  @@index([erp_hrm_organization_id])
+  @@index([erp_hrm_member_id, created_at])
 }
 
-/// Password reset tokens with expiration for members who need to recover or
-/// change their password.
-///
-/// This table stores temporary, single-use tokens that allow members to
-/// securely reset their passwords. Each token has a limited validity period
-/// defined by the expires_at timestamp, after which it becomes invalid.
-/// Members can have multiple reset tokens (e.g., if they request multiple
-/// resets), but typically only the most recent valid token is used.
-///
-/// The table supports both password recovery (forgotten password) and
-/// password change workflows. Tokens are cryptographically random strings
-/// that should be included in password reset links sent via email.
+/// Password reset tokens for member account recovery. Stores temporary
+/// tokens with expiration that allow members to reset their password when
+/// they cannot authenticate. Each token is valid for a limited time and can
+/// only be used once. A member may have multiple reset tokens if they
+/// request multiple resets without completing the recovery flow.
 ///
 /// @namespace Actors
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model hrm_time_tracking_member_password_resets {
+model erp_hrm_member_password_resets {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// The member account for which this password reset token was created.
-  /// {@link hrm_time_tracking_members.id}.
+  /// The member who requested the password reset. {@link erp_hrm_members.id}
   member_id String
   
-  /// Unique, cryptographically random token string used to identify and
-  /// validate the password reset request. This token should be included in the
-  /// password reset link sent to the member's email address.
+  /// Hashed password reset token. This is a secure hash of the actual token
+  /// sent to the user. The token must be unique across all reset requests to
+  /// prevent collision attacks.
   token String
   
-  /// Timestamp when this password reset token expires. After this time, the
-  /// token is no longer valid and cannot be used to reset the password.
-  /// Typical expiration is 1-24 hours from creation.
-  expires_at DateTime
-  
-  /// Timestamp when the password reset token was created.
+  /// Timestamp when the password reset was requested. Used for audit trail and
+  /// to calculate token age.
   created_at DateTime
   
-  /// Timestamp when the password reset token record was last updated.
-  updated_at DateTime
-  
-  /// Timestamp when the password reset token was soft-deleted (used or
-  /// invalidated). Nullable field for audit trail purposes.
-  deleted_at DateTime?
+  /// Expiration timestamp for the reset token. Tokens become invalid after
+  /// this time for security purposes. Must be set at creation time - there is
+  /// no indefinite reset token.
+  expired_at DateTime
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  member hrm_time_tracking_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  member erp_hrm_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
   //----
   @@unique([token])
-  // spellchecker: ignore-next-line
-  @@index([member_id, created_at], map: "hrm_time_tracking_member_password_resets_member_id_cre_b5a3bdad")
+  @@index([member_id, created_at])
 }

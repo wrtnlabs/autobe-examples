@@ -1,0 +1,85 @@
+/// Customer wishlist entity representing the collection of product bookmarks
+/// for each customer. Each customer has exactly one wishlist created at
+/// registration time. The wishlist serves as a container for wishlist items
+/// that link customers to products they want to save for later purchase.
+/// {@link ecommerce_mall_wishlist_items} stores individual product links
+/// while this table represents the customer's wishlist collection.
+///
+/// @namespace Wishlists
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner customer who owns this wishlist. {@link ecommerce_mall_customers.id}
+  shopping_customer_id String
+  
+  /// Timestamp when the wishlist was created.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  wishlistItems ecommerce_mall_wishlist_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_customer_id])
+}
+
+/// Individual wishlist items linking customers to products they want to save
+/// for future purchase. Each item represents a product bookmark within a
+/// customer's wishlist. Products can only appear once per wishlist, enforced
+/// by unique constraint. Items are automatically removed when the linked
+/// product is deleted by the seller.
+///
+/// @namespace Wishlists
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent wishlist this item belongs to. {@link
+  /// ecommerce_mall_wishlists.id}
+  ecommerce_mall_wishlist_id String
+  
+  /// Reference to the product this item bookmarks. {@link
+  /// ecommerce_mall_products.id}
+  ecommerce_mall_product_id String
+  
+  /// Timestamp when the item was added to the wishlist.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  wishlist ecommerce_mall_wishlists @relation(fields: [ecommerce_mall_wishlist_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_mall_product_id])
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_wishlist_id, ecommerce_mall_product_id], map: "ecommerce_mall_wishlist_items_ecommerce_mall_wishlist__f21ac611")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_wishlist_id, created_at], map: "ecommerce_mall_wishlist_items_ecommerce_mall_wishlist__df7a52d5")
+}

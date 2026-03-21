@@ -1,0 +1,70 @@
+/// Immutable audit trail entries capturing significant organizational
+/// actions for compliance and accountability. Each entry records the
+/// timestamp, user performer, action type, target entity, organization
+/// context, and optional details.
+///
+/// Activity logs are append-only records that cannot be modified after
+/// creation. They support filtering by action type, user, and date range for
+/// audit and reporting purposes. Users with org:manage permission can view
+/// the full activity log within their organization.
+///
+/// The polymorphic entity reference (entity_type + entity_id) allows
+/// tracking actions across different entity types including employees,
+/// contracts, projects, tasks, timesheets, and roles without creating
+/// circular foreign key references.
+///
+/// @namespace ActivityLogs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who performed the action. {@link erp_hrm_members.id}
+  member_id String
+  
+  /// The organization context in which the action occurred. All activity logs
+  /// are organization-scoped for data isolation. {@link
+  /// erp_hrm_organizations.id}
+  organization_id String
+  
+  /// The type of action performed. Valid values include: employee_invited,
+  /// employee_deactivated, employee_reactivated, contract_created,
+  /// contract_edited, project_created, project_archived, project_completed,
+  /// project_deleted, task_status_changed, timesheet_submitted,
+  /// timesheet_approved, timesheet_rejected, role_assigned, role_changed.
+  action_type String
+  
+  /// The type of entity that was the target of the action. Valid values:
+  /// employee, contract, project, task, timesheet, role.
+  entity_type String
+  
+  /// The unique identifier of the target entity. Combined with entity_type to
+  /// form a polymorphic reference.
+  entity_id String
+  
+  /// Additional context about the action, such as old and new values for
+  /// status changes or rejection reasons. Stored as text for flexibility.
+  details String?
+  
+  /// Timestamp when the action was performed. Activity logs are immutable
+  /// after creation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  organization erp_hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([organization_id, created_at])
+  @@index([member_id, created_at])
+  @@index([action_type])
+  @@index([entity_type, entity_id])
+}

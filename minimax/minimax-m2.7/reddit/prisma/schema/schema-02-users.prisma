@@ -1,0 +1,99 @@
+/// Stores user profile information for the Reddit-like platform. Each
+/// registered member has exactly one profile containing their display name,
+/// bio text, and avatar image. Profile data is publicly viewable by all
+/// users to display author information on posts and comments. The profile is
+/// directly owned by a member via a 1:1 relationship.
+///
+/// @namespace Users
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner's member account. {@link reddit_clone_members.id}.
+  reddit_clone_member_id String
+  
+  /// Avatar image file association. {@link reddit_clone_file_associations.id}.
+  reddit_clone_file_association_id String?
+  
+  /// User's display name shown on posts, comments, and profile page.
+  display_name String
+  
+  /// User's biography or description text on their profile.
+  bio String?
+  
+  /// Profile creation timestamp.
+  created_at DateTime
+  
+  /// Last profile update timestamp.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  avatarFileAssociation reddit_clone_file_associations? @relation(fields: [reddit_clone_file_association_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_clone_file_association_id], map: "reddit_clone_user_profiles_reddit_clone_file_associati_b8643841")
+  @@unique([reddit_clone_member_id])
+}
+
+/// Tracks the computed karma score for each user, denormalized for efficient
+/// profile display.
+///
+/// Karma represents a user's reputation on the platform calculated from
+/// votes on their content. When a user receives an upvote on a post or
+/// comment, their karma increases by 1. When a downvote is received, karma
+/// decreases by 1. Removing votes adjusts karma accordingly. Karma can be
+/// negative.
+///
+/// This table is a denormalized aggregation maintained by the system (not
+/// directly user-managed). It is updated automatically when votes are cast,
+/// changed, or removed on the user's posts and comments. The denormalized
+/// design enables efficient profile page queries without counting votes at
+/// runtime.
+///
+/// References {@link reddit_clone_members} for user identity.
+///
+/// @namespace Users
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_user_karmas {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member whose karma is being tracked. {@link
+  /// reddit_clone_members.id}.
+  reddit_clone_member_id String
+  
+  /// Computed karma score for the user. Increases by 1 for each upvote on
+  /// user's content, decreases by 1 for each downvote. Can be negative.
+  karma_score Int
+  
+  /// Timestamp when the karma record was initially created.
+  created_at DateTime
+  
+  /// Timestamp when the karma score was last updated due to vote changes.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_clone_member_id])
+}

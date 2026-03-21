@@ -1,0 +1,83 @@
+/// Email invitations sent to potential employees to join an organization as
+/// team members. Each invitation belongs to one organization and targets a
+/// specific email address. Invitations track their lifecycle from creation
+/// through acceptance or expiration. When inviting an existing user, the
+/// employee record is created immediately. When inviting a new user, a
+/// pending invitation is created and automatically linked when the user
+/// registers with that email. {@link erp_hrm_organizations} is the owning
+/// organization. Optional role and department assignments can be
+/// pre-specified for streamlined onboarding.
+///
+/// @namespace System
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_invitations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization that sent this invitation. {@link erp_hrm_organizations.id}
+  erp_hrm_organization_id String
+  
+  /// Pre-assigned role for the invited employee. Optional - can be changed
+  /// after onboarding. {@link erp_hrm_roles.id}
+  erp_hrm_role_id String?
+  
+  /// Pre-assigned department for the invited employee. Optional. {@link
+  /// erp_hrm_departments.id}
+  erp_hrm_department_id String?
+  
+  /// Email address of the person being invited. Serves as the unique
+  /// identifier for matching invitations to users during registration.
+  email String
+  
+  /// Current state of the invitation. Values: pending (awaiting user
+  /// registration), accepted (user joined organization), expired (no longer
+  /// valid).
+  status String
+  
+  /// Secure token for invitation link. Used to verify invitation authenticity
+  /// when accessed.
+  token String?
+  
+  /// Pre-specified position or job title for the invited employee.
+  position String?
+  
+  /// Optional message from the organization to the invited person.
+  note String?
+  
+  /// Timestamp when the invitation was accepted and employee record was
+  /// created.
+  accepted_at DateTime?
+  
+  /// Timestamp when this invitation expires and becomes invalid.
+  expires_at DateTime?
+  
+  /// Timestamp when the invitation was created.
+  created_at DateTime
+  
+  /// Timestamp when the invitation was last modified.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_organizations @relation(fields: [erp_hrm_organization_id], references: [id], onDelete: Cascade)
+  role erp_hrm_roles? @relation(fields: [erp_hrm_role_id], references: [id], onDelete: Cascade)
+  department erp_hrm_departments? @relation(fields: [erp_hrm_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_role_id])
+  @@index([erp_hrm_department_id])
+  @@unique([erp_hrm_organization_id, email])
+  @@index([erp_hrm_organization_id, created_at])
+  @@index([status])
+  @@index([email])
+}

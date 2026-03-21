@@ -1,0 +1,94 @@
+/// Primary tenant containers in the multi-tenant ERP platform. Each
+/// organization operates as an independent tenant with complete data
+/// isolation from other organizations.
+///
+/// Organizations store identity attributes (name, description, logo) and
+/// operational configuration (currency, timezone, fiscal start month). The
+/// owner reference tracks the user who created the organization. All
+/// organization-scoped business entities (employees, projects, tasks,
+/// timelogs, etc.) belong to exactly one organization.
+///
+/// Data isolation is enforced at the application layer through organization
+/// context scoping. When users belong to multiple organizations, they select
+/// an active organization context, and all subsequent operations are scoped
+/// to that organization.
+///
+/// @namespace Organizations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who created and owns this organization. Has full administrative
+  /// rights including organization deletion. {@link erp_hrm_members.id}
+  owner_id String
+  
+  /// Organization display name used as the primary identifier throughout the
+  /// platform interface.
+  name String
+  
+  /// Optional additional context about the organization's purpose, nature, or
+  /// business focus.
+  description String?
+  
+  /// Optional URL to the organization's logo image for visual branding.
+  /// Displayed in the organization interface to help members identify their
+  /// current organization context.
+  logo_image String?
+  
+  /// Designated currency for financial operations within the organization.
+  /// Supported values include USD, EUR, KRW, and other common international
+  /// currencies. All monetary values associated with the organization use this
+  /// currency.
+  currency String
+  
+  /// Organization's preferred timezone for time tracking and reporting.
+  /// Affects how dates and times display for all members within that
+  /// organization context.
+  timezone String
+  
+  /// Month number (1-12) when the organization's fiscal year begins. Impacts
+  /// financial reporting and budget tracking features, allowing organizations
+  /// to align reporting periods with fiscal calendars.
+  fiscal_start_month Int
+  
+  /// Timestamp when the organization was created.
+  created_at DateTime
+  
+  /// Timestamp when the organization was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the organization was soft-deleted. Null if the
+  /// organization is active. Soft deletion preserves data for potential
+  /// recovery while removing the organization from active operations.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner erp_hrm_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberSessions erp_hrm_member_sessions[]
+  roles erp_hrm_roles[]
+  employees erp_hrm_employees[]
+  departments erp_hrm_departments[]
+  projects erp_hrm_projects[]
+  invitations erp_hrm_invitations[]
+  activityLogs erp_hrm_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([owner_id])
+  @@index([created_at])
+  @@index([deleted_at])
+}

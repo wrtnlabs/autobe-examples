@@ -1,0 +1,122 @@
+/// Stores customer profile information including display name and phone
+/// number. Each customer has exactly one profile linked via 1:1 relationship
+/// with the customer account table. Profile data is editable by the customer
+/// and deleted when the customer account is deleted.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the owning customer's {@link ecommerce_mall_customers.id}.
+  ecommerce_mall_customer_id String
+  
+  /// Customer's display name shown on the platform. Used for public-facing
+  /// identification.
+  display_name String
+  
+  /// Customer's contact phone number for order notifications and delivery
+  /// coordination.
+  phone String
+  
+  /// Timestamp when the profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([ecommerce_mall_customer_id])
+}
+
+/// Stores multiple shipping addresses for customers with default address
+/// designation for checkout convenience. Each address represents a delivery
+/// destination where packages will be delivered after purchase. Customers
+/// maintain multiple addresses for different delivery scenarios such as home
+/// delivery, workplace delivery, or gifts to friends and family. The default
+/// address is pre-selected during checkout for user convenience.
+/// Soft-deleted addresses are preserved but hidden from selection. Belongs
+/// to {@link ecommerce_mall_customers.id}.
+///
+/// @namespace Customers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_shipping_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link ecommerce_mall_customers.id}. Each address
+  /// must belong to exactly one customer.
+  ecommerce_mall_customer_id String
+  
+  /// Recipient's full name for delivery. Required for shipping purposes.
+  recipient_name String
+  
+  /// Recipient's phone number for delivery coordination. Required for shipping
+  /// purposes.
+  phone String
+  
+  /// Street address including house/building number and street name. Required
+  /// for physical delivery.
+  street_address String
+  
+  /// City name for the delivery address. Required for shipping routing.
+  city String
+  
+  /// State or province name for the delivery address. Required for regional
+  /// shipping routing.
+  state String
+  
+  /// Postal code or ZIP code for delivery routing. Used by carriers for
+  /// accurate package routing.
+  postal_code String
+  
+  /// Country name for international shipping. Required for cross-border
+  /// delivery processing.
+  country String
+  
+  /// Whether this is the customer's default shipping address. Only one address
+  /// can be default per customer. Pre-selected during checkout.
+  is_default Boolean
+  
+  /// Timestamp when the address was first added to the customer's account.
+  created_at DateTime
+  
+  /// Timestamp when the address was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the address was soft-deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [ecommerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orders ecommerce_mall_orders[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_id, deleted_at], map: "ecommerce_mall_shipping_addresses_ecommerce_mall_custo_6d66c55b")
+}

@@ -1,0 +1,45 @@
+/// Immutable inventory records tracking all stock changes for product
+/// variants including restocking, order deductions, adjustments,
+/// cancellations, and refunds. Each record captures quantity change
+/// (positive for restocking, negative for consumption), the business reason,
+/// and timestamp. Current stock is derived from sum of all records for a
+/// variant. Records are never updated or deleted to maintain complete audit
+/// trail.
+///
+/// @namespace Inventory
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The product variant this inventory record applies to. {@link
+  /// ecommerce_mall_product_variants.id}.
+  ecommerce_mall_product_variant_id String
+  
+  /// Stock quantity change value. Positive values indicate restocking or
+  /// refunds, negative values indicate order deductions, cancellations, or
+  /// adjustments.
+  quantity_change Int
+  
+  /// Business reason for the inventory change such as 'restock',
+  /// 'order_placement', 'order_cancellation', 'refund', or 'adjustment'.
+  reason String
+  
+  /// Timestamp when the inventory change occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id, created_at], map: "ecommerce_mall_inventory_records_ecommerce_mall_produc_19d25df6")
+}
