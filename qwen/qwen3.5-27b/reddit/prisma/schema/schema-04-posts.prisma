@@ -1,0 +1,224 @@
+/// Main post entity representing user-generated content within communities.
+///
+/// Posts are the primary content unit on the platform. Users can create
+/// posts in communities they are subscribed to. Each post supports three
+/// types (text, link, image), tracks voting scores, and maintains a complete
+/// audit trail through snapshots.
+///
+/// **Key Characteristics**:
+/// - Belongs to exactly one community (required relationship)
+/// - Created by a specific user (author)
+/// - Supports multiple media types with different content structures
+/// - Accumulates vote score based on community engagement
+/// - Supports soft-delete for content moderation
+///
+/// **Business Rules**:
+/// - Users must be subscribed to a community before posting to it
+/// - Posts can be edited by their author or deleted by moderators
+/// - Vote score = (upvotes - downvotes)
+/// - Each post can have zero or more child comments
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The community where this post is published. Posts are scoped to a single
+  /// community for organizational and moderation purposes. Users must be
+  /// subscribed to the community to post there. {@link
+  /// reddit_clone_communities.id}
+  reddit_clone_community_id String
+  
+  /// The user who authored this post. This establishes post ownership for
+  /// edit/delete permissions and karma attribution. {@link
+  /// reddit_clone_members.id}
+  reddit_clone_members_id String
+  
+  /// The headline or summary of the post content. Required for all post types.
+  /// Maximum 500 characters.
+  title String
+  
+  /// The main body content of the post. For text-type posts, this contains the
+  /// full article. For link/image types, this may be null or contain a
+  /// caption.
+  content String?
+  
+  /// Classifies the post format. Valid values: 'text' (article-style post),
+  /// 'link' (external URL reference), 'image' (visual media post).
+  post_type String
+  
+  /// The current net vote score for this post, calculated as (upvotes -
+  /// downvotes). Starts at 0 and adjusts with each vote action.
+  score Int
+  
+  /// Timestamp when this post was originally published.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this post.
+  updated_at DateTime
+  
+  /// Timestamp when this post was soft-deleted. Null means the post is active.
+  /// Used for moderation and author-initiated deletion.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  author reddit_clone_members @relation(fields: [reddit_clone_members_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  images reddit_clone_post_images[]
+  snapshots reddit_clone_post_snapshots[]
+  comments reddit_clone_comments[]
+  commentSnapshots reddit_clone_comment_snapshots[]
+  reports reddit_clone_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_clone_community_id, created_at])
+  @@index([reddit_clone_members_id, created_at])
+  @@index([post_type, created_at])
+  @@index([score, created_at])
+}
+
+/// Images associated with image-type posts, supporting multiple images per
+/// post.
+///
+/// This table stores image file references for posts of type 'image'. Each
+/// image-type post can have multiple images stored here, with sequence
+/// ordering to maintain the intended display order.
+///
+/// Key relationships:
+/// - Belongs to {@link reddit_clone_posts} via reddit_clone_post_id (1:N
+/// relationship)
+/// - Images are managed through their parent post, not independently
+///
+/// Behavioral notes:
+/// - Sequence numbers start from 1 and increment for each image in a post
+/// - When a post is deleted, all associated images are also deleted (cascade)
+/// - Images can be reordered by updating sequence values
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged post's {@link reddit_clone_posts.id}. This image belongs to this
+  /// post.
+  reddit_clone_post_id String
+  
+  /// URL of the uploaded image file stored in the file storage system.
+  file_url String
+  
+  /// Display order of this image within the post. Starts from 1 and increments
+  /// for each additional image.
+  sequence Int
+  
+  /// Timestamp when this image was attached to the post.
+  created_at DateTime
+  
+  /// Timestamp when this image record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this image was soft-deleted. Null means the image is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_clone_post_id, sequence])
+}
+
+/// Historical snapshots of post state at the time of modification.
+///
+/// Each snapshot captures a complete, point-in-time copy of a post's data
+/// when it was created or significantly modified. This enables audit trails,
+/// content recovery, and historical analysis of post evolution. Snapshots
+/// are immutable once created and serve as an append-only audit log.
+///
+/// Key relationships:
+/// - References {@link reddit_clone_posts.id} via foreign key
+/// - Denormalizes all post fields for historical accuracy
+/// - Multiple snapshots can exist per post (one per modification)
+///
+/// Behavioral notes:
+/// - Snapshots are append-only; never updated or deleted
+/// - Captures the exact state of the post at the moment of snapshot
+/// - Includes original timestamps from the post to preserve historical context
+///
+/// @namespace Posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main post entity being snapshot. {@link
+  /// reddit_clone_posts.id}
+  reddit_clone_post_id String
+  
+  /// Title of the post at the time of snapshot.
+  title String
+  
+  /// Text content of the post at the time of snapshot.
+  content String?
+  
+  /// Type of post: text, link, or image.
+  post_type String
+  
+  /// URL for link-type posts.
+  link_url String?
+  
+  /// URL of the image file for image-type posts.
+  file_url String?
+  
+  /// Current vote score at the time of snapshot.
+  score Int
+  
+  /// Timestamp when the original post was created.
+  original_created_at DateTime
+  
+  /// Timestamp when the original post was last updated.
+  original_updated_at DateTime
+  
+  /// Timestamp when the original post was deleted (soft delete).
+  original_deleted_at DateTime?
+  
+  /// Timestamp when this snapshot was taken.
+  captured_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_post_id, captured_at], map: "reddit_clone_post_snapshots_reddit_clone_post_id_captu_ff4f9755")
+}

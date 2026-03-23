@@ -1,0 +1,36 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+export async function deleteMultiUserTodoMemberTodosTodoId(props: {
+  member: MemberPayload;
+  todoId: string & tags.Format<"uuid">;
+}): Promise<void> {
+  // Find the todo and verify ownership
+  const todo = await MyGlobal.prisma.multi_user_todo_todos.findUniqueOrThrow({
+    where: { id: props.todoId },
+    select: { id: true, multi_user_todo_member_id: true },
+  });
+  // Verify ownership - throw 403 if member doesn't own the todo
+  if (todo.multi_user_todo_member_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Soft delete: set deleted=true and deleted_at=current timestamp
+  await MyGlobal.prisma.multi_user_todo_todos.update({
+    where: { id: props.todoId },
+    data: {
+      deleted: true,
+      deleted_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+}

@@ -1,0 +1,616 @@
+/// Employee records linked to users within an organization. Each employee
+/// belongs to exactly one organization and can be assigned a role for
+/// permission management.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_tracker_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for the employee record.
+  id String @id
+  
+  /// Organization's id. Employee belongs to exactly one organization.
+  organization_id String
+  
+  /// Member's id. Employee record links to the user account.
+  user_id String
+  
+  /// Role's id. Current assigned role for this employee in the organization.
+  role_id String?
+  
+  /// Department's id. Optional department归属. Set to NULL when department is
+  /// deleted.
+  department_id String?
+  
+  /// Employee status. Values: 'active', 'deactivated'. Deactivated employees
+  /// cannot log time or submit timesheets.
+  status String
+  
+  /// Employment type classification. Values: 'full-time', 'part-time',
+  /// 'contractor', 'intern'.
+  employment_type String
+  
+  /// Employee's position or title within the organization.
+  position String?
+  
+  /// Record creation timestamp. Automatically set when employee record is
+  /// created.
+  created_at DateTime
+  
+  /// Record last update timestamp. Automatically updated on every change.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. NULL for active employees, set when employee is
+  /// deactivated.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_tracker_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user hrm_tracker_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role hrm_tracker_roles? @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  department hrm_tracker_departments? @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  roleAssignments hrm_tracker_employee_roles[]
+  roleChanges hrm_tracker_employee_role_changes[]
+  histories hrm_tracker_employee_histories[]
+  projectMembers hrm_tracker_project_members[]
+  assignedTasks hrm_tracker_tasks[]
+  taskHistories hrm_tracker_task_histories[]
+  timelogs hrm_tracker_timelogs[]
+  timesheets hrm_tracker_timesheets[]
+  contracts hrm_tracker_employee_contracts[]
+  activeTimers hrm_tracker_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@index([role_id])
+  @@index([department_id])
+  @@unique([organization_id, user_id])
+  @@index([organization_id, status])
+  @@index([organization_id, department_id])
+}
+
+/// Roles defined per organization assigned to employees. Each role belongs
+/// to exactly one organization and can be assigned to multiple employees.
+/// Roles can be built-in (Owner, Manager, Employee) or custom, with custom
+/// roles supporting detailed permission sets through the
+/// hrm_tracker_role_permissions junction table.
+///
+/// Organization-scoped: Roles are isolated to their parent organization and
+/// cannot be shared across organizations.
+///
+/// Deletion constraint: Custom roles (is_custom = true) can only be deleted
+/// if no employees are currently assigned to them.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_tracker_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization that owns this role. {@link hrm_tracker_organizations.id}.
+  hrm_tracker_organization_id String
+  
+  /// Unique role name within the organization (e.g., Owner, Manager, Employee,
+  /// or custom name). Required for both built-in and custom roles.
+  name String
+  
+  /// Optional description explaining the role's purpose and responsibilities.
+  description String?
+  
+  /// Whether this is a custom role created by the organization (true) or a
+  /// built-in role (false). Built-in roles (Owner, Manager, Employee) cannot
+  /// be deleted.
+  is_custom Boolean
+  
+  /// Whether this role is automatically assigned to newly invited employees.
+  /// Organizations can set one default role.
+  is_default Boolean
+  
+  /// Timestamp when this role was created.
+  created_at DateTime
+  
+  /// Timestamp when this role was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for archival purposes. Roles are never
+  /// hard-deleted; deleted_at indicates retirement.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_tracker_organizations @relation(fields: [hrm_tracker_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_tracker_employees[]
+  permissions hrm_tracker_permissions[]
+  employeeAssignments hrm_tracker_employee_roles[]
+  rolePermissions hrm_tracker_role_permissions[]
+  oldRoleChangeHistories hrm_tracker_employee_role_changes[] @relation("hrm_tracker_employee_role_changes_of_old_hrm_tracker_role_id")
+  newRoleChangeHistories hrm_tracker_employee_role_changes[] @relation("hrm_tracker_employee_role_changes_of_new_hrm_tracker_role_id")
+  employeeHistories hrm_tracker_employee_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_tracker_organization_id, name])
+  @@index([hrm_tracker_organization_id])
+  @@index([is_custom])
+}
+
+/// Assigns permissions to roles within the organization.
+///
+/// This table defines which permissions are granted to each role. Each role
+/// can have multiple permissions, and each permission can be assigned to
+/// multiple roles (many-to-many relationship).
+///
+/// **Permission Values:**
+///
+/// - org:manage: Full organization management access
+/// - employee:manage: Manage employees (invite, deactivate, view all)
+/// - employee:view: View employee information
+/// - project:manage: Manage projects, tasks, and project members
+/// - project:view: View project information
+/// - time:manage: Manage own timelogs and timers
+/// - time:approve: Approve/reject timesheets
+/// - time:view_all: View all timelogs across the organization
+/// - report:view: Access organization reports
+///
+/// **Relationships:**
+///
+/// - Belongs to exactly one role (hrm_tracker_roles)
+/// - One role can have many permissions
+///
+/// **Data Integrity:**
+///
+/// - Composite unique constraint on role_id and permission_name
+/// - Foreign key to hrm_tracker_roles with CASCADE delete
+/// - Permission names are validated at application level
+///
+/// **Usage:**
+///
+/// - Assigned to roles during role creation/editing
+/// - Checked during authorization to grant/deny access
+/// - Inherited by all employees with that role
+///
+/// **Example:**
+///
+/// - Manager role might have: project:manage, time:approve, report:view
+/// - Employee role might have: project:view, time:manage, time:view_all
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_tracker_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for the permission assignment record.
+  id String @id
+  
+  /// Belonged role's {@link hrm_tracker_roles.id}. The role to which this
+  /// permission is assigned.
+  hrm_tracker_role_id String
+  
+  /// Permission code following org:entity:action format.
+  ///
+  /// Allowed values:
+  ///
+  /// - org:manage: Full organization management access
+  /// - employee:manage: Manage employees (invite, deactivate, view all)
+  /// - employee:view: View employee information
+  /// - project:manage: Manage projects, tasks, and project members
+  /// - project:view: View project information
+  /// - time:manage: Manage own timelogs and timers
+  /// - time:approve: Approve/reject timesheets
+  /// - time:view_all: View all timelogs across the organization
+  /// - report:view: Access organization reports
+  ///
+  /// **Format**: `{resource}:{action}`
+  ///
+  /// **Examples**:
+  /// - org:manage
+  /// - employee:manage
+  /// - project:manage
+  /// - time:approve
+  permission String
+  
+  /// Timestamp when this permission was assigned to the role.
+  created_at DateTime
+  
+  /// Timestamp when this permission assignment was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_tracker_roles @relation(fields: [hrm_tracker_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  rolePermissions hrm_tracker_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_tracker_role_id, permission])
+  @@index([hrm_tracker_role_id])
+  @@index([permission])
+}
+
+/// Departments with optional parent-child hierarchy within an organization.
+/// Departments represent organizational units that group employees. Each
+/// department belongs to exactly one organization and may have a parent
+/// department for creating a one-level hierarchical structure. This is a
+/// subsidiary table — managed through the organization context, not directly
+/// accessible via independent CRUD endpoints.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_tracker_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link hrm_tracker_organizations.id}.
+  hrm_tracker_organization_id String
+  
+  /// Parent department's {@link hrm_tracker_departments.id} for hierarchical
+  /// structure (optional).
+  parent_id String?
+  
+  /// Department name.
+  name String
+  
+  /// Department description.
+  description String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_tracker_organizations @relation(fields: [hrm_tracker_organization_id], references: [id], onDelete: Cascade)
+  parent hrm_tracker_departments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_tracker_employees[]
+  children hrm_tracker_departments[] @relation("recursive")
+  employeeHistories hrm_tracker_employee_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_tracker_organization_id, created_at], map: "hrm_tracker_departments_hrm_tracker_organization_id_cr_d5d20701")
+  @@index([parent_id])
+}
+
+/// Mapping of employees to roles in organizations (role assignments). This
+/// junction table enables many-to-many relationships between employees and
+/// roles while enforcing business rules through database constraints. Each
+/// employee can have exactly one current role per organization, tracked with
+/// timestamps for audit purposes.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_tracker_employee_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the employee being assigned a role. {@link
+  /// hrm_tracker_employees.id}.
+  employee_id String
+  
+  /// Reference to the role assigned to the employee. {@link
+  /// hrm_tracker_roles.id}.
+  role_id String
+  
+  /// Timestamp when this role assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when this role assignment was last updated.
+  updated_at DateTime
+  
+  /// Reference to the user who assigned this role to the employee (for audit
+  /// trail). {@link hrm_tracker_members.id}.
+  assigned_by_id String?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_tracker_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  role hrm_tracker_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([employee_id])
+  @@unique([employee_id, role_id])
+  @@index([role_id])
+  @@index([created_at])
+}
+
+/// Mapping table linking roles to permissions for access control. Each row
+/// assigns one permission to one role, enabling fine-grained authorization.
+/// Both role_id and permission_id form a composite unique constraint to
+/// prevent duplicate mappings.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_tracker_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target role's {@link hrm_tracker_roles.id}.
+  role_id String
+  
+  /// Target permission's {@link hrm_tracker_permissions.id}.
+  permission_id String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_tracker_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission hrm_tracker_permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([permission_id])
+  @@unique([role_id, permission_id])
+}
+
+/// Audit trail recording when employee roles and permissions were changed,
+/// who made the change, and what changed.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_tracker_employee_role_changes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The employee whose role/permissions changed.
+  hrm_tracker_employee_id String
+  
+  /// The member (actor) who made this change.
+  hrm_tracker_member_id String
+  
+  /// The role before the change (nullable if new employee or first role).
+  old_hrm_tracker_role_id String?
+  
+  /// The role after the change.
+  new_hrm_tracker_role_id String
+  
+  /// Type of action performed (e.g., 'role_assigned', 'role_changed',
+  /// 'role_removed', 'permissions_updated').
+  action_type String
+  
+  /// Timestamp when the role/permission change occurred.
+  changed_at DateTime
+  
+  /// IP address of the actor at the time of change.
+  ip_address String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (nullable for active records).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_tracker_employees @relation(fields: [hrm_tracker_employee_id], references: [id], onDelete: Cascade)
+  actor hrm_tracker_members @relation(fields: [hrm_tracker_member_id], references: [id], onDelete: Cascade)
+  oldRole hrm_tracker_roles? @relation("hrm_tracker_employee_role_changes_of_old_hrm_tracker_role_id", fields: [old_hrm_tracker_role_id], references: [id], onDelete: Cascade)
+  newRole hrm_tracker_roles @relation("hrm_tracker_employee_role_changes_of_new_hrm_tracker_role_id", fields: [new_hrm_tracker_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  details hrm_tracker_employee_role_change_details[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([old_hrm_tracker_role_id])
+  @@index([new_hrm_tracker_role_id])
+  // spellchecker: ignore-next-line
+  @@index([hrm_tracker_employee_id, changed_at], map: "hrm_tracker_employee_role_changes_hrm_tracker_employee_ba490dcc")
+  // spellchecker: ignore-next-line
+  @@index([hrm_tracker_member_id, changed_at], map: "hrm_tracker_employee_role_changes_hrm_tracker_member_i_7c458c0c")
+  @@index([changed_at])
+}
+
+/// Historical employee records for audit and point-in-time reporting. This
+/// table captures snapshots of employee data at the time of significant
+/// changes, providing an immutable audit trail of employee record
+/// modifications including role assignments, status changes, and permission
+/// updates. Each record represents the employee state immediately after a
+/// change was made, enabling reconstruction of employee history and
+/// compliance auditing.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_tracker_employee_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the employee record that was changed. {@link
+  /// hrm_tracker_employees.id}.
+  employee_id String
+  
+  /// Reference to the member who made the change. {@link
+  /// hrm_tracker_members.id}.
+  changed_by_id String?
+  
+  /// Reference to the organization context for data isolation. {@link
+  /// hrm_tracker_organizations.id}.
+  organization_id String
+  
+  /// Reference to the role assigned at the time of change. {@link
+  /// hrm_tracker_roles.id}. Nullable when no role assigned.
+  role_id String?
+  
+  /// Reference to the department at the time of change. {@link
+  /// hrm_tracker_departments.id}. Nullable when department not assigned.
+  department_id String?
+  
+  /// Type of action that triggered this history record (role_assigned,
+  /// role_changed, status_changed, employee_added, employee_deactivated,
+  /// etc.).
+  action_type String
+  
+  /// Previous employee status before the change (active, deactivated).
+  previous_status String?
+  
+  /// Current employee status after the change (active, deactivated).
+  current_status String
+  
+  /// Previous position/title before the change. Null when position was not set
+  /// previously.
+  previous_position String?
+  
+  /// Current position/title after the change.
+  current_position String
+  
+  /// Previous employment type before the change (full-time, part-time,
+  /// contractor, intern).
+  previous_employment_type String?
+  
+  /// Current employment type after the change.
+  current_employment_type String
+  
+  /// Comma-separated list of fields that were changed in this record.
+  changed_fields String?
+  
+  /// Human-readable description of the change made.
+  change_description String?
+  
+  /// Timestamp when this historical record was created (when the change
+  /// occurred).
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_tracker_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  changedBy hrm_tracker_members? @relation(fields: [changed_by_id], references: [id], onDelete: Cascade)
+  organization hrm_tracker_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  role hrm_tracker_roles? @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  department hrm_tracker_departments? @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([employee_id, created_at])
+  @@index([organization_id, created_at])
+  @@index([changed_by_id, created_at])
+  @@index([role_id])
+  @@index([department_id])
+}
+
+/// Key-value pairs for JSON details of role changes (e.g., 'old_role',
+/// 'new_role', 'changed_by'). Enables atomic storage and querying of
+/// structured audit data while preserving 1NF compliance.
+///
+/// This table stores structured audit details for employee role changes as
+/// separate rows instead of JSON strings, supporting efficient querying of
+/// specific audit attributes like old_role, new_role, and changed_by. Each
+/// entry is associated with a parent audit record in
+/// hrm_tracker_employee_role_changes.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_tracker_employee_role_change_details {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent role change audit record's {@link
+  /// hrm_tracker_employee_role_changes.id}.
+  change_id String
+  
+  /// Key name of the audit detail (e.g., 'old_role', 'new_role', 'changed_by',
+  /// 'department_change').
+  key String
+  
+  /// Value of the audit detail as a string representation (e.g., 'Manager',
+  /// 'Employee', 'user_id').
+  value String
+  
+  /// When this audit detail was recorded.
+  created_at DateTime
+  
+  /// When this audit detail was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  change hrm_tracker_employee_role_changes @relation(fields: [change_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([change_id, key])
+  @@index([change_id])
+}

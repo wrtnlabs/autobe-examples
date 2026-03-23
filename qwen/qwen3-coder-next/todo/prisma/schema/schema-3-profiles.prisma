@@ -1,0 +1,47 @@
+/// User display profiles with display name and timestamps. Each user has
+/// exactly one profile. Profile privacy is absolute - users can only access
+/// their own profile data. The display name serves as the user's identifier
+/// in the application interface without revealing their email address.
+///
+/// @namespace Profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged user's {@link todo_app_users.id}.
+  todo_app_user_id String
+  
+  /// User's display name for identification in the interface. Must be between
+  /// 1 and 100 characters, cannot be whitespace-only. Never reveals the user's
+  /// email address.
+  display_name String
+  
+  /// Profile creation timestamp.
+  created_at DateTime
+  
+  /// Profile last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user todo_app_users @relation(fields: [todo_app_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  member todo_app_members?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([todo_app_user_id])
+  @@unique([display_name])
+  @@index([created_at])
+}

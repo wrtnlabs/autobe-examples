@@ -1,0 +1,188 @@
+/// Employment agreements between organizations and employees with
+/// compensation terms, pay periods, and working hours.
+///
+/// Each contract represents a formal employment agreement that establishes
+/// the specific terms under which an employee works for an organization.
+/// Contracts define compensation rates, payment frequency, and working hour
+/// expectations.
+///
+/// Key relationships:
+/// - Each contract belongs to exactly one {@link hrm_platform_employees} and
+/// cannot exist independently of an employee record
+/// - Each contract belongs to exactly one {@link hrm_platform_organizations}
+/// for multi-tenancy data isolation
+/// - Multiple contracts can exist for a single employee over their
+/// employment history, but only one contract can be active at any given time
+/// - Active contracts are those without an end_at date or with an end_at in
+/// the future
+/// - Historical contracts (with end_at in the past) become immutable records
+/// for compliance and auditing
+///
+/// Contract versioning ensures continuous coverage without gaps: when a new
+/// contract is created, the previous active contract is automatically ended
+/// by setting its end_at to the day before the new contract starts.
+///
+/// This table is referenced by {@link hrm_platform_contract_snapshots} for
+/// audit trail preservation.
+///
+/// @namespace Contract
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged employee's {@link hrm_platform_employees.id}. Each contract is
+  /// tied to a specific employee and cannot exist independently.
+  hrm_platform_employee_id String
+  
+  /// Belonged organization's {@link hrm_platform_organizations.id}. Ensures
+  /// multi-tenancy data isolation.
+  hrm_platform_organization_id String
+  
+  /// The date when the employment terms begin. Required field that marks the
+  /// start of the contract.
+  start_at DateTime
+  
+  /// The date when the employment terms conclude. Optional field - when null,
+  /// the contract is considered ongoing and continues indefinitely. When
+  /// present, must be on or after start_at.
+  end_at DateTime?
+  
+  /// The employee's compensation amount expressed in the organization's
+  /// configured currency. Represents the base compensation before any
+  /// deductions or additional benefits.
+  pay_rate Float
+  
+  /// The frequency of payment cycles. One of: hourly, daily, weekly, or
+  /// monthly. Determines how the pay_rate is interpreted in compensation
+  /// calculations.
+  pay_period String
+  
+  /// The standard working hours per week for the employee. Establishes the
+  /// expected full-time equivalent baseline for calculating overtime,
+  /// part-time ratios, and workload expectations.
+  working_hours_per_week Float
+  
+  /// Timestamp when this contract was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this contract was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this contract was soft deleted. Null indicates the
+  /// contract is active in the system.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots hrm_platform_contract_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_platform_employee_id, end_at])
+  @@index([hrm_platform_employee_id, created_at])
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, created_at], map: "hrm_platform_contracts_hrm_platform_organization_id_cr_dcb0c2c4")
+}
+
+/// Point-in-time snapshots of contract records for audit trail and
+/// historical tracking.
+///
+/// This table captures the complete state of employment contracts at
+/// specific moments in time, enabling:
+///
+/// - **Audit Trail**: Track all changes to contract terms over time
+/// - **Compliance**: Maintain immutable records of employment agreements for
+/// legal requirements
+/// - **Historical Reference**: View what contract terms were in effect at
+/// any point in time
+/// - **Recovery**: Restore previous contract states if needed
+///
+/// Each snapshot is created when a contract is modified, preserving the
+/// original terms including compensation, pay period, working hours, and
+/// duration. Snapshots are immutable once created and serve as the
+/// authoritative historical record of employment agreements.
+///
+/// Relationships:
+/// - Belongs to {@link hrm_platform_contracts} - the contract being snapshot
+/// - References {@link hrm_platform_employees} - the employee under contract
+/// - References {@link hrm_platform_organizations} - the organization
+/// employing the worker
+///
+/// @namespace Contract
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_contract_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the contract being snapshot. {@link
+  /// hrm_platform_contracts.id}
+  hrm_platform_contract_id String
+  
+  /// Reference to the employee under this contract. {@link
+  /// hrm_platform_employees.id}
+  hrm_platform_employee_id String
+  
+  /// Reference to the organization employing the worker. {@link
+  /// hrm_platform_organizations.id}
+  hrm_platform_organization_id String
+  
+  /// The date when this contract employment terms begin. Required field that
+  /// marks the start of the employment agreement.
+  start_at DateTime
+  
+  /// The date when this contract employment terms conclude. Optional field -
+  /// null indicates ongoing contract without end date.
+  end_at DateTime?
+  
+  /// The compensation amount specified in the contract. Required numeric value
+  /// representing base pay before deductions.
+  pay_rate Float
+  
+  /// The frequency of payment cycles. One of: hourly, daily, weekly, or
+  /// monthly. Determines how pay_rate is interpreted.
+  pay_period String
+  
+  /// The standard working hours per week for the employee. Required value
+  /// establishing full-time equivalent baseline for overtime and workload
+  /// calculations.
+  working_hours_per_week Float
+  
+  /// Timestamp when this snapshot was created. Records the point in time when
+  /// contract state was captured.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  contract hrm_platform_contracts @relation(fields: [hrm_platform_contract_id], references: [id], onDelete: Cascade)
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id], map: "hrm_platform_contract_snapshots_hrm_platform_organizat_16287215")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_contract_id, created_at], map: "hrm_platform_contract_snapshots_hrm_platform_contract__231bfda9")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_employee_id, created_at], map: "hrm_platform_contract_snapshots_hrm_platform_employee__d724226b")
+}

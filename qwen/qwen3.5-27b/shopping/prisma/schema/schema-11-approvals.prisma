@@ -1,0 +1,274 @@
+/// Seller approval requests for onboarding new sellers to the platform.
+///
+/// This table tracks the approval workflow when users register as sellers.
+/// Each request contains the seller's application details, reason for
+/// registration, and current approval status. Administrators review these
+/// requests and can approve, reject, or leave them pending.
+///
+/// Key relationships:
+/// - Belongs to {@link shopping_mall_sellers} - the seller making the
+/// approval request
+/// - Has many {@link shopping_mall_seller_approval_snapshots} - immutable
+/// audit trail of request state changes
+///
+/// Important behavioral notes:
+/// - Rejected sellers can resubmit new approval requests
+/// - Only super administrators can approve or reject seller registration
+/// requests
+/// - Status transitions: pending → approved OR pending → rejected
+/// - When approved, the seller's approval_status in shopping_mall_sellers is
+/// updated to 'approved'
+/// - When rejected, the seller's approval_status is updated to 'rejected'
+/// with rejection reason stored
+///
+/// @namespace Approvals
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_approval_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged seller's {@link shopping_mall_sellers.id} who submitted the
+  /// approval request.
+  shopping_mall_seller_id String
+  
+  /// Reason or justification provided by the seller for their registration
+  /// request.
+  reason String
+  
+  /// Current approval status: 'pending' (awaiting admin review), 'approved'
+  /// (seller can now sell), or 'rejected' (seller cannot sell, can resubmit).
+  status String
+  
+  /// Timestamp when the seller submitted the approval request.
+  submitted_at DateTime
+  
+  /// Timestamp when the administrator responded to the approval request
+  /// (approved or rejected). Null while pending.
+  responded_at DateTime?
+  
+  /// Timestamp when this approval request record was created.
+  created_at DateTime
+  
+  /// Timestamp when this approval request record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this approval request was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_seller_approval_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_approval_requests_shopping_mall_s_5a5c14b8")
+}
+
+/// Administrator promotion requests submitted by users who want to become
+/// platform administrators.
+///
+/// This table tracks the formal application process for users requesting
+/// elevated administrative privileges. Each request requires a justification
+/// reason and goes through a review process by super administrators.
+///
+/// Key relationships:
+/// - Belongs to {@link shopping_mall_admins} - the user submitting the
+/// promotion request
+/// - Has many {@link shopping_mall_admin_promotion_snapshots} - audit trail
+/// of state changes
+///
+/// Business rules:
+/// - Only one pending request allowed per user at a time
+/// - Requests are preserved even if the user deletes their account
+/// - Super administrators review and approve/reject requests
+/// - Approved requests automatically grant regular administrator status
+/// - Rejected users may submit new requests
+///
+/// @namespace Approvals
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_promotion_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user requesting administrator promotion. {@link
+  /// shopping_mall_admins.id}
+  shopping_mall_admin_id String
+  
+  /// The justification provided by the user explaining why they should become
+  /// an administrator. Required field that cannot be empty or whitespace.
+  reason String
+  
+  /// Current approval status of the promotion request. Valid values: 'pending'
+  /// (awaiting review), 'approved' (granted), 'rejected' (denied).
+  status String
+  
+  /// Timestamp when the promotion request was submitted by the user.
+  submitted_at DateTime
+  
+  /// Timestamp when the super administrator responded to the request (approved
+  /// or rejected). Null while request is pending.
+  responded_at DateTime?
+  
+  /// Timestamp when this record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this record was soft deleted. Promotion requests are
+  /// typically preserved for audit purposes even after resolution.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  admin shopping_mall_admins @relation(fields: [shopping_mall_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_admin_promotion_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_admin_id, status], map: "shopping_mall_admin_promotion_requests_shopping_mall_a_3cdff754")
+  @@index([status, submitted_at])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_id, submitted_at], map: "shopping_mall_admin_promotion_requests_shopping_mall_a_7fd9d58e")
+}
+
+/// Immutable audit trail snapshots of seller approval requests for data
+/// integrity and dispute resolution.
+///
+/// These snapshots capture the complete state of {@link
+/// shopping_mall_seller_approval_requests} at key moments (submission, admin
+/// response) to preserve historical records for audit purposes. Each
+/// snapshot is immutable and cannot be modified once created.
+///
+/// **Key Characteristics**:
+/// - Append-only: Snapshots are created but never updated or deleted
+/// - Complete state capture: Contains all fields from the parent request at
+/// snapshot time
+/// - Audit trail: Enables tracking of approval workflow progression over time
+/// - Data preservation: Maintains historical accuracy even if original
+/// request is modified
+///
+/// @namespace Approvals
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_approval_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged seller approval request's {@link
+  /// shopping_mall_seller_approval_requests.id}.
+  shopping_mall_seller_approval_request_id String
+  
+  /// Complete JSON snapshot of the seller approval request state at the time
+  /// of capture, including seller_id, reason, status, submitted_at, and
+  /// responded_at fields.
+  snapshot_data String
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  sellerApprovalRequest shopping_mall_seller_approval_requests @relation(fields: [shopping_mall_seller_approval_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_approval_request_id, created_at], map: "shopping_mall_seller_approval_snapshots_shopping_mall__c50ddbad")
+}
+
+/// Immutable audit snapshots capturing administrator promotion request state
+/// at decision time.
+///
+/// These snapshots preserve the complete state of {@link
+/// shopping_mall_admin_promotion_requests} when an admin promotion request
+/// is approved or rejected. They provide an immutable audit trail for
+/// compliance and dispute resolution, recording which administrator
+/// requested the promotion, their reason, the final decision status, and all
+/// relevant timestamps.
+///
+/// Unlike the parent request table which may be updated during the workflow,
+/// snapshots are append-only and never modified, ensuring historical
+/// accuracy of the approval process.
+///
+/// @namespace Approvals
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_promotion_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced administrator promotion request's {@link
+  /// shopping_mall_admin_promotion_requests.id}. Each snapshot corresponds to
+  /// a specific promotion request decision.
+  shopping_mall_admin_promotion_request_id String
+  
+  /// The administrator user requesting grade elevation, captured at snapshot
+  /// time. References {@link shopping_mall_admins.id}.
+  user_id String
+  
+  /// The justification provided by the administrator for requesting super
+  /// admin privileges, captured at snapshot time.
+  reason String
+  
+  /// The approval status of the promotion request at snapshot time. Valid
+  /// values: 'pending', 'approved', 'rejected'.
+  status String
+  
+  /// Timestamp when the administrator submitted the promotion request,
+  /// captured at snapshot time.
+  submitted_at DateTime
+  
+  /// Timestamp when super admin responded to the promotion request (approved
+  /// or rejected). Null if still pending at snapshot time.
+  responded_at DateTime?
+  
+  /// Timestamp when this snapshot was created, recording when the state was
+  /// captured.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  request shopping_mall_admin_promotion_requests @relation(fields: [shopping_mall_admin_promotion_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_admin_promotion_request_id, created_at], map: "shopping_mall_admin_promotion_snapshots_shopping_mall__1ddfda71")
+}

@@ -1,0 +1,252 @@
+/// Work containers within organizations that group related work efforts and
+/// business initiatives.
+///
+/// Projects serve as the primary organizational structure for tracking time
+/// expenditures against specific business objectives. Each project
+/// represents a distinct body of work that employees contribute time and
+/// effort towards achieving specific goals.
+///
+/// Key relationships:
+/// - Belongs to {@link hrm_platform_organizations} - projects are scoped to
+/// a single organization
+/// - Has many {@link hrm_platform_project_memberships} - links employees to
+/// projects with role designations
+/// - Has many {@link hrm_platform_tasks} - tasks are discrete work units
+/// within projects
+///
+/// Status states:
+/// - `active`: Work is currently in progress, accepting new time entries
+/// - `completed`: All planned work finished, historical records accessible
+/// but no new time entries
+/// - `archived`: Preserved for historical reference, read-only for time
+/// tracking
+///
+/// Visual identification via color_code enables employees to quickly
+/// distinguish between multiple projects when creating time entries or
+/// viewing reports.
+///
+/// @namespace Project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link hrm_platform_organizations.id}. Projects
+  /// are scoped to a single organization and cannot span multiple
+  /// organizations.
+  organization_id String
+  
+  /// Required project name that uniquely identifies the project within the
+  /// organization. Used as the primary identifier for employees when selecting
+  /// projects for time entries and task assignments.
+  name String
+  
+  /// Optional description that clarifies the project's purpose, scope, and
+  /// boundaries. Helps employees understand which work belongs to which
+  /// project when logging time.
+  description String?
+  
+  /// Project lifecycle status. Valid values: 'active' (work in progress,
+  /// accepting time entries), 'completed' (work finished, read-only),
+  /// 'archived' (historical reference, read-only). Completed and archived
+  /// projects prevent new time entries.
+  status String
+  
+  /// Required color code for visual distinction across user interfaces.
+  /// Enables employees to quickly identify projects when creating time
+  /// entries, viewing reports, or browsing project lists.
+  color_code String
+  
+  /// Optional total estimated effort in hours for the project. Provides a
+  /// baseline against which actual time logged can be compared to track
+  /// whether work is proceeding within planned estimates.
+  budget_hours Float?
+  
+  /// Timestamp when the project was created.
+  created_at DateTime
+  
+  /// Timestamp when the project was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the project was soft deleted. Null indicates the project
+  /// is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberships hrm_platform_project_memberships[]
+  snapshots hrm_platform_project_snapshots[]
+  tasks hrm_platform_tasks[]
+  taskSnapshots hrm_platform_task_snapshots[]
+  timers hrm_platform_timers[]
+  timelogs hrm_platform_timelogs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([organization_id, created_at])
+}
+
+/// Junction table linking employees to projects with role designations.
+///
+/// This table establishes many-to-many relationships between employees and
+/// projects, enabling employees to participate in multiple projects and
+/// projects to have multiple team members. Each membership record includes a
+/// role designation (member or project-lead) that determines the employee's
+/// level of authority within the project.
+///
+/// Key relationships:
+/// - Links to {@link hrm_platform_employees} via foreign key
+/// - Links to {@link hrm_platform_projects} via foreign key
+/// - Each employee can have multiple memberships across different projects
+/// - Each project can have multiple member employees
+/// - Only one membership per employee-project combination (enforced by
+/// unique constraint)
+///
+/// Role designations:
+/// - "member": Regular team member with standard project access
+/// - "project-lead": Project lead with elevated permissions for task
+/// management and team coordination
+///
+/// @namespace Project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_project_memberships {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged employee's {@link hrm_platform_employees.id}. Establishes which
+  /// employee is assigned to the project.
+  hrm_platform_employee_id String
+  
+  /// Belonged project's {@link hrm_platform_projects.id}. Establishes which
+  /// project the employee is assigned to.
+  hrm_platform_project_id String
+  
+  /// Role designation within the project. Valid values are 'member' for
+  /// regular team members or 'project-lead' for employees with elevated task
+  /// management permissions.
+  role String
+  
+  /// Timestamp when the project membership was created.
+  created_at DateTime
+  
+  /// Timestamp when the project membership was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the project membership was soft deleted. Null indicates
+  /// active membership.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  project hrm_platform_projects @relation(fields: [hrm_platform_project_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_employee_id, hrm_platform_project_id], map: "hrm_platform_project_memberships_hrm_platform_employee_115efc09")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_project_id, created_at], map: "hrm_platform_project_memberships_hrm_platform_project__a54b4d3c")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_employee_id, created_at], map: "hrm_platform_project_memberships_hrm_platform_employee_80ad72ff")
+}
+
+/// Point-in-time snapshots of project records for audit trail and historical
+/// tracking.
+///
+/// These snapshots capture the complete state of a project at specific
+/// moments in time, preserving historical data for compliance, recovery, and
+/// audit purposes. Each snapshot is immutable once created and reflects the
+/// exact state of the project including all denormalized fields.
+///
+/// Key characteristics:
+/// - **Immutable records**: Once created, snapshots are never modified or
+/// deleted
+/// - **Complete state capture**: All project fields are denormalized to
+/// preserve exact historical state
+/// - **Audit trail**: Enables tracking of project lifecycle changes over time
+/// - **Compliance support**: Provides verifiable historical records for
+/// regulatory requirements
+///
+/// Related entities:
+/// - Parent: {@link hrm_platform_projects} - The project being snapshot
+/// - Organization: {@link hrm_platform_organizations} - Organization that
+/// owns the project
+/// - Creator: {@link hrm_platform_members} - User who created the snapshot
+///
+/// @namespace Project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_project_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent project record being snapshot. {@link
+  /// hrm_platform_projects.id}
+  project_id String
+  
+  /// Organization that owns this project snapshot. {@link
+  /// hrm_platform_organizations.id}
+  hrm_platform_organization_id String
+  
+  /// Member who created this snapshot. {@link hrm_platform_members.id}
+  created_by_id String
+  
+  /// Unique project code within the organization at snapshot time.
+  code String
+  
+  /// Project name at snapshot time.
+  name String
+  
+  /// Project description at snapshot time.
+  description String?
+  
+  /// Project status at snapshot time (active, completed, archived).
+  status String
+  
+  /// Visual color identifier for the project at snapshot time.
+  color_code String
+  
+  /// Budgeted hours for the project at snapshot time.
+  budget_hours Float?
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project hrm_platform_projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  creator hrm_platform_members @relation(fields: [created_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id], map: "hrm_platform_project_snapshots_hrm_platform_organizati_5be741fe")
+  @@index([created_by_id])
+  @@index([project_id, created_at])
+}

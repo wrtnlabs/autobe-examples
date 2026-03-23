@@ -1,0 +1,523 @@
+/// Employee records that establish work relationships between users and
+/// organizations.
+///
+/// This table represents an individual's working relationship within a
+/// specific organization, creating a bridge between a user account and
+/// organization-specific work responsibilities. Each employee record enables
+/// the individual to participate in organizational activities including time
+/// tracking, project work, and timesheet submission.
+///
+/// Key relationships:
+/// - Links to {@link hrm_platform_members} for user authentication and identity
+/// - Belongs to {@link hrm_platform_organizations} establishing
+/// organizational context
+/// - Optionally assigned to {@link hrm_platform_departments} for
+/// organizational grouping
+/// - Assigned exactly one {@link hrm_platform_roles} determining permissions
+/// and authorization
+///
+/// Business rules:
+/// - Employment type classification: full-time, part-time, contractor, or
+/// intern
+/// - Status tracking: active employees can log time and submit timesheets;
+/// deactivated employees cannot create new entries but historical data is
+/// preserved
+/// - Each user can have multiple employee records across different
+/// organizations
+/// - Role assignment determines what actions the employee can perform within
+/// the organization
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User account that this employee record represents. Links to the
+  /// authenticated member identity. {@link hrm_platform_members.id}
+  member_id String
+  
+  /// Organization where this employee works. Establishes the organizational
+  /// context for all employee activities. {@link
+  /// hrm_platform_organizations.id}
+  organization_id String
+  
+  /// Department assignment for organizational grouping. Optional field that
+  /// can be null if employee is not assigned to any department. When
+  /// department is deleted, this is set to null. {@link
+  /// hrm_platform_departments.id}
+  department_id String?
+  
+  /// Role assigned to this employee determining permissions and authorization
+  /// level. Each employee must have exactly one role. {@link
+  /// hrm_platform_roles.id}
+  role_id String
+  
+  /// Classification of the employment relationship. Valid values: full-time,
+  /// part-time, contractor, intern. Determines how the employee's work is
+  /// tracked and reported.
+  employment_type String
+  
+  /// Current employment status. Valid values: active, deactivated. Active
+  /// employees can log time and submit timesheets. Deactivated employees
+  /// cannot create new entries but historical data is preserved.
+  status String
+  
+  /// Timestamp when this employee record was created.
+  created_at DateTime
+  
+  /// Timestamp when this employee record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this employee record was soft-deleted. Null means the
+  /// record is active. Used for reactivation support.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  department hrm_platform_departments? @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  role hrm_platform_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshot hrm_platform_employee_snapshots?
+  contracts hrm_platform_contracts[]
+  contractSnapshots hrm_platform_contract_snapshots[]
+  projectMemberships hrm_platform_project_memberships[]
+  assignedTasks hrm_platform_tasks[]
+  taskSnapshots hrm_platform_task_snapshots[]
+  timers hrm_platform_timers[]
+  timelogs hrm_platform_timelogs[]
+  timesheets hrm_platform_timesheets[] @relation("hrm_platform_timesheets_of_hrm_platform_employee_id")
+  approvedTimesheets hrm_platform_timesheets[] @relation("hrm_platform_timesheets_of_approver_id")
+  timesheetSnapshots hrm_platform_timesheet_snapshots[] @relation("hrm_platform_timesheet_snapshots_of_hrm_platform_employee_id")
+  approvedTimesheetSnapshots hrm_platform_timesheet_snapshots[] @relation("hrm_platform_timesheet_snapshots_of_approver_id")
+  rejectedTimesheetSnapshots hrm_platform_timesheet_snapshots[] @relation("hrm_platform_timesheet_snapshots_of_rejected_by_id")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([member_id, organization_id])
+  @@index([organization_id, status])
+  @@index([organization_id, created_at])
+  @@index([department_id, status])
+  @@index([role_id])
+}
+
+/// Role definitions within organizations for role-based access control.
+///
+/// Roles represent named collections of permissions that determine what
+/// actions employees can perform within an organization. Each role
+/// aggregates specific permissions defining capabilities such as managing
+/// employees, viewing projects, approving timesheets, or accessing reports.
+///
+/// The system includes three built-in roles (Owner, Manager, Employee) that
+/// cannot be deleted or modified, providing a standard permission structure.
+/// Organization owners can also create custom roles with tailored permission
+/// combinations to match specific job functions.
+///
+/// Each employee is assigned exactly one role, which determines their
+/// authorization level. When a role is assigned to an employee, they inherit
+/// all permissions associated with that role.
+///
+/// Key relationships:
+/// - Belongs to {@link hrm_platform_organizations} - roles are scoped to
+/// specific organizations
+/// - Assigned to many {@link hrm_platform_employees} - employees reference
+/// their assigned role
+/// - Maps to many permissions through {@link hrm_platform_role_permissions}
+/// - junction table for role-based access control
+///
+/// Built-in roles (is_builtin = true) cannot be deleted under any
+/// circumstances. Custom roles (is_builtin = false) can only be deleted if
+/// no employees are currently assigned to them.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link hrm_platform_organizations.id}. Roles are
+  /// scoped to specific organizations and cannot be shared across
+  /// organizations.
+  hrm_platform_organization_id String
+  
+  /// Unique name of the role within the organization. Built-in roles have
+  /// predefined names: 'Owner', 'Manager', 'Employee'. Custom roles can have
+  /// any descriptive name chosen by the organization owner.
+  name String
+  
+  /// Detailed description explaining the role's purpose and typical
+  /// responsibilities. Helps administrators understand what the role is
+  /// intended for when assigning employees.
+  description String?
+  
+  /// Whether this is a built-in role (Owner, Manager, Employee) or a custom
+  /// role. Built-in roles cannot be deleted or modified. Custom roles can be
+  /// deleted if no employees are assigned.
+  is_builtin Boolean
+  
+  /// Type identifier for built-in roles: 'owner', 'manager', or 'employee'.
+  /// NULL for custom roles. Used to identify and protect built-in roles from
+  /// deletion or modification.
+  built_in_type String?
+  
+  /// Timestamp when the role was created. Built-in roles are created during
+  /// organization setup. Custom roles are created when organization owners
+  /// define new permission combinations.
+  created_at DateTime
+  
+  /// Timestamp when the role was last modified. Custom roles can be updated to
+  /// change name, description, or permissions. Built-in roles should rarely be
+  /// updated.
+  updated_at DateTime
+  
+  /// Timestamp when the role was soft-deleted. Only custom roles can be
+  /// deleted. Built-in roles cannot be deleted. When deleted, the role is no
+  /// longer available for new employee assignments.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_platform_employees[]
+  employeeSnapshots hrm_platform_employee_snapshots[]
+  employeeInvitations hrm_platform_employee_invitations[]
+  permissions hrm_platform_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_platform_organization_id, name])
+  @@index([hrm_platform_organization_id, created_at])
+}
+
+/// Departmental organizational units within organizations that provide
+/// structural grouping for employees. Departments support a one-level
+/// hierarchical structure where a department can have one parent department,
+/// enabling subdepartment organization. Each department belongs to exactly
+/// one organization and must have a unique name within that organization.
+/// Departments facilitate employee assignment and organizational reporting
+/// structures.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization that owns this department. {@link
+  /// hrm_platform_organizations.id}
+  hrm_platform_organization_id String
+  
+  /// Optional parent department for one-level hierarchy. Only one level of
+  /// nesting is supported.
+  parent_id String?
+  
+  /// Unique name identifying the department within its organization.
+  name String
+  
+  /// Optional description clarifying the department's business purpose and
+  /// responsibilities.
+  description String?
+  
+  /// Timestamp when the department was created.
+  created_at DateTime
+  
+  /// Timestamp when the department was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for department deactivation.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  parent hrm_platform_departments? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_platform_employees[]
+  childDepartments hrm_platform_departments[] @relation("recursive")
+  employeeSnapshots hrm_platform_employee_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_id])
+  @@unique([hrm_platform_organization_id, name])
+}
+
+/// Point-in-time snapshots of employee records for audit trail and
+/// historical tracking.
+///
+/// This table captures the complete state of employee records at specific
+/// moments in time, preserving historical data for compliance, auditing, and
+/// recovery purposes. Each snapshot contains all employee attributes
+/// denormalized, including employment classification, status, department
+/// assignment, and role association.
+///
+/// Key characteristics:
+/// - Append-only: Snapshots are created but never modified or deleted
+/// - Denormalized: All employee data is captured at snapshot time,
+/// independent of future changes to referenced entities
+/// - Historical preservation: Maintains accurate record of employee state
+/// even if related entities (departments, roles) are later modified or
+/// deleted
+/// - Audit trail: Enables tracking of employee record changes over time
+///
+/// Relationships:
+/// - {@link hrm_platform_employees} - One snapshot per employee record
+/// change (1:1 via unique constraint)
+/// - {@link hrm_platform_organizations} - Organization context at snapshot time
+/// - {@link hrm_platform_members} - User identity at snapshot time
+/// - {@link hrm_platform_departments} - Department assignment at snapshot
+/// time (nullable)
+/// - {@link hrm_platform_roles} - Role assignment at snapshot time
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_employee_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Referenced employee record's {@link hrm_platform_employees.id}. Each
+  /// snapshot corresponds to exactly one employee record change.
+  employees_id String
+  
+  /// Organization's {@link hrm_platform_organizations.id} where the employee
+  /// works, captured at snapshot time.
+  organizations_id String
+  
+  /// User's {@link hrm_platform_members.id} associated with this employee
+  /// record, captured at snapshot time.
+  members_id String
+  
+  /// Department's {@link hrm_platform_departments.id} where the employee is
+  /// assigned, captured at snapshot time. Nullable if employee had no
+  /// department assignment.
+  departments_id String?
+  
+  /// Role's {@link hrm_platform_roles.id} assigned to the employee, captured
+  /// at snapshot time.
+  roles_id String
+  
+  /// Employment classification at snapshot time. Valid values: full-time,
+  /// part-time, contractor, intern.
+  employment_type String
+  
+  /// Employee status at snapshot time. Valid values: active, deactivated.
+  status String
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  /// Original employee record creation timestamp, captured at snapshot time.
+  employee_created_at DateTime
+  
+  /// Employee record last update timestamp, captured at snapshot time.
+  employee_updated_at DateTime
+  
+  /// Employee record deletion timestamp, captured at snapshot time. Nullable
+  /// if employee was not deleted.
+  employee_deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [employees_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [organizations_id], references: [id], onDelete: Cascade)
+  member hrm_platform_members @relation(fields: [members_id], references: [id], onDelete: Cascade)
+  department hrm_platform_departments? @relation(fields: [departments_id], references: [id], onDelete: Cascade)
+  role hrm_platform_roles @relation(fields: [roles_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([employees_id])
+  @@index([departments_id])
+  @@index([roles_id])
+  @@unique([employees_id, created_at])
+  @@index([organizations_id, created_at])
+  @@index([members_id, created_at])
+}
+
+/// Tracks pending employee invitations sent by managers to potential new
+/// hires. Stores the invitee's email, assigned role, target organization,
+/// invitation status, and unique redemption token. Used in the employee
+/// onboarding workflow where managers invite people to join the
+/// organization.
+///
+/// This table exists independently of employee records since invitations are
+/// sent before employee relationships are established. Once an invitation is
+/// redeemed, the user creates an account and an employee record is
+/// subsequently created linking them to the organization.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_employee_invitations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link hrm_platform_organizations.id}
+  hrm_platform_organization_id String
+  
+  /// Assigned role's {@link hrm_platform_roles.id}
+  hrm_platform_role_id String
+  
+  /// User who redeemed the invitation's {@link hrm_platform_members.id}
+  hrm_platform_member_id String?
+  
+  /// Email address of the person being invited to join the organization.
+  email String
+  
+  /// Unique secure token for invitation redemption.
+  token String
+  
+  /// Current status of the invitation (pending, accepted, expired, revoked).
+  status String
+  
+  /// Expiration timestamp after which the invitation is no longer valid.
+  expires_at DateTime
+  
+  /// Timestamp when the invitation was created.
+  created_at DateTime
+  
+  /// Timestamp when the invitation was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the invitation was accepted by the invitee.
+  redeemed_at DateTime?
+  
+  /// Timestamp when the invitation was soft deleted. Null means the invitation
+  /// is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  role hrm_platform_roles @relation(fields: [hrm_platform_role_id], references: [id], onDelete: Cascade)
+  redeemedByMember hrm_platform_members? @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_role_id])
+  @@index([hrm_platform_member_id])
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, status], map: "hrm_platform_employee_invitations_hrm_platform_organiz_ebd9a0eb")
+  @@index([email])
+}
+
+/// Junction table mapping roles to their granted permissions for role-based
+/// access control.
+///
+/// This table establishes the many-to-many relationship between {@link
+/// hrm_platform_roles} and permission codes. Each record represents a single
+/// permission granted to a specific role.
+///
+/// **Business Context**:
+///
+/// Roles in the system (both built-in and custom) are defined by the set of
+/// permissions they grant. This table stores those permission assignments,
+/// enabling flexible role-based access control.
+///
+/// **Available Permissions** (from Section 57):
+///
+/// - Organization management: edit organization settings
+/// - Employee management: add, edit, or deactivate employees
+/// - Employee viewing: view employee list and details
+/// - Project management: create, edit, delete projects and tasks
+/// - Project viewing: view projects and tasks
+/// - Time management: edit or delete any employee's timelogs
+/// - Time approval: approve or reject timesheets
+/// - Time viewing: view all employees' timelogs and timesheets
+/// - Report viewing: view organization reports
+///
+/// **Key Constraints**:
+///
+/// - Each role can have a permission only once (enforced by unique index)
+/// - Built-in roles (Owner, Manager, Employee) have pre-configured permissions
+/// - Custom roles can be assigned any combination of available permissions
+/// - Soft delete support via deleted_at field for audit trail and recovery
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged role's {@link hrm_platform_roles.id}. This foreign key links the
+  /// permission to the role that grants it.
+  hrm_platform_role_id String
+  
+  /// Permission identifier string that defines a specific capability. Examples
+  /// include 'organization_edit', 'employee_manage', 'employee_view',
+  /// 'project_manage', 'project_view', 'time_manage', 'time_approve',
+  /// 'time_view', 'report_view'.
+  permission_code String
+  
+  /// Timestamp when this permission was granted to the role.
+  created_at DateTime
+  
+  /// Timestamp when this permission assignment was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this permission assignment was soft deleted. Null
+  /// indicates the permission is currently active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_platform_roles @relation(fields: [hrm_platform_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_role_id, permission_code], map: "hrm_platform_role_permissions_hrm_platform_role_id_per_7b2e590d")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_role_id, created_at], map: "hrm_platform_role_permissions_hrm_platform_role_id_cre_1a14eea4")
+}

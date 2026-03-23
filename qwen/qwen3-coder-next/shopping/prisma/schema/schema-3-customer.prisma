@@ -1,0 +1,208 @@
+/// Customer's display name and phone number linked to user account. Profiles
+/// are subsidiary entities managed through customer accounts and do not
+/// exist independently.
+///
+/// @namespace Customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged customer's {@link ecommerce_mall_customers.id}.
+  user_id String
+  
+  /// Customer's display name shown in public contexts.
+  display_name String
+  
+  /// Customer's phone number for contact and shipping.
+  phone_number String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  addresses ecommerce_mall_addresses[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([user_id])
+  @@index([user_id])
+}
+
+/// Multiple shipping addresses per customer with recipient info and default
+/// flag. Each customer can have multiple addresses, and one address can be
+/// marked as default shipping address for convenience. Addresses are linked
+/// to customer profiles and users for audit purposes.
+///
+/// @namespace Customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer profile's {@link ecommerce_mall_customer_profiles.id}.
+  customer_profile_id String
+  
+  /// User's {@link ecommerce_mall_customers.id}.
+  user_id String
+  
+  /// Recipient name for the address.
+  recipient_name String
+  
+  /// Phone number for the address.
+  phone_number String
+  
+  /// Street address details.
+  street_address String
+  
+  /// City name.
+  city String
+  
+  /// State or province name.
+  state_province String
+  
+  /// Postal code.
+  postal_code String
+  
+  /// Country name.
+  country String
+  
+  /// Whether this address is the default shipping address.
+  is_default Boolean
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Deletion timestamp for soft delete.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customerProfile ecommerce_mall_customer_profiles @relation(fields: [customer_profile_id], references: [id], onDelete: Cascade)
+  user ecommerce_mall_customers @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orders ecommerce_mall_orders[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([customer_profile_id, is_default])
+  @@index([customer_profile_id])
+  @@index([user_id])
+  @@index([created_at])
+}
+
+/// Products saved by customers for future purchase. Each wishlist item
+/// represents a product that a customer wants to buy later. Customers can
+/// add products to their wishlist and remove them at any time. If a product
+/// is deleted by the seller, it is automatically removed from all customers'
+/// wishlists. This table supports a many-to-many relationship between
+/// customers and products through the wishlist feature.
+///
+/// @namespace Customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who saved the product to their wishlist. {@link
+  /// ecommerce_mall_customers.id}.
+  customer_id String
+  
+  /// Product that was saved to the customer's wishlist. {@link
+  /// ecommerce_mall_products.id}.
+  product_id String
+  
+  /// Timestamp when the product was added to the customer's wishlist.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([product_id])
+  @@unique([customer_id, product_id])
+  @@index([customer_id, created_at])
+}
+
+/// Customer shopping cart items linking users to product variants with
+/// quantity. Customers can add variants to cart, change quantities, remove
+/// items, and view cart totals. Same variant in cart combines quantities via
+/// unique constraint. Deleted or out-of-stock variants appear as unavailable
+/// in cart. Deleted products automatically removed from all carts.
+///
+/// @namespace Customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner customer's {@link ecommerce_mall_customers.id}.
+  user_id String
+  
+  /// Selected product variant's {@link ecommerce_mall_product_variants.id}.
+  variant_id String
+  
+  /// Number of units in cart. Minimum 1.
+  quantity Int
+  
+  /// When cart item was created.
+  created_at DateTime
+  
+  /// When cart item was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_customers @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  variant ecommerce_mall_product_variants @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([user_id, variant_id])
+  @@index([user_id])
+  @@index([variant_id])
+}

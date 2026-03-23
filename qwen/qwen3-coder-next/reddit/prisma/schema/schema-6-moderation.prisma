@@ -1,0 +1,170 @@
+/// Links users to communities with moderation roles (owner/moderator)
+///
+/// This table defines the relationship between users and communities for
+/// moderation purposes. Each record represents a user's authority to
+/// moderate a specific community with their assigned role type.
+///
+/// ## Role Types
+/// - `owner`: Highest authority role with full management permissions
+/// including appointing/removing moderators
+/// - `moderator`: Standard moderation permissions for content and user
+/// management
+///
+/// ## Business Rules
+/// - Each community must have at least one owner
+/// - Owners can appoint and remove moderators
+/// - Moderators cannot remove owners or other moderators
+/// - User deletion removes their associated moderator roles
+/// - Community deletion removes all associated moderator roles
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_moderator_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who holds the moderation role. {@link reddit_like_members.id},
+  /// {@link reddit_like_moderators.id}, or {@link reddit_like_admins.id}.
+  user_id String
+  
+  /// The community where the user has moderation authority. {@link
+  /// reddit_like_communities.id}.
+  community_id String
+  
+  /// Moderation role type with permission levels. 'owner' has highest
+  /// authority including appointing/removing moderators. 'moderator' has
+  /// standard moderation permissions.
+  role String
+  
+  /// When the moderation role was assigned.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user reddit_like_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_like_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([user_id, community_id])
+  @@unique([community_id, role])
+  @@index([user_id])
+  @@index([community_id])
+}
+
+/// Content reporting system allowing users to flag posts or comments for
+/// moderator review. Reports track the reporter, the reported content (post
+/// or comment), the reason for reporting, and the current status
+/// (pending/approved/dismissed). Moderators can approve reports (which
+/// removes the reported content) or dismiss them (which keeps the content
+/// but closes the report). Each user can only report a specific piece of
+/// content once.
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User who filed the report. {@link reddit_like_members.id}.
+  reporter_id String
+  
+  /// Post being reported. Null when reporting a comment. {@link
+  /// reddit_like_posts.id}.
+  reported_post_id String?
+  
+  /// Comment being reported. Null when reporting a post. {@link
+  /// reddit_like_comments.id}.
+  reported_comment_id String?
+  
+  /// Text description of why the content was reported. Required field for all
+  /// reports.
+  reason String
+  
+  /// Current status of the report. Initial value is 'pending', can be changed
+  /// to 'approved' (content deleted) or 'dismissed' (content kept).
+  status String
+  
+  /// Timestamp when the report was created.
+  created_at DateTime
+  
+  /// Timestamp when the report was last updated (e.g., status change).
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion. Null when report is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter reddit_like_members @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  reportedPost reddit_like_posts? @relation(fields: [reported_post_id], references: [id], onDelete: Cascade)
+  reportedComment reddit_like_comments? @relation(fields: [reported_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reporter_id, reported_post_id])
+  @@unique([reporter_id, reported_comment_id])
+  @@index([status, created_at])
+  @@index([reporter_id, created_at])
+  @@index([reported_post_id, status])
+  @@index([reported_comment_id, status])
+}
+
+/// Tracks community bans with user, community, status, and timestamps
+///
+/// @namespace Moderation
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who is banned. {@link reddit_like_members.id}.
+  reddit_like_user_id String
+  
+  /// The community where the user is banned. {@link
+  /// reddit_like_communities.id}.
+  reddit_like_community_id String
+  
+  /// The current status of the ban (active/inactive).
+  status String
+  
+  /// When the ban was created.
+  created_at DateTime
+  
+  /// When the ban was last updated.
+  updated_at DateTime
+  
+  /// When the ban was soft-deleted (nullable if not deleted).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  bannedUser reddit_like_members @relation(fields: [reddit_like_user_id], references: [id], onDelete: Cascade)
+  bannedCommunity reddit_like_communities @relation(fields: [reddit_like_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_like_user_id, reddit_like_community_id], map: "reddit_like_bans_reddit_like_user_id_reddit_like_commu_d46c1256")
+  @@index([reddit_like_user_id, created_at])
+  @@index([reddit_like_community_id, created_at])
+  @@index([status])
+}

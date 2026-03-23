@@ -1,0 +1,284 @@
+/// Main task entity representing discrete work units within projects. Tasks
+/// are the smallest unit of work tracking with status progression, priority
+/// classification, and optional subtask relationships.
+///
+/// Tasks belong to projects and can be assigned to employees who are members
+/// of that project. Each task may have an optional parent task for one-level
+/// subtask hierarchy (subtasks cannot have their own subtasks). Task status
+/// changes are automatically recorded in {@link hrm_platform_task_histories}
+/// for audit trail purposes.
+///
+/// Key relationships:
+/// - Belongs to exactly one {@link hrm_platform_projects}
+/// - Optionally assigned to one {@link hrm_platform_employees} (must be
+/// project member)
+/// - Optionally has one parent {@link hrm_platform_tasks} (for subtasks)
+/// - Has many child subtasks (through self-referential relationship)
+/// - Has many {@link hrm_platform_task_histories} entries for status change
+/// audit
+/// - Has many {@link hrm_platform_task_snapshots} for point-in-time state
+/// preservation
+/// - Created by a {@link hrm_platform_members} for audit trail
+///
+/// Tasks support optional due dates for deadline tracking and estimated
+/// hours for effort planning. The status field tracks task progression
+/// through the workflow lifecycle.
+///
+/// @namespace Task
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged project's {@link hrm_platform_projects.id}. Tasks must belong to
+  /// exactly one project.
+  hrm_platform_project_id String
+  
+  /// Assigned employee's {@link hrm_platform_employees.id}. Optional - task
+  /// may remain unassigned. Employee must be a member of the project
+  /// containing this task.
+  assigned_employee_id String?
+  
+  /// Parent task's {@link hrm_platform_tasks.id}. Optional - if set, this task
+  /// is a subtask of the parent. Subtasks cannot have their own subtasks (one
+  /// level only).
+  parent_task_id String?
+  
+  /// Creator member's {@link hrm_platform_members.id}. Tracks which
+  /// authenticated member created this task for audit purposes.
+  created_by_member_id String
+  
+  /// Task title or name. Required field that identifies the work item.
+  title String
+  
+  /// Detailed description of the task work. Optional field providing
+  /// additional context.
+  description String?
+  
+  /// Current task status tracking workflow progression. Valid values depend on
+  /// task status workflow configuration.
+  status String
+  
+  /// Task priority classification for work ordering. Valid values defined in
+  /// priority classification business rules.
+  priority String
+  
+  /// Optional due date when the task should be completed. Used for planning
+  /// and deadline tracking.
+  due_date DateTime?
+  
+  /// Optional estimated hours representing anticipated time required to
+  /// complete the task. Used for effort planning and capacity management.
+  estimated_hours Float?
+  
+  /// Timestamp when the task was created.
+  created_at DateTime
+  
+  /// Timestamp when the task was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the task was soft deleted. Null means task is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project hrm_platform_projects @relation(fields: [hrm_platform_project_id], references: [id], onDelete: Cascade)
+  assignedEmployee hrm_platform_employees? @relation(fields: [assigned_employee_id], references: [id], onDelete: Cascade)
+  parentTask hrm_platform_tasks? @relation("recursive", fields: [parent_task_id], references: [id], onDelete: Cascade)
+  createdByMember hrm_platform_members @relation(fields: [created_by_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subtasks hrm_platform_tasks[] @relation("recursive")
+  taskHistories hrm_platform_task_histories[]
+  snapshots hrm_platform_task_snapshots[] @relation("hrm_platform_task_snapshots_of_hrm_platform_task_id")
+  subtaskSnapshots hrm_platform_task_snapshots[] @relation("hrm_platform_task_snapshots_of_hrm_platform_task_parent_id")
+  timers hrm_platform_timers[]
+  timelogs hrm_platform_timelogs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_by_member_id])
+  @@index([hrm_platform_project_id, status])
+  @@index([assigned_employee_id, status])
+  @@index([parent_task_id])
+  @@index([created_at])
+}
+
+/// Immutable audit trail recording all task status changes throughout the
+/// task lifecycle.
+///
+/// Each time a task's status is modified, a new history entry is
+/// automatically created to document the transition. This ensures complete
+/// visibility into how tasks progress from creation through completion.
+///
+/// The history record preserves the exact moment when a status change
+/// occurred and identifies which member performed the modification. Both the
+/// previous status and the new status are captured to show the complete
+/// transition path.
+///
+/// TaskHistory entries are read-only once created. They serve as factual
+/// records that cannot be altered or deleted, providing an accurate account
+/// of task evolution. This audit capability supports accountability and
+/// helps organizations understand how work flows through their processes.
+///
+/// Key relationships:
+/// - {@link hrm_platform_tasks} - Parent task that this history entry
+/// belongs to
+/// - {@link hrm_platform_members} - Member who made the status change
+///
+/// @namespace Task
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_task_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged task's {@link hrm_platform_tasks.id}. Each history entry is
+  /// associated with exactly one task.
+  hrm_platform_task_id String
+  
+  /// Member who made the status change's {@link hrm_platform_members.id}.
+  /// Identifies which user performed the modification for accountability.
+  hrm_platform_member_id String
+  
+  /// The task status before the change occurred. Preserves the previous state
+  /// for complete transition tracking.
+  old_status String
+  
+  /// The task status after the change occurred. Records the new state that the
+  /// task transitioned to.
+  new_status String
+  
+  /// Timestamp when the status change occurred. Records the exact date and
+  /// time of the modification.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  task hrm_platform_tasks @relation(fields: [hrm_platform_task_id], references: [id], onDelete: Cascade)
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_member_id])
+  @@index([hrm_platform_task_id, created_at])
+}
+
+/// Point-in-time snapshots of task records for audit trail and historical
+/// tracking.
+///
+/// This table captures the complete state of tasks at specific moments in
+/// time, preserving all task attributes including title, description,
+/// status, priority, assignment, due date, estimated hours, and temporal
+/// fields. Each snapshot is created when significant changes occur to a
+/// task, enabling organizations to review historical task states and recover
+/// from unintended modifications.
+///
+/// Key relationships:
+/// - Belongs to {@link hrm_platform_tasks} - the parent task being snapshot
+/// - References {@link hrm_platform_projects} - the project containing the
+/// task (denormalized)
+/// - References {@link hrm_platform_employees} - the employee assigned to
+/// the task (denormalized, optional)
+/// - References {@link hrm_platform_tasks} as parent - for subtask
+/// relationships (denormalized, optional)
+/// - References {@link hrm_platform_member_sessions} - the session that
+/// created the original task (denormalized, optional)
+///
+/// Snapshots are immutable once created and serve as the authoritative
+/// record of task state at a given point in time. They support compliance
+/// requirements, audit trails, and data recovery operations.
+///
+/// @namespace Task
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_task_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent task's {@link hrm_platform_tasks.id} that this snapshot captures.
+  hrm_platform_task_id String
+  
+  /// Project's {@link hrm_platform_projects.id} containing the task at
+  /// snapshot time (denormalized).
+  hrm_platform_project_id String
+  
+  /// Assigned employee's {@link hrm_platform_employees.id} at snapshot time
+  /// (denormalized, optional).
+  assigned_employee_id String?
+  
+  /// Parent task's {@link hrm_platform_tasks.id} if this is a subtask
+  /// (denormalized, optional).
+  hrm_platform_task_parent_id String?
+  
+  /// Creator session's {@link hrm_platform_member_sessions.id} that created
+  /// the original task (denormalized, optional).
+  hrm_platform_member_session_id String?
+  
+  /// Task title at the time of snapshot.
+  title String
+  
+  /// Task description at the time of snapshot (optional).
+  description String?
+  
+  /// Task status at the time of snapshot (e.g., todo, in_progress, done,
+  /// cancelled).
+  status String
+  
+  /// Task priority at the time of snapshot (e.g., low, medium, high, urgent).
+  priority String
+  
+  /// Task due date at the time of snapshot (optional).
+  due_date DateTime?
+  
+  /// Estimated hours for task completion at the time of snapshot (optional).
+  estimated_hours Float?
+  
+  /// Original task creation timestamp at the time of snapshot.
+  task_created_at DateTime
+  
+  /// Task last update timestamp at the time of snapshot.
+  updated_at DateTime
+  
+  /// Task soft delete timestamp at the time of snapshot (null if not deleted).
+  deleted_at DateTime?
+  
+  /// Timestamp when this snapshot was created.
+  snapshot_created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  task hrm_platform_tasks @relation("hrm_platform_task_snapshots_of_hrm_platform_task_id", fields: [hrm_platform_task_id], references: [id], onDelete: Cascade)
+  project hrm_platform_projects @relation(fields: [hrm_platform_project_id], references: [id], onDelete: Cascade)
+  employee hrm_platform_employees? @relation(fields: [assigned_employee_id], references: [id], onDelete: Cascade)
+  parentTask hrm_platform_tasks? @relation("hrm_platform_task_snapshots_of_hrm_platform_task_parent_id", fields: [hrm_platform_task_parent_id], references: [id], onDelete: Cascade)
+  creatorSession hrm_platform_member_sessions? @relation(fields: [hrm_platform_member_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_project_id])
+  @@index([assigned_employee_id])
+  @@index([hrm_platform_task_parent_id])
+  @@index([hrm_platform_member_session_id])
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_task_id, snapshot_created_at], map: "hrm_platform_task_snapshots_hrm_platform_task_id_snaps_bf8535a7")
+}

@@ -1,0 +1,124 @@
+/// Customer reviews for purchased products with star ratings and optional
+/// text feedback.
+///
+/// Reviews are written by customers after receiving their order items and
+/// help other buyers make informed purchasing decisions. Each review is tied
+/// to a specific order item, ensuring customers can only review products
+/// they've actually purchased and received.
+///
+/// Reviews support soft deletion to preserve historical data while allowing
+/// customers to remove their feedback. The system maintains immutable
+/// snapshots of review changes for audit and dispute resolution purposes.
+///
+/// Key relationships:
+/// - Belongs to {@link shopping_mall_order_items} - the order item being
+/// reviewed
+/// - Belongs to {@link shopping_mall_customers} - the customer who wrote the
+/// review
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order item being reviewed. {@link shopping_mall_order_items.id}
+  shopping_order_item_id String
+  
+  /// Customer who wrote the review. {@link shopping_mall_customers.id}
+  shopping_customer_id String
+  
+  /// Star rating from 1 to 5. Must be between 1 (lowest) and 5 (highest).
+  rating Int
+  
+  /// Optional text feedback describing the customer's experience with the
+  /// product.
+  content String?
+  
+  /// Timestamp when the review was first created.
+  created_at DateTime
+  
+  /// Timestamp when the review was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the review was soft deleted. Null means the review is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_review_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_order_item_id])
+  @@index([shopping_customer_id, created_at])
+  @@index([created_at])
+}
+
+/// Immutable audit trail capturing review state at modification time for
+/// dispute resolution and change history tracking.
+///
+/// This table preserves the complete state of {@link shopping_mall_reviews}
+/// whenever a review is modified, enabling:
+///
+/// - **Dispute resolution**: Provides evidence of what the review contained
+/// at any point in time
+/// - **Change tracking**: Allows sellers and administrators to see the full
+/// modification history
+/// - **Data integrity**: Ensures review content cannot be altered without
+/// leaving an audit trail
+///
+/// Each snapshot is immutable and append-only, created automatically when a
+/// review is edited. The snapshot_data field contains all review fields
+/// denormalized for historical reference, including the order item
+/// reference, customer reference, rating, content, and timestamps as they
+/// existed at the time of modification.
+///
+/// @namespace Reviews
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the review being snapshot. {@link shopping_mall_reviews.id}
+  shopping_mall_review_id String
+  
+  /// Complete review state captured at snapshot time. Contains denormalized
+  /// review fields including order item reference, customer reference, rating,
+  /// text content, and timestamps as they existed when the snapshot was
+  /// created.
+  snapshot_data String
+  
+  /// Timestamp when this snapshot was created. Records the exact moment the
+  /// review modification was captured.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_review_id, created_at], map: "shopping_mall_review_snapshots_shopping_mall_review_id_8f74bdf1")
+}

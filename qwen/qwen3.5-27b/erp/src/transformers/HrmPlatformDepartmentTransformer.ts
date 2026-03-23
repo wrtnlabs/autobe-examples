@@ -1,0 +1,63 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
+import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
+import { IHrmPlatformOrganizationLogo } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationLogo";
+import { IHrmPlatformOrganizationSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationSetting";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import typia, { tags } from "typia";
+
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { HrmPlatformDepartmentAtSummaryTransformer } from "./HrmPlatformDepartmentAtSummaryTransformer";
+import { HrmPlatformOrganizationAtSummaryTransformer } from "./HrmPlatformOrganizationAtSummaryTransformer";
+
+export namespace HrmPlatformDepartmentTransformer {
+  export type Payload = Prisma.hrm_platform_departmentsGetPayload<
+    ReturnType<typeof select>
+  >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        parent: HrmPlatformDepartmentAtSummaryTransformer.select(),
+        childDepartments: HrmPlatformDepartmentAtSummaryTransformer.select(),
+        employees: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_employeesFindManyArgs,
+        organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
+      },
+    } satisfies Prisma.hrm_platform_departmentsFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IHrmPlatformDepartment> {
+    return {
+      id: input.id,
+      name: input.name,
+      description: input.description ?? null,
+      parent: input.parent
+        ? await HrmPlatformDepartmentAtSummaryTransformer.transform(
+            input.parent,
+          )
+        : null,
+      childDepartments: await ArrayUtil.asyncMap(
+        input.childDepartments,
+        HrmPlatformDepartmentAtSummaryTransformer.transform,
+      ),
+      employee_count: input.employees.length,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(
+        input.organization,
+      ),
+    };
+  }
+}

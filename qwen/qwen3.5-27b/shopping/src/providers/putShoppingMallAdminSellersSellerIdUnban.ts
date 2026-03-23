@@ -1,0 +1,45 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { ShoppingMallSellerTransformer } from "../transformers/ShoppingMallSellerTransformer";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+export async function putShoppingMallAdminSellersSellerIdUnban(props: {
+  admin: AdminPayload;
+  sellerId: string & tags.Format<"uuid">;
+}): Promise<IShoppingMallSeller> {
+  // Verify seller exists and check current status
+  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
+    where: { id: props.sellerId },
+    select: { id: true, status: true },
+  });
+  // Validate seller is currently banned
+  if (seller.status !== "banned") {
+    throw new HttpException("Seller is not banned", 400);
+  }
+  // Update status to active
+  await MyGlobal.prisma.shopping_mall_sellers.update({
+    where: { id: props.sellerId },
+    data: {
+      status: "active",
+      updated_at: new Date(),
+    },
+  });
+  // Fetch updated seller with transformer select
+  const updated = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow(
+    {
+      where: { id: props.sellerId },
+      ...ShoppingMallSellerTransformer.select(),
+    },
+  );
+  return await ShoppingMallSellerTransformer.transform(updated);
+}

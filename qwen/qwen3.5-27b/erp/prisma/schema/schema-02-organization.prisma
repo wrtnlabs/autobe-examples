@@ -1,0 +1,212 @@
+/// Main organization records representing the primary business container
+/// within the platform.
+///
+/// Organizations serve as the fundamental multi-tenancy boundary, ensuring
+/// complete data isolation between different companies or business units
+/// using the platform. Each organization contains employees, projects,
+/// tasks, time tracking data, and all business operations scoped to that
+/// organization.
+///
+/// Key characteristics:
+/// - Unique name identifies the organization across the system
+/// - Owner reference tracks which member created and controls the organization
+/// - Soft delete support allows organization deactivation while preserving
+/// data integrity
+/// - All organization-scoped entities reference this table for multi-tenancy
+/// enforcement
+///
+/// Related entities:
+/// - {@link hrm_platform_organization_settings} stores organization-specific
+/// configuration (currency, timezone, fiscal year)
+/// - {@link hrm_platform_organization_logos} stores branding assets
+/// - {@link hrm_platform_employees} belong to organizations
+/// - {@link hrm_platform_projects} belong to organizations
+/// - {@link hrm_platform_departments} belong to organizations
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Owner's {@link hrm_platform_members.id}. The member who created and has
+  /// full control over this organization.
+  owner_id String
+  
+  /// Organization name, must be unique across the system.
+  name String
+  
+  /// Optional description providing additional context about the
+  /// organization's purpose or structure.
+  description String?
+  
+  /// Timestamp when the organization was created.
+  created_at DateTime
+  
+  /// Timestamp when the organization was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the organization was soft deleted. NULL means organization
+  /// is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner hrm_platform_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberSessions hrm_platform_member_sessions[]
+  setting hrm_platform_organization_settings?
+  logo hrm_platform_organization_logos?
+  employees hrm_platform_employees[]
+  roles hrm_platform_roles[]
+  departments hrm_platform_departments[]
+  employeeSnapshots hrm_platform_employee_snapshots[]
+  employeeInvitations hrm_platform_employee_invitations[]
+  contracts hrm_platform_contracts[]
+  contractSnapshots hrm_platform_contract_snapshots[]
+  projects hrm_platform_projects[]
+  projectSnapshots hrm_platform_project_snapshots[]
+  activityLogs hrm_platform_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([owner_id, created_at])
+  @@index([deleted_at])
+}
+
+/// Organization-specific configuration settings including currency,
+/// timezone, and fiscal year parameters.
+///
+/// This table stores operational settings that define how an organization
+/// manages its business operations. Each organization has exactly one
+/// settings record that controls:
+///
+/// - **Currency**: The default currency code for financial calculations and
+/// reporting
+/// - **Timezone**: The organization's primary timezone for timestamp display
+/// and scheduling
+/// - **Fiscal Year Start Month**: The month (1-12) when the organization's
+/// fiscal year begins
+///
+/// These settings are subsidiary to the {@link hrm_platform_organizations}
+/// entity and are managed through organization administration workflows.
+/// Changes to settings affect all organization-scoped operations including
+/// time tracking, reporting, and financial calculations.
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organization_settings {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link hrm_platform_organizations.id}. Each
+  /// organization has exactly one settings record.
+  organization_id String
+  
+  /// Three-letter ISO currency code (e.g., 'USD', 'EUR', 'KRW') for financial
+  /// calculations and reporting within the organization.
+  currency String
+  
+  /// IANA timezone identifier (e.g., 'Asia/Seoul', 'America/New_York') for
+  /// timestamp display and scheduling operations.
+  timezone String
+  
+  /// The month number (1-12) when the organization's fiscal year begins. Used
+  /// for financial reporting and period calculations.
+  fiscal_year_start_month Int
+  
+  /// Timestamp when the organization settings record was created.
+  created_at DateTime
+  
+  /// Timestamp when the organization settings were last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the organization settings were soft-deleted. Null
+  /// indicates active settings.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id])
+  // spellchecker: ignore-next-line
+  @@index([organization_id, created_at], map: "hrm_platform_organization_settings_organization_id_cre_74b1b3d1")
+}
+
+/// Logo images and branding assets for organizations.
+///
+/// This table stores logo image references for organizations to provide
+/// visual identification in the user interface. Each organization can have
+/// at most one active logo, establishing a 1:1 relationship with {@link
+/// hrm_platform_organizations}.
+///
+/// The logo is managed through the parent organization entity and is not
+/// independently searchable or filterable. When an organization is deleted,
+/// its logo is also removed through cascade deletion.
+///
+/// Key relationships:
+/// - Belongs to exactly one {@link hrm_platform_organizations} (1:1
+/// relationship)
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organization_logos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Belonged organization's {@link hrm_platform_organizations.id}.
+  /// Establishes 1:1 relationship where each organization has at most one
+  /// logo.
+  hrm_platform_organization_id String
+  
+  /// URL or path to the logo image file. Stores the location of the uploaded
+  /// logo image for display in the user interface.
+  image_url String
+  
+  /// Timestamp when the logo was uploaded/created.
+  created_at DateTime
+  
+  /// Timestamp when the logo was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the logo was soft deleted. Null indicates the logo is
+  /// currently active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_organization_id], map: "hrm_platform_organization_logos_hrm_platform_organizat_84c3b53f")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, created_at], map: "hrm_platform_organization_logos_hrm_platform_organizat_96db2418")
+}

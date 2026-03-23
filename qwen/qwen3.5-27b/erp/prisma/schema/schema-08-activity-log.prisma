@@ -1,0 +1,144 @@
+/// Comprehensive audit trail recording all significant business actions
+/// across the organization including employee management events, contract
+/// changes, project lifecycle events, task status updates, timesheet
+/// approvals, and role assignments. Each log entry is immutable once created
+/// and includes the acting user, target entity, action type, and detailed
+/// change information for full audit compliance.
+///
+/// @namespace ActivityLog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization that this activity belongs to for multi-tenancy isolation.
+  hrm_platform_organization_id String
+  
+  /// User who performed the action that triggered this activity log entry.
+  hrm_platform_member_id String?
+  
+  /// Type of action performed, e.g., 'employee_hired', 'timesheet_approved',
+  /// 'project_archived'. Used for filtering and categorization.
+  action_type String
+  
+  /// Type of entity affected by the action, e.g., 'employee', 'project',
+  /// 'task', 'timesheet'. Used to identify what business object was modified.
+  target_entity_type String
+  
+  /// ID of the entity affected by the action. Nullable for organization-wide
+  /// actions not tied to a specific entity.
+  target_entity_id String?
+  
+  /// Human-readable description of the action for audit trail clarity.
+  action_description String
+  
+  /// IP address of the client when the action was performed, for security
+  /// auditing.
+  ip_address String?
+  
+  /// HTTP User-Agent header from the request that triggered this action.
+  user_agent String?
+  
+  /// Timestamp when this action was performed.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  actingMember hrm_platform_members? @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  changes hrm_platform_activity_log_changes[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, created_at], map: "hrm_platform_activity_logs_hrm_platform_organization_i_ad2e97ed")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, hrm_platform_member_id], map: "hrm_platform_activity_logs_hrm_platform_organization_i_896349e7")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, action_type], map: "hrm_platform_activity_logs_hrm_platform_organization_i_58c484f8")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_member_id, created_at], map: "hrm_platform_activity_logs_hrm_platform_member_id_crea_eb0e73ce")
+  // spellchecker: ignore-next-line
+  @@index([target_entity_type, target_entity_id], map: "hrm_platform_activity_logs_target_entity_type_target_e_41653f1a")
+}
+
+/// Atomic key-value pairs storing field-level changes for activity log entries.
+///
+/// This table decomposes the changes data from parent {@link
+/// hrm_platform_activity_logs} to maintain First Normal Form (1NF)
+/// compliance by avoiding JSON storage in string fields. Each record
+/// represents a single field change within an activity log entry, capturing
+/// the field name, previous value, new value, and field type.
+///
+/// Key characteristics:
+/// - Child table of {@link hrm_platform_activity_logs} with 1:N relationship
+/// - Immutable audit trail data - never updated or deleted after creation
+/// - Managed exclusively through parent activity log operations
+/// - Enables granular change tracking for compliance and history purposes
+///
+/// Use cases:
+/// - Track which specific fields changed in employee records, contracts,
+/// projects, or tasks
+/// - Preserve old and new values for audit trail
+/// - Support compliance requirements for detailed change history
+/// - Enable recovery of historical field values
+///
+/// @namespace ActivityLog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_activity_log_changes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent activity log entry's {@link hrm_platform_activity_logs.id}. This
+  /// foreign key establishes the relationship between the change record and
+  /// its parent activity log entry.
+  hrm_platform_activity_log_id String
+  
+  /// Name of the field that changed (e.g., 'status', 'title', 'assigned_to',
+  /// 'end_date'). This identifies which specific attribute was modified in the
+  /// target entity.
+  field_name String
+  
+  /// Previous value of the field before the change. Nullable for newly created
+  /// fields that had no prior value.
+  old_value String?
+  
+  /// New value of the field after the change. Nullable for deleted fields or
+  /// when a value is removed.
+  new_value String?
+  
+  /// Data type of the changed field (e.g., 'string', 'int', 'datetime',
+  /// 'boolean', 'uuid'). Provides context for interpreting the old and new
+  /// values.
+  field_type String
+  
+  /// Timestamp when this change record was created. Immutable for audit trail
+  /// integrity.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  activityLog hrm_platform_activity_logs @relation(fields: [hrm_platform_activity_log_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_activity_log_id, field_name], map: "hrm_platform_activity_log_changes_hrm_platform_activit_486c35cd")
+}
