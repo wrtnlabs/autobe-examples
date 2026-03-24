@@ -1,0 +1,137 @@
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { Controller } from "@nestjs/common";
+import typia, { tags } from "typia";
+
+import { ITodoAppTodoSnapshot } from "../../../../../api/structures/ITodoAppTodoSnapshot";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
+import { getTodoAppMemberTodosTodoIdSnapshotsSnapshotId } from "../../../../../providers/getTodoAppMemberTodosTodoIdSnapshotsSnapshotId";
+import { patchTodoAppMemberTodosTodoIdSnapshots } from "../../../../../providers/patchTodoAppMemberTodosTodoIdSnapshots";
+
+@Controller("/todoApp/member/todos/:todoId/snapshots")
+export class TodoappMemberTodosSnapshotsController {
+  /**
+   * Capture a new point-in-time snapshot for a specific todo.
+   *
+   * This operation is used to record the todo’s state in a dedicated snapshot table so the system can reconstruct what the todo looked like at the time of an edit. The snapshot stores the denormalized fields required for history/recovery, including title, optional description, optional start_date, optional due_date, completion_status, and whether the todo was in the deleted/trash lifecycle at the snapshot time (lifecycle_deleted). The snapshot also records created_at for timeline ordering.
+   *
+   * Authorization is strictly scoped to the owning member of the target todo. The system must locate the target record in todo_app_todos by todo_app_todos.id and confirm that todo_app_todos.todo_app_member_id matches the authenticated member context. If the todo does not exist or is not accessible to the caller, the system rejects the request and applies no snapshot changes.
+   *
+   * Validation and consistency rules: the operation must validate title and any provided planned dates according to the same business expectations used for todo editing. It must also ensure due_date is not earlier than start_date when both are provided (rejecting invalid combinations). If an unexpected failure occurs while creating the snapshot, the system rejects the request and leaves the system state unchanged so the todo content and its history remain in sync.
+   *
+   * The snapshot record is inserted into todo_app_todo_snapshots with todo_app_todo_id set to the target todo’s id, and lifecycle_deleted set based on whether the todo is currently marked as deleted_in_trash_at (in the trash) at the time the snapshot is recorded.
+   *
+   * Related behavior: after a successful edit, the edit history timeline must include the newly created history entry/snapshot in addition to any previously existing entries. This operation is designed to be used as part of or alongside todo edit flows (e.g., when the service layer records history during edit completion).
+   *
+   * @param connection
+   * @param todoId Target todo identifier whose state will be snapshotted.
+   * @param body Snapshot payload representing the todo state to capture at this moment.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Implementation guidance:
+   *
+   * - Input: todoId from path; request body contains the updated todo state fields that should be captured as a new snapshot.
+   * - Authorization & access check:
+   *   - Start a database transaction.
+   *   - Query todo_app_todos by id = todoId.
+   *   - Verify todo_app_todos.todo_app_member_id equals the authenticated member id.
+   *   - If not found or not owned, reject (throw domain/access error) and rollback.
+   * - Validation:
+   *   - title must be present and non-empty.
+   *   - If both start_date and due_date are provided, enforce due_date >= start_date.
+   *   - completion_status is a boolean in the snapshot context (stored as String in todo_app_todo_snapshots.completion_status; map the operation’s boolean to the expected stored representation used by the system).
+   * - Determine lifecycle_deleted:
+   *   - lifecycle_deleted = (todo_app_todos.deleted_in_trash_at != null).
+   * - Insert snapshot:
+   *   - Create a new row in todo_app_todo_snapshots with:
+   *     - todo_app_todo_id = todo_app_todos.id
+   *     - title, description, start_date, due_date from request body
+   *     - completion_status from request body mapped to the snapshot column representation
+   *     - lifecycle_deleted computed above
+   *     - created_at/updated_at set by database or server timestamps per schema
+   *   - Ensure any failure during insertion is treated as a rejection with rollback.
+   * - Response:
+   *   - Return the created snapshot record (including id and the captured fields).
+   *
+   * Error handling:
+   * - For inaccessible or non-existent todo: reject without creating a snapshot.
+   * - For invalid edit fields (e.g., empty title, due_date earlier than start_date): reject without creating a snapshot.
+   * - For any exception during insertion: reject and do not persist partial changes.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async createSnapshot(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("todoId")
+    todoId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: ITodoAppTodoSnapshot.ICreate,
+  ): Promise<ITodoAppTodoSnapshot> {
+    try {
+      return await patchTodoAppMemberTodosTodoIdSnapshots({
+        member,
+        todoId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a single point-in-time snapshot for one of the signed-in member’s todos.
+   *
+   * This endpoint reads from the `todo_app_todo_snapshots` table, where each snapshot stores the denormalized todo fields at the moment the snapshot was created. The snapshot includes `title`, optional `description`, optional `start_date`, optional `due_date`, the boolean `completion_status`, and the `lifecycle_deleted` flag that indicates whether the todo was in the deleted/trash lifecycle state at the time the snapshot was taken.
+   *
+   * Access control is enforced by scoping the snapshot lookup through the owning todo (`todo_app_todos.todo_app_member_id`). Because todos are private to each member, the system must reject requests that target a todo not owned by the authenticated member, and must reject requests when the specified snapshot cannot be found under the requested todo.
+   *
+   * Input validation focuses on identifier parsing/validation for `todoId` and `snapshotId`, and on verifying that both identifiers resolve to an accessible record. If the request cannot be completed due to invalid/unacceptable input or because the record is not accessible, the system rejects the request without modifying any data.
+   *
+   * Related operations: members use the todo list and todo detail/edit APIs for managing active and deleted todos; snapshot retrieval is a read-only companion feature that allows users to inspect past states. The history timeline for edits is provided by `todo_app_todo_history_entries`, while this endpoint returns the snapshot record used for point-in-time restoration and audit viewing.
+   *
+   * Expected behavior: on success, the operation returns the requested snapshot’s persisted fields exactly as stored. On failure (todo not found/inaccessible, or snapshot not found for the todo), the operation is rejected with no side effects.
+   *
+   * @param connection
+   * @param todoId Identifier of the todo whose snapshot is being retrieved. Scope is limited to the authenticated member’s own todos.
+   * @param snapshotId Identifier of the snapshot record to retrieve.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Implement a read-only single-record lookup for `todo_app_todo_snapshots`.
+   *
+   * 1) Parse `todoId` (UUID) and `snapshotId` (UUID) from the route.
+   * 2) Authorize: from the authenticated member context, resolve the owning todo via `todo_app_todos` using `id = todoId` and `todo_app_member_id = currentMemberId`. If no row matches, reject.
+   * 3) Query `todo_app_todo_snapshots` for a snapshot row where `id = snapshotId` and `todo_app_todo_id = todoId`.
+   *    - If no row matches, reject.
+   * 4) Map the database snapshot fields to the response DTO `ITodoAppTodoSnapshot`.
+   *    - Include `id`, `todoAppTodoId` (or equivalent mapping name), `title`, `description`, `startDate`, `dueDate`, `completionStatus`, `lifecycleDeleted`, `createdAt`, `updatedAt`.
+   *    - Include `deletedAt` only if the DTO/schema requires it; otherwise omit from mapping.
+   * 5) No transaction is required because this is a read.
+   *
+   * Error handling:
+   * - For inaccessible/non-existent todo or snapshot, reject the request per general error handling rules.
+   * - Ensure the rejection path makes no unintended updates (read-only operation).
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":snapshotId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("todoId")
+    todoId: string & tags.Format<"uuid">,
+    @TypedParam("snapshotId")
+    snapshotId: string & tags.Format<"uuid">,
+  ): Promise<ITodoAppTodoSnapshot> {
+    try {
+      return await getTodoAppMemberTodosTodoIdSnapshotsSnapshotId({
+        member,
+        todoId,
+        snapshotId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+}

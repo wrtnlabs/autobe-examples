@@ -9,12 +9,12 @@ AI Model | Success | Score | FCSR | Status
 [`z-ai/glm-5`](#z-aiglm-5) | 4 | 100 | 88% | 🟢
 [`moonshotai/kimi-k2.5`](#moonshotaikimi-k25) | 2 | 99.87 | 58% | 🟡
 [`qwen/qwen3.5-27b`](#qwenqwen35-27b) | 2 | 99.86 | 82% | 🟡
+[`openai/gpt-5.4-nano`](#openaigpt-54-nano) | 2 | 99.86 | 80% | 🟡
 [`qwen/qwen3.5-122b-a10b`](#qwenqwen35-122b-a10b) | 3 | 99.62 | 84% | 🟢
 [`qwen/qwen3.5-397b-a17b`](#qwenqwen35-397b-a17b) | 1 | 99.57 | 88% | 🟡
 [`openai/gpt-5.4-mini`](#openaigpt-54-mini) | 2 | 99.2 | 86% | 🟡
 [`qwen/qwen3.5-35b-a3b`](#qwenqwen35-35b-a3b) | 1 | 99.1 | 76% | 🟡
 [`qwen/qwen3-coder-next`](#qwenqwen3-coder-next) | 1 | 99.02 | 66% | 🟡
-[`openai/gpt-5.4-nano`](#openaigpt-54-nano) | 1 | 98.85 | 81% | 🟡
 [`minimax/minimax-m2.7`](#minimaxminimax-m27) | 1 | 98.01 | 78% | 🟡
 [`deepseek/deepseek-v3.2`](#deepseekdeepseek-v32) | 1 | 65.86 | 72% | 🟡
 
@@ -409,6 +409,83 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟡 Realize | `functions`: 208, `errors`: 1 | 27.68M | 2h 13m 10s | 76%
 
 
+## `openai/gpt-5.4-nano`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./openai/gpt-5.4-nano/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./openai/gpt-5.4-nano/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`shopping`](./openai/gpt-5.4-nano/shopping/) | 99.77 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`erp`](./openai/gpt-5.4-nano/erp/) | 99.68 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+
+### `openai/gpt-5.4-nano` - `todo`
+
+- Source Code: [`openai/gpt-5.4-nano/todo`](./openai/gpt-5.4-nano/todo/)
+- Score: 100
+- Elapsed Time: 32m 8s
+- Token Usage: 38.41M
+- Function Calling Success Rate: 79.65%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 2.12M | 11m 48s | 95%
+🟢 Database | `namespaces`: 3, `models`: 11 | 758.0K | 42s | 86%
+🟢 Interface | `operations`: 35, `schemas`: 42 | 25.22M | 6m 41s | 66%
+🟢 Test | `functions`: 94 | 6.76M | 7m 35s | 95%
+🟢 Realize | `functions`: 53 | 3.55M | 5m 19s | 87%
+
+
+### `openai/gpt-5.4-nano` - `reddit`
+
+- Source Code: [`openai/gpt-5.4-nano/reddit`](./openai/gpt-5.4-nano/reddit/)
+- Score: 100
+- Elapsed Time: 1h 41m 44s
+- Token Usage: 123.02M
+- Function Calling Success Rate: 82.10%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 6 | 1.36M | 7m 27s | 97%
+🟢 Database | `namespaces`: 7, `models`: 23 | 1.70M | 1m 22s | 91%
+🟢 Interface | `operations`: 126, `schemas`: 98 | 70.97M | 22m 6s | 66%
+🟢 Test | `functions`: 369 | 34.64M | 43m 26s | 96%
+🟢 Realize | `functions`: 174 | 14.36M | 27m 21s | 88%
+
+
+### `openai/gpt-5.4-nano` - `shopping`
+
+- Source Code: [`openai/gpt-5.4-nano/shopping`](./openai/gpt-5.4-nano/shopping/)
+- Score: 99.77
+- Elapsed Time: 2h 54m 31s
+- Token Usage: 205.00M
+- Function Calling Success Rate: 80.69%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 6 | 3.19M | 45m 22s | 98%
+🟢 Database | `namespaces`: 7, `models`: 35 | 2.85M | 1m 56s | 87%
+🟢 Interface | `operations`: 185, `schemas`: 159 | 122.62M | 31m 48s | 64%
+🟢 Test | `functions`: 575 | 53.61M | 1h 3m 20s | 97%
+🟡 Realize | `functions`: 263, `errors`: 1 | 22.74M | 32m 3s | 86%
+
+
+### `openai/gpt-5.4-nano` - `erp`
+
+- Source Code: [`openai/gpt-5.4-nano/erp`](./openai/gpt-5.4-nano/erp/)
+- Score: 99.68
+- Elapsed Time: 2h 23m 7s
+- Token Usage: 147.33M
+- Function Calling Success Rate: 78.26%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 2.16M | 17m 18s | 98%
+🟢 Database | `namespaces`: 7, `models`: 26 | 2.13M | 1m 54s | 92%
+🟢 Interface | `operations`: 122, `schemas`: 131 | 91.12M | 39m 59s | 63%
+🟢 Test | `functions`: 362 | 32.73M | 39m 34s | 96%
+🟡 Realize | `functions`: 186, `errors`: 1 | 19.19M | 44m 19s | 81%
+
+
 ## `qwen/qwen3.5-122b-a10b`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -792,83 +869,6 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Interface | `operations`: 84, `schemas`: 105 | 92.02M | 1h 28m 28s | 54%
 🟢 Test | `functions`: 222 | 24.37M | 56m 28s | 47%
 🟡 Realize | `functions`: 130, `errors`: 3 | 18.09M | 55m 14s | 85%
-
-
-## `openai/gpt-5.4-nano`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./openai/gpt-5.4-nano/todo/) | 95.93 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-[`reddit`](./openai/gpt-5.4-nano/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`shopping`](./openai/gpt-5.4-nano/shopping/) | 99.77 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-[`erp`](./openai/gpt-5.4-nano/erp/) | 99.68 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-
-### `openai/gpt-5.4-nano` - `todo`
-
-- Source Code: [`openai/gpt-5.4-nano/todo`](./openai/gpt-5.4-nano/todo/)
-- Score: 95.93
-- Elapsed Time: 27m 14s
-- Token Usage: 42.52M
-- Function Calling Success Rate: 96.20%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 765.4K | 7m 49s | 97%
-🟢 Database | `namespaces`: 3, `models`: 10 | 1.21M | 2m 12s | 92%
-🟢 Interface | `operations`: 42, `schemas`: 42 | 23.04M | 4m 25s | 92%
-🟢 Test | `functions`: 127 | 9.88M | 6m 13s | 99%
-🟡 Realize | `functions`: 59, `errors`: 4 | 7.62M | 6m 32s | 100%
-
-
-### `openai/gpt-5.4-nano` - `reddit`
-
-- Source Code: [`openai/gpt-5.4-nano/reddit`](./openai/gpt-5.4-nano/reddit/)
-- Score: 100
-- Elapsed Time: 1h 41m 44s
-- Token Usage: 123.02M
-- Function Calling Success Rate: 82.10%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 6 | 1.36M | 7m 27s | 97%
-🟢 Database | `namespaces`: 7, `models`: 23 | 1.70M | 1m 22s | 91%
-🟢 Interface | `operations`: 126, `schemas`: 98 | 70.97M | 22m 6s | 66%
-🟢 Test | `functions`: 369 | 34.64M | 43m 26s | 96%
-🟢 Realize | `functions`: 174 | 14.36M | 27m 21s | 88%
-
-
-### `openai/gpt-5.4-nano` - `shopping`
-
-- Source Code: [`openai/gpt-5.4-nano/shopping`](./openai/gpt-5.4-nano/shopping/)
-- Score: 99.77
-- Elapsed Time: 2h 54m 31s
-- Token Usage: 205.00M
-- Function Calling Success Rate: 80.69%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 6 | 3.19M | 45m 22s | 98%
-🟢 Database | `namespaces`: 7, `models`: 35 | 2.85M | 1m 56s | 87%
-🟢 Interface | `operations`: 185, `schemas`: 159 | 122.62M | 31m 48s | 64%
-🟢 Test | `functions`: 575 | 53.61M | 1h 3m 20s | 97%
-🟡 Realize | `functions`: 263, `errors`: 1 | 22.74M | 32m 3s | 86%
-
-
-### `openai/gpt-5.4-nano` - `erp`
-
-- Source Code: [`openai/gpt-5.4-nano/erp`](./openai/gpt-5.4-nano/erp/)
-- Score: 99.68
-- Elapsed Time: 2h 23m 7s
-- Token Usage: 147.33M
-- Function Calling Success Rate: 78.26%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 2.16M | 17m 18s | 98%
-🟢 Database | `namespaces`: 7, `models`: 26 | 2.13M | 1m 54s | 92%
-🟢 Interface | `operations`: 122, `schemas`: 131 | 91.12M | 39m 59s | 63%
-🟢 Test | `functions`: 362 | 32.73M | 39m 34s | 96%
-🟡 Realize | `functions`: 186, `errors`: 1 | 19.19M | 44m 19s | 81%
 
 
 ## `minimax/minimax-m2.7`

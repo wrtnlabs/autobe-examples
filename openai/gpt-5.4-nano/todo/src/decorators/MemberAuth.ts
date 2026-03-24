@@ -1,11 +1,10 @@
 import { SwaggerCustomizer } from "@nestia/core";
-import { ExecutionContext, createParamDecorator } from "@nestjs/common";
+import { ExecutionContext, createParamDecorator, type ParameterDecorator } from "@nestjs/common";
 import { Singleton } from "tstl";
 import { memberAuthorize } from "../providers/authorize/memberAuthorize";
 
-export const MemberAuth =
-  (): ParameterDecorator =>
-  (
+export const MemberAuth = (): ParameterDecorator =>
+  ((
     target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number,
@@ -15,7 +14,7 @@ export const MemberAuth =
       props.route.security.push({ bearer: [] });
     })(target, propertyKey as string, undefined!);
     singleton.get()(target, propertyKey, parameterIndex);
-  };
+  }) as ParameterDecorator;
 
 const singleton = new Singleton(() =>
   createParamDecorator(async (_0: unknown, ctx: ExecutionContext) => {

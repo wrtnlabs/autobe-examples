@@ -1,4 +1,4 @@
-**multiUserTodo — Actor definitions, permission matrix, authentication, session, account lifecycle**
+**todoApp — Actor definitions, permission matrix, authentication, session, account lifecycle**
 
 Actor definitions, permission matrix, authentication, session, account lifecycle
 
@@ -8,125 +8,117 @@ Define all user actor types with their identity, permissions, and access boundar
 
 ## guest Actor
 
-A guest actor represents a person who has not authenticated with the application yet. This actor has no verified user identity inside the system, so they are treated as not belonging to any particular account. The guest actor’s permissions are limited to entry-point actions that allow someone to start using the service, such as creating a new account or signing in. When the guest actor tries to use actions meant for authenticated users, the application should block those requests and require authentication first. The guest actor must not be able to view any of a user’s private information, including any personal todo content. The guest actor is expected to receive clear guidance that authentication is needed rather than detailed personal data. Overall, the guest experience is about onboarding and gaining access, with all account-scoped features protected from unauthenticated use.
+A guest actor represents a person who is not currently signed in to the todo application. The guest has no authenticated user identity and therefore cannot be treated as an owner of any private content. The guest can access only entry points that allow starting an account relationship, such as beginning registration or providing credentials to sign in. The guest’s permissions are limited to actions that do not require an established account context. Because the guest is not tied to a user, the system should not grant access to any user-specific views or actions. If the guest attempts to do something that requires an authenticated identity, the system should prevent the action and ask the person to sign in or complete the required account step. Any attempt to access restricted areas should result in an access-denied experience rather than exposing any private information.
 
-### Guest identity and lack of verified user identity
+### Unauthenticated Visitor Identity
 
-A visitor who has not signed in is treated as a guest actor with no verified user identity inside the system.
+A guest actor represents a person who is not currently signed in to the todo application.
 
-While a visitor remains a guest, the system must not treat them as belonging to any specific user account.
+While a visitor is not signed in, the system shall treat that visitor as having no authenticated user identity.
 
-Any action that assumes an authenticated user context must be considered protected and therefore unavailable to the guest until the visitor signs in.
+If the visitor attempts to access features that require an authenticated identity, the system shall deny access rather than treating the visitor as an owner of private content.
 
-### Access-limited guest permissions for onboarding
+The guest actor shall not be considered an owner of any private todo data.
 
-The guest actor is allowed to use entry-point actions that enable onboarding, specifically:
-- creating an account (sign up)
-- signing in (log in)
+### Guest Role With No Account Ownership
 
-When a guest attempts to access actions intended for signed-in users, the system must block the request and require the visitor to sign in first.
+The guest actor shall not be associated with any user account for the purposes of viewing, creating, editing, or deleting todos.
 
-The guest experience must provide clear guidance that authentication is needed, rather than exposing any personal todo content.
+While the guest has no established account relationship, the system shall not grant access to any action that would operate on a specific user’s todos.
 
-### No viewing of private todo content
+If an action requires ownership of a todo, the system shall ensure the guest has no eligible ownership context and therefore cannot perform the action.
 
-The guest actor must not be able to view any private todo content.
+### Limited Guest Permissions for Starting Account Relationship
 
-The guest actor must not be able to access or view personal details that belong to a specific user account.
+The guest actor shall be allowed to begin the account relationship by using the application entry points that start registration or sign-in.
 
-If a guest attempts to access a specific user’s todo details or edit history, the system must deny access and require the visitor to sign in.
+The system shall limit guest access to only those account-starting steps.
 
-### Request blocking until signed in
+The guest actor shall not have permission to access any user-specific views that display personal todos or personal profile information.
 
-When the guest actor submits a request for any protected action, the system must reject the request and prevent it from taking effect.
+### Access Boundaries for Signed-Out Users
 
-The system must ensure that even if the guest knows or provides identifiers for a todo or an account, the guest still cannot access that information without signing in.
+While a person is signed out, the system shall ensure that all user-specific access is blocked.
 
-After the visitor signs in, subsequent requests may be allowed according to the signed-in actor’s permissions; until then, protected requests remain blocked.
+User-specific content includes the normal todo list, the trash list, and any single-todo details, because these depend on the currently signed-in user.
+
+If the requested page or action would require signed-in context, the system shall provide an access-denied experience rather than exposing any private information.
+
+### Access Denied When Not Signed In
+
+If the guest tries to perform an operation that requires an authenticated account (such as creating, viewing, editing, completing, deleting, restoring, or permanently deleting a todo), the system shall reject the operation.
+
+When access is denied for a signed-out visitor, the system shall clearly communicate that signing in (or completing the required account step) is needed to proceed.
+
+Access denial shall not leak information about other users’ existence or their content.
+
+### Registration or Sign-In Entry Point Behavior
+
+When the guest initiates registration, the system shall guide the person through the process of creating an account.
+
+When the guest initiates sign-in, the system shall guide the person through providing credentials to sign in.
+
+After the guest successfully establishes an account relationship by signing in, the system shall treat subsequent actions as belonging to the signed-in user rather than continuing to enforce guest restrictions.
+
+If the guest account-starting attempt fails, the system shall keep the person in the signed-out state and continue to enforce guest access boundaries.
+
+### No Permission to User-Specific Content
+
+The guest actor shall have no permission to view other users’ profiles.
+
+The guest actor shall have no permission to view any user’s todos.
+
+The guest actor shall have no permission to view edit history for any todo.
+
+If the guest attempts to access any user-specific todo area, the system shall deny access.
 
 ## member Actor
 
-A member actor represents an authenticated user who has successfully signed in and is recognized as an account holder. This actor has a specific identity associated with their session, enabling access to account-scoped capabilities. The member actor is permitted to manage their own account and content within the application, based on the rules that apply to the authenticated user role. The member actor must be restricted from accessing anything that belongs to other users, even if they know about it indirectly. Their permissions should cover actions related to their own profile, todos, and related history while remaining unavailable to others. If a member actor attempts to perform an action that requires a different state (for example, an unauthenticated context), the application should respond by requiring the proper authentication status rather than performing the action. In short, the member actor is the authorized role for using all authenticated, account-bound features, with access boundaries that prevent cross-user access.
+A member actor represents a signed-in user who has an established account identity in the todo application. The member is considered the owner of their own account context and is therefore eligible to access features that require authentication. The member’s permissions begin only after a successful sign-in, and they remain valid while the session is active. The member can manage their own account-related actions and interact with application functionality under their identity. The member has access boundaries that prevent them from acting on behalf of other users, since the application treats each member as separate. If a member tries to perform an action without an authenticated identity (for example, after the session is no longer valid), the system should require them to sign in again. If the member’s credentials are not accepted during sign-in, they should remain a guest and not receive any member-level access.
 
-### Member Actor Identity and Authentication State Boundary
+### Signed-in user identity for Member
 
-A member actor represents a user who has successfully signed in and is recognized as an account holder within an active session.
+A member actor represents a single signed-in user identity in the todo application.
 
-When an unauthenticated visitor attempts to access any capability reserved for signed-in users, the system must require the visitor to be properly authenticated instead of performing the requested action.
+While a user is signed in, the system treats actions performed by that user as being performed under that member actor identity.
 
-A member actor’s identity must be unambiguously tied to the user who owns the currently active session, so that all account-scoped behavior is applied to the correct user.
+If a user tries to use member-level access without a current signed-in identity, the system must treat the user as not having the member identity required for protected actions.
 
-If the system cannot establish a member identity for the current session, the system must treat the actor as not eligible for member-only capabilities and must not expose account-scoped data.
+### Member role with authenticated access eligibility
 
-The system must not infer or grant member privileges based on any indirect knowledge of another user’s information (for example, if a member knows details about another account), and must instead rely on the member actor identity established by authentication.
+A member is eligible to access member-level functionality only when the user has successfully signed in.
 
-### Member Role Permissions: Allowed Access Scope
+If the user’s sign-in is successful, the system grants member-level access to the user for the duration of the active member session.
 
-A member actor must be permitted to manage and view only account-scoped content that belongs to the member’s own user account.
+If the user’s credentials are not accepted during sign-in, the system must not grant member-level access; the user must be treated with guest-level access instead.
 
-A member actor must be permitted to access and edit the member’s own profile (including viewing and updating the display name).
+### Permissions granted after successful sign-in
 
-A member actor must be permitted to create, view, edit, mark completion status, and delete todos that belong to the member’s own user account.
+Once a user is signed in and the session is active, the system must grant the member the permissions needed to manage and interact with the application under that member’s own account.
 
-A member actor must be permitted to view and manage the edit history for todos that belong to the member’s own user account.
+These member permissions must not be granted for unauthenticated access. If the session is not active, the member permissions are not available.
 
-A member actor must be permitted to view deleted todos in the member’s trash and to restore or permanently delete items from that trash.
+### Member session access boundaries
 
-A member actor must be permitted to filter and sort the list of the member’s own todos as part of viewing the account’s todo list.
+The member’s permissions apply only while the member session is active.
 
-A member actor must be permitted to permanently delete a todo from the trash such that the todo’s edit history is also removed from the account’s permanently deleted content.
+If a session is no longer valid (for example, it has ended or is no longer recognized as active), the system must deny member-level access and require the user to sign in again before performing member-level actions.
 
-### Account-Scoped Access and Own Profile Access
+### Account-scoped access eligibility (member owns their data context)
 
-A member actor must be restricted to accessing the member’s own profile only.
+A member can only access data that belongs to the member’s own account context.
 
-A member actor must not be able to view other users’ profiles, even if the member attempts to access them indirectly.
+When the member requests to view, edit, complete, delete, restore, or permanently delete a todo, the system must ensure that the todo is eligible for access only if it belongs to the member.
 
-The member actor’s view of profile information must always correspond to the member’s authenticated user identity.
+The member must not be able to access todos that do not belong to the member’s own account context.
 
-Any request that would require reading or modifying profile information that does not belong to the member must be blocked.
+### No cross-user impersonation access
 
-When a member actor attempts an action that would affect another user’s profile, the system must prevent the action and must not reveal information that would indicate the existence or details of other users’ profiles.
+The system must prevent any mechanism that would allow a member to act on behalf of another user.
 
-### Own Todo Management Capability
+If a member attempts an action targeting another user’s resources, the system must deny access.
 
-A member actor must be able to view a paginated list of the member’s own todos.
-
-Each todo shown in the member’s todo list must reflect the member’s own account data and must include the todo’s title, completion status, and any applicable start date and due date, along with its creation date.
-
-A member actor must be able to view the full details of a single todo that belongs to the member’s own account, including the full description.
-
-A member actor must be able to toggle a todo between incomplete and complete within the member’s own account.
-
-A member actor must be able to edit the member’s own todo fields, including title, description, start date, and due date.
-
-A member actor must be able to view the member’s own todo edit history, with entries ordered from most recent to oldest.
-
-A member actor must be able to delete a todo that belongs to the member’s own account, such that it no longer appears in the normal todo list and becomes available in the member’s trash.
-
-### No Access to Other Users’ Data and Blocked Cross-User Access Attempts
-
-A member actor must not have access to any data that belongs to other users.
-
-This restriction includes, but is not limited to, viewing other users’ todos, viewing other users’ trash, viewing other users’ todo details, and viewing other users’ todo edit history.
-
-If a member actor attempts to access or modify a todo (or any related details such as description or edit history) that belongs to another user, the system must block the attempt.
-
-The system must not disclose whether the target todo exists when the request is blocked due to cross-user access boundaries.
-
-If a member actor attempts to restore or permanently delete a deleted todo that belongs to another user, the system must prevent the action under the no-access-to-other-users rule.
-
-For any blocked cross-user attempt, the system must ensure that no other user’s data is returned to the member actor as part of the response.
-
-### Member Permissions Bound to Authentication State (Member-Only Capabilities)
-
-Member-only capabilities must require the member actor to be authenticated and recognized as an account holder.
-
-If a session is not authenticated as a member, the system must not allow actions that create or modify account content (including profile edits and todo creation or edits).
-
-If a member actor’s authenticated identity is no longer valid for the current session, the system must stop treating the actor as a member and must require the proper authentication status before member-only access resumes.
-
-The system must ensure the authentication-state boundary is enforced consistently across: profile access, todo list access, individual todo access, completion toggling, editing, deletion/trash operations, and viewing edit history.
+A member must not be able to view other users’ profile information.
 
 # Authentication Flows
 
@@ -136,107 +128,149 @@ Registration, login, logout, and session management from a user perspective.
 
 Define user registration and login flows including validation and error handling.
 
-### Registration (Email and Password)
+### Registration (Sign-up)
 
-Users can create an account by providing an email address and a password.
+Users can register for an account using an email address and a password.
 
-The system must associate any newly created account with the provided email address.
+A user registration request is accepted only when the provided email and password meet the system’s registration requirements (as defined in the business rules for this specification).
 
-If the email address is already in use, the system must reject the registration request.
+WHEN a user submits registration details, THE system SHALL create the new user account.
 
-If the password is missing, the system must reject the registration request.
+The created user account becomes eligible for login.
 
-If the registration request is missing the required email address, the system must reject the registration request.
+If the registration request includes an email that is already associated with an existing account, THEN the registration request is rejected.
 
-After a successful registration, the user is able to log in using the same email address and password.
+If the registration request includes missing required information (email or password), THEN the registration request is rejected.
 
-### Login (Email and Password)
+If the registration request fails validation (for example, the password or email does not meet the stated registration requirements), THEN the system rejects the registration request.
 
-Users can sign in by providing an email address and a password.
+The system SHALL not allow an unregistered person to act as an authenticated member; access remains restricted to signed-out capabilities until login succeeds.
 
-The system must authenticate the user based on the provided email address and password.
+Flowchart of registration outcome:
+```mermaid
+flowchart LR
+    A["Registration request"] --> B["Validate email and password"]
+    B -->|"Valid"| C["Create account"]
+    B -->|"Invalid"| D["Reject registration request"]
+```
 
-If the email address does not correspond to an existing account, the system must reject the login request.
+### Login
 
-If the password provided does not match the password for the account associated with the provided email address, the system must reject the login request.
+Users can log in using their email address and password.
 
-After a successful login, the system must treat the user as authenticated so that they can access protected actions.
+WHEN a user submits login details, THE system SHALL authenticate the login by verifying that the email/password combination corresponds to a registered account.
 
-If a login attempt fails, the system must not grant authenticated access for that attempt.
+If the login details correspond to a registered account, THEN the user is authenticated and can access member capabilities.
 
-### Authentication Requirement for Protected Access
+If the email does not correspond to any registered account, THEN the login request is rejected.
 
-The system must ensure that todo and profile features are only available to authenticated users.
+If the password does not match the account’s password, THEN the login request is rejected.
 
-Unauthenticated visitors (guests) must not be able to create, view, edit, complete, or delete any todos.
+If the login request is missing required information (email or password), THEN the login request is rejected.
 
-Unauthenticated visitors (guests) must not be able to view or edit any user profile information.
+If authentication fails, THEN the system SHALL return the user to a signed-out state for that attempt (the user does not gain authenticated access).
 
-Only authenticated users can access account-scoped todo lists, individual todo details, and todo deletion and restoration actions.
+Flowchart of login outcome:
+```mermaid
+flowchart LR
+    A["Login request"] --> B["Verify email and password"]
+    B -->|"Match"| C["Authenticate user"]
+    B -->|"No match"| D["Reject login request"]
+```
+
+### Authentication and Account Lifecycle Boundaries
+
+The system supports authentication for registered users and restricts access for unsigned visitors.
+
+WHILE a user is not authenticated, THE system SHALL prevent access to member-scoped actions.
+
+WHEN a login succeeds, THE system SHALL establish an authenticated session for the user so the user can access their private data.
+
+WHEN an account is deleted, THE system SHALL ensure that the deleted account can no longer be used to authenticate.
+
+IF a user attempts to log in using credentials for an account that has been deleted, THEN the login request is rejected.
+
+Authentication availability depends on account status: if the account is eligible, authentication can succeed; if the account has been removed, authentication must fail.
+
+Flowchart connecting authentication boundaries to account deletion:
+```mermaid
+flowchart LR
+    A["Signed-out visitor"] --> B["Attempt login"]
+    B --> C["Account exists and eligible"]
+    C -->|"Yes"| D["Authenticated session established"]
+    C -->|"No"| E["Reject login request"]
+    D --> F["Authenticated actions"]
+    E --> G["No access granted"]
+```
 
 ## Session and Logout
 
 Define session behavior and logout from a user perspective.
 
-### Session Scope and Persistence
+### Session Lifetime and Member Access Boundaries
 
-Each authenticated member interacts with the system through their own session.
+While a user is signed in, the system SHALL treat that user as the active member for todo-related actions.
 
-While a session is active, the system treats the member as authenticated for member-only actions.
+WHEN a user is not signed in, the system SHALL not allow access to member-only operations.
 
-The system must associate all todo and profile actions with the session’s authenticated member, so a member can only manage their own data.
+WHEN a signed-in user performs member-only actions, the system SHALL ensure the actions are limited to that user’s own data.
 
-If a member attempts to access member-only actions without an active session, the system denies the action and requires the member to log in.
+IF a user’s session is no longer valid, the system SHALL require the user to sign in again before member-only operations can be performed.
 
-A new login for the same member results in a valid session for that member and allows member-only actions.
+IF a user tries to access member-only functionality while signed out, the system SHALL deny access and guide the user to sign in.
 
-A member remains able to view their own session-protected resources during the period when the session is active.
+A member’s session state SHALL remain consistent across multiple actions during the signed-in period, so that the user’s identity remains the same for subsequent operations.
 
-A member’s session does not grant access to any other user’s todos or profile, even if the member knows identifiers for other users’ records.
-
-If the system can no longer confirm an active session (for example, after it is no longer valid), the member is treated as unauthenticated for protected actions and must log in again.
-
-### Logout Behavior
-
-When a member logs out, the system ends the member’s current session.
-
-After logout, the member must no longer be able to perform member-only actions until they log in again.
-
-After logout, the system must not treat the member as authenticated based on any previous session.
-
-Logging out must not delete the member’s account or affect the member’s existing todos; the only data deletion that occurs is the account deletion action described elsewhere.
-
-If a member tries to log out while already logged out (no active session), the system treats the request as a successful no-op and does not create a new session.
-
-A member who logs out and then logs back in again must receive an authenticated session appropriate for their account.
-
-### Account-Security Boundaries for Protected Actions
-
-Account security ensures that only authenticated members can manage their own account and data.
-
-The system must restrict access to all todo operations (including viewing, creating, editing, completing, deleting, restoring, and permanently deleting from trash) to the authenticated member who owns the todo.
-
-The system must restrict access to the profile’s display name viewing and editing to the authenticated member only.
-
-The system must not provide any way to view, access, or share another user’s todos or profiles.
-
-When an unauthenticated visitor attempts a protected action, the system denies the action.
-
-When an authenticated member attempts an action on another member’s todo or profile, the system denies the action.
-
-If a member’s account has been deleted, the system must treat that account as unavailable for authentication and must not allow the deleted member to log in.
-
-Logout must always be sufficient to remove access for subsequent protected actions without requiring any additional action by the member.
-
-### Session-to-Access Flow (Business View)
-
+```mermaid
 flowchart LR
-    A["Unauthenticated visitor"] -->|"Requests a protected todo or profile action"| B["System checks session"]
-    B -->|"No active session"| C["Action denied; member must log in"]
-    B -->|"Active session for member"| D["Action allowed; member can manage only their own data"]
+  A["signed out"] -->|"User signs in"| B["signed in (member)"]
+  B -->|"User signs out"| A
+  A -->|"Member-only action attempt"| C["access denied; sign in required"]
+  B -->|"Member-only action"| D["perform for that member’s own data"]
+```
 
-    D -->|"Member chooses to log out"| E["Session ends"]
-    E --> A
+### Logout Behavior and Post-Logout Access
+
+WHEN a signed-in user chooses to log out, the system SHALL end the member’s signed-in state for subsequent actions.
+
+AFTER logout, the system SHALL treat the user as signed out and SHALL prevent access to member-only operations.
+
+AFTER logout, the system SHALL not allow the user to continue accessing their previously available data using the prior signed-in session.
+
+IF the user attempts to log out when no active signed-in session exists, the system SHALL keep the user in the signed-out state and SHALL not affect other users.
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant S as System
+  U->>S: Request logout
+  S-->>U: Logout successful
+  U->>S: Request member-only action
+  S-->>U: Access denied; sign in required
+```
+
+### Account-Security: Authorization Boundaries for Session Users
+
+The system SHALL ensure that a user can access only their own account data and associated user data.
+
+WHEN a member performs an account-scoped action, the system SHALL ensure the action is associated with the currently signed-in user.
+
+IF a user attempts to act on data that does not belong to them, the system SHALL reject the action and SHALL not reveal private details about the other user’s data.
+
+The system SHALL ensure users cannot access other users’ profile information, and that this restriction is enforced regardless of the member’s session status.
+
+IF a user submits an operation request while their session has become invalid, the system SHALL deny the operation and require re-sign-in.
+
+IF a user account is deleted, the system SHALL ensure that the deleted account’s signed-in state is no longer usable for future account or data operations.
+
+```mermaid
+flowchart LR
+  A["Member signs in"] --> B["System ties access to active member"]
+  B --> C["Member requests own data action"]
+  C --> D["Allowed"]
+  B --> E["Member requests someone else's data action"]
+  E --> F["Rejected; no private details exposed"]
+```
 
 # Account Lifecycle
 
@@ -246,46 +280,46 @@ Account creation, deletion, and password management.
 
 Define how users create accounts, delete accounts, and change passwords.
 
-### Account Creation
+### Account Creation (Sign Up)
 
-Users can create an account using an email address and a password.
+Users can create an account by providing an email address and a password.
 
-The system must create a new user identity when a sign-up is submitted with an email address and password.
+If the email address is already associated with an existing account, the system rejects the account creation attempt.
 
-Users can log in using their email address and password.
+If the email address is missing or not provided, the system rejects the account creation attempt.
 
-If an email and password combination does not correspond to an existing account, the login attempt is rejected.
+If the password is missing or not provided, the system rejects the account creation attempt.
 
-Account creation establishes ownership of the user’s private todo data: each todo created by the user belongs to that user.
+After a successful account creation, the system makes the new account available for sign-in and subsequent actions.
 
-Newly created accounts are able to manage their own profile and todos after successful registration and login.
+If account creation fails for any reason, the system does not create a partially usable account and informs the user that the sign-up was not completed.
 
-Accounts are scoped to the user: users can only access their own data, not other users’ data.
+### Account Deletion (Permanently Delete Account)
+
+Users can delete their own account.
+
+When a user deletes their account, the system permanently deletes the user’s account data, including all of the user’s todos that are currently in normal view and todos that are currently in trash.
+
+After an account deletion is completed, the user can no longer sign in or perform any actions using the deleted account.
+
+If a user attempts to delete an account that does not exist (or is not accessible), the system rejects the request.
+
+If account deletion fails, the system must not leave the account in a partially deleted state; the user should either still be able to sign in and manage data, or receive a clear indication that the deletion did not complete.
 
 ### Password Change
 
-Users can change their password.
+Users can change the password on their own account.
 
-A password change applies only to the currently signed-in user.
+To change a password, the user provides the current password and the new password.
 
-If a user requests a password change while not signed in, the request is rejected.
+If the current password does not match the user’s account, the system rejects the password change request.
 
-The system must update the user’s credentials so that the new password can be used for subsequent logins.
+If the current password is missing or not provided, the system rejects the password change request.
 
-The system must reject a password change request if required password inputs are missing.
+If the new password is missing or not provided, the system rejects the password change request.
 
-The system must ensure that users remain able to continue using the application after successfully changing their password.
+After a successful password change, the user can authenticate using the new password.
 
-### Account Deletion
+After a failed password change, the password remains unchanged.
 
-Users can delete their account.
-
-When a user deletes their account, all todos owned by that user are permanently deleted, including todos that are currently in trash.
-
-After account deletion, the user can no longer access their personal profile or any todos.
-
-If a user attempts to delete an account while not signed in, the request is rejected.
-
-Account deletion removes the user’s profile information from the application’s accessible user data.
-
-Deleting an account is definitive: the system must not allow the deleted user’s account to be restored.
+Account-scoped access: password changes only affect the user performing the change; other users are unaffected.
