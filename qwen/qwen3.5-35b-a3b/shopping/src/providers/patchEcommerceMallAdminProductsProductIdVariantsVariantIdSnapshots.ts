@@ -20,38 +20,33 @@ export async function patchEcommerceMallAdminProductsProductIdVariantsVariantIdS
   variantId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductVariantSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallProductVariantSnapshot.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  const variant =
-    await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
-      where: {
-        id: props.variantId,
-        product_id: props.productId,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
+  // Validate product exists (admin can view any product)
+  await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+    where: { id: props.productId },
+  });
+  // Validate variant exists and belongs to the product
+  await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
+    where: {
+      id: props.variantId,
+      product_id: props.productId,
+    },
+  });
+  // Build filter conditions
+  const search = props.body.search;
+  const fromDate = props.body.fromDate;
+  const toDate = props.body.toDate;
   const whereInput: Prisma.ecommerce_mall_product_variant_snapshotsWhereInput =
     {
       product_id: props.productId,
       product_variant_id: props.variantId,
-      ...(props.body.search !== undefined && {
-        sku_code: {
-          contains: props.body.search,
-          mode: Prisma.QueryMode.insensitive,
-        },
-      }),
-      ...(props.body.changeType !== undefined && {
-        change_type: props.body.changeType,
-      }),
-      ...(props.body.fromDate !== undefined && {
-        created_at: { gte: new Date(props.body.fromDate) },
-      }),
-      ...(props.body.toDate !== undefined && {
-        created_at: { lt: new Date(props.body.toDate) },
-      }),
-    };
+      ...(search !== undefined && { sku_code: { contains: search } }),
+      ...(fromDate !== undefined && { created_at: { gte: fromDate } }),
+      ...(toDate !== undefined && { created_at: { lt: toDate } }),
+    } satisfies Prisma.ecommerce_mall_product_variant_snapshotsWhereInput;
+  // Fetch paginated results
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
   const data =
     await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findMany({
       where: whereInput,
@@ -66,34 +61,32 @@ export async function patchEcommerceMallAdminProductsProductIdVariantsVariantIdS
         stock_quantity: true,
         status: true,
         created_at: true,
-      } satisfies Prisma.ecommerce_mall_product_variant_snapshotsSelect,
+      },
     });
+  // Fetch total count
   const total =
     await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.count({
       where: whereInput,
     });
-  const totalPages = Math.ceil(total / limit);
-  const pagination: IPage.IPagination = {
-    current: page,
-    limit: limit,
-    records: total,
-    pages: totalPages,
-  } satisfies IPage.IPagination;
-  const transformedData: IEcommerceMallProductVariantSnapshot.ISummary[] =
-    data.map(
-      (snapshot) =>
-        ({
-          id: snapshot.id,
-          sku_code: snapshot.sku_code,
-          options: snapshot.options,
-          price: snapshot.price,
-          stock_quantity: snapshot.stock_quantity,
-          status: snapshot.status,
-          created_at: snapshot.created_at.toISOString(),
-        }) satisfies IEcommerceMallProductVariantSnapshot.ISummary,
-    );
+  // Transform and return paginated response
+  const transformedData = await ArrayUtil.asyncMap(data, async (record) => {
+    return {
+      id: record.id,
+      sku_code: record.sku_code,
+      options: record.options,
+      price: Number(record.price),
+      stock_quantity: record.stock_quantity,
+      status: record.status,
+      created_at: toISOStringSafe(record.created_at),
+    };
+  });
   return {
-    pagination,
     data: transformedData,
-  } satisfies IPageIEcommerceMallProductVariantSnapshot.ISummary;
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+  };
 }

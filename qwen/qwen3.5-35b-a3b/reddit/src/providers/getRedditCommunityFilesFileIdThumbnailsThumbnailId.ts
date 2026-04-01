@@ -18,18 +18,13 @@ export async function getRedditCommunityFilesFileIdThumbnailsThumbnailId(props: 
   thumbnailId: string & tags.Format<"uuid">;
 }): Promise<IRedditCommunityFileThumbnail> {
   const thumbnail =
-    await MyGlobal.prisma.reddit_community_file_thumbnails.findUniqueOrThrow({
+    await MyGlobal.prisma.reddit_community_file_thumbnails.findFirstOrThrow({
       where: {
         id: props.thumbnailId,
         reddit_community_file_id: props.fileId,
+        deleted_at: null,
       },
       ...RedditCommunityFileThumbnailTransformer.select(),
     });
-  if (thumbnail.deleted_at !== null) {
-    throw new HttpException("Thumbnail has been deleted", 404);
-  }
-  if (thumbnail.file.deleted_at !== null) {
-    throw new HttpException("Parent file has been deleted", 404);
-  }
   return await RedditCommunityFileThumbnailTransformer.transform(thumbnail);
 }

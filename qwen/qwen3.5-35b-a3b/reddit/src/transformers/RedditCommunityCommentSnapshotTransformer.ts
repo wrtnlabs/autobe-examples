@@ -7,8 +7,10 @@ import { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityCommentAtSummaryTransformer } from "./RedditCommunityCommentAtSummaryTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
@@ -25,12 +27,14 @@ export namespace RedditCommunityCommentSnapshotTransformer {
         content: true,
         version: true,
         created_at: true,
-        comment: RedditCommunityCommentAtSummaryTransformer.select(),
+        comment: {
+          select: { id: true },
+        },
         author: RedditCommunityMemberAtSummaryTransformer.select(),
         post: RedditCommunityPostAtSummaryTransformer.select(),
         parentComment: RedditCommunityCommentAtSummaryTransformer.select(),
       },
-    } satisfies Prisma.reddit_community_comment_snapshotsFindManyArgs;
+    };
   }
   export async function transform(
     input: Payload,

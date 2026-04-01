@@ -1,0 +1,221 @@
+/// Stores the association between a member account and an organization,
+/// including the membership status and whether this membership is the
+/// currently selected organization context for the member.
+///
+/// This table is the organization-scoped access link used to scope all
+/// subsequent tenant data access. It does not store role assignments,
+/// invitation metadata, or profile data; those concerns belong to the
+/// authorization and role components. The relationship is always maintained
+/// from the membership record to {@link erp_hrm_time_members} and {@link
+/// erp_hrm_time_organizations}, ensuring a single source of truth for
+/// organization membership.
+///
+/// @namespace OrganizationHr
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_organization_memberships {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Member account reference. {@link erp_hrm_time_members.id}.
+  erp_hrm_time_member_id String
+  
+  /// Organization reference. {@link erp_hrm_time_organizations.id}.
+  erp_hrm_time_organization_id String
+  
+  /// Membership status within the organization, such as active or pending.
+  status String
+  
+  /// Indicates whether this membership is the member's currently selected
+  /// organization context.
+  is_selected_context Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for logically removed memberships.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member erp_hrm_time_members @relation(fields: [erp_hrm_time_member_id], references: [id], onDelete: Cascade)
+  organization erp_hrm_time_organizations @relation(fields: [erp_hrm_time_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([erp_hrm_time_member_id, erp_hrm_time_organization_id], map: "erp_hrm_time_organization_memberships_erp_hrm_time_mem_f79aaa30")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_organization_id, status], map: "erp_hrm_time_organization_memberships_erp_hrm_time_org_e34daec7")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_member_id, is_selected_context], map: "erp_hrm_time_organization_memberships_erp_hrm_time_mem_e4072221")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_member_id, status], map: "erp_hrm_time_organization_memberships_erp_hrm_time_mem_560e4615")
+}
+
+/// Stores organization-scoped employee records for the ERP HRM and time
+/// tracking platform. Each record links a user account to one organization,
+/// assigns exactly one role within that organization, and captures the
+/// employee's department, position, employment type, and active or
+/// deactivated status.
+///
+/// This table is the authoritative employee identity within a tenant. It is
+/// used to scope access, manage organization membership-driven employment
+/// records, and support HR and time-tracking workflows without duplicating
+/// contract history or dashboard data in this entity.
+///
+/// @namespace OrganizationHr
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the employee record.
+  id String @id
+  
+  /// Organization's {@link erp_hrm_time_organizations.id}.
+  erp_hrm_time_organization_id String
+  
+  /// Member account's {@link erp_hrm_time_members.id}.
+  erp_hrm_time_member_id String
+  
+  /// Role's {@link erp_hrm_time_roles.id}.
+  erp_hrm_time_role_id String
+  
+  /// Department's {@link erp_hrm_time_departments.id}.
+  erp_hrm_time_department_id String?
+  
+  /// Optional job title or position name for display and HR management.
+  position_title String?
+  
+  /// Employment classification for the employee, such as full-time, part-time,
+  /// contractor, or intern.
+  employment_type String
+  
+  /// Current employment state, such as active or deactivated.
+  status String
+  
+  /// Timestamp when the employee record was created.
+  created_at DateTime
+  
+  /// Timestamp when the employee record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the employee record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_time_organizations @relation(fields: [erp_hrm_time_organization_id], references: [id], onDelete: Cascade)
+  member erp_hrm_time_members @relation(fields: [erp_hrm_time_member_id], references: [id], onDelete: Cascade)
+  role erp_hrm_time_roles @relation(fields: [erp_hrm_time_role_id], references: [id], onDelete: Cascade)
+  department erp_hrm_time_departments? @relation(fields: [erp_hrm_time_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  contracts erp_hrm_time_employee_contracts[]
+  projectMemberships erp_hrm_time_project_memberships[]
+  assignedTasks erp_hrm_time_tasks[]
+  timers erp_hrm_time_timers[]
+  timesheets erp_hrm_time_timesheets[]
+  timeReportRows erp_hrm_time_time_report_rows[]
+  dashboardSummary erp_hrm_time_employee_dashboard_summaries?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([erp_hrm_time_member_id])
+  @@index([erp_hrm_time_role_id])
+  @@index([erp_hrm_time_department_id])
+  // spellchecker: ignore-next-line
+  @@unique([erp_hrm_time_organization_id, erp_hrm_time_member_id], map: "erp_hrm_time_employees_erp_hrm_time_organization_id_er_5ff3fd32")
+  @@index([erp_hrm_time_organization_id, status])
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_organization_id, employment_type], map: "erp_hrm_time_employees_erp_hrm_time_organization_id_em_6bfa73ae")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_organization_id, erp_hrm_time_role_id], map: "erp_hrm_time_employees_erp_hrm_time_organization_id_er_4eb0a332")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_organization_id, erp_hrm_time_department_id], map: "erp_hrm_time_employees_erp_hrm_time_organization_id_er_c52efd3d")
+}
+
+/// Stores historical employment contracts for employees within an
+/// organization. Each record captures one contract period, compensation
+/// terms, and working-time expectations for a specific employee.
+///
+/// This table is append-oriented and preserves past contract history as
+/// immutable records after activation. The current active contract for an
+/// employee is determined by its date range, while the application layer
+/// enforces the rule that only one active contract may exist at a time and
+/// that a new contract closes the previous one the day before the new start
+/// date. Related employee identity is referenced through {@link
+/// erp_hrm_time_employees}.
+///
+/// @namespace OrganizationHr
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_employee_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the employee contract record.
+  id String @id
+  
+  /// Employee's {@link erp_hrm_time_employees.id}.
+  erp_hrm_time_employee_id String
+  
+  /// The date on which this employment contract becomes effective.
+  start_date DateTime
+  
+  /// The date on which this contract ends. A null value indicates the contract
+  /// is ongoing.
+  end_date DateTime?
+  
+  /// The compensation amount defined by this contract.
+  pay_rate Float
+  
+  /// The unit used to interpret the pay rate, such as hourly, daily, weekly,
+  /// or monthly.
+  pay_period String
+  
+  /// The expected number of working hours per week for this contract.
+  working_hours_per_week Int
+  
+  /// Optional free-text notes describing contract-specific terms or context.
+  notes String?
+  
+  /// Timestamp when the contract record was created.
+  created_at DateTime
+  
+  /// Timestamp when the contract record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the contract record was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee erp_hrm_time_employees @relation(fields: [erp_hrm_time_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([erp_hrm_time_employee_id, start_date], map: "erp_hrm_time_employee_contracts_erp_hrm_time_employee__6b00073c")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_employee_id, start_date, end_date], map: "erp_hrm_time_employee_contracts_erp_hrm_time_employee__8acba6e0")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_employee_id, end_date], map: "erp_hrm_time_employee_contracts_erp_hrm_time_employee__1ddb7f83")
+}

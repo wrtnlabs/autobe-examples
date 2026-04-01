@@ -4,8 +4,10 @@ import { IHrmsOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrm
 import { IHrmsOrganizationRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsOrganizationRole";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsOrganizationAtSummaryTransformer } from "./HrmsOrganizationAtSummaryTransformer";
 

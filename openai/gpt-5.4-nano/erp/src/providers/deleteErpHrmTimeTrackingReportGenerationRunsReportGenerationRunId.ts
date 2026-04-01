@@ -13,36 +13,13 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function deleteErpHrmTimeTrackingReportGenerationRunsReportGenerationRunId(props: {
   reportGenerationRunId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const run =
-    await MyGlobal.prisma.erp_hrm_time_tracking_report_generation_runs.findUnique(
-      {
-        where: { id: props.reportGenerationRunId },
-        select: {
-          id: true,
-          erp_hrm_time_tracking_report_definition_id: true,
-        },
-      },
-    );
-  if (!run) {
-    throw new HttpException("Report generation run unavailable", 404);
-  }
-  const selectedOrgId: string | null =
-    (props as any)?.customer?.selected_organization_id ?? null;
-  if (selectedOrgId) {
-    const reportDefinition =
-      await MyGlobal.prisma.erp_hrm_time_tracking_report_definitions.findUnique(
-        {
-          where: { id: run.erp_hrm_time_tracking_report_definition_id },
-          select: { organization: { select: { id: true } } },
-        },
-      );
-    if (
-      !reportDefinition ||
-      reportDefinition.organization.id !== selectedOrgId
-    ) {
-      throw new HttpException("Report generation run unavailable", 404);
-    }
-  }
+  // Existence check (also ensures unavailable -> 404 via OrThrow)
+  await MyGlobal.prisma.erp_hrm_time_tracking_report_generation_runs.findUniqueOrThrow(
+    {
+      where: { id: props.reportGenerationRunId },
+      select: { id: true },
+    },
+  );
   await MyGlobal.prisma.$transaction(async (tx) => {
     await tx.erp_hrm_time_tracking_report_generation_runs.delete({
       where: { id: props.reportGenerationRunId },

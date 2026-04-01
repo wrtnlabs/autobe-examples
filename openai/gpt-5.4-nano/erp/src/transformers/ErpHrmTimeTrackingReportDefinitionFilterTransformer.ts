@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingReportDefinitionFilter } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingReportDefinitionFilter";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingReportDefinitionFilterTransformer {
@@ -15,6 +17,7 @@ export namespace ErpHrmTimeTrackingReportDefinitionFilterTransformer {
     return {
       select: {
         id: true,
+        erp_hrm_time_tracking_report_definition_id: true,
         field_key: true,
         operator: true,
         value_text: true,
@@ -24,11 +27,6 @@ export namespace ErpHrmTimeTrackingReportDefinitionFilterTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        reportDefinition: {
-          select: {
-            id: true,
-          },
-        },
       },
     } satisfies Prisma.erp_hrm_time_tracking_report_definition_filtersFindManyArgs;
   }
@@ -37,11 +35,11 @@ export namespace ErpHrmTimeTrackingReportDefinitionFilterTransformer {
   ): Promise<IErpHrmTimeTrackingReportDefinitionFilter> {
     return {
       id: input.id,
-      reportDefinitionId: input.reportDefinition.id,
+      reportDefinitionId: input.erp_hrm_time_tracking_report_definition_id,
       fieldKey: input.field_key,
       operator: input.operator,
       valueText: input.value_text,
-      valueText2: input.value_text_2 ?? null,
+      valueText2: input.value_text_2,
       isEnabled: input.is_enabled,
       displayOrder: input.display_order,
       createdAt: input.created_at.toISOString(),

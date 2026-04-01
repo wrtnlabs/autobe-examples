@@ -36,10 +36,10 @@ export namespace HrmPlatformProjectSnapshotAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? undefined,
+      description: input.description ?? null,
       color_code: input.color_code,
       status: input.status,
-      budget_hours: input.budget_hours ?? undefined,
+      budget_hours: input.budget_hours ?? null,
       start_date: input.start_date?.toISOString() ?? null,
       end_date: input.end_date?.toISOString() ?? null,
       created_at: input.created_at.toISOString(),
@@ -47,6 +47,6 @@ export namespace HrmPlatformProjectSnapshotAtSummaryTransformer {
       project: await HrmPlatformProjectAtSummaryTransformer.transform(
         input.project,
       ),
-    };
+    } satisfies IHrmPlatformProjectSnapshot.ISummary;
   }
 }

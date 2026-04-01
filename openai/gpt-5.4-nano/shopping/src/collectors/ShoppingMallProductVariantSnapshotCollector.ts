@@ -11,6 +11,7 @@ export namespace ShoppingMallProductVariantSnapshotCollector {
   export async function collect(props: {
     body: IShoppingMallProductVariantSnapshot.ICreate;
   }) {
+    const now = new Date();
     return {
       id: v4(),
       code: props.body.code,
@@ -19,8 +20,8 @@ export namespace ShoppingMallProductVariantSnapshotCollector {
       currency: props.body.currency,
       is_available: props.body.is_available,
       variant_status: props.body.variant_status,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
       productVariant: {
         connect: { id: props.body.shopping_mall_product_variant_id },

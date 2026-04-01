@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IRedditLikeAttachmentAccessLog } from "../../../../../api/structures/IRedditLikeAttachmentAccessLog";
-import { AdminAuth } from "../../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { postRedditLikeMemberAttachmentsAttachmentIdAccess } from "../../../../../providers/postRedditLikeMemberAttachmentsAttachmentIdAccess";
 
 @Controller("/redditLike/member/attachments/:attachmentId/access")
@@ -45,8 +45,8 @@ export class RedditlikeMemberAttachmentsAccessController {
    */
   @TypedRoute.Post()
   public async createAccessLog(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("attachmentId")
     attachmentId: string & tags.Format<"uuid">,
     @TypedBody()

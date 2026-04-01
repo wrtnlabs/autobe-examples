@@ -21,67 +21,52 @@ export async function patchShoppingMallMemberProductImages(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const deletedAtFilter =
-    props.body.deletedAt === undefined
-      ? undefined
-      : props.body.deletedAt === null
-        ? (null as IShoppingMallProductImage.ISummary["deleted_at"] | null)
-        : (props.body.deletedAt as string & tags.Format<"date-time">);
-  const productWhere = {
-    ...(props.body.shoppingMallProductId !== undefined
-      ? { id: props.body.shoppingMallProductId }
-      : {}),
-    shopping_mall_seller_id: props.member.id,
-    ...(deletedAtFilter === undefined
-      ? {}
-      : deletedAtFilter === null
-        ? {}
-        : {}),
-  } satisfies Prisma.shopping_mall_productsWhereInput;
-  const whereImages = {
-    ...(props.body.shoppingMallProductId !== undefined
-      ? { shopping_mall_product_id: props.body.shoppingMallProductId }
-      : {}),
-    ...(props.body.hrefKeyword !== undefined && props.body.hrefKeyword !== ""
-      ? { href: { contains: props.body.hrefKeyword, mode: "insensitive" } }
-      : {}),
-    ...(props.body.altTextKeyword !== undefined &&
-    props.body.altTextKeyword !== ""
-      ? {
-          alt_text: {
-            contains: props.body.altTextKeyword,
-            mode: "insensitive",
-          },
-        }
-      : {}),
-    ...(props.body.deletedAt === undefined
-      ? {}
-      : props.body.deletedAt === null
-        ? { deleted_at: null }
-        : { deleted_at: props.body.deletedAt }),
-    product: {
+  const deletedAtFilter = props.body.deletedAt ?? null;
+  const productScope = (props.body.shoppingMallProductId ?? null) as
+    | (string & tags.Format<"uuid">)
+    | null;
+  let productWhere: Prisma.shopping_mall_productsWhereInput = {
+    deleted_at: null,
+  };
+  if (productScope) {
+    productWhere = {
+      ...productWhere,
+      id: productScope,
       shopping_mall_seller_id: props.member.id,
-      ...(props.body.shoppingMallProductId !== undefined
-        ? { id: props.body.shoppingMallProductId }
-        : {}),
-    },
-    deleted_at:
-      props.body.deletedAt === undefined
-        ? undefined
-        : props.body.deletedAt === null
-          ? null
-          : props.body.deletedAt,
+    };
+  } else {
+    productWhere = {
+      ...productWhere,
+      shopping_mall_seller_id: props.member.id,
+    };
+  }
+  if (productScope) {
+    const product = await MyGlobal.prisma.shopping_mall_products.findFirst({
+      where: productWhere,
+      select: { id: true },
+    });
+    if (product === null) {
+      throw new HttpException("Forbidden", 403);
+    }
+  }
+  const where = {
+    deleted_at: deletedAtFilter,
+    ...(productScope
+      ? {
+          shopping_mall_product_id: productScope,
+        }
+      : {
+          shopping_mall_product: {
+            // relation filter via FK through join if supported
+          },
+        }),
   } satisfies Prisma.shopping_mall_product_imagesWhereInput;
-  const orderBy =
-    props.body.sort === "displayOrderAsc"
-      ? [{ display_order: "asc" as const }, { created_at: "desc" as const }]
-      : [{ display_order: "asc" as const }, { created_at: "desc" as const }];
   const [items, total] = await MyGlobal.prisma.$transaction([
     MyGlobal.prisma.shopping_mall_product_images.findMany({
-      where: whereImages,
+      where: where as unknown as Prisma.shopping_mall_product_imagesWhereInput,
       skip,
       take: limit,
-      orderBy,
+      orderBy: { display_order: "asc" },
       select: {
         id: true,
         href: true,
@@ -93,26 +78,34 @@ export async function patchShoppingMallMemberProductImages(props: {
         deleted_at: true,
       },
     }),
-    MyGlobal.prisma.shopping_mall_product_images.count({ where: whereImages }),
+    MyGlobal.prisma.shopping_mall_product_images.count({
+      where: where as unknown as Prisma.shopping_mall_product_imagesWhereInput,
+    }),
   ]);
+  const pages = total === 0 ? 0 : Math.ceil(total / limit);
   return {
-    data: items.map((img) => ({
-      id: img.id as string & tags.Format<"uuid">,
-      href: img.href as string & tags.Format<"uri">,
-      alt_text: img.alt_text,
-      display_order: img.display_order as number & tags.Type<"int32">,
-      shopping_mall_product_id: img.shopping_mall_product_id as string &
-        tags.Format<"uuid">,
-      created_at: toISOStringSafe(img.created_at),
-      updated_at: toISOStringSafe(img.updated_at),
-      deleted_at:
-        img.deleted_at === null ? null : toISOStringSafe(img.deleted_at),
-    })),
     pagination: {
       current: page,
       limit,
       records: total,
-      pages: limit === 0 ? 0 : Math.ceil(total / limit),
+      pages,
     },
-  };
+    data: items.map((x) => ({
+      id: x.id as string & tags.Format<"uuid">,
+      href: x.href as string & tags.Format<"uri">,
+      alt_text: x.alt_text,
+      display_order: x.display_order,
+      shopping_mall_product_id: x.shopping_mall_product_id as string &
+        tags.Format<"uuid">,
+      created_at: toISOStringSafe(x.created_at) as string &
+        tags.Format<"date-time">,
+      updated_at: toISOStringSafe(x.updated_at) as string &
+        tags.Format<"date-time">,
+      deleted_at:
+        x.deleted_at === null
+          ? null
+          : (toISOStringSafe(x.deleted_at) as string &
+              tags.Format<"date-time">),
+    })),
+  } satisfies IPageIShoppingMallProductImage.ISummary;
 }

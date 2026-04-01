@@ -24,17 +24,35 @@ export async function getHrmPlatformMemberProjectsProjectId(props: {
         id: props.projectId,
         deleted_at: null,
       },
-      ...HrmPlatformProjectTransformer.select(),
+      select: {
+        organization_id: true,
+        ...HrmPlatformProjectTransformer.select().select,
+      },
     },
   );
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
-      member_id: props.member.id,
-      organization_id: project.organization.id,
+      user_id: props.member.id,
+      organization_id: project.organization_id,
       deleted_at: null,
     },
+    select: {
+      id: true,
+      role_id: true,
+    },
   });
-  if (employee === null) {
+  if (!employee) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const permission =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
+      where: {
+        hrm_platform_role_id: employee.role_id,
+        permission: "project:view",
+        deleted_at: null,
+      },
+    });
+  if (!permission) {
     throw new HttpException("Forbidden", 403);
   }
   return await HrmPlatformProjectTransformer.transform(project);

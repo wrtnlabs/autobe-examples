@@ -9,34 +9,37 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { EcommerceMallPlatformConfigurationCollector } from "../collectors/EcommerceMallPlatformConfigurationCollector";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { EcommerceMallPlatformConfigurationTransformer } from "../transformers/EcommerceMallPlatformConfigurationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postEcommerceMallSuperAdminPlatformConfigurations(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IEcommerceMallPlatformConfiguration.ICreate;
 }): Promise<IEcommerceMallPlatformConfiguration> {
-  try {
-    const input = await EcommerceMallPlatformConfigurationCollector.collect({
-      body: props.body,
+  const configKey = props.body.configuration_key;
+  const scope = props.body.scope;
+  const existing =
+    await MyGlobal.prisma.ecommerce_mall_platform_configurations.findFirst({
+      where: {
+        configuration_key: configKey,
+        scope: scope,
+        deleted_at: null,
+      },
     });
-    const created =
-      await MyGlobal.prisma.ecommerce_mall_platform_configurations.create({
-        data: input,
-        ...EcommerceMallPlatformConfigurationTransformer.select(),
-      });
-    return await EcommerceMallPlatformConfigurationTransformer.transform(
-      created,
+  if (existing !== null) {
+    throw new HttpException(
+      "Configuration key already exists for this scope",
+      409,
     );
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "P2002") {
-      throw new HttpException(
-        "Configuration with this key already exists in this scope",
-        409,
-      );
-    }
-    throw error;
   }
+  const created =
+    await MyGlobal.prisma.ecommerce_mall_platform_configurations.create({
+      data: await EcommerceMallPlatformConfigurationCollector.collect({
+        body: props.body,
+      }),
+      ...EcommerceMallPlatformConfigurationTransformer.select(),
+    });
+  return await EcommerceMallPlatformConfigurationTransformer.transform(created);
 }

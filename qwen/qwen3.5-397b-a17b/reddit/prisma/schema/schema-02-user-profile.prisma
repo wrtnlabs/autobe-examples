@@ -1,0 +1,162 @@
+/// Public user profiles with display name, bio text, and cached karma score.
+///
+/// Each member has exactly one profile containing public-facing information
+/// visible to other users. The profile is created automatically when a
+/// member account is created and is managed through the member's account
+/// settings. Karma score is cached and updated via triggers when votes are
+/// cast on the user's posts and comments. User avatars are stored in {@link
+/// reddit_community_user_avatars} and reference back to this model.
+///
+/// @namespace UserProfile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Public display name shown to other users throughout the platform.
+  display_name String
+  
+  /// Optional biographical text about the user visible on their profile page.
+  bio String?
+  
+  /// Cached karma score calculated from upvotes and downvotes on user's posts
+  /// and comments.
+  karma_score Int
+  
+  /// Timestamp when the profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete. Null means the profile is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  avatars reddit_community_user_avatars[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_community_member_id])
+  @@index([display_name])
+}
+
+/// Audit trail of karma score changes triggered by votes on user posts and
+/// comments. Each record captures a single karma change event with the
+/// change amount, new total score, source content type and ID, and voter
+/// reference. Append-only snapshot table for tracking karma history and
+/// debugging score calculations.
+///
+/// @namespace UserProfile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_karma_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User whose karma score changed. {@link reddit_community_members.id}.
+  user_id String
+  
+  /// User who cast the vote that triggered this karma change. {@link
+  /// reddit_community_members.id}.
+  voter_id String?
+  
+  /// Karma change amount from this vote event. Positive for upvotes, negative
+  /// for downvotes.
+  change_amount Int
+  
+  /// User's total karma score after this change was applied.
+  new_total Int
+  
+  /// Type of content that received the vote: POST or COMMENT.
+  source_type String
+  
+  /// ID of the post or comment that received the vote and triggered this karma
+  /// change.
+  source_id String
+  
+  /// Timestamp when this karma change occurred.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user reddit_community_members @relation("reddit_community_user_karma_histories_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  voter reddit_community_members? @relation("reddit_community_user_karma_histories_of_voter_id", fields: [voter_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([voter_id])
+  @@index([user_id, created_at])
+}
+
+/// Avatar image files uploaded by users for their profiles with storage
+/// metadata. Each record represents one avatar file linked to a user profile
+/// via {@link reddit_community_user_profiles}. The profile table references
+/// the current avatar while this table maintains upload history.
+///
+/// @namespace UserProfile
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_avatars {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// User profile's {@link reddit_community_user_profiles.id}.
+  reddit_community_user_profile_id String
+  
+  /// Original filename of the uploaded avatar image.
+  file_name String
+  
+  /// File size in bytes.
+  file_size Int
+  
+  /// MIME type of the image (e.g., image/jpeg, image/png).
+  mime_type String
+  
+  /// Storage path or URL for the avatar image file.
+  storage_path String
+  
+  /// Timestamp when the avatar was uploaded.
+  created_at DateTime
+  
+  /// Timestamp when the avatar record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the avatar was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  profile reddit_community_user_profiles @relation(fields: [reddit_community_user_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_user_profile_id, created_at], map: "reddit_community_user_avatars_reddit_community_user_pr_5c4e4092")
+}

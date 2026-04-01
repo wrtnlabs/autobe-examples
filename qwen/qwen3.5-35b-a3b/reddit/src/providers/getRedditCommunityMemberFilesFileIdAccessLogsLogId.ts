@@ -18,47 +18,29 @@ export async function getRedditCommunityMemberFilesFileIdAccessLogsLogId(props: 
   fileId: string & tags.Format<"uuid">;
   logId: string & tags.Format<"uuid">;
 }): Promise<IRedditCommunityFileAccessLog> {
+  // Verify file exists
+  await MyGlobal.prisma.reddit_community_files.findUniqueOrThrow({
+    where: { id: props.fileId },
+  });
+  // Query the access log entry, ensuring it belongs to the specified file
   const accessLog =
     await MyGlobal.prisma.reddit_community_file_access_logs.findUniqueOrThrow({
-      where: { id: props.logId },
-      select: {
-        id: true,
-        file: {
-          select: { id: true },
-        },
-        actor: {
-          select: { id: true },
-        },
-        actor_type: true,
-        access_type: true,
-        response_size: true,
-        response_time_ms: true,
-        status_code: true,
-        referrer: true,
-        user_agent: true,
-        ip: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
+      where: {
+        id: props.logId,
+        reddit_community_file_id: props.fileId,
       },
+      ...RedditCommunityFileAccessLogTransformer.select(),
     });
-  if (accessLog.file.id !== props.fileId) {
-    throw new HttpException("Access log file mismatch", 404);
-  }
-  return await RedditCommunityFileAccessLogTransformer.transform({
-    id: accessLog.id,
-    file: accessLog.file,
-    actor: accessLog.actor,
-    actor_type: accessLog.actor_type,
-    access_type: accessLog.access_type,
-    response_size: accessLog.response_size,
-    response_time_ms: accessLog.response_time_ms,
-    status_code: accessLog.status_code,
-    referrer: accessLog.referrer,
-    user_agent: accessLog.user_agent,
-    ip: accessLog.ip,
-    created_at: accessLog.created_at,
-    updated_at: accessLog.updated_at,
-    deleted_at: accessLog.deleted_at,
+  // Check moderator/admin authorization for sensitive access log information
+  const member = await MyGlobal.prisma.reddit_community_members.findFirst({
+    where: {
+      id: props.member.id,
+      deleted_at: null,
+    },
+    select: { id: true },
   });
+  if (member === null) {
+    throw new HttpException("Unauthorized", 401);
+  }
+  return await RedditCommunityFileAccessLogTransformer.transform(accessLog);
 }

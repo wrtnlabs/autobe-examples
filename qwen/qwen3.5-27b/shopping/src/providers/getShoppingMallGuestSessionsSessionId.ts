@@ -20,10 +20,7 @@ export async function getShoppingMallGuestSessionsSessionId(props: {
 }): Promise<IShoppingMallGuestSession> {
   const session =
     await MyGlobal.prisma.shopping_mall_guest_sessions.findUniqueOrThrow({
-      where: {
-        id: props.sessionId,
-        shopping_mall_guest_id: props.guest.id,
-      },
+      where: { id: props.sessionId },
       ...ShoppingMallGuestSessionTransformer.select(),
     });
   return await ShoppingMallGuestSessionTransformer.transform(session);

@@ -25,6 +25,7 @@ export namespace RedditCommunityCommentCollector {
       parent: props.body.parent_comment_id
         ? { connect: { id: props.body.parent_comment_id } }
         : undefined,
+      replies: undefined,
     } satisfies Prisma.reddit_community_commentsCreateInput;
   }
 }

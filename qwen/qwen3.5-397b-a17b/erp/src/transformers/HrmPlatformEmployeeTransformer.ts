@@ -11,7 +11,6 @@ import typia, { tags } from "typia";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformDepartmentAtSummaryTransformer } from "./HrmPlatformDepartmentAtSummaryTransformer";
 import { HrmPlatformMemberAtSummaryTransformer } from "./HrmPlatformMemberAtSummaryTransformer";
-import { HrmPlatformOrganizationAtSummaryTransformer } from "./HrmPlatformOrganizationAtSummaryTransformer";
 import { HrmPlatformRoleAtSummaryTransformer } from "./HrmPlatformRoleAtSummaryTransformer";
 
 export namespace HrmPlatformEmployeeTransformer {
@@ -22,17 +21,15 @@ export namespace HrmPlatformEmployeeTransformer {
     return {
       select: {
         id: true,
-        member: HrmPlatformMemberAtSummaryTransformer.select(),
-        organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
-        role: HrmPlatformRoleAtSummaryTransformer.select(),
-        department: HrmPlatformDepartmentAtSummaryTransformer.select(),
-        display_name: true,
         position: true,
         employment_type: true,
         status: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        user: HrmPlatformMemberAtSummaryTransformer.select(),
+        role: HrmPlatformRoleAtSummaryTransformer.select(),
+        department: HrmPlatformDepartmentAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_employeesFindManyArgs;
   }
@@ -41,27 +38,19 @@ export namespace HrmPlatformEmployeeTransformer {
   ): Promise<IHrmPlatformEmployee> {
     return {
       id: input.id,
-      member: await HrmPlatformMemberAtSummaryTransformer.transform(
-        input.member,
-      ),
-      organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(
-        input.organization,
-      ),
+      user: await HrmPlatformMemberAtSummaryTransformer.transform(input.user),
       role: await HrmPlatformRoleAtSummaryTransformer.transform(input.role),
       department: input.department
         ? await HrmPlatformDepartmentAtSummaryTransformer.transform(
             input.department,
           )
         : null,
-      display_name: input.display_name,
-      position: input.position ?? null,
-      employment_type: typia.assert<
-        "full-time" | "part-time" | "contractor" | "intern"
-      >(input.employment_type),
-      status: typia.assert<"active" | "deactivated">(input.status),
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      position: input.position,
+      employment_type: input.employment_type,
+      status: input.status,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

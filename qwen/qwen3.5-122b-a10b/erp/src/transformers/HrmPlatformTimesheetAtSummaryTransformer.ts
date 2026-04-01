@@ -37,11 +37,11 @@ export namespace HrmPlatformTimesheetAtSummaryTransformer {
               select: {
                 duration_minutes: true,
               },
-            },
+            } satisfies Prisma.hrm_platform_timelogsFindManyArgs,
           },
-        },
+        } satisfies Prisma.hrm_platform_timesheet_timelogsFindManyArgs,
       },
-    };
+    } satisfies Prisma.hrm_platform_timesheetsFindManyArgs;
   }
   export async function transform(
     input: Payload,
@@ -52,14 +52,12 @@ export namespace HrmPlatformTimesheetAtSummaryTransformer {
     );
     return {
       id: input.id,
-      weekStartDate: toISOStringSafe(input.week_start_date),
-      weekEndDate: toISOStringSafe(input.week_end_date),
+      weekStartDate: input.week_start_date.toISOString(),
+      weekEndDate: input.week_end_date.toISOString(),
       status: input.status,
       totalHours: totalMinutes / 60.0,
-      submittedAt: input.submitted_at
-        ? toISOStringSafe(input.submitted_at)
-        : null,
-      reviewedAt: input.reviewed_at ? toISOStringSafe(input.reviewed_at) : null,
+      submittedAt: input.submitted_at?.toISOString() ?? null,
+      reviewedAt: input.reviewed_at?.toISOString() ?? null,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,
       ),

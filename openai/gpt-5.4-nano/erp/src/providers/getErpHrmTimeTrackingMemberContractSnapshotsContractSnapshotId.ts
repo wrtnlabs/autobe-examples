@@ -17,18 +17,25 @@ export async function getErpHrmTimeTrackingMemberContractSnapshotsContractSnapsh
   member: MemberPayload;
   contractSnapshotId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingContractSnapshot> {
-  const organizationId = (
-    props.member as unknown as {
-      organization_id: string;
-    }
-  ).organization_id;
   const snapshot =
-    await MyGlobal.prisma.erp_hrm_time_tracking_contract_snapshots.findFirstOrThrow(
+    await MyGlobal.prisma.erp_hrm_time_tracking_contract_snapshots.findUniqueOrThrow(
       {
         where: {
           id: props.contractSnapshotId,
-          organization_id: organizationId,
-          deleted_at: null,
+          organization_id:
+            (
+              props.member as {
+                organization_id?: string;
+                organizationId?: string;
+              }
+            ).organization_id ??
+            (
+              props.member as {
+                organization_id?: string;
+                organizationId?: string;
+              }
+            ).organizationId ??
+            ("" as string & tags.Format<"uuid">),
         },
         ...ErpHrmTimeTrackingContractSnapshotTransformer.select(),
       },

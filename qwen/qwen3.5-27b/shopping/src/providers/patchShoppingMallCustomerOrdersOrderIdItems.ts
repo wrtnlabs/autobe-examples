@@ -20,29 +20,29 @@ export async function patchShoppingMallCustomerOrdersOrderIdItems(props: {
   orderId: string & tags.Format<"uuid">;
   body: IShoppingMallOrderItem.IRequest;
 }): Promise<IPageIShoppingMallOrderItem.ISummary> {
-  // Validate customer owns the order
-  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
+  // Verify order exists and belongs to customer
+  await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
     where: {
       id: props.orderId,
+      shopping_mall_customer_id: props.customer.id,
       deleted_at: null,
     },
-    select: {
-      shopping_mall_customer_id: true,
-    },
+    select: { id: true },
   });
-  if (order.shopping_mall_customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Pagination parameters
+  // Extract pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   // Build WHERE clause
   const whereInput: Prisma.shopping_mall_order_itemsWhereInput = {
-    deleted_at: null,
     shopping_mall_order_id: props.orderId,
-    ...(props.body.status && {
-      status: props.body.status,
+    deleted_at: null,
+    ...(props.body.status && { status: props.body.status }),
+    ...(props.body.productId && {
+      product_snapshot: props.body.productId,
+    }),
+    ...(props.body.variantId && {
+      variant_snapshot: props.body.variantId,
     }),
     ...(props.body.createdAtFrom && {
       created_at: {
@@ -77,13 +77,15 @@ export async function patchShoppingMallCustomerOrdersOrderIdItems(props: {
   } satisfies Prisma.shopping_mall_order_itemsWhereInput;
   // Build ORDER BY clause
   const orderByInput: Prisma.shopping_mall_order_itemsOrderByWithRelationInput =
-    props.body.sortBy && props.body.sortOrder
-      ? {
-          [props.body.sortBy]: props.body.sortOrder,
-        }
-      : ({
-          created_at: "desc",
-        } satisfies Prisma.shopping_mall_order_itemsOrderByWithRelationInput);
+    props.body.sortBy === "created_at"
+      ? { created_at: props.body.sortOrder ?? "desc" }
+      : props.body.sortBy === "updated_at"
+        ? { updated_at: props.body.sortOrder ?? "desc" }
+        : props.body.sortBy === "price"
+          ? { price: props.body.sortOrder ?? "desc" }
+          : props.body.sortBy === "quantity"
+            ? { quantity: props.body.sortOrder ?? "desc" }
+            : { created_at: "desc" };
   // Query order items
   const data = await MyGlobal.prisma.shopping_mall_order_items.findMany({
     where: whereInput,
@@ -92,7 +94,7 @@ export async function patchShoppingMallCustomerOrdersOrderIdItems(props: {
     orderBy: orderByInput,
     ...ShoppingMallOrderItemAtSummaryTransformer.select(),
   });
-  // Count total records
+  // Get total count
   const total = await MyGlobal.prisma.shopping_mall_order_items.count({
     where: whereInput,
   });
@@ -107,7 +109,7 @@ export async function patchShoppingMallCustomerOrdersOrderIdItems(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
     data: transformedData,
   };
 }

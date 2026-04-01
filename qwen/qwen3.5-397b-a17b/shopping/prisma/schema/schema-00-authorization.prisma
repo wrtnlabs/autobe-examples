@@ -1,0 +1,683 @@
+/// Registered customer accounts with email/password authentication
+/// credentials. This is the core customer identity table that authentication
+/// sessions, password resets, and email verifications reference. Profile
+/// information (display name, phone number) is stored in the separate {@link
+/// shopping_mall_customer_profiles} table. Customers can delete their
+/// accounts, which preserves orders and reviews for legal and seller record
+/// purposes while removing profile data.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's email address used for authentication and communication. Must
+  /// be unique across all customers.
+  email String
+  
+  /// Bcrypt hashed password for authentication. Never store plain text
+  /// passwords.
+  password_hash String
+  
+  /// Timestamp when the customer account was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the customer account was soft deleted. Null means account
+  /// is active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions shopping_mall_customer_sessions[]
+  passwordResets shopping_mall_customer_password_resets[]
+  emailVerifications shopping_mall_customer_email_verifications[]
+  profile shopping_mall_customer_profiles?
+  customerProfileSnapshots shopping_mall_customer_profile_snapshots[]
+  addresses shopping_mall_addresses[]
+  wishlistItems shopping_mall_wishlist_items[]
+  cart shopping_mall_carts?
+  orders shopping_mall_orders[]
+  reviews shopping_mall_reviews[]
+  cancellationRequests shopping_mall_cancellation_requests[]
+  refundRequests shopping_mall_refund_requests[]
+  adminPromotionRequests shopping_mall_admin_promotion_request_of_customers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens for customer authentication with access and refresh
+/// token support. Tracks login sessions with device information and
+/// expiration timestamps for security management.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// JWT access token for API authentication.
+  access_token String
+  
+  /// JWT refresh token for obtaining new access tokens.
+  refresh_token String
+  
+  /// IP address of the client device at login time.
+  ip String
+  
+  /// URL href of the client application at login time.
+  href String
+  
+  /// HTTP referrer header from the login request.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp for automatic invalidation.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  adminPromotionRequests shopping_mall_admin_promotion_request_of_customers[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_sessions_shopping_mall_customer_adefa402")
+}
+
+/// Password reset tokens for customer password recovery. Each token is
+/// single-use with expiration time for security. When customer requests
+/// password reset, a new token is generated and sent via email. Token
+/// becomes invalid after use or expiration.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Unique password reset token sent to customer email.
+  token String
+  
+  /// Token expiration timestamp. Token invalid after this time.
+  expires_at DateTime
+  
+  /// Timestamp when token was used for password reset. Null if unused.
+  used_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_password_resets_shopping_mall_c_08e0cfed")
+}
+
+/// Email verification tokens for customer registration confirmation. Each
+/// customer receives a unique token upon registration that must be verified
+/// before account activation. Tokens expire after a configured time period
+/// for security.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Unique verification token sent to customer's email address.
+  token String
+  
+  /// Token expiration timestamp after which verification is no longer valid.
+  expires_at DateTime
+  
+  /// Timestamp when email was successfully verified. Null until verification
+  /// completed.
+  verified_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null for active records.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_email_verifications_shopping_ma_44a754be")
+}
+
+/// Registered seller accounts with email/password authentication
+/// credentials. This table stores the core seller identity used for
+/// authentication. Shop profile information including shop name,
+/// description, and logo is stored in {@link shopping_mall_seller_profiles}.
+/// Seller approval workflow is tracked in {@link
+/// shopping_mall_seller_approval_requests}.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for seller authentication and communication.
+  email String
+  
+  /// Bcrypt hashed password for authentication.
+  password_hash String
+  
+  /// Account creation timestamp.
+  created_at DateTime
+  
+  /// Last profile update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for account deletion.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions shopping_mall_seller_sessions[]
+  passwordResets shopping_mall_seller_password_resets[]
+  emailVerifications shopping_mall_seller_email_verifications[]
+  profile shopping_mall_seller_profiles?
+  products shopping_mall_products[]
+  orderItems shopping_mall_order_items[]
+  shipments shopping_mall_shipments[]
+  cancellationRequestSnapshots shopping_mall_cancellation_request_snapshots[]
+  refundRequestResponses shopping_mall_refund_requests[]
+  approvalRequests shopping_mall_seller_approval_requests[]
+  sellerApprovalRequestSnapshots shopping_mall_seller_approval_request_snapshots[]
+  adminPromotionRequests shopping_mall_admin_promotion_request_of_sellers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens for seller authentication with access and refresh
+/// token support. Tracks login sessions for sellers with session metadata
+/// and expiration. Each session belongs to exactly one seller and is created
+/// during login, expired during logout or timeout.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's {@link shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// IP address of the client that created this session.
+  ip String
+  
+  /// URL where the login was initiated.
+  href String
+  
+  /// Referrer URL that led to the login page.
+  referrer String
+  
+  /// Timestamp when this session was created.
+  created_at DateTime
+  
+  /// Timestamp when this session expires. Sessions are invalidated after this
+  /// time for security.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  adminPromotionRequests shopping_mall_admin_promotion_request_of_sellers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_id, created_at])
+}
+
+/// Password reset tokens for seller account recovery. Generated when sellers
+/// request password reset via email, contains secure token and expiration
+/// timestamp. Tokens are single-use and automatically expire after
+/// configured duration. Managed through authentication flows, not direct
+/// CRUD operations.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Secure random token for password reset verification.
+  token String
+  
+  /// Token expiration timestamp after which reset is invalid.
+  expires_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_password_resets_shopping_mall_sel_bf4fc308")
+}
+
+/// Email verification tokens for seller registration confirmation. Stores
+/// temporary tokens sent to seller email addresses during the registration
+/// process. Each token is single-use and expires after a configured time
+/// period. Once the seller clicks the verification link, the token is marked
+/// as used and the seller account becomes active.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Unique verification token sent via email.
+  token String
+  
+  /// Token expiration timestamp.
+  expires_at DateTime
+  
+  /// Timestamp when the token was used for verification, null if not yet used.
+  used_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_seller_email_verifications_shopping_mall_870f9e98")
+}
+
+/// Administrator accounts with email/password authentication credentials.
+/// Administrators manage seller approvals, categories, products, orders, and
+/// user accounts. This table serves as the parent entity for administrator
+/// sessions and password reset tokens.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for authentication and communication.
+  email String
+  
+  /// Bcrypt hashed password for secure authentication.
+  password_hash String
+  
+  /// Timestamp when the administrator account was created.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions shopping_mall_administrator_sessions[]
+  passwordResets shopping_mall_administrator_password_resets[]
+  reviewedApprovalRequests shopping_mall_seller_approval_requests[]
+  sellerApprovalRequestSnapshots shopping_mall_seller_approval_request_snapshots[]
+  gradeChanges shopping_mall_administrator_grade_changes[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens for administrator authentication with access and
+/// refresh token support. Tracks login sessions for administrators with
+/// session metadata including IP address, request URL, and referrer.
+/// Sessions are append-only audit trails managed through authentication
+/// flows.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's {@link shopping_mall_administrators.id}.
+  administrator_id String
+  
+  /// Hashed access token for session validation and revocation.
+  access_token_hash String
+  
+  /// Hashed refresh token for token rotation and session extension.
+  refresh_token_hash String
+  
+  /// IP address of the client that created this session.
+  ip String
+  
+  /// URL path where the login was initiated.
+  href String
+  
+  /// Referrer URL that led to the login page.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and becomes invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "shopping_mall_administrator_sessions_administrator_id__168720aa")
+}
+
+/// Password reset tokens for administrator accounts. Generated when
+/// administrators request password recovery, sent via email, and validated
+/// during password reset. Tokens expire after a short time window for
+/// security. Each token is unique and can only be used once.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Administrator's {@link shopping_mall_administrators.id}.
+  administrator_id String
+  
+  /// Unique password reset token sent to administrator's email.
+  token String
+  
+  /// Token expiration timestamp. Token is invalid after this time.
+  expires_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means active record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator shopping_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([administrator_id, created_at], map: "shopping_mall_administrator_password_resets_administra_4ca2923b")
+}
+
+/// Super administrator accounts with elevated system privileges for managing
+/// administrator promotions, demotions, and full system oversight.
+///
+/// Super administrators can promote regular administrators to super
+/// administrator grade and demote other super administrators to regular
+/// administrator grade. They cannot demote themselves. This table stores
+/// authentication credentials and is referenced by
+/// administrator_grade_changes for audit trail.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_super_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address for authentication and login.
+  email String
+  
+  /// Bcrypt hashed password for authentication.
+  password_hash String
+  
+  /// Account creation timestamp.
+  created_at DateTime
+  
+  /// Last profile update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for account deactivation.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions shopping_mall_super_administrator_sessions[]
+  passwordResets shopping_mall_super_administrator_password_resets[]
+  adminPromotionRequestSnapshots shopping_mall_admin_promotion_request_snapshots[]
+  gradeChangesPerformeds shopping_mall_administrator_grade_changes[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens for super administrator authentication with access and
+/// refresh token support. Tracks login sessions for security audit and
+/// session management.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_super_administrator_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Super Administrator's {@link shopping_mall_super_administrators.id}.
+  super_administrator_id String
+  
+  /// JWT access token for API authentication.
+  access_token String
+  
+  /// JWT refresh token for obtaining new access tokens.
+  refresh_token String
+  
+  /// IP address of the client that created this session.
+  ip String
+  
+  /// URL where the login was initiated.
+  href String
+  
+  /// Referrer URL from the login request.
+  referrer String
+  
+  /// Timestamp when this session was created.
+  created_at DateTime
+  
+  /// Timestamp when this session expires and becomes invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  superAdministrator shopping_mall_super_administrators @relation(fields: [super_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([super_administrator_id, created_at], map: "shopping_mall_super_administrator_sessions_super_admin_dd7e15e5")
+}
+
+/// Password reset tokens with expiration for super administrator password
+/// recovery. Tokens are single-use and expire after a configured time window
+/// for security.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_super_administrator_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Super Administrator's {@link shopping_mall_super_administrators.id}.
+  shopping_mall_super_administrator_id String
+  
+  /// Unique password reset token sent to the super administrator's email.
+  token String
+  
+  /// Token expiration timestamp after which the reset link becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when the password reset request was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  superAdministrator shopping_mall_super_administrators @relation(fields: [shopping_mall_super_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_super_administrator_id, created_at], map: "shopping_mall_super_administrator_password_resets_shop_4ef2c0a8")
+}

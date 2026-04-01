@@ -19,7 +19,8 @@ export namespace HrmPlatformTaskHistoryAtSummaryTransformer {
         old_status: true,
         new_status: true,
         created_at: true,
-        user: HrmPlatformMemberAtSummaryTransformer.select(),
+        task: { select: { id: true } },
+        member: HrmPlatformMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_task_historiesFindManyArgs;
   }
@@ -28,17 +29,12 @@ export namespace HrmPlatformTaskHistoryAtSummaryTransformer {
   ): Promise<IHrmPlatformTaskHistory.ISummary> {
     return {
       id: input.id,
-      old_status:
-        input.old_status !== null
-          ? typia.assert<"completed" | "open" | "in-progress" | "closed">(
-              input.old_status,
-            )
-          : null,
-      new_status: typia.assert<"completed" | "open" | "in-progress" | "closed">(
-        input.new_status,
+      old_status: input.old_status,
+      new_status: input.new_status,
+      created_at: input.created_at.toISOString(),
+      actor: await HrmPlatformMemberAtSummaryTransformer.transform(
+        input.member,
       ),
-      created_at: toISOStringSafe(input.created_at),
-      user: await HrmPlatformMemberAtSummaryTransformer.transform(input.user),
     };
   }
 }

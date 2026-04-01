@@ -18,16 +18,19 @@ export async function patchEcommerceMallCategories(props: {
   body: IEcommerceMallCategory.IRequest;
 }): Promise<IPageIEcommerceMallCategory.ISummary> {
   const page = props.body.page ?? 1;
-  const pageSize = props.body.page_size ?? 100;
-  const limit = Math.min(Math.max(pageSize, 1), 100);
+  const limit = Math.min(Math.max(props.body.page_size ?? 100, 1), 100);
   const skip = (page - 1) * limit;
-  // Build where clause for filtering
-  const whereInput: Prisma.ecommerce_mall_categoriesWhereInput = {
-    deleted_at: null, // Always exclude soft-deleted categories
+  // Valid sort fields whitelist
+  const validSortFields: Array<
+    keyof Prisma.ecommerce_mall_categoriesOrderByWithRelationInput
+  > = ["display_order", "name", "created_at"];
+  // Build WHERE conditions
+  const whereConditions: Prisma.ecommerce_mall_categoriesWhereInput = {
+    deleted_at: null,
   };
-  // Apply search filters
+  // Apply search filter
   if (props.body.search_term) {
-    whereInput.OR = [
+    whereConditions.OR = [
       {
         name: {
           contains: props.body.search_term,
@@ -35,62 +38,57 @@ export async function patchEcommerceMallCategories(props: {
         },
       },
       {
-        slug: {
-          contains: props.body.search_term,
-          mode: "insensitive",
-        },
+        slug: props.body.search_term,
       },
-    ];
+    ] as Prisma.ecommerce_mall_categoriesWhereInput[];
   }
-  // Apply parent_id filter
+  // Apply parent_id filter (exclude if explicitly null/undefined)
   if (props.body.parent_id !== undefined) {
-    whereInput.parent_id = props.body.parent_id;
+    if (props.body.parent_id === null) {
+      whereConditions.parent_id = null;
+    } else {
+      whereConditions.parent_id = props.body.parent_id;
+    }
   }
   // Apply is_active filter
   if (props.body.is_active !== undefined) {
-    whereInput.is_active = props.body.is_active;
+    whereConditions.is_active = props.body.is_active;
   }
-  // Build orderBy clause
-  const orderByInput: Prisma.ecommerce_mall_categoriesOrderByWithRelationInput[] =
-    [
-      {
-        display_order: "asc",
-      },
-    ];
-  if (props.body.sort_by === "name") {
-    orderByInput[0] = {
-      name: props.body.sort_order === "desc" ? "desc" : "asc",
-    };
-  } else if (props.body.sort_by === "created_at") {
-    orderByInput[0] = {
-      created_at: props.body.sort_order === "desc" ? "desc" : "asc",
-    };
+  // Build ORDER BY with validation
+  const orderByKey = props.body.sort_by ?? "display_order";
+  const orderByDirection = props.body.sort_order === "desc" ? "desc" : "asc";
+  if (!validSortFields.includes(orderByKey as never)) {
+    throw new HttpException("Invalid sort field", 400);
   }
-  // Execute query
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.ecommerce_mall_categories.findMany({
-      where: whereInput,
-      orderBy: orderByInput,
-      skip,
-      take: limit,
-      ...EcommerceMallCategoryAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.ecommerce_mall_categories.count({ where: whereInput }),
-  ]);
+  const orderByInput = {
+    [orderByKey]: orderByDirection,
+  } satisfies Prisma.ecommerce_mall_categoriesOrderByWithRelationInput as
+    | Prisma.ecommerce_mall_categoriesOrderByWithRelationInput
+    | Prisma.ecommerce_mall_categoriesOrderByWithRelationInput[];
+  // Fetch paginated data
+  const data = await MyGlobal.prisma.ecommerce_mall_categories.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy: Array.isArray(orderByInput) ? orderByInput : [orderByInput],
+    ...EcommerceMallCategoryAtSummaryTransformer.select(),
+  });
+  // Fetch total count
+  const total = await MyGlobal.prisma.ecommerce_mall_categories.count({
+    where: whereConditions,
+  });
   // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallCategoryAtSummaryTransformer.transform,
-  );
-  // Calculate pagination metadata
-  const pages = total === 0 ? 0 : Math.ceil(total / limit);
+  const transformedData =
+    await EcommerceMallCategoryAtSummaryTransformer.transformAll(data);
+  // Build pagination metadata
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: pages,
-    } satisfies IPage.IPagination,
+      pages: totalPages,
+    },
     data: transformedData,
-  } satisfies IPageIEcommerceMallCategory.ISummary;
+  };
 }

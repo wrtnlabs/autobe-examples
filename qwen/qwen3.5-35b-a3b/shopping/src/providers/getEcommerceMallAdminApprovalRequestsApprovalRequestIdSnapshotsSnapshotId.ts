@@ -27,9 +27,8 @@ export async function getEcommerceMallAdminApprovalRequestsApprovalRequestIdSnap
         ...EcommerceMallSellerApprovalSnapshotTransformer.select(),
       },
     );
-  // Validate that the approval request ID in path matches the snapshot's approval request
   if (snapshot.approvalRequest.id !== props.approvalRequestId) {
-    throw new HttpException("Snapshot not found", 404);
+    throw new HttpException("Not Found", 404);
   }
   return await EcommerceMallSellerApprovalSnapshotTransformer.transform(
     snapshot,

@@ -25,70 +25,26 @@ export async function postHrmPlatformMemberProjectsProjectIdTasks(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmPlatformTask.ICreate;
 }): Promise<IHrmPlatformTask> {
-  // 1. Verify project exists and is not soft-deleted
-  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
-    {
-      where: { id: props.projectId },
-      select: {
-        id: true,
-        hrm_platform_organization_id: true,
-        deleted_at: true,
-      },
-    },
-  );
-  if (project.deleted_at !== null) {
+  // 1. Validate project exists and is not soft-deleted
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
+    where: { id: props.projectId },
+    select: { id: true, deleted_at: true },
+  });
+  if (project === null || project.deleted_at !== null) {
     throw new HttpException("Project not found", 404);
   }
-  // 2. Authorization check - verify member is project lead or has project:manage permission
+  // 2. Authorization check: project lead role
   const projectMember =
     await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
         hrm_platform_project_id: props.projectId,
-        employee: {
-          hrm_platform_user_id: props.member.id,
-          deleted_at: null,
-        },
+        hrm_platform_employee_id: props.member.id,
         deleted_at: null,
       },
       select: { role: true },
     });
-  if (projectMember === null) {
+  if (projectMember === null || projectMember.role !== "project-lead") {
     throw new HttpException("Forbidden", 403);
-  }
-  if (projectMember.role !== "project-lead") {
-    // Check for project:manage permission at organization level
-    const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-      where: {
-        hrm_platform_user_id: props.member.id,
-        hrm_platform_organization_id: project.hrm_platform_organization_id,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
-    if (employee === null) {
-      throw new HttpException("Forbidden", 403);
-    }
-    const hasPermission =
-      await MyGlobal.prisma.hrm_platform_employees.findFirst({
-        where: {
-          id: employee.id,
-          deleted_at: null,
-          role: {
-            hrm_platform_organization_id: project.hrm_platform_organization_id,
-            deleted_at: null,
-            permissions: {
-              some: {
-                permission: {
-                  code: "project:manage",
-                },
-              },
-            },
-          },
-        },
-      });
-    if (hasPermission === null) {
-      throw new HttpException("Forbidden", 403);
-    }
   }
   // 3. Validate assigned employee if provided
   if (
@@ -103,10 +59,10 @@ export async function postHrmPlatformMemberProjectsProjectIdTasks(props: {
           projectMemberships: {
             some: {
               hrm_platform_project_id: props.projectId,
-              deleted_at: null,
             },
           },
         },
+        select: { id: true },
       });
     if (assignedEmployee === null) {
       throw new HttpException(
@@ -115,7 +71,7 @@ export async function postHrmPlatformMemberProjectsProjectIdTasks(props: {
       );
     }
   }
-  // 4. Validate parent task if provided (one-level nesting)
+  // 4. Validate parent task if provided
   if (
     props.body.parent_task_id !== undefined &&
     props.body.parent_task_id !== null
@@ -125,31 +81,40 @@ export async function postHrmPlatformMemberProjectsProjectIdTasks(props: {
         id: props.body.parent_task_id,
         deleted_at: null,
         hrm_platform_projects_id: props.projectId,
+        hrm_platform_tasks_id: null,
       },
-      select: { id: true, hrm_platform_tasks_id: true },
+      select: { id: true },
     });
     if (parentTask === null) {
       throw new HttpException(
-        "Parent task not found or does not belong to this project",
+        "Parent task must exist in the same project and cannot be a child task",
         400,
-      );
-    }
-    // Enforce one-level nesting - parent cannot be a child task itself
-    if (parentTask.hrm_platform_tasks_id !== null) {
-      throw new HttpException(
-        "Parent task cannot be a subtask (one-level nesting only)",
-        409,
       );
     }
   }
   // 5. Create task using collector
-  const created = await MyGlobal.prisma.hrm_platform_tasks.create({
+  const task = await MyGlobal.prisma.hrm_platform_tasks.create({
     data: await HrmPlatformTaskCollector.collect({
       body: props.body,
-      hrmPlatformProjects: { id: props.projectId },
+      hrmPlatformProjects: {
+        id: props.projectId,
+      } satisfies IEntity,
     }),
     ...HrmPlatformTaskTransformer.select(),
   });
-  // 6. Return transformed task
-  return await HrmPlatformTaskTransformer.transform(created);
+  // 6. Create task history record for initial status change
+  await MyGlobal.prisma.hrm_platform_task_histories.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      hrm_platform_task_id: task.id,
+      hrm_platform_member_id: props.member.id,
+      old_status: "",
+      new_status: "open",
+      created_at: new Date(),
+      changed_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+  // 7. Return transformed task
+  return await HrmPlatformTaskTransformer.transform(task);
 }

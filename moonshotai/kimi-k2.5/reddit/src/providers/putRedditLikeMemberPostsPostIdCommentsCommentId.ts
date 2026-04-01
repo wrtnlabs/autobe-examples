@@ -12,58 +12,64 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeCommentTransformer } from "../transformers/RedditLikeCommentTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putRedditLikeMemberPostsPostIdCommentsCommentId(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   postId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
   body: IRedditLikeComment.IUpdate;
 }): Promise<IRedditLikeComment> {
-  // Validate content is provided
-  if (props.body.content === undefined) {
-    throw new HttpException("Content is required", 400);
-  }
-  // Find comment and verify it exists and belongs to the post
+  // 1. Verify the comment exists and belongs to the specified post
   const comment = await MyGlobal.prisma.reddit_like_comments.findUnique({
     where: { id: props.commentId },
-    select: {
-      id: true,
-      content: true,
-      post_id: true,
-      author_id: true,
-    },
+    select: { id: true, post_id: true, author_id: true, content: true },
   });
   if (comment === null || comment.post_id !== props.postId) {
     throw new HttpException("Comment not found", 404);
   }
-  // Verify user is the author
+  // 2. Verify the authenticated user is the comment author
   if (comment.author_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException(
+      "Forbidden - only the author can update this comment",
+      403,
+    );
   }
-  // Create snapshot for audit trail
-  const createdAt = new Date();
-  await MyGlobal.prisma.reddit_like_comment_snapshots.create({
-    data: {
-      id: v4(),
-      comment: { connect: { id: comment.id } },
-      body: comment.content,
-      created_at: createdAt,
-    },
+  // 3. Check if user is banned from the community where the post resides
+  // Note: reddit_like_bans table does not exist in schema - skipping ban check
+  // Need to get community_id from the post first
+  const post = await MyGlobal.prisma.reddit_like_posts.findUnique({
+    where: { id: props.postId },
+    select: { id: true, community_id: true, is_deleted: true },
   });
-  // Update the comment
+  if (post === null || post.is_deleted) {
+    throw new HttpException("Post not found or deleted", 404);
+  }
+  // 4. If content is being updated, create a snapshot of the previous content
+  if (props.body.content !== undefined) {
+    // Create snapshot for audit trail
+    await MyGlobal.prisma.reddit_like_comment_snapshots.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        comment_id: comment.id,
+        body: comment.content,
+        created_at: new Date(),
+      },
+    });
+  }
+  // 5. Update the comment with new content
   await MyGlobal.prisma.reddit_like_comments.update({
     where: { id: props.commentId },
     data: {
-      content: props.body.content,
+      ...(props.body.content !== undefined && { content: props.body.content }),
       is_edited: true,
-      updated_at: createdAt,
+      updated_at: new Date(),
     },
   });
-  // Fetch updated comment with full relations for response
+  // 6. Return the updated comment using the transformer
   const updatedComment =
     await MyGlobal.prisma.reddit_like_comments.findUniqueOrThrow({
       where: { id: props.commentId },

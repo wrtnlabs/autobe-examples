@@ -21,52 +21,40 @@ export async function patchEcommerceMallAdminShipments(props: {
   admin: AdminPayload;
   body: IEcommerceMallShipment.IRequest;
 }): Promise<IPageIEcommerceMallShipment.ISummary> {
-  // Pagination defaults
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause for filtering
   const whereInput: Prisma.ecommerce_mall_shipmentsWhereInput = {
     deleted_at: null,
-    ...(props.body.status && { status: props.body.status }),
-    ...(props.body.carrier_name && {
-      carrier_name: {
-        contains: props.body.carrier_name,
-        mode: "insensitive",
-      },
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.carrier_name !== undefined && {
+      carrier_name: { contains: props.body.carrier_name, mode: "insensitive" },
     }),
-    ...(props.body.created_at && {
+    ...(props.body.created_at !== undefined && {
       created_at: { gte: new Date(props.body.created_at) },
     }),
-    ...(props.body.shipped_at && {
+    ...(props.body.shipped_at !== undefined && {
       shipped_at: { gte: new Date(props.body.shipped_at) },
     }),
-    ...(props.body.delivered_at && {
+    ...(props.body.delivered_at !== undefined && {
       delivered_at: { gte: new Date(props.body.delivered_at) },
     }),
-    ...(props.body.estimated_delivery_at && {
+    ...(props.body.estimated_delivery_at !== undefined && {
       estimated_delivery_at: {
         gte: new Date(props.body.estimated_delivery_at),
       },
     }),
-  } satisfies Prisma.ecommerce_mall_shipmentsWhereInput;
-  // Build orderBy clause
-  const orderByInput: Prisma.ecommerce_mall_shipmentsOrderByWithRelationInput =
-    (() => {
-      switch (props.body.sort) {
-        case "shipped_at":
-          return { shipped_at: "desc" as const };
-        case "delivered_at":
-          return { delivered_at: "desc" as const };
-        case "status":
-          return { status: "asc" as const };
-        case "carrier_name":
-          return { carrier_name: "asc" as const };
-        default:
-          return { created_at: "desc" as const };
-      }
-    })();
-  // Fetch shipments and count
+  };
+  const orderByInput =
+    props.body.sort === "shipped_at"
+      ? { shipped_at: "desc" as const }
+      : props.body.sort === "delivered_at"
+        ? { delivered_at: "desc" as const }
+        : props.body.sort === "status"
+          ? { status: "asc" as const }
+          : props.body.sort === "carrier_name"
+            ? { carrier_name: "asc" as const }
+            : { created_at: "desc" as const };
   const [data, total] = await Promise.all([
     MyGlobal.prisma.ecommerce_mall_shipments.findMany({
       where: whereInput,
@@ -75,27 +63,18 @@ export async function patchEcommerceMallAdminShipments(props: {
       orderBy: orderByInput,
       ...EcommerceMallShipmentAtSummaryTransformer.select(),
     }),
-    MyGlobal.prisma.ecommerce_mall_shipments.count({
-      where: whereInput,
-    }),
+    MyGlobal.prisma.ecommerce_mall_shipments.count({ where: whereInput }),
   ]);
-  // Handle edge case where total is 0
-  const pages =
-    total === 0
-      ? 0
-      : (Math.ceil(total / limit) as number &
-          tags.Type<"int32"> &
-          tags.Minimum<0>);
   return {
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       data,
       EcommerceMallShipmentAtSummaryTransformer.transform,
     ),
-    pagination: {
-      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
-      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
-      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
-      pages,
-    } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIEcommerceMallShipment.ISummary;
 }

@@ -22,11 +22,11 @@ export async function getRedditLikePostsPostId(props: {
   postId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikePost> {
   const post = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
-    where: {
-      id: props.postId,
-      is_deleted: false,
-    },
+    where: { id: props.postId },
     ...RedditLikePostTransformer.select(),
   });
+  if (post.is_deleted) {
+    throw new HttpException("Post not found", 404);
+  }
   return await RedditLikePostTransformer.transform(post);
 }

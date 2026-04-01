@@ -16,46 +16,46 @@ export async function postShoppingMallAuthGuestJoin(props: {
   ip: string;
   body: IShoppingMallGuest.IJoin;
 }): Promise<IShoppingMallGuest.IAuthorized> {
+  const refreshableUntilExpiresInHours = 24 * 7;
   return await MyGlobal.prisma.$transaction(async (tx) => {
-    const now = toISOStringSafe(new Date());
     const guest = await tx.shopping_mall_guests.upsert({
       where: { fingerprint: props.body.fingerprint },
-      update: {
-        updated_at: toISOStringSafe(new Date()),
-      },
       create: {
         id: v4(),
         fingerprint: props.body.fingerprint,
-        created_at: toISOStringSafe(new Date()),
-        updated_at: toISOStringSafe(new Date()),
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
       },
-    });
-    const accessExpires = toISOStringSafe(
-      new Date(Date.now() + 60 * 60 * 1000),
-    );
-    const refreshExpires = toISOStringSafe(
-      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    );
-    const session = await tx.shopping_mall_guest_sessions.create({
-      data: {
-        id: v4(),
-        shopping_mall_guest_id: guest.id,
-        ip: props.body.ip ?? props.ip,
-        href: props.body.href,
-        referrer: props.body.referrer,
-        created_at: now,
-        updated_at: now,
-        expired_at: accessExpires,
+      update: {
+        updated_at: new Date(),
         deleted_at: null,
       },
     });
-    const jwtCreatedAt = now;
+    const session = await tx.shopping_mall_guest_sessions.create({
+      data: {
+        shopping_mall_guest_id: guest.id,
+        ip: props.body.ip === null ? props.ip : props.body.ip,
+        href: props.body.href,
+        referrer: props.body.referrer,
+        id: v4(),
+        created_at: new Date(),
+        updated_at: new Date(),
+        expired_at: new Date(Date.now() + 60 * 60 * 1000),
+        deleted_at: null,
+      },
+    });
+    const accessJwtExpires = new Date(Date.now() + 60 * 60 * 1000);
+    const refreshableUntil = new Date(
+      Date.now() + refreshableUntilExpiresInHours * 60 * 60 * 1000,
+    );
+    const createdAtIso = toISOStringSafe(session.created_at);
     const access = jwt.sign(
       {
         type: "guest",
         id: guest.id,
         session_id: session.id,
-        created_at: jwtCreatedAt,
+        created_at: createdAtIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -66,17 +66,17 @@ export async function postShoppingMallAuthGuestJoin(props: {
         id: guest.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: jwtCreatedAt,
+        created_at: createdAtIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     );
-    const token: IAuthorizationToken = {
+    const token = {
       access,
       refresh,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
-    };
+      expired_at: toISOStringSafe(accessJwtExpires),
+      refreshable_until: toISOStringSafe(refreshableUntil),
+    } satisfies IAuthorizationToken;
     return {
       id: session.id,
       ip: session.ip,
@@ -85,9 +85,7 @@ export async function postShoppingMallAuthGuestJoin(props: {
       created_at: toISOStringSafe(session.created_at),
       updated_at: toISOStringSafe(session.updated_at),
       expired_at: toISOStringSafe(session.expired_at),
-      deleted_at: session.deleted_at
-        ? toISOStringSafe(session.deleted_at)
-        : null,
+      deleted_at: null,
       token,
     } satisfies IShoppingMallGuest.IAuthorized;
   });

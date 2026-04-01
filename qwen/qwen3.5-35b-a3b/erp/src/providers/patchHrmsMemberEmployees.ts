@@ -19,110 +19,146 @@ export async function patchHrmsMemberEmployees(props: {
   body: IHrmsEmployee.IRequest;
 }): Promise<IPageIHrmsEmployee.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? props.body.page_size ?? 20;
-  const safeLimit = Math.min(Math.max(limit, 1), 100);
-  const skip = (page - 1) * safeLimit;
-  const whereClause: Prisma.hrms_employeesWhereInput = {
+  const limit = props.body.page_size ?? props.body.limit ?? 20;
+  const normalizedLimit = Math.min(Math.max(limit, 1), 100);
+  const skip = (page - 1) * normalizedLimit;
+  const whereInput: Prisma.hrms_employeesWhereInput = {
     deleted_at: null,
+    ...(props.body.department_id && {
+      department_id: props.body.department_id,
+    }),
+    ...(props.body.status && {
+      status: props.body.status,
+    }),
+    ...(props.body.search && {
+      OR: [
+        { display_name: { contains: props.body.search, mode: "insensitive" } },
+        { position: { contains: props.body.search, mode: "insensitive" } },
+      ],
+    }),
   };
-  if (props.body.department_id !== undefined) {
-    whereClause.department_id = props.body.department_id;
-  } else {
-    whereClause.department_id = { not: null };
-  }
-  if (props.body.status !== undefined) {
-    whereClause.status = props.body.status;
-  }
-  if (props.body.search !== undefined) {
-    whereClause.OR = [
-      { display_name: { contains: props.body.search, mode: "insensitive" } },
-      { position: { contains: props.body.search, mode: "insensitive" } },
-    ];
-  }
-  const total = await MyGlobal.prisma.hrms_employees.count({
-    where: whereClause,
-  });
-  const order = props.body.order ?? "desc";
-  const orderBy: Prisma.hrms_employeesOrderByWithRelationInput[] = [];
-  if (props.body.sort === "total_hours") {
-    orderBy.push({
-      display_name: order === "asc" ? "asc" : "desc",
-    });
-  } else if (props.body.sort === "employee_name") {
-    orderBy.push({
-      display_name: order === "asc" ? "asc" : "desc",
-    });
-  } else if (props.body.sort === "status") {
-    orderBy.push({
-      status: order === "asc" ? "asc" : "desc",
-    });
-  } else if (props.body.sort === "last_activity_date") {
-    orderBy.push({
-      display_name: order === "asc" ? "asc" : "desc",
-    });
-  } else {
-    orderBy.push({
-      display_name: "asc",
-    });
-  }
+  const orderByInput = (() => {
+    const sortField = props.body.sort ?? "employee_name";
+    const sortOrder =
+      props.body.order ??
+      (sortField === "total_hours" || sortField === "last_activity_date"
+        ? "desc"
+        : "asc");
+    switch (sortField) {
+      case "total_hours":
+        return { created_at: sortOrder as "asc" | "desc" };
+      case "employee_name":
+        return { display_name: sortOrder as "asc" | "desc" };
+      case "status":
+        return { status: sortOrder as "asc" | "desc" };
+      case "last_activity_date":
+        return { created_at: sortOrder as "asc" | "desc" };
+      default:
+        return { display_name: "asc" as const };
+    }
+  })();
   const employees = await MyGlobal.prisma.hrms_employees.findMany({
-    where: whereClause,
+    where: whereInput,
     skip,
-    take: safeLimit,
-    orderBy,
-    include: {
-      timelogs: {
-        select: {
-          id: true,
-          duration_minutes: true,
-          created_at: true,
-        },
-      },
-      timesheets: {
-        select: {
-          id: true,
-          status: true,
-        },
-      },
+    take: normalizedLimit,
+    orderBy: orderByInput,
+    select: {
+      id: true,
+      display_name: true,
+      position: true,
+      department_id: true,
+      status: true,
+      created_at: true,
+      updated_at: true,
     },
   });
+  const total = await MyGlobal.prisma.hrms_employees.count({
+    where: whereInput,
+  });
   const data = await ArrayUtil.asyncMap(employees, async (employee) => {
-    const timesheetCounts = employee.timesheets.reduce(
-      (acc, ts) => {
-        if (ts.status === "submitted") {
-          acc.submitted++;
-        } else if (ts.status === "approved") {
-          acc.approved++;
-        } else if (ts.status === "draft") {
-          acc.pending++;
-        }
-        return acc;
+    const timelogAggregation = await MyGlobal.prisma.hrms_timelogs.aggregate({
+      where: {
+        employee_id: employee.id,
+        deleted_at: null,
       },
-      { submitted: 0, approved: 0, pending: 0 },
-    );
+      _sum: { duration_minutes: true },
+      _count: { id: true },
+    });
+    const startDate = (() => {
+      const now = new Date();
+      const dayOfWeek = now.getUTCDay();
+      const monday = new Date(now);
+      monday.setUTCDate(
+        now.getUTCDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1),
+      );
+      monday.setUTCHours(0, 0, 0, 0);
+      return monday;
+    })();
+    const endDate = new Date(startDate);
+    endDate.setUTCDate(startDate.getUTCDate() + 6);
+    endDate.setUTCHours(23, 59, 59, 999);
+    const [timesheetsSubmitted, timesheetsApproved, timesheetsDraft] =
+      await Promise.all([
+        MyGlobal.prisma.hrms_timesheets.count({
+          where: {
+            employee: {
+              id: employee.id,
+            },
+            deleted_at: null,
+            submitted_at: {
+              gte: startDate,
+              lte: endDate,
+            },
+            status: "submitted",
+          },
+        }),
+        MyGlobal.prisma.hrms_timesheets.count({
+          where: {
+            employee: {
+              id: employee.id,
+            },
+            deleted_at: null,
+            submitted_at: {
+              gte: startDate,
+              lte: endDate,
+            },
+            status: "approved",
+          },
+        }),
+        MyGlobal.prisma.hrms_timesheets.count({
+          where: {
+            employee: {
+              id: employee.id,
+            },
+            deleted_at: null,
+            submitted_at: {
+              gte: startDate,
+              lte: endDate,
+            },
+            status: "draft",
+          },
+        }),
+      ]);
     return {
       id: employee.id,
       display_name: employee.display_name,
-      position: employee.position ?? "",
-      department_id: employee.department_id ?? "",
-      total_hours_logged: employee.timelogs.reduce(
-        (sum, tl) => sum + tl.duration_minutes,
-        0,
-      ),
-      timelog_count: employee.timelogs.length,
-      timesheets_submitted: timesheetCounts.submitted,
-      timesheets_approved: timesheetCounts.approved,
-      timesheets_pending: timesheetCounts.pending,
+      position: employee.position as string,
+      department_id: employee.department_id as string,
+      total_hours_logged: timelogAggregation._sum.duration_minutes ?? 0,
+      timelog_count: timelogAggregation._count.id ?? 0,
+      timesheets_submitted: timesheetsSubmitted,
+      timesheets_approved: timesheetsApproved,
+      timesheets_pending: timesheetsDraft,
       status: employee.status,
-    };
+    } satisfies IHrmsEmployee.ISummary;
   });
   return {
     pagination: {
       current: page,
-      limit: safeLimit,
+      limit: normalizedLimit,
       records: total,
-      pages: Math.ceil(total / safeLimit),
-    },
+      pages: Math.ceil(total / normalizedLimit),
+    } satisfies IPage.IPagination,
     data,
-  };
+  } satisfies IPageIHrmsEmployee.ISummary;
 }

@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAddressSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAddressSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -40,10 +41,10 @@ export namespace ShoppingMallAddressSnapshotTransformer {
       regionLine1: input.region_line1,
       regionLine2: input.region_line2,
       streetAddressLine1: input.street_address_line1,
-      streetAddressLine2: input.street_address_line2 ?? null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      streetAddressLine2: input.street_address_line2,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

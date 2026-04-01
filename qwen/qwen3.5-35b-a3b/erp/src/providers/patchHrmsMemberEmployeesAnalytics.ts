@@ -19,170 +19,162 @@ export async function patchHrmsMemberEmployeesAnalytics(props: {
   body: IHrmsEmployee.IRequest;
 }): Promise<IPageIHrmsEmployee.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.page_size ?? props.body.limit ?? 20;
+  const limit = (props.body.limit ?? props.body.page_size ?? 20) as number;
   const skip = (page - 1) * limit;
-  const memberMembership =
-    await MyGlobal.prisma.hrms_organization_members.findFirst({
+  const member = await MyGlobal.prisma.hrms_members.findUniqueOrThrow({
+    where: { id: props.member.id, deleted_at: null },
+  });
+  const orgMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirstOrThrow({
       where: {
         hrms_member_id: props.member.id,
         deleted_at: null,
       },
-      select: {
-        id: true,
-        hrms_organization_id: true,
-      },
     });
-  if (memberMembership === null) {
-    throw new HttpException("No organization membership found", 404);
-  }
-  const now = new Date();
-  const currentDay = now.getDay();
-  const daysSinceMonday = currentDay === 0 ? 6 : currentDay - 1;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - daysSinceMonday);
-  monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
+  const organizationId = orgMember.hrms_organization_id;
   const startDate = props.body.start_date
     ? new Date(props.body.start_date)
-    : monday;
-  const endDate = props.body.end_date ? new Date(props.body.end_date) : sunday;
-  if (props.body.department_id) {
-    const department = await MyGlobal.prisma.hrms_departments.findFirst({
-      where: {
-        id: props.body.department_id,
-        organization_id: memberMembership.hrms_organization_id,
-        deleted_at: null,
-      },
-    });
-    if (department === null) {
-      throw new HttpException("Invalid department_id", 400);
-    }
-  }
-  const employeeWhere: Prisma.hrms_employeesWhereInput = {
-    organization_member_id: memberMembership.id,
+    : (() => {
+        const now = new Date();
+        const day = now.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        const monday = new Date(now);
+        monday.setDate(monday.getDate() + diff);
+        monday.setHours(0, 0, 0, 0);
+        return monday;
+      })();
+  const endDate = props.body.end_date
+    ? new Date(props.body.end_date)
+    : (() => {
+        const now = new Date();
+        const day = now.getDay();
+        const diff = day === 0 ? 0 : 6 - day;
+        const sunday = new Date(now);
+        sunday.setDate(sunday.getDate() + diff);
+        sunday.setHours(23, 59, 59, 999);
+        return sunday;
+      })();
+  const whereInput: Prisma.hrms_employeesWhereInput = {
+    organizationMember: {
+      hrms_organization_id: organizationId,
+      deleted_at: null,
+    },
     deleted_at: null,
     ...(props.body.status && { status: props.body.status }),
     ...(props.body.department_id && {
       department_id: props.body.department_id,
     }),
-    ...(props.body.search && {
-      OR: [
-        { display_name: { contains: props.body.search, mode: "insensitive" } },
-        { position: { contains: props.body.search, mode: "insensitive" } },
-      ],
-    }),
-  };
-  const total = await MyGlobal.prisma.hrms_employees.count({
-    where: employeeWhere,
-  });
-  const orderBy: Prisma.hrms_employeesOrderByWithRelationInput[] = [
-    props.body.sort === "total_hours"
+    ...(props.body.search
       ? {
-          timelogs: {
-            _sum: {
-              duration_minutes: props.body.order ?? "desc",
+          OR: [
+            {
+              display_name: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
             },
+            { position: { contains: props.body.search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+  const [rawData, total] = await Promise.all([
+    MyGlobal.prisma.hrms_employees.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      include: {
+        department: true,
+        timelogs: {
+          where: {
+            date: {
+              gte: startDate,
+              lte: endDate,
+            },
+            deleted_at: null,
           },
-        }
-      : {},
-    props.body.sort === "employee_name"
-      ? {
-          display_name: props.body.order ?? "asc",
-        }
-      : {},
-    props.body.sort === "status"
-      ? {
-          status: props.body.order ?? "asc",
-        }
-      : {},
-    props.body.sort === "last_activity_date"
-      ? {
-          timelogs: {
-            _max: { created_at: props.body.order ?? "desc" },
-          },
-        }
-      : {},
-    props.body.sort === undefined
-      ? {
-          display_name: "asc",
-        }
-      : {},
-  ].filter(
-    (o) => Object.keys(o).length > 0,
-  ) as Prisma.hrms_employeesOrderByWithRelationInput[];
-  const employees = await MyGlobal.prisma.hrms_employees.findMany({
-    where: employeeWhere,
-    select: {
-      id: true,
-      display_name: true,
-      position: true,
-      department_id: true,
-      status: true,
-      timelogs: {
-        where: {
-          date: {
-            gte: startDate,
-            lte: endDate,
-          },
+          select: { duration_minutes: true, date: true },
         },
-        select: {
-          duration_minutes: true,
-          created_at: true,
+        timesheets: {
+          where: {
+            week_start_date: {
+              gte: startDate,
+              lte: endDate,
+            },
+            deleted_at: null,
+          },
+          select: { status: true },
         },
       },
-      timesheets: {
-        where: {
-          week_start_date: {
-            gte: startDate,
-          },
-          week_end_date: {
-            lte: endDate,
-          },
-        },
-        select: {
-          status: true,
-        },
-      },
-    },
-    skip,
-    take: limit,
-    orderBy,
-  });
-  const data = await ArrayUtil.asyncMap(employees, async (emp) => {
-    const totalMinutes = emp.timelogs.reduce(
-      (sum, tl) => sum + tl.duration_minutes,
+      orderBy: (() => {
+        const sort = props.body.sort ?? "employee_name";
+        const order = props.body.order ?? "asc";
+        switch (sort) {
+          case "total_hours":
+            return {
+              timelogs: { _sum: { duration_minutes: "desc" } },
+            } as Prisma.hrms_employeesOrderByWithRelationInput;
+          case "last_activity_date":
+            return {
+              timelogs: { date: order },
+            } as Prisma.hrms_employeesOrderByWithRelationInput;
+          case "status":
+            return { status: order };
+          default:
+            return { display_name: "asc" };
+        }
+      })(),
+    }),
+    MyGlobal.prisma.hrms_employees.count({
+      where: whereInput,
+    }),
+  ]);
+  const pagination: IPage.IPagination = {
+    current: page,
+    limit: limit,
+    records: total,
+    pages: Math.ceil(total / limit),
+  } satisfies IPage.IPagination;
+  const transformedData = await ArrayUtil.asyncMap(rawData, async (emp) => {
+    const empWithRelations = emp as typeof emp & {
+      timelogs: Array<{
+        duration_minutes: number | null;
+        date: Date;
+      }>;
+      timesheets: Array<{
+        status: string;
+      }>;
+    };
+    const totalHoursLogged = empWithRelations.timelogs.reduce(
+      (sum: number, t) => sum + (t.duration_minutes ?? 0),
       0,
     );
-    const submitted = emp.timesheets.filter(
-      (ts) => ts.status === "submitted",
+    const timesheetsSubmitted = empWithRelations.timesheets.filter(
+      (t) => t.status === "submitted",
     ).length;
-    const approved = emp.timesheets.filter(
-      (ts) => ts.status === "approved",
+    const timesheetsApproved = empWithRelations.timesheets.filter(
+      (t) => t.status === "approved",
     ).length;
-    const pending = emp.timesheets.filter((ts) => ts.status === "draft").length;
+    const timesheetsPending = empWithRelations.timesheets.filter(
+      (t) => t.status === "draft",
+    ).length;
     return {
-      id: emp.id,
-      display_name: emp.display_name,
-      position: emp.position ?? undefined,
-      department_id:
-        emp.department_id ?? "00000000-0000-0000-0000-000000000000",
-      total_hours_logged: Math.round(totalMinutes / 60),
-      timelog_count: emp.timelogs.length,
-      timesheets_submitted: submitted,
-      timesheets_approved: approved,
-      timesheets_pending: pending,
-      status: emp.status,
+      id: (empWithRelations.id ?? "") satisfies string as string,
+      display_name: empWithRelations.display_name,
+      position: empWithRelations.position ?? undefined,
+      department_id: (empWithRelations.department_id ??
+        "") satisfies string as string,
+      total_hours_logged: totalHoursLogged,
+      timelog_count: empWithRelations.timelogs
+        .length satisfies number as number,
+      timesheets_submitted: timesheetsSubmitted satisfies number as number,
+      timesheets_approved: timesheetsApproved satisfies number as number,
+      timesheets_pending: timesheetsPending satisfies number as number,
+      status: empWithRelations.status,
     } satisfies IHrmsEmployee.ISummary;
   });
   return {
-    pagination: {
-      current: page,
-      limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data,
+    pagination,
+    data: transformedData,
   } satisfies IPageIHrmsEmployee.ISummary;
 }

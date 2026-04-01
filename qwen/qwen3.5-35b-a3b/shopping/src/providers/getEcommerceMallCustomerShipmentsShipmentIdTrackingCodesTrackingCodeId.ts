@@ -12,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { EcommerceMallShipmentAtSummaryTransformer } from "../transformers/EcommerceMallShipmentAtSummaryTransformer";
 import { EcommerceMallShipmentTrackingCodeTransformer } from "../transformers/EcommerceMallShipmentTrackingCodeTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -21,8 +22,7 @@ export async function getEcommerceMallCustomerShipmentsShipmentIdTrackingCodesTr
   shipmentId: string & tags.Format<"uuid">;
   trackingCodeId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallShipmentTrackingCode> {
-  // Step 1: Load tracking code with nested shipment containing order reference
-  const trackingCode =
+  const trackingCodeWithShipment =
     await MyGlobal.prisma.ecommerce_mall_shipment_tracking_codes.findUniqueOrThrow(
       {
         where: { id: props.trackingCodeId },
@@ -33,40 +33,23 @@ export async function getEcommerceMallCustomerShipmentsShipmentIdTrackingCodesTr
           tracking_code: true,
           created_at: true,
           updated_at: true,
-          shipment: {
-            select: {
-              id: true,
-              order: {
-                select: {
-                  id: true,
-                  customer_id: true,
-                },
-              },
-            },
-          },
+          shipment: EcommerceMallShipmentAtSummaryTransformer.select(),
         },
       },
     );
-  // Verify tracking code belongs to the specified shipment
-  if (trackingCode.shipment_id !== props.shipmentId) {
+  if (trackingCodeWithShipment.shipment_id !== props.shipmentId) {
     throw new HttpException(
       "Tracking code does not belong to this shipment",
       404,
     );
   }
-  // Step 2: Authorization check - verify customer owns the order containing this shipment
-  if (trackingCode.shipment.order.customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Step 3: Return tracking code with full shipment details using transformer
-  const fullTrackingCode =
-    await MyGlobal.prisma.ecommerce_mall_shipment_tracking_codes.findUniqueOrThrow(
-      {
-        where: { id: props.trackingCodeId },
-        ...EcommerceMallShipmentTrackingCodeTransformer.select(),
-      },
-    );
+  await MyGlobal.prisma.ecommerce_mall_orders.findFirstOrThrow({
+    where: {
+      id: trackingCodeWithShipment.shipment.order.id,
+      customer_id: props.customer.id,
+    },
+  });
   return await EcommerceMallShipmentTrackingCodeTransformer.transform(
-    fullTrackingCode,
+    trackingCodeWithShipment,
   );
 }

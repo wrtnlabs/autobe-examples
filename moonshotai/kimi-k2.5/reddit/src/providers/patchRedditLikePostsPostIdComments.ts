@@ -11,6 +11,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditLikeCommentAtSummaryTransformer } from "../transformers/RedditLikeCommentAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,7 +19,7 @@ export async function patchRedditLikePostsPostIdComments(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditLikeComment.IRequest;
 }): Promise<IPageIRedditLikeComment.ISummary> {
-  // Validate post exists
+  // Verify post exists
   await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
     where: { id: props.postId },
   });
@@ -26,100 +27,65 @@ export async function patchRedditLikePostsPostIdComments(props: {
   const limit = props.body.limit;
   const skip = (page - 1) * limit;
   // Build where clause
-  const whereInput = {
-    reddit_like_post_id: props.postId,
-    ...(props.body.authorId !== null && {
-      reddit_like_member_id: props.body.authorId,
-    }),
-    ...(props.body.parentId !== null
-      ? { parent_id: props.body.parentId }
-      : { parent_id: null }),
+  const where: Prisma.reddit_like_commentsWhereInput = {
+    post_id: props.postId,
     ...(props.body.includeDeleted === false && { is_deleted: false }),
+    ...(props.body.authorId !== null && { author_id: props.body.authorId }),
+    ...(props.body.parentId !== undefined && {
+      parent_id: props.body.parentId,
+    }),
     ...(props.body.search !== null && {
-      content: { contains: props.body.search, mode: "insensitive" as const },
+      content: { contains: props.body.search, mode: "insensitive" },
     }),
   };
-  // Build orderBy based on sort strategy
-  let orderByInput: Prisma.reddit_like_commentsOrderByWithRelationInput;
+  // Build orderBy based on sort
+  let orderBy:
+    | Prisma.reddit_like_commentsOrderByWithRelationInput
+    | Prisma.reddit_like_commentsOrderByWithRelationInput[];
   switch (props.body.sort) {
+    case "BEST":
+      orderBy = { vote_score: "desc" };
+      break;
     case "NEW":
-      orderByInput = { created_at: "desc" };
-      break;
-    case "OLD":
-      orderByInput = { created_at: "asc" };
-      break;
-    case "TOP":
-      orderByInput = { vote_score: "desc" };
+      orderBy = { created_at: "desc" };
       break;
     case "CONTROVERSIAL":
-      orderByInput = { vote_score: "asc" };
+      orderBy = { vote_score: "asc" };
       break;
-    case "BEST":
+    case "TOP":
+      orderBy = { vote_score: "desc" };
+      break;
+    case "OLD":
+      orderBy = { created_at: "asc" };
+      break;
     case "QA":
-    default:
-      orderByInput = { vote_score: "desc" };
+      orderBy = [{ parent_id: "asc" }, { created_at: "asc" }];
       break;
+    default:
+      orderBy = { created_at: "desc" };
   }
-  // Fetch comments with pagination
+  // Query paginated comments
   const comments = await MyGlobal.prisma.reddit_like_comments.findMany({
-    where: whereInput,
+    where,
     skip,
     take: limit,
-    orderBy: orderByInput,
-    select: {
-      id: true,
-      content: true,
-      vote_score: true,
-      is_edited: true,
-      is_deleted: true,
-      created_at: true,
-      parent_id: true,
-      author: {
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          email_verified: true,
-          created_at: true,
-        },
-      } satisfies Prisma.reddit_like_membersFindManyArgs,
-      replies: {
-        select: { id: true },
-      } satisfies Prisma.reddit_like_commentsFindManyArgs,
-    },
+    orderBy,
+    ...RedditLikeCommentAtSummaryTransformer.select(),
   });
-  // Get total count
-  const total = await MyGlobal.prisma.reddit_like_comments.count({
-    where: whereInput,
-  });
-  // Transform results manually since we need reply_count
-  const transformedData: IRedditLikeComment.ISummary[] =
-    await ArrayUtil.asyncMap(comments, async (comment) => ({
-      id: comment.id as string & tags.Format<"uuid">,
-      content: comment.is_deleted ? "[deleted]" : comment.content,
-      author: {
-        id: comment.author.id as string & tags.Format<"uuid">,
-        email: comment.author.email as string & tags.Format<"email">,
-        username: comment.author.username,
-        emailVerified: comment.author.email_verified,
-        createdAt: toISOStringSafe(comment.author.created_at) as string &
-          tags.Format<"date-time">,
-      } satisfies IRedditLikeMember.ISummary,
-      vote_score: comment.vote_score as number & tags.Type<"int32">,
-      is_edited: comment.is_edited,
-      is_deleted: comment.is_deleted,
-      created_at: toISOStringSafe(comment.created_at) as string &
-        tags.Format<"date-time">,
-      parent_id: comment.parent_id as (string & tags.Format<"uuid">) | null,
-      reply_count: comment.replies.length as number & tags.Type<"int32">,
-    }));
+  // Count total
+  const total = await MyGlobal.prisma.reddit_like_comments.count({ where });
+  // Transform results
+  const data = await ArrayUtil.asyncMap(
+    comments,
+    RedditLikeCommentAtSummaryTransformer.transform,
+  );
   return {
-    data: transformedData,
+    data,
     pagination: {
-      current: page satisfies number as number,
-      limit: limit satisfies number as number,
-      records: total satisfies number as number,
-      pages: Math.ceil(total / limit) satisfies number as number,
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

@@ -14,6 +14,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditCommunityPostAtSummaryTransformer } from "../transformers/RedditCommunityPostAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,117 +24,95 @@ export async function patchRedditCommunityCommunitiesCommunityIdFeed(props: {
 }): Promise<IPageIRedditCommunityPost.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  const sortType = props.body.sortType ?? "hot";
-  const timeFilter = props.body.timeFilter;
   const skip = (page - 1) * limit;
+  // Validate sortType
+  const sortType = (props.body.sortType ?? "hot") as
+    | "hot"
+    | "new"
+    | "top"
+    | "controversial";
+  const timeFilter = (props.body.timeFilter ?? "all") as
+    | "today"
+    | "week"
+    | "month"
+    | "year"
+    | "all";
   // Validate community exists
-  await MyGlobal.prisma.reddit_community_communities.findUniqueOrThrow({
-    where: { id: props.communityId, deleted_at: null },
+  const community =
+    await MyGlobal.prisma.reddit_community_communities.findUnique({
+      where: { id: props.communityId, deleted_at: null },
+      select: { id: true },
+    });
+  if (!community) {
+    throw new HttpException("Community not found", 404);
+  }
+  // Get total count
+  const total = await MyGlobal.prisma.reddit_community_posts.count({
+    where: { community_id: props.communityId, deleted_at: null },
   });
-  // Build WHERE conditions
-  const whereInput: Prisma.reddit_community_postsWhereInput = {
+  // Apply time filter if top sorting
+  let whereClause: Prisma.reddit_community_postsWhereInput = {
     community_id: props.communityId,
     deleted_at: null,
   };
-  // Apply time filter for top sorting
-  if (sortType === "top" && timeFilter && timeFilter !== "all") {
-    const cutoff = new Date();
+  if (sortType === "top" && timeFilter !== "all") {
+    const now = new Date();
+    let cutoffDate: Date;
     switch (timeFilter) {
       case "today":
-        cutoff.setHours(cutoff.getHours() - 24);
+        cutoffDate = new Date();
+        cutoffDate.setHours(0, 0, 0, 0);
         break;
       case "week":
-        cutoff.setDate(cutoff.getDate() - 7);
+        cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 7);
         break;
       case "month":
-        cutoff.setDate(cutoff.getDate() - 30);
+        cutoffDate = new Date();
+        cutoffDate.setMonth(cutoffDate.getMonth() - 1);
         break;
       case "year":
-        cutoff.setFullYear(cutoff.getFullYear() - 1);
+        cutoffDate = new Date();
+        cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
         break;
+      default:
+        cutoffDate = new Date(0);
     }
-    whereInput.created_at = { gte: cutoff };
+    whereClause = {
+      community_id: props.communityId,
+      deleted_at: null,
+      created_at: { gte: cutoffDate },
+    };
   }
-  // Build ORDER BY based on sort type
-  const orderByInput:
-    | Prisma.reddit_community_postsOrderByWithRelationInput[]
-    | Prisma.reddit_community_postsOrderByWithRelationInput =
-    sortType === "new"
-      ? { created_at: "desc" }
-      : sortType === "top"
-        ? { vote_score: "desc" }
-        : sortType === "controversial"
-          ? [{ vote_score: "asc" }, { created_at: "asc" }]
-          : { created_at: "desc" }; // hot: recent activity
-  const data = await MyGlobal.prisma.reddit_community_posts.findMany({
-    where: whereInput,
-    orderBy: orderByInput,
+  // Build orderBy based on sortType
+  const orderBy: Prisma.reddit_community_postsOrderByWithRelationInput[] =
+    sortType === "controversial"
+      ? [{ vote_score: "asc" }, { vote_score: "desc" }]
+      : sortType === "hot"
+        ? [{ vote_score: "desc" }, { created_at: "desc" }]
+        : sortType === "top"
+          ? [{ vote_score: "desc" }]
+          : [{ created_at: "desc" }];
+  // Fetch posts
+  const posts = await MyGlobal.prisma.reddit_community_posts.findMany({
+    where: whereClause,
+    orderBy,
     skip,
-    take: limit + 1,
-    select: {
-      id: true,
-      title: true,
-      vote_score: true,
-      comment_count: true,
-      created_at: true,
-      post_type: true,
-      author_id: true,
-      community_id: true,
-    },
+    take: limit,
+    ...RedditCommunityPostAtSummaryTransformer.select(),
   });
-  const total = await MyGlobal.prisma.reddit_community_posts.count({
-    where: whereInput,
-  });
-  const hasMore = data.length > limit;
-  const finalData = hasMore ? data.slice(0, limit) : data;
-  const transformedData = await ArrayUtil.asyncMap(finalData, async (post) => {
-    // Get preview content based on post type (simplified - no related data)
-    let previewContent: string | null = null;
-    if (post.post_type === "text") {
-      previewContent = null; // text body not available in this schema
-    } else if (post.post_type === "link") {
-      previewContent = null; // link url not available in this schema
-    } else if (post.post_type === "image") {
-      previewContent = null; // image file not available in this schema
-    }
-    return {
-      id: post.id,
-      title: post.title,
-      author: {
-        id: post.author_id,
-        username: "", // username not available without author relation
-        created_at: toISOStringSafe(post.created_at),
-        profile: undefined,
-      } satisfies IRedditCommunityMember.ISummary,
-      community: {
-        id: post.community_id,
-        name: "", // name not available without community relation
-        description: "",
-        subscriber_count: 0,
-        owner: {
-          id: "",
-          username: "",
-          created_at: toISOStringSafe(post.created_at),
-          profile: undefined,
-        } satisfies IRedditCommunityMember.ISummary,
-        created_at: toISOStringSafe(post.created_at),
-        updated_at: toISOStringSafe(post.created_at),
-        deleted_at: null,
-      } satisfies IRedditCommunityCommunity.ISummary,
-      vote_score: post.vote_score,
-      comment_count: post.comment_count,
-      created_at: toISOStringSafe(post.created_at),
-      post_type: typia.assert<"text" | "link" | "image">(post.post_type),
-      preview_content: previewContent,
-    } satisfies IRedditCommunityPost.ISummary;
-  });
+  // Transform posts
+  const data = await ArrayUtil.asyncMap(
+    posts,
+    RedditCommunityPostAtSummaryTransformer.transform,
+  );
   return {
-    data: transformedData,
+    data,
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIRedditCommunityPost.ISummary;
+  };
 }

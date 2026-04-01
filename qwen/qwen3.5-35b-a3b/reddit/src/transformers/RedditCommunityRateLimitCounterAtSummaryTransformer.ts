@@ -4,8 +4,10 @@ import { IRedditCommunityRateLimitCounter } from "@ORGANIZATION/PROJECT-api/lib/
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
@@ -21,10 +23,10 @@ export namespace RedditCommunityRateLimitCounterAtSummaryTransformer {
         request_count: true,
         window_start: true,
         window_end: true,
+        member: RedditCommunityMemberAtSummaryTransformer.select(),
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        member: RedditCommunityMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_community_rate_limit_countersFindManyArgs;
   }

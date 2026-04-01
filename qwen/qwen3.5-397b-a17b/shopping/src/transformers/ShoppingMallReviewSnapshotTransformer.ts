@@ -1,13 +1,15 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { IShoppingMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReviewSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
 import { ShoppingMallReviewAtSummaryTransformer } from "./ShoppingMallReviewAtSummaryTransformer";
 
 export namespace ShoppingMallReviewSnapshotTransformer {
@@ -20,10 +22,8 @@ export namespace ShoppingMallReviewSnapshotTransformer {
         id: true,
         rating: true,
         content: true,
-        snapshot_at: true,
         created_at: true,
         review: ShoppingMallReviewAtSummaryTransformer.select(),
-        snapshotByUser: ShoppingMallCustomerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_review_snapshotsFindManyArgs;
   }
@@ -32,16 +32,12 @@ export namespace ShoppingMallReviewSnapshotTransformer {
   ): Promise<IShoppingMallReviewSnapshot> {
     return {
       id: input.id,
-      rating: input.rating,
-      content: input.content ?? null,
-      snapshot_at: input.snapshot_at.toISOString(),
-      created_at: input.created_at.toISOString(),
       review: await ShoppingMallReviewAtSummaryTransformer.transform(
         input.review,
       ),
-      snapshotByUser: await ShoppingMallCustomerAtSummaryTransformer.transform(
-        input.snapshotByUser,
-      ),
+      rating: input.rating,
+      content: input.content,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

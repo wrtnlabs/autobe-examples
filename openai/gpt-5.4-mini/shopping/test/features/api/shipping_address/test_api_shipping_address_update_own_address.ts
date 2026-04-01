@@ -1,9 +1,8 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
-import type { IShoppingMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShippingAddress";
+import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import type { IMallPlatformShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShippingAddress";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -18,65 +17,83 @@ export async function test_api_shipping_address_update_own_address(
   connection: api.IConnection,
 ): Promise<void> {
   const customerConnection: api.IConnection = { host: connection.host };
-  const authorization = await authorize_customer_join(customerConnection, {
+  const authorized = await authorize_customer_join(customerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "Password123!",
-      href: "https://example.com/signup",
-      referrer: "https://example.com/",
-      ip: "127.0.0.1",
-    } satisfies IShoppingMallCustomer.IJoin,
+      password: RandomGenerator.alphaNumeric(16),
+    } satisfies IMallPlatformCustomer.IJoin,
   });
-  typia.assert(authorization);
-  const body = {
+  typia.assert(authorized);
+  const shippingAddressId = typia.random<string & tags.Format<"uuid">>();
+  const updateBody = {
     recipientName: RandomGenerator.name(),
     phoneNumber: RandomGenerator.mobile(),
-    streetAddress: RandomGenerator.paragraph({ sentences: 2 }),
+    streetAddress: RandomGenerator.paragraph({ sentences: 3 }),
     city: RandomGenerator.name(1),
     stateProvince: RandomGenerator.name(1),
-    postalCode: RandomGenerator.alphaNumeric(6),
-    country: "Korea",
-    isDefault: false,
-  } satisfies IShoppingMallShippingAddress.IUpdate;
-  const output =
-    await api.functional.shoppingMall.customer.shipping_addresses.update(
+    postalCode: RandomGenerator.alphaNumeric(8),
+    country: RandomGenerator.name(1),
+    isDefault: true,
+  } satisfies IMallPlatformShippingAddress.IUpdate;
+  const updated =
+    await api.functional.mallPlatform.customer.shipping_addresses.update(
       customerConnection,
       {
-        shippingAddressId: typia.random<string & tags.Format<"uuid">>(),
-        body,
+        shippingAddressId,
+        body: updateBody,
       },
     );
-  typia.assert(output);
+  typia.assert(updated);
   TestValidator.equals(
-    "recipient name echoes request",
-    output.recipientName,
-    body.recipientName,
+    "shipping address id preserved",
+    updated.id,
+    shippingAddressId,
   );
   TestValidator.equals(
-    "phone number echoes request",
-    output.phoneNumber,
-    body.phoneNumber,
+    "owner id preserved",
+    updated.customer.id,
+    authorized.id,
   );
   TestValidator.equals(
-    "street address echoes request",
-    output.streetAddress,
-    body.streetAddress,
-  );
-  TestValidator.equals("city echoes request", output.city, body.city);
-  TestValidator.equals(
-    "state/province echoes request",
-    output.stateProvince,
-    body.stateProvince,
+    "owner email preserved",
+    updated.customer.email,
+    authorized.email,
   );
   TestValidator.equals(
-    "postal code echoes request",
-    output.postalCode,
-    body.postalCode,
+    "recipient name updated",
+    updated.recipientName,
+    updateBody.recipientName,
   );
-  TestValidator.equals("country echoes request", output.country, body.country);
   TestValidator.equals(
-    "default flag echoes request",
-    output.isDefault,
-    body.isDefault,
+    "phone number updated",
+    updated.phoneNumber,
+    updateBody.phoneNumber,
   );
+  TestValidator.equals(
+    "street address updated",
+    updated.streetAddress,
+    updateBody.streetAddress,
+  );
+  TestValidator.equals("city updated", updated.city, updateBody.city);
+  TestValidator.equals(
+    "state province updated",
+    updated.stateProvince,
+    updateBody.stateProvince,
+  );
+  TestValidator.equals(
+    "postal code updated",
+    updated.postalCode,
+    updateBody.postalCode,
+  );
+  TestValidator.equals("country updated", updated.country, updateBody.country);
+  TestValidator.equals("default address updated", updated.isDefault, true);
+  TestValidator.predicate(
+    "created timestamp exists",
+    updated.createdAt.length > 0,
+  );
+  TestValidator.predicate(
+    "updated timestamp exists",
+    updated.updatedAt.length > 0,
+  );
+  TestValidator.equals("address remains active", updated.deletedAt, null);
 }

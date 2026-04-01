@@ -3,8 +3,10 @@ import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/str
 import { IRedditCommunityFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityFile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityFileAtSummaryTransformer } from "./RedditCommunityFileAtSummaryTransformer";
 
@@ -19,6 +21,7 @@ export namespace RedditCommunityCommunityIconTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        community: true,
         file: RedditCommunityFileAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_community_community_iconsFindManyArgs;

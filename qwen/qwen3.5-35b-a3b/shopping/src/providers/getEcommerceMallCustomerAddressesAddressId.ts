@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { EcommerceMallAddressTransformer } from "../transformers/EcommerceMallAddressTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,15 +19,41 @@ export async function getEcommerceMallCustomerAddressesAddressId(props: {
 }): Promise<IEcommerceMallAddress> {
   const address =
     await MyGlobal.prisma.ecommerce_mall_addresses.findUniqueOrThrow({
-      where: { id: props.addressId, deleted_at: null },
+      where: {
+        id: props.addressId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        ecommerce_mall_customer_id: true,
+        recipient_name: true,
+        recipient_phone: true,
+        street: true,
+        city: true,
+        state: true,
+        is_default: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
     });
   if (address.ecommerce_mall_customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException("Not Found", 404);
   }
-  return {
-    ...address,
-    created_at: toISOStringSafe(address.created_at),
-    updated_at: toISOStringSafe(address.updated_at),
-    deleted_at: address.deleted_at ? toISOStringSafe(address.deleted_at) : null,
-  };
+  const transformed = await EcommerceMallAddressTransformer.transform({
+    id: address.id,
+    customer: { id: address.ecommerce_mall_customer_id },
+    recipient_name: address.recipient_name,
+    recipient_phone: address.recipient_phone,
+    street: address.street,
+    city: address.city,
+    state: address.state,
+    is_default: address.is_default,
+    created_at: address.created_at,
+    updated_at: address.updated_at,
+    deleted_at: address.deleted_at,
+    orders: [],
+    snapshots: [],
+  });
+  return transformed satisfies IEcommerceMallAddress;
 }

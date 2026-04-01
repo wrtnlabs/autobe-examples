@@ -20,57 +20,46 @@ export async function patchRedditLikeCommentsCommentIdSnapshots(props: {
   // Verify comment exists
   await MyGlobal.prisma.reddit_like_comments.findUniqueOrThrow({
     where: { id: props.commentId },
+    select: { id: true },
   });
-  // Pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Sorting parameters
-  const sortField = props.body.sort ?? "created_at";
-  const sortOrder = props.body.order ?? "desc";
-  // Build where clause
-  const where: Prisma.reddit_like_comment_snapshotsWhereInput = {
-    comment_id: props.commentId,
-  };
-  // Build order by
+  const sort = props.body.sort ?? "created_at";
+  const order = props.body.order ?? "desc";
+  // Build orderBy
   const orderBy: Prisma.reddit_like_comment_snapshotsOrderByWithRelationInput =
-    sortField === "id" ? { id: sortOrder } : { created_at: sortOrder };
-  // Query snapshots with pagination
+    {};
+  if (sort === "id") {
+    orderBy.id = order;
+  } else {
+    orderBy.created_at = order;
+  }
   const snapshots =
     await MyGlobal.prisma.reddit_like_comment_snapshots.findMany({
-      where,
+      where: { comment_id: props.commentId },
       skip,
       take: limit,
       orderBy,
-      select: {
-        id: true,
-        comment_id: true,
-        body: true,
-        edit_reason: true,
-        created_at: true,
-      },
     });
-  // Count total records
   const total = await MyGlobal.prisma.reddit_like_comment_snapshots.count({
-    where,
+    where: { comment_id: props.commentId },
   });
-  // Transform to DTO format
   const data: IRedditLikeCommentSnapshot[] = snapshots.map((snapshot) => ({
-    id: snapshot.id,
-    commentId: snapshot.comment_id,
+    id: snapshot.id as string & tags.Format<"uuid">,
+    commentId: snapshot.comment_id as string & tags.Format<"uuid">,
     body: snapshot.body,
     editReason: snapshot.edit_reason,
-    createdAt: toISOStringSafe(snapshot.created_at),
+    createdAt: snapshot.created_at.toISOString() as string &
+      tags.Format<"date-time">,
   }));
-  // Calculate pagination
-  const pages = Math.ceil(total / limit);
   return {
     data,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: pages,
+      pages: Math.ceil(total / limit) || 0,
     } satisfies IPage.IPagination,
   };
 }

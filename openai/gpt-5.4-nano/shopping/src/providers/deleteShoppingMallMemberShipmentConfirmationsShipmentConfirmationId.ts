@@ -11,45 +11,41 @@ import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-export async function deleteShoppingMallMemberShipmentConfirmationId(props: {
+export async function deleteShoppingMallMemberShipmentConfirmationsShipmentConfirmationId(props: {
   member: MemberPayload;
   shipmentConfirmationId: string & tags.Format<"uuid">;
 }): Promise<void> {
   await MyGlobal.prisma.$transaction(async (tx) => {
-    const memberSeller = await tx.shopping_mall_members.findFirst({
-      where: {
-        id: props.member.id,
-      },
-      select: {
-        id: true,
-        deleted_at: true,
-      },
-    });
-    if (memberSeller === null || memberSeller.deleted_at !== null) {
-      throw new HttpException("Forbidden", 403);
-    }
     const confirmation =
-      await tx.shopping_mall_shipment_confirmations.findFirstOrThrow({
-        where: {
-          shopping_mall_shipment_id: props.shipmentConfirmationId,
-          deleted_at: null,
-        } satisfies Prisma.shopping_mall_shipment_confirmationsFindFirstArgs,
+      await tx.shopping_mall_shipment_confirmations.findUniqueOrThrow({
+        where: { id: props.shipmentConfirmationId },
         select: {
+          id: true,
           shopping_mall_shipment_id: true,
-          deleted_at: true,
-          shipment: {
-            select: {
-              id: true,
-              shopping_mall_order_id: true,
-              seller_snapshot_id: true,
-            },
-          },
         },
       });
+    const shipment = await tx.shopping_mall_shipments.findUniqueOrThrow({
+      where: { id: confirmation.shopping_mall_shipment_id },
+      select: {
+        id: true,
+        seller_snapshot_id: true,
+      },
+    });
+    const snapshot = await tx.shopping_mall_snapshots.findUniqueOrThrow({
+      where: { id: shipment.seller_snapshot_id },
+      select: {
+        id: true,
+        source_seller_id: true,
+      },
+    });
+    if (snapshot.source_seller_id === null) {
+      throw new HttpException("Forbidden", 403);
+    }
+    if (snapshot.source_seller_id !== props.member.id) {
+      throw new HttpException("Forbidden", 403);
+    }
     await tx.shopping_mall_shipment_confirmations.delete({
-      where: {
-        shopping_mall_shipment_id: confirmation.shopping_mall_shipment_id,
-      } satisfies Prisma.shopping_mall_shipment_confirmationsWhereUniqueInput,
+      where: { id: confirmation.id },
     });
   });
 }

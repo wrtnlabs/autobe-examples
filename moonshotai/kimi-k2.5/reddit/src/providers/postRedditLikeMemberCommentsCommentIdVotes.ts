@@ -9,19 +9,17 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditLikeVoteCollector } from "../collectors/RedditLikeVoteCollector";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { RedditLikeMemberAtSummaryTransformer } from "../transformers/RedditLikeMemberAtSummaryTransformer";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeVoteTransformer } from "../transformers/RedditLikeVoteTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditLikeMemberCommentsCommentIdVotes(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   commentId: string & tags.Format<"uuid">;
   body: IRedditLikeVote.ICreate;
 }): Promise<IRedditLikeVote> {
-  // Validate comment exists and is not deleted
+  // 1. Validate comment exists and is not deleted
   const comment = await MyGlobal.prisma.reddit_like_comments.findUniqueOrThrow({
     where: { id: props.commentId },
     select: {
@@ -31,114 +29,95 @@ export async function postRedditLikeMemberCommentsCommentIdVotes(props: {
     },
   });
   if (comment.is_deleted) {
-    throw new HttpException("Comment has been deleted", 400);
+    throw new HttpException("Comment is deleted", 400);
   }
-  // Prevent self-voting
+  // 2. Prevent self-voting
   if (comment.author_id === props.member.id) {
     throw new HttpException("Cannot vote on your own comment", 403);
   }
-  // Check for existing vote by this member on this comment
-  const existingVote = await MyGlobal.prisma.reddit_like_votes.findFirst({
-    where: {
-      member_id: props.member.id,
-      commentVote: {
+  // 3. Check for existing vote by this member on this comment
+  const existingVote =
+    await MyGlobal.prisma.reddit_like_comment_votes.findFirst({
+      where: {
         comment_id: props.commentId,
+        vote: {
+          member_id: props.member.id,
+        },
       },
-    },
-    select: {
-      id: true,
-      vote_type: true,
-    },
-  });
-  const memberSelect = RedditLikeMemberAtSummaryTransformer.select();
-  // Execute transaction for atomic updates
-  const result = await MyGlobal.prisma.$transaction(async (tx) => {
-    const now = new Date();
-    if (existingVote) {
-      // Vote change scenario
-      if (existingVote.vote_type === props.body.vote_type) {
-        // Same vote type - return existing vote without changes
-        return tx.reddit_like_votes.findUniqueOrThrow({
-          where: { id: existingVote.id },
+      select: {
+        vote_id: true,
+        vote: {
           select: {
             id: true,
             vote_type: true,
-            created_at: true,
-            updated_at: true,
-            member: memberSelect,
           },
-        });
-      }
-      // Different vote type - update the vote
-      const updatedVote = await tx.reddit_like_votes.update({
-        where: { id: existingVote.id },
-        data: {
-          vote_type: props.body.vote_type,
-          updated_at: now,
         },
-        select: {
-          id: true,
-          vote_type: true,
-          created_at: true,
-          updated_at: true,
-          member: memberSelect,
+      },
+    });
+  const result = await MyGlobal.prisma.$transaction(async (tx) => {
+    let voteId: string;
+    if (existingVote) {
+      // Vote exists - handle vote change
+      const oldVoteType = existingVote.vote.vote_type;
+      const newVoteType = props.body.vote_type;
+      if (oldVoteType === newVoteType) {
+        throw new HttpException("Already voted with the same type", 400);
+      }
+      // Update vote type
+      await tx.reddit_like_votes.update({
+        where: { id: existingVote.vote_id },
+        data: {
+          vote_type: newVoteType,
+          updated_at: new Date(),
         },
       });
-      // Update comment vote_score: reverse old vote effect and apply new
-      // Old vote: -1 if was upvote, +1 if was downvote
-      // New vote: +1 if upvote, -1 if downvote
-      const oldVoteDelta = existingVote.vote_type === "upvote" ? -1 : 1;
-      const newVoteDelta = props.body.vote_type === "upvote" ? 1 : -1;
-      const totalDelta = oldVoteDelta + newVoteDelta;
+      voteId = existingVote.vote_id;
+      // Calculate deltas for vote change
+      const oldDelta = oldVoteType === "upvote" ? 1 : -1;
+      const newDelta = newVoteType === "upvote" ? 1 : -1;
+      const scoreDelta = newDelta - oldDelta;
+      // Update comment vote_score
       await tx.reddit_like_comments.update({
         where: { id: props.commentId },
         data: {
-          vote_score: { increment: totalDelta },
-          updated_at: now,
+          vote_score: { increment: scoreDelta },
         },
       });
-      // Update author karma through members table timestamp
-      await tx.reddit_like_members.update({
-        where: { id: comment.author_id },
+    } else {
+      // Create new vote
+      voteId = v4();
+      const createdAt = new Date();
+      await tx.reddit_like_votes.create({
         data: {
-          updated_at: now,
+          id: voteId,
+          vote_type: props.body.vote_type,
+          created_at: createdAt,
+          updated_at: createdAt,
+          member: { connect: { id: props.member.id } },
         },
       });
-      return updatedVote;
+      await tx.reddit_like_comment_votes.create({
+        data: {
+          id: v4(),
+          vote_id: voteId,
+          comment_id: props.commentId,
+          created_at: createdAt,
+        },
+      });
+      const scoreDelta = props.body.vote_type === "upvote" ? 1 : -1;
+      // Update comment vote_score
+      await tx.reddit_like_comments.update({
+        where: { id: props.commentId },
+        data: {
+          vote_score: { increment: scoreDelta },
+        },
+      });
     }
-    // New vote scenario
-    const voteData = await RedditLikeVoteCollector.collect({
-      body: props.body,
-      redditLikeMembers: { id: props.member.id },
-      redditLikeComments: { id: props.commentId },
+    // Return the vote with full data for transformation
+    return tx.reddit_like_votes.findUniqueOrThrow({
+      where: { id: voteId },
+      ...RedditLikeVoteTransformer.select(),
     });
-    const newVote = await tx.reddit_like_votes.create({
-      data: voteData,
-      select: {
-        id: true,
-        vote_type: true,
-        created_at: true,
-        updated_at: true,
-        member: memberSelect,
-      },
-    });
-    // Update comment vote_score
-    const voteDelta = props.body.vote_type === "upvote" ? 1 : -1;
-    await tx.reddit_like_comments.update({
-      where: { id: props.commentId },
-      data: {
-        vote_score: { increment: voteDelta },
-        updated_at: now,
-      },
-    });
-    // Update author karma through members table timestamp
-    await tx.reddit_like_members.update({
-      where: { id: comment.author_id },
-      data: {
-        updated_at: now,
-      },
-    });
-    return newVote;
   });
-  return await RedditLikeVoteTransformer.transform(result);
+  return RedditLikeVoteTransformer.transform(result);
 }

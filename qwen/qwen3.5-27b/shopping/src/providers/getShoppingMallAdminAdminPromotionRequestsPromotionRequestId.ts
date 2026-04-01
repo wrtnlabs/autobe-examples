@@ -18,25 +18,7 @@ export async function getShoppingMallAdminAdminPromotionRequestsPromotionRequest
   admin: AdminPayload;
   promotionRequestId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallAdminPromotionRequest> {
-  // Verify super administrator access
-  const requestingAdmin =
-    await MyGlobal.prisma.shopping_mall_admins.findUniqueOrThrow({
-      where: {
-        id: props.admin.id,
-        deleted_at: null,
-      },
-      select: {
-        grade: true,
-      },
-    });
-  if (requestingAdmin.grade !== "super") {
-    throw new HttpException(
-      "Only super administrators can access promotion requests",
-      403,
-    );
-  }
-  // Retrieve the promotion request with nested admin information
-  const promotionRequest =
+  const request =
     await MyGlobal.prisma.shopping_mall_admin_promotion_requests.findUniqueOrThrow(
       {
         where: {
@@ -46,7 +28,5 @@ export async function getShoppingMallAdminAdminPromotionRequestsPromotionRequest
         ...ShoppingMallAdminPromotionRequestTransformer.select(),
       },
     );
-  return await ShoppingMallAdminPromotionRequestTransformer.transform(
-    promotionRequest,
-  );
+  return await ShoppingMallAdminPromotionRequestTransformer.transform(request);
 }

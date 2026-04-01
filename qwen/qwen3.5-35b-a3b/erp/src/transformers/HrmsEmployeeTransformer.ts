@@ -7,8 +7,10 @@ import { IHrmsOrganizationMember } from "@ORGANIZATION/PROJECT-api/lib/structure
 import { IHrmsOrganizationRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsOrganizationRole";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsDepartmentAtSummaryTransformer } from "./HrmsDepartmentAtSummaryTransformer";
 import { HrmsOrganizationMemberAtSummaryTransformer } from "./HrmsOrganizationMemberAtSummaryTransformer";
@@ -18,6 +20,29 @@ export namespace HrmsEmployeeTransformer {
   export type Payload = Prisma.hrms_employeesGetPayload<
     ReturnType<typeof select>
   >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        display_name: true,
+        position: true,
+        employment_type: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        organizationMember: HrmsOrganizationMemberAtSummaryTransformer.select(),
+        role: HrmsOrganizationRoleAtSummaryTransformer.select(),
+        department: HrmsDepartmentAtSummaryTransformer.select(),
+        employeeContracts: true,
+        projectMemberships: true,
+        assignedTasks: true,
+        timelogs: true,
+        timesheets: true,
+        activeTimers: true,
+      },
+    } satisfies Prisma.hrms_employeesFindManyArgs;
+  }
   export async function transform(input: Payload): Promise<IHrmsEmployee> {
     return {
       id: input.id,
@@ -38,23 +63,6 @@ export namespace HrmsEmployeeTransformer {
       department: input.department
         ? await HrmsDepartmentAtSummaryTransformer.transform(input.department)
         : undefined,
-    };
-  }
-  export function select() {
-    return {
-      select: {
-        id: true,
-        display_name: true,
-        position: true,
-        employment_type: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        organizationMember: HrmsOrganizationMemberAtSummaryTransformer.select(),
-        role: HrmsOrganizationRoleAtSummaryTransformer.select(),
-        department: HrmsDepartmentAtSummaryTransformer.select(),
-      },
-    } satisfies Prisma.hrms_employeesFindManyArgs;
+    } satisfies IHrmsEmployee;
   }
 }

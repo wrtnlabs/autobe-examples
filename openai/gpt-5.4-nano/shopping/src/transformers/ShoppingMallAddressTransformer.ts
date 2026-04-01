@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAddress";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -25,9 +26,8 @@ export namespace ShoppingMallAddressTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        // Relation selections included only to satisfy the transformer framework/validator.
-        customer: { select: { id: true } },
-        addressSnapshots: { select: { id: true } },
+        customer: true,
+        addressSnapshots: true,
       },
     } satisfies Prisma.shopping_mall_addressesFindManyArgs;
   }

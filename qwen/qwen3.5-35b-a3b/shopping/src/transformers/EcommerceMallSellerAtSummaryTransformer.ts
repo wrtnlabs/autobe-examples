@@ -2,8 +2,10 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallSellerAtSummaryTransformer {
@@ -19,10 +21,7 @@ export namespace EcommerceMallSellerAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         approvalRequests: {
-          select: {
-            status: true,
-            created_at: true,
-          },
+          select: { status: true, created_at: true },
         } satisfies Prisma.ecommerce_mall_seller_approval_requestsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_sellersFindManyArgs;
@@ -30,24 +29,22 @@ export namespace EcommerceMallSellerAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallSeller.ISummary> {
-    const latestApproval =
+    // Compute status from approval requests: use latest or default to 'pending'
+    const latestRequest =
       input.approvalRequests.length > 0
-        ? [...input.approvalRequests].sort(
-            (a, b) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime(),
+        ? input.approvalRequests.sort(
+            (a, b) => b.created_at.getTime() - a.created_at.getTime(),
           )[0]
         : null;
-    const status = latestApproval
-      ? (latestApproval.status as "pending" | "approved" | "rejected")
-      : "pending";
     return {
       id: input.id,
       email: input.email,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-      status,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      status: typia.assert<"pending" | "approved" | "rejected">(
+        latestRequest?.status ?? "pending",
+      ),
     };
   }
 }

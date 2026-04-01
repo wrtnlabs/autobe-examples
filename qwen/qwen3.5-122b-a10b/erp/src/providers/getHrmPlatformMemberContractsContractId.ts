@@ -21,56 +21,24 @@ export async function getHrmPlatformMemberContractsContractId(props: {
   member: MemberPayload;
   contractId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformContract> {
-  // Query contract with employee FK fields for authorization check
   const contract =
     await MyGlobal.prisma.hrm_platform_contracts.findUniqueOrThrow({
       where: {
         id: props.contractId,
         deleted_at: null,
       },
-      select: {
-        id: true,
-        start_date: true,
-        end_date: true,
-        pay_rate: true,
-        pay_period: true,
-        working_hours_per_week: true,
-        notes: true,
-        created_at: true,
-        updated_at: true,
-        hrm_platform_employee_id: true,
-      },
+      ...HrmPlatformContractTransformer.select(),
     });
-  // Get employee record for authorization
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: { id: contract.hrm_platform_employee_id },
-      select: {
-        hrm_platform_user_id: true,
-        hrm_platform_organization_id: true,
-      },
-    });
-  // Authorization check: contract holder access
-  const isContractHolder = employee.hrm_platform_user_id === props.member.id;
+  const employee = contract.employee;
+  const isContractHolder = employee.user.id === props.member.id;
   if (isContractHolder) {
-    // Contract holder can view their own contracts - fetch full contract with employee summary
-    const fullContract =
-      await MyGlobal.prisma.hrm_platform_contracts.findUniqueOrThrow({
-        where: {
-          id: props.contractId,
-          deleted_at: null,
-        },
-        select: HrmPlatformContractTransformer.select().select,
-      });
-    return await HrmPlatformContractTransformer.transform(fullContract);
+    return await HrmPlatformContractTransformer.transform(contract);
   }
-  // Authorization check: manager/admin access with employee:view permission
-  // Check if member has a role in the employee's organization with employee:view permission
   const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
     {
       where: {
         hrm_platform_user_id: props.member.id,
-        hrm_platform_organization_id: employee.hrm_platform_organization_id,
+        hrm_platform_organization_id: employee.organization.id,
         deleted_at: null,
       },
       select: {
@@ -78,30 +46,26 @@ export async function getHrmPlatformMemberContractsContractId(props: {
       },
     },
   );
-  if (!memberEmployee) {
+  if (memberEmployee === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Check if member's role has employee:view permission
-  const hasPermission =
-    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
+  const roleWithPermission = await MyGlobal.prisma.hrm_platform_roles.findFirst(
+    {
       where: {
-        hrm_platform_role_id: memberEmployee.hrm_platform_role_id,
-        permission: {
-          code: "employee:view",
+        id: memberEmployee.hrm_platform_role_id,
+        deleted_at: null,
+        permissions: {
+          some: {
+            permission: {
+              code: "employee:view",
+            },
+          },
         },
       },
-    });
-  if (!hasPermission) {
+    },
+  );
+  if (roleWithPermission === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Fetch full contract with employee summary for response
-  const fullContract =
-    await MyGlobal.prisma.hrm_platform_contracts.findUniqueOrThrow({
-      where: {
-        id: props.contractId,
-        deleted_at: null,
-      },
-      select: HrmPlatformContractTransformer.select().select,
-    });
-  return await HrmPlatformContractTransformer.transform(fullContract);
+  return await HrmPlatformContractTransformer.transform(contract);
 }

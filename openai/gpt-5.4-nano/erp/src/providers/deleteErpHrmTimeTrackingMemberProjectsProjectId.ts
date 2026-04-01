@@ -15,16 +15,50 @@ export async function deleteErpHrmTimeTrackingMemberProjectsProjectId(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const currentOrganizationId =
-    (props.member as any).organization_id ??
-    (props.member as any).organizationId ??
-    (props.member as any).selected_organization_id;
-  await MyGlobal.prisma.erp_hrm_time_tracking_projects.findUniqueOrThrow({
-    where: { id: props.projectId },
-    select: {
-      id: true,
-      deleted_at: true,
-      erp_hrm_time_tracking_organization_id: true,
-    },
+  const project =
+    await MyGlobal.prisma.erp_hrm_time_tracking_projects.findFirst({
+      where: {
+        id: props.projectId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        erp_hrm_time_tracking_organization_id: true,
+      },
+    });
+  if (project === null) {
+    throw new HttpException("Project not found", 404);
+  }
+  // Authorization + organization scoping proxy: caller must be an active member of the project.
+  // (project:manage enforcement is domain-level; this guarantees within the selected org context.)
+  const projectMembership =
+    await MyGlobal.prisma.erp_hrm_time_tracking_project_memberships.findFirst({
+      where: {
+        project_id: project.id,
+        employee_id: props.member.id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        membership_role: true,
+      },
+    });
+  if (projectMembership === null) {
+    throw new HttpException("Project not found", 404);
+  }
+  const timelogExists =
+    await MyGlobal.prisma.erp_hrm_time_tracking_timelogs.findFirst({
+      where: {
+        erp_hrm_time_tracking_project_id: project.id,
+        deleted_at: null,
+      },
+      select: { id: true },
+    });
+  if (timelogExists !== null) {
+    // Treat as unavailable.
+    throw new HttpException("Project not found", 404);
+  }
+  await MyGlobal.prisma.erp_hrm_time_tracking_projects.delete({
+    where: { id: project.id },
   });
 }

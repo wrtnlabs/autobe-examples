@@ -17,14 +17,12 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditCommunityRateLimitCountersRateLimitCounterId(props: {
   rateLimitCounterId: string & tags.Format<"uuid">;
 }): Promise<IRedditCommunityRateLimitCounter> {
-  const rateLimitCounter =
+  const counter =
     await MyGlobal.prisma.reddit_community_rate_limit_counters.findUniqueOrThrow(
       {
         where: { id: props.rateLimitCounterId },
         ...RedditCommunityRateLimitCounterTransformer.select(),
       },
     );
-  return await RedditCommunityRateLimitCounterTransformer.transform(
-    rateLimitCounter,
-  );
+  return await RedditCommunityRateLimitCounterTransformer.transform(counter);
 }

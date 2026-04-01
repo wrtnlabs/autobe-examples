@@ -17,17 +17,16 @@ export namespace ShoppingMallProductCollector {
       // Scalar fields
       id,
       name: props.body.name,
-      description: props.body.description ?? null,
+      description: props.body.description,
       base_price: props.body.base_price,
-      deleted: false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       // BelongsTo relations
       seller: { connect: { id: props.shoppingMallSellers.id } },
-      category: { connect: { id: props.body.shopping_category_id } },
-      // HasMany relations (optional, not needed for create)
-      // images, variants, snapshots, wishlists, reviews omitted
+      category: { connect: { id: props.body.category_id } },
+      // HasMany relations - omitted (created separately)
+      // variants, optionDefinitions, images, snapshots, wishlistedBies, orderItems, reviews
     } satisfies Prisma.shopping_mall_productsCreateInput;
   }
 }

@@ -20,26 +20,23 @@ export async function getShoppingMallCustomerRefundRequestsRefundRequestIdSnapsh
   refundRequestId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallRefundSnapshot> {
-  const refundRequest =
-    await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
-      where: {
-        id: props.refundRequestId,
-      },
-      select: {
-        id: true,
-        shopping_mall_customer_id: true,
-      },
-    });
-  if (refundRequest.shopping_mall_customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
   const snapshot =
     await MyGlobal.prisma.shopping_mall_refund_snapshots.findUniqueOrThrow({
       where: {
         id: props.snapshotId,
-        shopping_mall_refund_request_id: props.refundRequestId,
       },
       ...ShoppingMallRefundSnapshotTransformer.select(),
     });
+  if (snapshot.refundRequest.id !== props.refundRequestId) {
+    throw new HttpException("Refund snapshot not found", 404);
+  }
+  const refundRequest =
+    await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
+      where: { id: props.refundRequestId },
+      select: { shopping_mall_customer_id: true },
+    });
+  if (refundRequest.shopping_mall_customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await ShoppingMallRefundSnapshotTransformer.transform(snapshot);
 }

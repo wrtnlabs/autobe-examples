@@ -16,10 +16,9 @@ export async function postShoppingMallAdminCustomersBulkUnban(props: {
   admin: AdminPayload;
   body: IShoppingMallCustomerBulkUnban.ICreate;
 }): Promise<IShoppingMallCustomerBulkUnban.IResult> {
-  const customerIds = props.body.customerIds;
   const success: (string & tags.Format<"uuid">)[] = [];
   const failed: IShoppingMallCustomerBulkUnban.IResultFailedItem[] = [];
-  for (const customerId of customerIds) {
+  for (const customerId of props.body.customerIds) {
     const customer = await MyGlobal.prisma.shopping_mall_customers.findUnique({
       where: { id: customerId },
       select: { id: true, status: true, deleted_at: true },
@@ -28,34 +27,31 @@ export async function postShoppingMallAdminCustomersBulkUnban(props: {
       failed.push({
         customerId: customerId,
         reason: "customer not found",
-      } satisfies IShoppingMallCustomerBulkUnban.IResultFailedItem);
+      });
       continue;
     }
     if (customer.deleted_at !== null) {
       failed.push({
         customerId: customerId,
         reason: "customer already deleted",
-      } satisfies IShoppingMallCustomerBulkUnban.IResultFailedItem);
+      });
       continue;
     }
     if (customer.status !== "banned") {
       failed.push({
         customerId: customerId,
         reason: "customer not banned",
-      } satisfies IShoppingMallCustomerBulkUnban.IResultFailedItem);
+      });
       continue;
     }
     await MyGlobal.prisma.shopping_mall_customers.update({
       where: { id: customerId },
-      data: {
-        status: "active",
-        updated_at: new Date(),
-      },
+      data: { status: "active" },
     });
     success.push(customerId);
   }
   return {
-    success: success,
-    failed: failed,
-  } satisfies IShoppingMallCustomerBulkUnban.IResult;
+    success,
+    failed,
+  };
 }

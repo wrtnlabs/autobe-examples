@@ -15,28 +15,23 @@ export async function deleteShoppingMallMemberCartsCartId(props: {
   member: MemberPayload;
   cartId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const now = toISOStringSafe(new Date());
-  await MyGlobal.prisma.shopping_mall_carts.findFirstOrThrow({
+  const nowIso: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const cart = await MyGlobal.prisma.shopping_mall_carts.findFirst({
     where: {
       id: props.cartId,
       shopping_mall_member_id: props.member.id,
     },
-    select: {
-      id: true,
-      deleted_at: true,
-    },
+    select: { id: true },
   });
+  if (cart === null) {
+    throw new HttpException("Cart not found", 404);
+  }
   await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.shopping_mall_carts.updateMany({
-      where: {
-        id: props.cartId,
-        shopping_mall_member_id: props.member.id,
-        deleted_at: null,
-      },
+    await tx.shopping_mall_carts.update({
+      where: { id: props.cartId },
       data: {
-        deleted_at: now,
-        updated_at: now,
-        warning_inventory_insufficient: false,
+        deleted_at: nowIso,
+        updated_at: nowIso,
       },
     });
     await tx.shopping_mall_cart_items.updateMany({
@@ -45,8 +40,8 @@ export async function deleteShoppingMallMemberCartsCartId(props: {
         deleted_at: null,
       },
       data: {
-        deleted_at: now,
-        updated_at: now,
+        deleted_at: nowIso,
+        updated_at: nowIso,
       },
     });
   });

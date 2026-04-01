@@ -15,22 +15,6 @@ export namespace HrmPlatformContractTransformer {
   export type Payload = Prisma.hrm_platform_contractsGetPayload<
     ReturnType<typeof select>
   >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        start_date: true,
-        end_date: true,
-        pay_rate: true,
-        pay_period: true,
-        working_hours_per_week: true,
-        notes: true,
-        created_at: true,
-        updated_at: true,
-        employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
-      },
-    } satisfies Prisma.hrm_platform_contractsFindManyArgs;
-  }
   export async function transform(
     input: Payload,
   ): Promise<IHrmPlatformContract> {
@@ -48,5 +32,27 @@ export namespace HrmPlatformContractTransformer {
         input.employee,
       ),
     };
+  }
+  export function select() {
+    return {
+      select: {
+        id: true,
+        start_date: true,
+        end_date: true,
+        pay_rate: true,
+        pay_period: true,
+        working_hours_per_week: true,
+        notes: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
+        snapshots: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_contract_snapshotsFindManyArgs,
+      },
+    } satisfies Prisma.hrm_platform_contractsFindManyArgs;
   }
 }

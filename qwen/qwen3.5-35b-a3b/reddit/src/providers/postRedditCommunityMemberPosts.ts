@@ -11,6 +11,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditCommunityPostCollector } from "../collectors/RedditCommunityPostCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditCommunityPostTransformer } from "../transformers/RedditCommunityPostTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -20,107 +21,97 @@ export async function postRedditCommunityMemberPosts(props: {
   member: MemberPayload;
   body: IRedditCommunityPost.ICreate;
 }): Promise<IRedditCommunityPost> {
-  const { member, body } = props;
-  const { community_id, post_type } = body;
+  const { community_id, post_type, title, body, url, fileId } = props.body;
+  // Validate title length
+  if (title.length < 1 || title.length > 300) {
+    throw new HttpException("Title must be between 1 and 300 characters", 400);
+  }
+  // Validate post_type
+  if (post_type !== "text" && post_type !== "link" && post_type !== "image") {
+    throw new HttpException("Invalid post type", 400);
+  }
+  // Validate content based on post type
+  if (post_type === "text" && (!body || body.length === 0)) {
+    throw new HttpException("Text posts require body content", 400);
+  }
+  if (post_type === "link" && (!url || !isValidUrl(url))) {
+    throw new HttpException("Link posts require a valid URL", 400);
+  }
+  if (post_type === "image" && !fileId) {
+    throw new HttpException("Image posts require a file ID", 400);
+  }
+  // Verify community exists and member is subscribed
   const subscription =
     await MyGlobal.prisma.reddit_community_subscriptions.findFirst({
       where: {
-        reddit_community_member_id: member.id,
-        community: { id: community_id },
+        reddit_community_member_id: props.member.id,
+        reddit_community_community_id: community_id,
         deleted_at: null,
       },
+      include: {
+        community: true,
+      },
     });
-  if (subscription === null) {
-    throw new HttpException("Not subscribed to community", 400);
+  if (!subscription) {
+    throw new HttpException("Not subscribed to this community", 400);
   }
-  const postTextValidation =
-    post_type === "text" && body.body !== undefined && body.body !== "";
-  const linkValidation = post_type === "link" && body.url !== undefined;
-  const imageValidation = post_type === "image" && body.fileId !== undefined;
-  if (!postTextValidation && !linkValidation && !imageValidation) {
-    throw new HttpException("Missing required content for post type", 400);
-  }
-  if (post_type === "link" && body.url !== undefined) {
-    try {
-      new URL(body.url);
-    } catch {
-      throw new HttpException("Invalid URL format", 400);
-    }
-  }
-  if (post_type === "image" && body.fileId !== undefined) {
-    const existingUsage =
+  // For image posts, verify file exists and isn't already used
+  if (post_type === "image" && fileId) {
+    const existing =
       await MyGlobal.prisma.reddit_community_file_of_posts.findFirst({
         where: {
-          file: { id: body.fileId },
+          reddit_community_file_id: fileId,
           deleted_at: null,
         },
       });
-    if (existingUsage !== null) {
+    if (existing) {
       throw new HttpException("File already used by another post", 409);
     }
-    const file = await MyGlobal.prisma.reddit_community_files.findUnique({
-      where: { id: body.fileId },
+    const file = await MyGlobal.prisma.reddit_community_files.findFirst({
+      where: {
+        id: fileId,
+        deleted_at: null,
+      },
     });
-    if (file === null) {
+    if (!file) {
       throw new HttpException("File not found", 404);
     }
   }
-  const now = toISOStringSafe(new Date());
-  const result = await MyGlobal.prisma.$transaction(async (tx) => {
-    const id: string = v4();
-    const createInput: Prisma.reddit_community_postsCreateInput = {
-      id,
-      title: body.title,
-      post_type,
-      vote_score: 0,
-      comment_count: 0,
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
-      author: { connect: { id: member.id } },
-      community: { connect: { id: community_id } },
-    };
-    if (post_type === "text") {
-      createInput.text = {
-        create: {
-          id: v4(),
-          created_at: now,
-          updated_at: now,
-          body: body.body!,
-        },
-      };
-    } else if (post_type === "link") {
-      const url: string = body.url!;
-      const urlObj = new URL(url);
-      const domainName: string = urlObj.hostname;
-      createInput.link = {
-        create: {
-          id: v4(),
-          created_at: now,
-          updated_at: now,
-          url,
-          domain_name: domainName,
-        },
-      };
-    } else if (post_type === "image") {
-      createInput.images = {
-        create: {
-          id: v4(),
-          created_at: now,
-          updated_at: now,
-          file: { connect: { id: body.fileId! } },
-        },
-      };
-    }
+  // Create post with content
+  const created = await MyGlobal.prisma.$transaction(async (tx) => {
+    const data = await RedditCommunityPostCollector.collect({
+      body: props.body,
+      redditCommunityMembers: { id: props.member.id } as any,
+    });
     const post = await tx.reddit_community_posts.create({
-      data: createInput,
+      data,
+      ...RedditCommunityPostTransformer.select(),
+    });
+    // Create snapshot
+    await tx.reddit_community_post_snapshots.create({
+      data: {
+        id: v4(),
+        reddit_community_post_id: post.id,
+        edited_by_member_id: props.member.id,
+        title: post.title,
+        post_type: post.post_type,
+        text_body: post_type === "text" ? body : null,
+        link_url: post_type === "link" ? url : null,
+        image_file_id: post_type === "image" ? fileId : null,
+        vote_score: post.vote_score,
+        comment_count: post.comment_count,
+        created_at: new Date().toISOString(),
+      },
     });
     return post;
   });
-  const fullPost =
-    await MyGlobal.prisma.reddit_community_posts.findUniqueOrThrow({
-      where: { id: result.id },
-      ...RedditCommunityPostTransformer.select(),
-    });
-  return await RedditCommunityPostTransformer.transform(fullPost);
+  return await RedditCommunityPostTransformer.transform(created);
+}
+function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -24,13 +24,16 @@ export async function getEcommerceMallCustomerOrdersOrderIdSnapshotsSnapshotId(p
 }): Promise<IEcommerceMallOrderSnapshot> {
   const snapshot =
     await MyGlobal.prisma.ecommerce_mall_order_snapshots.findUniqueOrThrow({
-      where: {
-        id: props.snapshotId,
-        ecommerce_mall_order_id: props.orderId,
-      },
+      where: { id: props.snapshotId },
       ...EcommerceMallOrderSnapshotTransformer.select(),
     });
-  if (snapshot.customer.id !== props.customer.id) {
+  if (snapshot.order.id !== props.orderId) {
+    throw new HttpException(
+      "Snapshot does not belong to the specified order",
+      400,
+    );
+  }
+  if (snapshot.order.customer.id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await EcommerceMallOrderSnapshotTransformer.transform(snapshot);

@@ -1,9 +1,0 @@
-export * as profile from "./profile/index";
-export * as sessions from "./sessions/index";
-export * as subscriptions from "./subscriptions/index";
-export * as posts from "./posts/index";
-export * as comments from "./comments/index";
-export * as communities from "./communities/index";
-export * as members from "./members/index";
-export * as subscribed from "./subscribed/index";
-export * as feeds from "./feeds/index";

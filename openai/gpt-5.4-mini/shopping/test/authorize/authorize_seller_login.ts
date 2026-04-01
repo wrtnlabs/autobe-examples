@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -11,10 +11,10 @@ import typia, { tags } from "typia";
 export async function authorize_seller_login(
   connection: api.IConnection,
   props: {
-    body: IShoppingMallSeller.ILogin;
+    body: IMallPlatformSeller.ILogin;
   },
-): Promise<IShoppingMallSeller.IAuthorized> {
-  return await api.functional.shoppingMall.auth.seller.login(connection, {
+): Promise<IMallPlatformSeller.IAuthorized> {
+  return await api.functional.mallPlatform.auth.seller.login(connection, {
     body: props.body,
   });
 }

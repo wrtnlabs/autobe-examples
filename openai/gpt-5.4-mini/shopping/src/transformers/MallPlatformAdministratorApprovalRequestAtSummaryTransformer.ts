@@ -1,0 +1,59 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
+import { IMallPlatformAdministratorApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministratorApprovalRequest";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
+import typia, { tags } from "typia";
+
+import { MyGlobal } from "../MyGlobal";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { MallPlatformAdministratorAtSummaryTransformer } from "./MallPlatformAdministratorAtSummaryTransformer";
+
+export namespace MallPlatformAdministratorApprovalRequestAtSummaryTransformer {
+  export type Payload =
+    Prisma.mall_platform_administrator_approval_requestsGetPayload<
+      ReturnType<typeof select>
+    >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        reason: true,
+        status: true,
+        rejection_reason: true,
+        reviewed_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        administrator: MallPlatformAdministratorAtSummaryTransformer.select(),
+        reviewerAdministrator:
+          MallPlatformAdministratorAtSummaryTransformer.select(),
+      },
+    } satisfies Prisma.mall_platform_administrator_approval_requestsFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IMallPlatformAdministratorApprovalRequest.ISummary> {
+    return {
+      id: input.id,
+      administrator:
+        await MallPlatformAdministratorAtSummaryTransformer.transform(
+          input.administrator,
+        ),
+      reviewerAdministrator:
+        input.reviewerAdministrator === null
+          ? null
+          : await MallPlatformAdministratorAtSummaryTransformer.transform(
+              input.reviewerAdministrator,
+            ),
+      reason: input.reason,
+      status: input.status,
+      rejectionReason: input.rejection_reason,
+      reviewedAt: input.reviewed_at?.toISOString() ?? null,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    };
+  }
+}

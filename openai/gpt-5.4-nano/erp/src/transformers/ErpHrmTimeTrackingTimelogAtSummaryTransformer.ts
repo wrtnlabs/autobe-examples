@@ -6,8 +6,10 @@ import { IErpHrmTimeTrackingTask } from "@ORGANIZATION/PROJECT-api/lib/structure
 import { IErpHrmTimeTrackingTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTimelog";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "./ErpHrmTimeTrackingMemberAtSummaryTransformer";
 import { ErpHrmTimeTrackingProjectAtSummaryTransformer } from "./ErpHrmTimeTrackingProjectAtSummaryTransformer";
@@ -29,12 +31,12 @@ export namespace ErpHrmTimeTrackingTimelogAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: true,
         employee: ErpHrmTimeTrackingMemberAtSummaryTransformer.select(),
         project: ErpHrmTimeTrackingProjectAtSummaryTransformer.select(),
         task: ErpHrmTimeTrackingTaskAtSummaryTransformer.select(),
-        timesheet: true,
-        timelogSnapshots: true,
+        // Required Prisma members (not represented in DTO)
+        timesheet: { select: { id: true } },
+        timelogSnapshots: { select: { id: true } },
       },
     } satisfies Prisma.erp_hrm_time_tracking_timelogsFindManyArgs;
   }
@@ -47,20 +49,24 @@ export namespace ErpHrmTimeTrackingTimelogAtSummaryTransformer {
       start_time: input.start_time?.toISOString() ?? null,
       end_time: input.end_time?.toISOString() ?? null,
       duration_minutes: input.duration_minutes,
-      note: input.note ?? null,
+      note: input.note,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-      organization: {},
+      // IErpHrmTimeTrackingOrganization.ISummary is defined as an empty object
+      organization: {} as IErpHrmTimeTrackingOrganization.ISummary,
       employee: await ErpHrmTimeTrackingMemberAtSummaryTransformer.transform(
         input.employee,
       ),
       project: await ErpHrmTimeTrackingProjectAtSummaryTransformer.transform(
         input.project,
       ),
-      task: input.task
-        ? await ErpHrmTimeTrackingTaskAtSummaryTransformer.transform(input.task)
-        : null,
+      task:
+        input.task === null
+          ? null
+          : await ErpHrmTimeTrackingTaskAtSummaryTransformer.transform(
+              input.task,
+            ),
     };
   }
 }

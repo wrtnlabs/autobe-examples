@@ -9,6 +9,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { ShoppingMallAdminTransformer } from "../transformers/ShoppingMallAdminTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,96 +17,106 @@ export async function postShoppingMallAuthAdminJoin(props: {
   ip: string;
   body: IShoppingMallAdmin.IJoin;
 }): Promise<IShoppingMallAdmin.IAuthorized> {
-  const nowIso = toISOStringSafe(new Date());
-  const accessExpiresIso = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiresIso = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  if (!props?.ip || !props?.body?.email || !props?.body?.password) {
+    throw new HttpException("Invalid request", 400);
+  }
   const existing = await MyGlobal.prisma.shopping_mall_admins.findFirst({
-    where: {
-      email: props.body.email,
-    },
-    select: {
-      id: true,
-      deleted_at: true,
-    },
+    where: { email: props.body.email },
+    select: { id: true },
   });
-  if (existing && existing.deleted_at === null) {
+  if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  const { admin, session } = await MyGlobal.prisma.$transaction(async (tx) => {
-    const createdAdmin = await tx.shopping_mall_admins.create({
+  return await MyGlobal.prisma.$transaction(async (tx) => {
+    const createdAt = new Date();
+    const adminCreated = await tx.shopping_mall_admins.create({
       data: {
-        id: v4() as string & tags.Format<"uuid">,
-        email: props.body.email as string & tags.Format<"email">,
+        id: v4(),
+        email: props.body.email,
         password_hash: await PasswordUtil.hash(props.body.password),
-        created_at: nowIso,
-        updated_at: nowIso,
-        deleted_at: null,
+        created_at: createdAt,
+        updated_at: createdAt,
       },
+    });
+    const sessionExpiredAt = new Date(Date.now() + 60 * 60 * 1000);
+    const sessionRefreshableUntil = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    );
+    const session = await tx.shopping_mall_admin_sessions.create({
+      data: {
+        id: v4(),
+        ip: props.ip,
+        shopping_mall_admin_id: adminCreated.id,
+        created_at: createdAt,
+        updated_at: createdAt,
+        href: "",
+        referrer: "",
+        expired_at: sessionExpiredAt,
+      },
+    });
+    const admin = await tx.shopping_mall_admins.findUniqueOrThrow({
+      where: { id: adminCreated.id },
       select: {
         id: true,
         email: true,
+        password_hash: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        sessions: {
+          select: {
+            id: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+            shopping_mall_admin_id: true,
+            ip: true,
+            href: true,
+            referrer: true,
+            expired_at: true,
+          },
+        },
+        passwordResets: {
+          select: {
+            id: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+            token: true,
+            expires_at: true,
+            shopping_mall_admins_id: true,
+          },
+        },
       },
     });
-    const createdSession = await tx.shopping_mall_admin_sessions.create({
-      data: {
-        id: v4() as string & tags.Format<"uuid">,
-        shopping_mall_admin_id: createdAdmin.id,
-        ip: props.ip,
-        href: "",
-        referrer: "",
-        created_at: nowIso,
-        expired_at: accessExpiresIso,
-        updated_at: nowIso,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-      },
-    });
-    return {
-      admin: createdAdmin,
-      session: createdSession,
+    const token: IAuthorizationToken = {
+      access: jwt.sign(
+        {
+          type: "admin",
+          id: adminCreated.id,
+          session_id: session.id,
+          created_at: toISOStringSafe(createdAt),
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "1h", issuer: "autobe" },
+      ),
+      refresh: jwt.sign(
+        {
+          type: "admin",
+          id: adminCreated.id,
+          session_id: session.id,
+          tokenType: "refresh",
+          created_at: toISOStringSafe(createdAt),
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "7d", issuer: "autobe" },
+      ),
+      expired_at: toISOStringSafe(sessionExpiredAt),
+      refreshable_until: toISOStringSafe(sessionRefreshableUntil),
     };
+    return {
+      ...(await ShoppingMallAdminTransformer.transform(admin)),
+      token,
+    } satisfies IShoppingMallAdmin.IAuthorized;
   });
-  const token = {
-    access: jwt.sign(
-      {
-        type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        created_at: nowIso,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: nowIso,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpiresIso,
-    refreshable_until: refreshExpiresIso,
-  } satisfies IAuthorizationToken;
-  return {
-    id: admin.id,
-    email: admin.email,
-    created_at: toISOStringSafe(admin.created_at),
-    updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at:
-      admin.deleted_at === null ? null : toISOStringSafe(admin.deleted_at),
-    token,
-  };
 }

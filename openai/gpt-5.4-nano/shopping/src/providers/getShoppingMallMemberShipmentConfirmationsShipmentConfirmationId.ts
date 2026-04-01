@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { ShoppingMallShipmentConfirmationTransformer } from "../transformers/ShoppingMallShipmentConfirmationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,54 +18,34 @@ export async function getShoppingMallMemberShipmentConfirmationsShipmentConfirma
   shipmentConfirmationId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallShipmentConfirmation> {
   const confirmation =
-    await MyGlobal.prisma.shopping_mall_shipment_confirmations.findFirstOrThrow(
+    await MyGlobal.prisma.shopping_mall_shipment_confirmations.findUniqueOrThrow(
       {
-        where: {
-          id: props.shipmentConfirmationId,
-          deleted_at: null,
-        },
-        select: {
-          id: true,
-          shopping_mall_shipment_id: true,
-          confirmation_type: true,
-          confirmed_at: true,
-          tracking_url: true,
-          tracking_number: true,
-          carrier_name: true,
-          note: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-        },
+        where: { id: props.shipmentConfirmationId, deleted_at: null },
+        ...ShoppingMallShipmentConfirmationTransformer.select(),
       },
     );
-  const shipment = await MyGlobal.prisma.shopping_mall_shipments.findFirst({
+  const shipmentId = confirmation.shopping_mall_shipment_id;
+  // Authorization: member can view if they own at least one order item inside that shipment.
+  const owningOrderIds = await MyGlobal.prisma.shopping_mall_orders.findMany({
     where: {
-      id: confirmation.shopping_mall_shipment_id,
       deleted_at: null,
-      order: {
-        shopping_customer_id: props.member.id,
-      },
+      shopping_customer_id: props.member.id,
     },
     select: { id: true },
   });
-  if (shipment === null) {
+  const owningOrderItem =
+    await MyGlobal.prisma.shopping_mall_order_items.findFirst({
+      where: {
+        deleted_at: null,
+        shopping_mall_shipment_id: shipmentId,
+        shopping_mall_order_id: { in: owningOrderIds.map((o) => o.id) },
+      },
+      select: { id: true },
+    });
+  if (owningOrderItem === null) {
     throw new HttpException("Forbidden", 403);
   }
-  return {
-    id: confirmation.id,
-    shopping_mall_shipment_id: confirmation.shopping_mall_shipment_id,
-    confirmation_type: confirmation.confirmation_type,
-    confirmed_at: confirmation.confirmed_at.toISOString() as string &
-      tags.Format<"date-time">,
-    tracking_url: confirmation.tracking_url ?? null,
-    tracking_number: confirmation.tracking_number ?? null,
-    carrier_name: confirmation.carrier_name ?? null,
-    note: confirmation.note ?? null,
-    created_at: confirmation.created_at.toISOString() as string &
-      tags.Format<"date-time">,
-    updated_at: confirmation.updated_at.toISOString() as string &
-      tags.Format<"date-time">,
-    deleted_at: confirmation.deleted_at?.toISOString() ?? null,
-  };
+  return await ShoppingMallShipmentConfirmationTransformer.transform(
+    confirmation,
+  );
 }

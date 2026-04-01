@@ -7,42 +7,35 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteRedditLikeMemberCommunitiesCommunityId(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the community and verify it exists and is active
-  const community =
-    await MyGlobal.prisma.reddit_like_communities.findUniqueOrThrow({
-      where: {
-        id: props.communityId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        owner_id: true,
-        icon_attachment_id: true,
-      },
-    });
-  // Verify ownership - only owner can delete
+  // Find community and verify it exists (not deleted)
+  const community = await MyGlobal.prisma.reddit_like_communities.findUnique({
+    where: { id: props.communityId },
+    select: { id: true, owner_id: true, deleted_at: true },
+  });
+  if (community === null || community.deleted_at !== null) {
+    throw new HttpException("Community not found", 404);
+  }
+  // Verify requesting member is the owner
   if (community.owner_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException(
+      "Forbidden: Only the community owner can delete this community",
+      403,
+    );
   }
-  // Handle icon attachment cleanup if exists
-  if (community.icon_attachment_id !== null) {
-    await MyGlobal.prisma.reddit_like_attachments.delete({
-      where: { id: community.icon_attachment_id },
-    });
-  }
-  // Soft delete the community
+  // Soft delete by setting deleted_at
   await MyGlobal.prisma.reddit_like_communities.update({
     where: { id: props.communityId },
     data: {
       deleted_at: new Date(),
+      updated_at: new Date(),
     },
   });
 }

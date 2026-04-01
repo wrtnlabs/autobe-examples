@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformRolePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRolePermission";
 import { ArrayUtil } from "@nestia/e2e";
@@ -20,65 +21,40 @@ export async function postHrmPlatformMemberRolesRoleIdPermissions(props: {
   roleId: string & tags.Format<"uuid">;
   body: IHrmPlatformRolePermission.ICreate;
 }): Promise<IHrmPlatformRolePermission> {
+  const VALID_PERMISSIONS = [
+    "org:manage",
+    "employee:manage",
+    "employee:view",
+    "project:manage",
+    "project:view",
+    "time:manage",
+    "time:approve",
+    "time:view_all",
+    "report:view",
+  ];
   const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
     where: { id: props.roleId },
-    select: {
-      id: true,
-      name: true,
-      built_in: true,
-      organization_id: true,
-    },
+    select: { id: true, is_builtin: true },
   });
-  if (role.built_in) {
-    throw new HttpException("Cannot modify permissions of built-in roles", 400);
+  if (role.is_builtin) {
+    throw new HttpException("Cannot modify permissions of built-in roles", 403);
   }
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        member_id: props.member.id,
-        organization_id: role.organization_id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        role_id: true,
-        organization_id: true,
-      },
-    });
-  const existingPermission =
+  if (!VALID_PERMISSIONS.includes(props.body.permission)) {
+    throw new HttpException(
+      `Invalid permission code. Must be one of: ${VALID_PERMISSIONS.join(", ")}`,
+      400,
+    );
+  }
+  const existing =
     await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
       where: {
-        role_id: props.roleId,
+        hrm_platform_role_id: props.roleId,
         permission: props.body.permission,
         deleted_at: null,
       },
     });
-  if (existingPermission) {
-    throw new HttpException("Permission already assigned to this role", 400);
-  }
-  const userRole = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
-    where: { id: employee.role_id },
-    select: {
-      built_in: true,
-      name: true,
-    },
-  });
-  const isOwner = userRole.built_in && userRole.name === "Owner";
-  if (!isOwner) {
-    const hasOrgManage =
-      await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-        where: {
-          role_id: employee.role_id,
-          permission: "org:manage",
-          deleted_at: null,
-        },
-      });
-    if (!hasOrgManage) {
-      throw new HttpException(
-        "Forbidden: Requires org:manage permission or owner role",
-        403,
-      );
-    }
+  if (existing) {
+    throw new HttpException("Permission already exists for this role", 409);
   }
   const created = await MyGlobal.prisma.hrm_platform_role_permissions.create({
     data: await HrmPlatformRolePermissionCollector.collect({
@@ -86,20 +62,6 @@ export async function postHrmPlatformMemberRolesRoleIdPermissions(props: {
       hrmPlatformRoles: { id: props.roleId },
     }),
     ...HrmPlatformRolePermissionTransformer.select(),
-  });
-  await MyGlobal.prisma.hrm_platform_activity_logs.create({
-    data: {
-      id: v4(),
-      member_id: props.member.id,
-      organization_id: role.organization_id,
-      action_type: "role.permission.added",
-      target_entity_type: "role",
-      target_entity_id: props.roleId,
-      details: `Added permission ${props.body.permission} to role ${role.name}`,
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
-    },
   });
   return await HrmPlatformRolePermissionTransformer.transform(created);
 }

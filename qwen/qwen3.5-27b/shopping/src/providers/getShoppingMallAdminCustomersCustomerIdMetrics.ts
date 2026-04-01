@@ -16,13 +16,12 @@ export async function getShoppingMallAdminCustomersCustomerIdMetrics(props: {
   admin: AdminPayload;
   customerId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallCustomerMetric> {
-  // Verify customer exists
-  await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
-    where: {
-      id: props.customerId,
-      deleted_at: null,
-    },
-  });
+  // Verify customer exists and get created_at
+  const customer =
+    await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
+      where: { id: props.customerId },
+      select: { created_at: true },
+    });
   // Order statistics
   const orderStats = await MyGlobal.prisma.shopping_mall_orders.aggregate({
     where: {
@@ -32,9 +31,10 @@ export async function getShoppingMallAdminCustomersCustomerIdMetrics(props: {
     _count: { id: true },
     _sum: { total_price: true },
   });
-  const totalOrders = orderStats._count.id ?? 0;
+  const totalOrders = orderStats._count.id;
   const totalSpending = orderStats._sum.total_price ?? 0;
   const averageOrderValue = totalOrders > 0 ? totalSpending / totalOrders : 0;
+  // Order items by status - single query with proper join
   const orderItemsByStatus =
     await MyGlobal.prisma.shopping_mall_order_items.groupBy({
       by: ["status"],
@@ -47,36 +47,42 @@ export async function getShoppingMallAdminCustomersCustomerIdMetrics(props: {
       },
       _count: { id: true },
     });
-  const paidCount =
-    orderItemsByStatus.find((x) => x.status === "paid")?._count.id ?? 0;
-  const shippedCount =
-    orderItemsByStatus.find((x) => x.status === "shipped")?._count.id ?? 0;
-  const deliveredCount =
-    orderItemsByStatus.find((x) => x.status === "delivered")?._count.id ?? 0;
-  const cancelledCount =
-    orderItemsByStatus.find((x) => x.status === "cancelled")?._count.id ?? 0;
-  const refundedCount =
-    orderItemsByStatus.find((x) => x.status === "refunded")?._count.id ?? 0;
+  const byStatus: {
+    paid: number;
+    shipped: number;
+    delivered: number;
+    cancelled: number;
+    refunded: number;
+  } = {
+    paid: 0,
+    shipped: 0,
+    delivered: 0,
+    cancelled: 0,
+    refunded: 0,
+  };
+  for (const item of orderItemsByStatus) {
+    if (item.status === "paid") byStatus.paid = item._count.id;
+    else if (item.status === "shipped") byStatus.shipped = item._count.id;
+    else if (item.status === "delivered") byStatus.delivered = item._count.id;
+    else if (item.status === "cancelled") byStatus.cancelled = item._count.id;
+    else if (item.status === "refunded") byStatus.refunded = item._count.id;
+  }
   // Wishlist statistics
-  const wishlistCount =
+  const wishlistStats =
     await MyGlobal.prisma.shopping_mall_wishlist_items.count({
       where: {
         shopping_mall_customer_id: props.customerId,
         deleted_at: null,
       },
     });
-  // Cart statistics - need to join with product_variants for total value
-  const cartItems = await MyGlobal.prisma.shopping_mall_cart_items.findMany({
+  // Cart statistics
+  const cartStats = await MyGlobal.prisma.shopping_mall_cart_items.aggregate({
     where: {
       shopping_mall_customer_id: props.customerId,
       deleted_at: null,
     },
+    _count: { id: true },
   });
-  const cartItemCount = cartItems.length;
-  const cartTotalValue = cartItems.reduce(
-    (sum, item) => sum + item.quantity * 0,
-    0,
-  );
   // Review statistics
   const reviewStats = await MyGlobal.prisma.shopping_mall_reviews.aggregate({
     where: {
@@ -86,17 +92,16 @@ export async function getShoppingMallAdminCustomersCustomerIdMetrics(props: {
     _count: { id: true },
     _avg: { rating: true },
   });
-  const totalReviews = reviewStats._count.id ?? 0;
-  const averageRating = reviewStats._avg.rating ?? null;
   // Cancellation statistics
-  const cancellationCount =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.count({
+  const cancellationStats =
+    await MyGlobal.prisma.shopping_mall_cancellation_requests.aggregate({
       where: {
         shopping_mall_customer_id: props.customerId,
         deleted_at: null,
       },
+      _count: { id: true },
     });
-  const cancellationsByStatus =
+  const cancellationByStatus =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.groupBy({
       by: ["status"],
       where: {
@@ -105,22 +110,32 @@ export async function getShoppingMallAdminCustomersCustomerIdMetrics(props: {
       },
       _count: { id: true },
     });
-  const pendingCancellationCount =
-    cancellationsByStatus.find((x) => x.status === "pending")?._count.id ?? 0;
-  const approvedCancellationCount =
-    cancellationsByStatus.find((x) => x.status === "approved")?._count.id ?? 0;
-  const rejectedCancellationCount =
-    cancellationsByStatus.find((x) => x.status === "rejected")?._count.id ?? 0;
+  const cancellationStatus: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  } = {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  };
+  for (const item of cancellationByStatus) {
+    if (item.status === "pending") cancellationStatus.pending = item._count.id;
+    else if (item.status === "approved")
+      cancellationStatus.approved = item._count.id;
+    else if (item.status === "rejected")
+      cancellationStatus.rejected = item._count.id;
+  }
   // Refund statistics
-  const refundCount = await MyGlobal.prisma.shopping_mall_refund_requests.count(
-    {
+  const refundStats =
+    await MyGlobal.prisma.shopping_mall_refund_requests.aggregate({
       where: {
         shopping_mall_customer_id: props.customerId,
         deleted_at: null,
       },
-    },
-  );
-  const refundsByStatus =
+      _count: { id: true },
+    });
+  const refundByStatus =
     await MyGlobal.prisma.shopping_mall_refund_requests.groupBy({
       by: ["status"],
       where: {
@@ -129,61 +144,52 @@ export async function getShoppingMallAdminCustomersCustomerIdMetrics(props: {
       },
       _count: { id: true },
     });
-  const pendingRefundCount =
-    refundsByStatus.find((x) => x.status === "pending")?._count.id ?? 0;
-  const approvedRefundCount =
-    refundsByStatus.find((x) => x.status === "approved")?._count.id ?? 0;
-  const rejectedRefundCount =
-    refundsByStatus.find((x) => x.status === "rejected")?._count.id ?? 0;
-  // Account info
-  const customer =
-    await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
-      where: { id: props.customerId },
-      select: { created_at: true },
-    });
-  const registrationDate = toISOStringSafe(customer.created_at);
+  const refundStatus: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  } = {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  };
+  for (const item of refundByStatus) {
+    if (item.status === "pending") refundStatus.pending = item._count.id;
+    else if (item.status === "approved") refundStatus.approved = item._count.id;
+    else if (item.status === "rejected") refundStatus.rejected = item._count.id;
+  }
+  // Account info - calculate age without using new Date()
+  const currentTime = Date.now();
+  const registrationTime = customer.created_at.getTime();
   const accountAgeInDays = Math.floor(
-    (Date.now() - customer.created_at.getTime()) / (1000 * 60 * 60 * 24),
+    (currentTime - registrationTime) / (1000 * 60 * 60 * 24),
   );
+  const registrationDate = customer.created_at.toISOString();
   return {
     orderStatistics: {
       totalOrders,
       totalSpending,
       averageOrderValue,
-      byStatus: {
-        paid: paidCount,
-        shipped: shippedCount,
-        delivered: deliveredCount,
-        cancelled: cancelledCount,
-        refunded: refundedCount,
-      },
+      byStatus,
     },
     wishlistStatistics: {
-      totalItems: wishlistCount,
+      totalItems: wishlistStats,
     },
     cartStatistics: {
-      totalItems: cartItemCount,
-      totalValue: cartTotalValue,
+      totalItems: cartStats._count.id,
+      totalValue: 0,
     },
     reviewStatistics: {
-      totalReviews,
-      averageRating,
+      totalReviews: reviewStats._count.id,
+      averageRating: reviewStats._avg.rating ?? null,
     },
     cancellationStatistics: {
-      totalRequests: cancellationCount,
-      byStatus: {
-        pending: pendingCancellationCount,
-        approved: approvedCancellationCount,
-        rejected: rejectedCancellationCount,
-      },
+      totalRequests: cancellationStats._count.id,
+      byStatus: cancellationStatus,
     },
     refundStatistics: {
-      totalRequests: refundCount,
-      byStatus: {
-        pending: pendingRefundCount,
-        approved: approvedRefundCount,
-        rejected: rejectedRefundCount,
-      },
+      totalRequests: refundStats._count.id,
+      byStatus: refundStatus,
     },
     accountInfo: {
       registrationDate,

@@ -24,40 +24,26 @@ export async function getShoppingMallMemberOrderItemsOrderItemId(props: {
   member: MemberPayload;
   orderItemId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallOrderItem> {
-  const existing =
-    await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
-      where: { id: props.orderItemId },
-      select: {
-        shopping_mall_order_id: true,
-        seller_snapshot_id: true,
-        // `deleted_at` field is not part of the generated args type in this project,
-        // so omit it and rely on the transformer / downstream mapping.
+  const orderItem =
+    await MyGlobal.prisma.shopping_mall_order_items.findFirstOrThrow({
+      where: {
+        id: props.orderItemId,
+        deleted_at: null,
+        OR: [
+          {
+            order: {
+              deleted_at: null,
+              shopping_customer_id: props.member.id,
+            },
+          },
+          {
+            sellerSnapshot: {
+              source_seller_id: props.member.id,
+            },
+          },
+        ],
       },
-    });
-  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
-    where: { id: existing.shopping_mall_order_id },
-    select: {
-      shopping_customer_id: true,
-    },
-  });
-  const sellerSnapshot =
-    await MyGlobal.prisma.shopping_mall_snapshots.findUniqueOrThrow({
-      where: { id: existing.seller_snapshot_id },
-      select: {
-        source_seller_id: true,
-      },
-    });
-  const isCustomerOwner = order.shopping_customer_id === props.member.id;
-  const isSellerOwner =
-    sellerSnapshot.source_seller_id !== null &&
-    sellerSnapshot.source_seller_id === props.member.id;
-  if (!isCustomerOwner && !isSellerOwner) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const detailed =
-    await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
-      where: { id: props.orderItemId },
       ...ShoppingMallOrderItemTransformer.select(),
     });
-  return await ShoppingMallOrderItemTransformer.transform(detailed);
+  return await ShoppingMallOrderItemTransformer.transform(orderItem);
 }

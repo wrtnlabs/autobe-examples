@@ -11,8 +11,8 @@ export namespace ShoppingMallCancellationRequestCollector {
   export async function collect(props: {
     body: IShoppingMallCancellationRequest.ICreate;
   }) {
-    const id: string = v4();
-    const now: Date = new Date();
+    const id = v4();
+    const now = new Date();
     return {
       id,
       reason: props.body.reason,
@@ -23,9 +23,7 @@ export namespace ShoppingMallCancellationRequestCollector {
       created_at: now,
       updated_at: now,
       deleted_at: null,
-      orderItem: {
-        connect: { id: props.body.orderItemId },
-      },
+      orderItem: { connect: { id: props.body.orderItemId } },
     } satisfies Prisma.shopping_mall_cancellation_requestsCreateInput;
   }
 }

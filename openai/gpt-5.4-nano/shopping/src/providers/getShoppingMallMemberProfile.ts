@@ -15,8 +15,11 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getShoppingMallMemberProfile(props: {
   member: MemberPayload;
 }): Promise<IShoppingMallMember> {
-  const record = await MyGlobal.prisma.shopping_mall_members.findUniqueOrThrow({
-    where: { id: props.member.id },
+  const member = await MyGlobal.prisma.shopping_mall_members.findFirstOrThrow({
+    where: {
+      id: props.member.id,
+      deleted_at: null,
+    },
     select: {
       id: true,
       email: true,
@@ -26,10 +29,10 @@ export async function getShoppingMallMemberProfile(props: {
     },
   });
   return {
-    id: record.id,
-    email: record.email,
-    created_at: record.created_at.toISOString(),
-    updated_at: record.updated_at.toISOString(),
-    deleted_at: record.deleted_at?.toISOString() ?? null,
-  } satisfies IShoppingMallMember;
+    id: member.id,
+    email: member.email,
+    created_at: toISOStringSafe(member.created_at),
+    updated_at: toISOStringSafe(member.updated_at),
+    deleted_at: null,
+  };
 }

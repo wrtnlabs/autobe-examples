@@ -26,6 +26,9 @@ export namespace RedditCommunityVoteCollector {
       targetComment: props.body.target_comment_id
         ? { connect: { id: props.body.target_comment_id } }
         : undefined,
+      karmaSnapshots: undefined,
+      postTarget: undefined,
+      commentVote: undefined,
     } satisfies Prisma.reddit_community_votesCreateInput;
   }
 }

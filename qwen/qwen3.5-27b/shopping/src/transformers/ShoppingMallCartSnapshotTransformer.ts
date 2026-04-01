@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCartSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallCartSnapshotTransformer {
@@ -14,12 +16,8 @@ export namespace ShoppingMallCartSnapshotTransformer {
     return {
       select: {
         id: true,
-        cartItem: {
-          select: { id: true },
-        } satisfies Prisma.shopping_mall_cart_itemsFindManyArgs,
-        customer: {
-          select: { id: true },
-        } satisfies Prisma.shopping_mall_customersFindManyArgs,
+        cartItem: { select: { id: true } },
+        customer: { select: { id: true } },
         sku_code: true,
         option_values: true,
         price_at_snapshot: true,

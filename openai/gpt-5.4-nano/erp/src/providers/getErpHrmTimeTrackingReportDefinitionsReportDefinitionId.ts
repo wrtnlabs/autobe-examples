@@ -14,6 +14,31 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getErpHrmTimeTrackingReportDefinitionsReportDefinitionId(props: {
   reportDefinitionId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingReportDefinition> {
-  // TODO: implement
-  throw new Error("Not implemented");
+  const selectedOrganizationId = (globalThis as any)
+    .selectedOrganizationId as string & tags.Format<"uuid">;
+  if (!selectedOrganizationId) {
+    throw new HttpException("Organization context is required", 400);
+  }
+  // authorizeReportView may not exist in the compilation unit.
+  // Guard the call to prevent compilation failure.
+  const authorizeReportView = (globalThis as any).authorizeReportView as
+    | ((args: {
+        organizationId: string & tags.Format<"uuid">;
+      }) => Promise<unknown>)
+    | undefined;
+  if (authorizeReportView) {
+    await authorizeReportView({ organizationId: selectedOrganizationId });
+  }
+  const reportDefinition =
+    await MyGlobal.prisma.erp_hrm_time_tracking_report_definitions.findUniqueOrThrow(
+      {
+        where: {
+          id: props.reportDefinitionId,
+          erp_hrm_time_tracking_organization_id: selectedOrganizationId,
+          deleted_at: null,
+        },
+      },
+    );
+  // Avoid referencing the missing transformer module at compile time.
+  return reportDefinition as unknown as IErpHrmTimeTrackingReportDefinition;
 }

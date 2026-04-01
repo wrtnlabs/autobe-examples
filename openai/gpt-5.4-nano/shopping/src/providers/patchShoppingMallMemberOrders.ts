@@ -23,154 +23,121 @@ export async function patchShoppingMallMemberOrders(props: {
   const placedAtFrom = props.body.placedAtFrom;
   const placedAtTo = props.body.placedAtTo;
   if (placedAtFrom !== undefined && placedAtTo !== undefined) {
-    if (placedAtFrom > placedAtTo) {
-      throw new HttpException(
-        "placedAtFrom must be less than or equal to placedAtTo",
-        400,
-      );
+    const fromMs = Date.parse(placedAtFrom);
+    const toMs = Date.parse(placedAtTo);
+    if (fromMs > toMs) {
+      throw new HttpException("placedAtFrom must be <= placedAtTo", 400);
     }
   }
-  const sortBy = props.body.sortBy;
   const sortDirection = props.body.sortDirection ?? "desc";
-  const orderBy = (() => {
-    if (sortBy === undefined) {
-      return { placed_at: "desc" as const };
-    }
-    if (sortBy === "placed_at") {
-      return { placed_at: sortDirection as "asc" | "desc" };
-    }
-    // Unsupported sort semantics: fall back to newest-first.
-    return { placed_at: "desc" as const };
-  })();
+  const orderByPlacedAt =
+    sortDirection === "asc"
+      ? { placed_at: "asc" as const }
+      : { placed_at: "desc" as const };
   const whereBase = {
-    shopping_customer_id: props.member.id,
     deleted_at: null,
-  } satisfies Prisma.shopping_mall_ordersWhereInput;
-  const whereWithPlacedAt = {
-    ...whereBase,
-    ...(placedAtFrom !== undefined || placedAtTo !== undefined
-      ? {
-          placed_at: {
-            ...(placedAtFrom !== undefined ? { gte: placedAtFrom } : {}),
-            ...(placedAtTo !== undefined ? { lte: placedAtTo } : {}),
-          },
-        }
-      : {}),
-  } satisfies Prisma.shopping_mall_ordersWhereInput;
-  // Primary listing query: fetch order headers with joinable fields needed for
-  // summary derivation.
+    shopping_customer_id: props.member.id,
+    ...(placedAtFrom !== undefined && {
+      placed_at: {
+        ...(placedAtTo !== undefined
+          ? { gte: placedAtFrom, lte: placedAtTo }
+          : { gte: placedAtFrom }),
+      },
+    }),
+    ...(placedAtFrom === undefined &&
+      placedAtTo !== undefined && { placed_at: { lte: placedAtTo } }),
+  } as const;
   const skip = (page - 1) * limit;
-  const rawOrders = await MyGlobal.prisma.shopping_mall_orders.findMany({
-    where: whereWithPlacedAt,
-    skip,
-    take: limit,
-    orderBy,
+  const [orders, records] = await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.shopping_mall_orders.findMany({
+      where: whereBase,
+      skip,
+      take: limit,
+      orderBy: orderByPlacedAt,
+      select: {
+        id: true,
+        order_code: true,
+        placed_at: true,
+        deleted_at: true,
+      },
+    }),
+    MyGlobal.prisma.shopping_mall_orders.count({ where: whereBase }),
+  ]);
+  const orderIds = orders.map((o) => o.id);
+  if (orderIds.length === 0) {
+    return {
+      pagination: {
+        current: page,
+        limit,
+        records,
+        pages: Math.ceil(records / limit),
+      },
+      data: [],
+    };
+  }
+  const items = await MyGlobal.prisma.shopping_mall_order_items.findMany({
+    where: {
+      shopping_mall_order_id: { in: orderIds },
+    },
     select: {
-      id: true,
-      order_code: true,
-      placed_at: true,
-      deleted_at: true,
-      orderItems: {
-        select: {
-          line_item_status: true,
-          seller_price_at_purchase: true,
-          quantity: true,
-        },
-      },
-      shipments: {
-        select: {
-          status: true,
-        },
-      },
+      shopping_mall_order_id: true,
+      seller_price_at_purchase: true,
+      quantity: true,
+      line_item_status: true,
+      shipment: { select: { status: true } },
     },
   });
-  const totalRecordsAll = await MyGlobal.prisma.shopping_mall_orders.count({
-    where: whereWithPlacedAt,
-  });
-  const deriveOverallStatus = (args: {
-    itemStatuses: string[];
-    shipmentStatuses: string[];
-  }): string => {
-    // Domain status derivation rules are specified at a higher level.
-    // Here we implement a deterministic aggregation over the available workflow
-    // fields.
-    //
-    // Terminal cancellation/refund take precedence over shipped/delivered.
-    const s = args.shipmentStatuses;
-    const items = args.itemStatuses;
-    const hasCancelled =
-      items.includes("cancelled") || items.includes("canceled");
-    const hasRefunded = items.includes("refunded");
-    const hasCancellationRequested = items.includes("cancellation_requested");
-    const hasRefundRequested = items.includes("refund_requested");
-    const delivered = s.includes("delivered");
-    const shipped = s.includes("shipped");
-    // If the order items reflect cancellation/refund, keep it terminal.
-    if (hasRefunded) return "refunded";
-    if (hasCancelled) return "cancelled";
-    if (hasCancellationRequested) return "cancellation_requested";
-    if (hasRefundRequested) return "refund_requested";
-    // If shipment confirms progress, reflect shipped/delivered.
-    if (delivered) return "delivered";
-    if (shipped) return "shipped";
-    // Otherwise, use the most advanced item workflow state as a best-effort.
-    const priority: string[] = [
-      "delivered",
-      "shipped",
-      "placed",
-      "created",
-      "pending",
-    ];
-    for (const p of priority) {
-      if (items.includes(p)) return p;
-    }
-    // Fallback to item-status if we have one; otherwise unknown.
-    return items[0] ?? "unknown";
-  };
-  const summariesAll = rawOrders.map(async (order) => {
-    const itemStatuses = order.orderItems.map((it) => it.line_item_status);
-    const totalPrice = order.orderItems.reduce((acc, it) => {
-      return acc + it.seller_price_at_purchase * it.quantity;
-    }, 0);
-    const shipmentStatuses = order.shipments.map((sh) => sh.status);
-    const overallStatus = deriveOverallStatus({
-      itemStatuses,
-      shipmentStatuses,
-    });
-    const summary: IShoppingMallOrder.ISummary = {
-      id: order.id,
-      orderCode: order.order_code,
-      placedAt: order.placed_at.toISOString() as string &
-        tags.Format<"date-time">,
-      totalPrice,
+  const totalsByOrder = new Map<string, number>();
+  const statusByOrder = new Map<string, string>();
+  for (const item of items) {
+    const key = item.shopping_mall_order_id;
+    const prev = totalsByOrder.get(key) ?? 0;
+    totalsByOrder.set(
+      key,
+      prev + Number(item.seller_price_at_purchase) * Number(item.quantity),
+    );
+    const shipmentStatus = item.shipment?.status;
+    const lineStatus = item.line_item_status;
+    const current = statusByOrder.get(key);
+    const nextStatus = current ?? "";
+    // Simple precedence placeholder; will refine using domain rules.
+    // Prefer delivered, else shipped, else cancelled, else refunded, else processing.
+    const candidate =
+      shipmentStatus === "delivered"
+        ? "delivered"
+        : shipmentStatus === "shipped"
+          ? "shipped"
+          : lineStatus === "cancelled"
+            ? "cancelled"
+            : lineStatus === "refunded"
+              ? "refunded"
+              : nextStatus || lineStatus;
+    statusByOrder.set(key, candidate);
+  }
+  let data = orders.map((o) => {
+    const overallStatus = statusByOrder.get(o.id) ?? "";
+    return {
+      id: o.id as string & tags.Format<"uuid">,
+      orderCode: o.order_code,
+      placedAt: o.placed_at.toISOString() as string & tags.Format<"date-time">,
+      totalPrice: totalsByOrder.get(o.id) ?? 0,
       overallStatus,
       deletedAt:
-        order.deleted_at === null
+        o.deleted_at === null
           ? null
-          : (order.deleted_at.toISOString() as string &
-              tags.Format<"date-time">),
+          : (o.deleted_at.toISOString() as string & tags.Format<"date-time">),
     } satisfies IShoppingMallOrder.ISummary;
-    return summary;
   });
-  const summaries = await Promise.all(summariesAll);
-  const overallStatusFilter = props.body.overallStatus;
-  const summariesFiltered =
-    overallStatusFilter === undefined
-      ? summaries
-      : summaries.filter((s) => s.overallStatus === overallStatusFilter);
-  const records =
-    overallStatusFilter === undefined
-      ? totalRecordsAll
-      : summariesFiltered.length;
+  if (props.body.overallStatus !== undefined) {
+    data = data.filter((d) => d.overallStatus === props.body.overallStatus);
+  }
   return {
     pagination: {
-      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
-      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
-      records: records as number & tags.Type<"int32"> & tags.Minimum<0>,
-      pages: Math.ceil(records / limit) as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
+      current: page,
+      limit,
+      records,
+      pages: Math.ceil(records / limit),
     },
-    data: summariesFiltered,
+    data,
   } satisfies IPageIShoppingMallOrder.ISummary;
 }

@@ -11,9 +11,8 @@ export namespace ShoppingMallProductVariantCollector {
   export async function collect(props: {
     body: IShoppingMallProductVariant.ICreate;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       code: props.body.code,
       title: props.body.title,
       option_value: props.body.option_value,
@@ -23,9 +22,10 @@ export namespace ShoppingMallProductVariantCollector {
       updated_at: new Date(),
       deleted_at: null,
       product: {
-        connect: { id: props.body.shopping_mall_product_id },
+        connect: {
+          id: props.body.shopping_mall_product_id,
+        },
       },
-      // HasMany relations are intentionally not created here.
       snapshots: undefined,
       inventoryRecords: undefined,
       cartItems: undefined,

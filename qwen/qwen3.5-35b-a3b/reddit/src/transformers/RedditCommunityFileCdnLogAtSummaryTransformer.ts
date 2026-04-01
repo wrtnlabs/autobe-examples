@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityFileCdnLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityFileCdnLog";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace RedditCommunityFileCdnLogAtSummaryTransformer {
@@ -27,7 +29,11 @@ export namespace RedditCommunityFileCdnLogAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        file: true,
+        file: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.reddit_community_file_cdn_logsFindManyArgs;
   }
@@ -46,6 +52,6 @@ export namespace RedditCommunityFileCdnLogAtSummaryTransformer {
       userAgent: input.user_agent ?? null,
       ipAddress: input.ip_address ?? null,
       region: input.region ?? null,
-    } satisfies IRedditCommunityFileCdnLog.ISummary;
+    };
   }
 }

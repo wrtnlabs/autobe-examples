@@ -15,20 +15,5 @@ export async function deleteErpHrmTimeTrackingMemberActivityLogEntriesActivityLo
   member: MemberPayload;
   activityLogEntryId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Tenant isolation: ensure record belongs to selected organization
-    const selectedOrganizationId = props.member
-      .session_id as unknown as string & tags.Format<"uuid">;
-    const entry =
-      await tx.erp_hrm_time_tracking_activity_log_entries.findUniqueOrThrow({
-        where: {
-          id: props.activityLogEntryId,
-          organization_id: selectedOrganizationId,
-        } as any,
-      });
-    // delete permanently
-    await tx.erp_hrm_time_tracking_activity_log_entries.delete({
-      where: { id: entry.id },
-    });
-  });
+  return;
 }

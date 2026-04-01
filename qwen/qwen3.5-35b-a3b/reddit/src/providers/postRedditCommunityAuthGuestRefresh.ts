@@ -15,25 +15,16 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postRedditCommunityAuthGuestRefresh(props: {
   body: IRedditCommunityGuest.IRefresh;
 }): Promise<IRedditCommunityGuest.IAuthorized> {
-  // 1. Verify refresh token
+  // 1. Verify refresh token is valid JWT
   const decoded: {
-    type: string;
-    id: string;
-    session_id: string;
-    created_at: string;
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "guest";
+    created_at: string & tags.Format<"date-time">;
   } = jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
     issuer: "autobe",
-  }) as unknown as {
-    type: string;
-    id: string;
-    session_id: string;
-    created_at: string;
-  };
-  // 2. Validate token type
-  if (decoded.type !== "guest") {
-    throw new HttpException("Invalid token type", 401);
-  }
-  // 3. Validate session exists and belongs to the same guest
+  }) as unknown as typeof decoded;
+  // 2. Validate session exists and belongs to this guest
   const session =
     await MyGlobal.prisma.reddit_community_guest_sessions.findFirst({
       where: {
@@ -45,49 +36,60 @@ export async function postRedditCommunityAuthGuestRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Calculate new expiration times
-  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-  // 5. Generate new tokens (SAME session_id for continuity)
-  const access_token: string = jwt.sign(
+  // 3. Validate session is not expired
+  const sessionExpiredAt: string & tags.Format<"date-time"> =
+    session.expired_at.toISOString();
+  const now: string & tags.Format<"date-time"> = new Date().toISOString();
+  if (now > sessionExpiredAt) {
+    throw new HttpException("Session expired", 401);
+  }
+  // 4. Validate guest exists and is not deleted
+  await MyGlobal.prisma.reddit_community_guests.findUniqueOrThrow({
+    where: { id: decoded.id },
+  });
+  // 5. Generate new tokens with same session_id
+  const accessExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 15 * 60 * 1000,
+  ).toISOString();
+  const refreshExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const nowIso: string & tags.Format<"date-time"> = new Date().toISOString();
+  const access: string = jwt.sign(
     {
-      type: "guest",
+      type: "guest" as const,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: toISOStringSafe(new Date()),
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
+    { expiresIn: "15m", issuer: "autobe" },
   );
-  const refresh_token: string = jwt.sign(
+  const refresh: string = jwt.sign(
     {
-      type: "guest",
+      type: "guest" as const,
       id: decoded.id,
       session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: toISOStringSafe(new Date()),
+      tokenType: "refresh" as const,
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 6. Update session expiration
+  // 6. Update session with new expiration time
   await MyGlobal.prisma.reddit_community_guest_sessions.update({
     where: { id: decoded.session_id },
     data: {
-      updated_at: new Date(),
       expired_at: new Date(refreshExpires),
+      updated_at: new Date(),
     },
   });
-  // 7. Return response
+  // 7. Return authorized response
   return {
     id: decoded.id,
     token: {
-      access: access_token,
-      refresh: refresh_token,
+      access,
+      refresh,
       expired_at: accessExpires,
       refreshable_until: refreshExpires,
     },

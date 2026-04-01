@@ -47,6 +47,13 @@ export namespace HrmPlatformTimesheetTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IHrmPlatformTimesheet> {
+    const timelogs = await ArrayUtil.asyncMap(input.timesheetTimelogs, (tt) =>
+      HrmPlatformTimelogTransformer.transform(tt.timelog),
+    );
+    const totalMinutes = timelogs.reduce(
+      (sum, tl) => sum + tl.duration_minutes,
+      0,
+    );
     return {
       id: input.id,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
@@ -55,27 +62,17 @@ export namespace HrmPlatformTimesheetTransformer {
       reviewer: input.reviewer
         ? await HrmPlatformMemberAtSummaryTransformer.transform(input.reviewer)
         : null,
-      week_start_date: toISOStringSafe(input.week_start_date),
-      week_end_date: toISOStringSafe(input.week_end_date),
+      week_start_date: input.week_start_date.toISOString(),
+      week_end_date: input.week_end_date.toISOString(),
       status: input.status,
-      submitted_at: input.submitted_at
-        ? toISOStringSafe(input.submitted_at)
-        : null,
-      reviewed_at: input.reviewed_at
-        ? toISOStringSafe(input.reviewed_at)
-        : null,
-      rejection_reason: input.rejection_reason ?? null,
-      total_hours:
-        input.timesheetTimelogs.reduce(
-          (sum, tl) => sum + tl.timelog.duration_minutes,
-          0,
-        ) / 60,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      timelogs: await ArrayUtil.asyncMap(input.timesheetTimelogs, (tl) =>
-        HrmPlatformTimelogTransformer.transform(tl.timelog),
-      ),
+      submitted_at: input.submitted_at?.toISOString() ?? null,
+      reviewed_at: input.reviewed_at?.toISOString() ?? null,
+      rejection_reason: input.rejection_reason,
+      total_hours: totalMinutes / 60,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      timelogs,
     };
   }
 }

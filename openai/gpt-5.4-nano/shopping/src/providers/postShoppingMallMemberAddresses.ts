@@ -18,28 +18,30 @@ export async function postShoppingMallMemberAddresses(props: {
   member: MemberPayload;
   body: IShoppingMallAddress.ICreate;
 }): Promise<IShoppingMallAddress> {
-  const address = await MyGlobal.prisma.$transaction(async (tx) => {
-    const created = await tx.shopping_mall_addresses.create({
+  const isDefault: boolean = props.body.is_default ?? false;
+  const created = await MyGlobal.prisma.$transaction(async (tx) => {
+    const createdAddress = await tx.shopping_mall_addresses.create({
       data: await ShoppingMallAddressCollector.collect({
         body: props.body,
         shoppingMallMembers: props.member,
       }),
     });
-    if (props.body.is_default === true) {
+    if (isDefault) {
       await tx.shopping_mall_addresses.updateMany({
         where: {
           shopping_mall_customer_id: props.member.id,
-          id: { not: created.id },
           deleted_at: null,
+          is_default: true,
+          id: { not: createdAddress.id },
         },
-        data: { is_default: false },
+        data: { is_default: false, updated_at: new Date() },
       });
     }
-    const fetched = await tx.shopping_mall_addresses.findUniqueOrThrow({
-      where: { id: created.id },
+    const withSelect = await tx.shopping_mall_addresses.findUniqueOrThrow({
+      where: { id: createdAddress.id },
       ...ShoppingMallAddressTransformer.select(),
     });
-    return await ShoppingMallAddressTransformer.transform(fetched);
+    return withSelect;
   });
-  return address;
+  return await ShoppingMallAddressTransformer.transform(created);
 }

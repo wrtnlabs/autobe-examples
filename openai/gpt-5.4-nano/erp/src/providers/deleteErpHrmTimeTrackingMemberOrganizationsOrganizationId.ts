@@ -14,4 +14,20 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function deleteErpHrmTimeTrackingMemberOrganizationsOrganizationId(props: {
   member: MemberPayload;
   organizationId: string & tags.Format<"uuid">;
-}): Promise<void> {}
+}): Promise<void> {
+  const organization =
+    await MyGlobal.prisma.erp_hrm_time_tracking_organizations.findUniqueOrThrow(
+      {
+        where: { id: props.organizationId },
+        select: { id: true, deleted_at: true },
+      },
+    );
+  if (organization.deleted_at !== null) {
+    throw new HttpException("Organization already deleted", 400);
+  }
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.erp_hrm_time_tracking_organizations.delete({
+      where: { id: props.organizationId },
+    });
+  });
+}

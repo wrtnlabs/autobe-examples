@@ -22,70 +22,29 @@ export async function getHrmsMemberTimesheetsTimesheetId(props: {
   member: MemberPayload;
   timesheetId: string & tags.Format<"uuid">;
 }): Promise<IHrmsTimesheet> {
-  const session = await MyGlobal.prisma.hrms_member_sessions.findFirst({
-    where: {
-      hrms_member_id: props.member.id,
-      id: props.member.session_id,
-      expired_at: { gt: new Date() },
-    },
-  });
-  if (session === null) {
-    throw new HttpException("Unauthorized", 401);
-  }
-  if (session.current_organization_id === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const organizationMember =
-    await MyGlobal.prisma.hrms_organization_members.findFirst({
-      where: {
-        hrms_member_id: props.member.id,
-        hrms_organization_id: session.current_organization_id,
-        deleted_at: null,
-      },
-      include: {
-        organizationRole: true,
-      },
-    });
-  if (organizationMember === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const hasTimeApprovePermission = false;
+  const { member, timesheetId } = props;
+  // Fetch the timesheet with proper selection
   const timesheet = await MyGlobal.prisma.hrms_timesheets.findUniqueOrThrow({
-    where: { id: props.timesheetId },
+    where: {
+      id: timesheetId,
+      deleted_at: null,
+    },
     ...HrmsTimesheetTransformer.select(),
   });
-  if (timesheet.deleted_at !== null) {
-    throw new HttpException("Not Found", 404);
-  }
-  if (!hasTimeApprovePermission) {
-    if (session.current_organization_id === null) {
-      throw new HttpException("Forbidden", 403);
-    }
-    const employeeOrgMember =
-      await MyGlobal.prisma.hrms_organization_members.findFirst({
-        where: {
-          hrms_member_id: timesheet.employee.id,
-          hrms_organization_id: session.current_organization_id,
-          deleted_at: null,
-        },
-      });
-    if (
-      employeeOrgMember === null ||
-      employeeOrgMember.hrms_organization_id !== session.current_organization_id
-    ) {
-      throw new HttpException("Forbidden", 403);
-    }
-  }
-  const prismaTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+  // Authorization: member must own the timesheet
+  // Check if the employee belongs to this member's organization by verifying the organization_member link
+  const orgMember = await MyGlobal.prisma.hrms_organization_members.findFirst({
     where: {
-      employee_id: timesheet.employee.id,
-      ...(timesheet.status === "approved" ? {} : { deleted_at: null }),
+      member: { id: member.id },
+      employees: {
+        some: {
+          id: timesheet.employee.id,
+        },
+      },
     },
   });
-  const transformed = await HrmsTimesheetTransformer.transform(timesheet);
-  const timelogs = prismaTimelogs as unknown as IHrmsTimelog[];
-  return {
-    ...transformed,
-    timelogs,
-  };
+  if (orgMember === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  return await HrmsTimesheetTransformer.transform(timesheet);
 }

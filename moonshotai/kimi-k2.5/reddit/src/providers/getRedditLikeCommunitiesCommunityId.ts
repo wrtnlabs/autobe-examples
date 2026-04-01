@@ -19,10 +19,7 @@ export async function getRedditLikeCommunitiesCommunityId(props: {
 }): Promise<IRedditLikeCommunity> {
   const community =
     await MyGlobal.prisma.reddit_like_communities.findUniqueOrThrow({
-      where: {
-        id: props.communityId,
-        deleted_at: null,
-      },
+      where: { id: props.communityId, deleted_at: null },
       ...RedditLikeCommunityTransformer.select(),
     });
   return await RedditLikeCommunityTransformer.transform(community);

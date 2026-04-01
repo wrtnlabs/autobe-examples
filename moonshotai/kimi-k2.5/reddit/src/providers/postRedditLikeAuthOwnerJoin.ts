@@ -17,89 +17,101 @@ export async function postRedditLikeAuthOwnerJoin(props: {
   body: IRedditLikeOwner.IJoin;
 }): Promise<IRedditLikeOwner.IAuthorized> {
   // 1. Check for duplicate email
-  const existingOwner = await MyGlobal.prisma.reddit_like_owners.findFirst({
+  const existingEmail = await MyGlobal.prisma.reddit_like_owners.findFirst({
     where: { email: props.body.email },
   });
-  if (existingOwner) {
+  if (existingEmail) {
     throw new HttpException("Email already registered", 409);
   }
-  // Generate username from email prefix
-  const username = props.body.email.split("@")[0] ?? props.body.email;
-  // Check username uniqueness
-  const existingUsername = await MyGlobal.prisma.reddit_like_owners.findFirst({
-    where: { username },
-  });
-  if (existingUsername) {
-    throw new HttpException("Username already exists", 409);
+  // 2. Generate unique username from email prefix
+  const emailPrefix = props.body.email.split("@")[0];
+  let username = emailPrefix;
+  let usernameExists = true;
+  let attempts = 0;
+  while (usernameExists && attempts < 10) {
+    const existingUsername = await MyGlobal.prisma.reddit_like_owners.findFirst(
+      {
+        where: { username },
+      },
+    );
+    if (!existingUsername) {
+      usernameExists = false;
+    } else {
+      username = `${emailPrefix}_${v4().substring(0, 8)}`;
+      attempts++;
+    }
   }
-  // 2. Create owner
-  const ownerId = v4();
-  const now = new Date();
+  if (usernameExists) {
+    throw new HttpException("Unable to generate unique username", 500);
+  }
+  // 3. Hash password
   const passwordHash = await PasswordUtil.hash(props.body.password);
+  // 4. Create owner record
+  const now = new Date();
+  const nowISO = now.toISOString();
+  const accessExpires = new Date(Date.now() + 30 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const owner = await MyGlobal.prisma.reddit_like_owners.create({
     data: {
-      id: ownerId,
+      id: v4(),
       email: props.body.email,
       password_hash: passwordHash,
-      username: username,
+      username,
       display_name: props.body.nickname,
       is_active: true,
-      created_at: now,
-      updated_at: now,
+      created_at: nowISO,
+      updated_at: nowISO,
       deleted_at: null,
     },
   });
-  // 3. Create session
-  const sessionId = v4();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  await MyGlobal.prisma.reddit_like_owner_sessions.create({
+  // 5. Create session
+  const session = await MyGlobal.prisma.reddit_like_owner_sessions.create({
     data: {
-      id: sessionId,
-      reddit_like_owner_id: ownerId,
+      id: v4(),
+      reddit_like_owner_id: owner.id,
       ip: props.ip,
       href: "",
       referrer: "",
-      created_at: now,
-      expired_at: accessExpires,
+      created_at: nowISO,
+      expired_at: accessExpires.toISOString(),
     },
   });
-  // 4. Generate JWT tokens
-  const token: IAuthorizationToken = {
+  // 6. Generate JWT tokens
+  const token = {
     access: jwt.sign(
       {
         type: "owner",
-        id: ownerId,
-        session_id: sessionId,
-        created_at: toISOStringSafe(now),
+        id: owner.id,
+        session_id: session.id,
+        created_at: nowISO,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
+      { expiresIn: "30m", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
         type: "owner",
-        id: ownerId,
-        session_id: sessionId,
+        id: owner.id,
+        session_id: session.id,
         tokenType: "refresh",
-        created_at: toISOStringSafe(now),
+        created_at: nowISO,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
-  // 5. Return IAuthorized
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
+  } satisfies IAuthorizationToken;
+  // 7. Return IAuthorized with proper date conversions
   return {
-    id: ownerId,
-    email: props.body.email,
-    username: username,
-    display_name: props.body.nickname,
-    is_active: true,
-    created_at: toISOStringSafe(now),
-    updated_at: toISOStringSafe(now),
-    deleted_at: null,
+    id: owner.id,
+    email: owner.email,
+    username: owner.username,
+    display_name: owner.display_name,
+    is_active: owner.is_active,
+    created_at: owner.created_at.toISOString(),
+    updated_at: owner.updated_at.toISOString(),
+    deleted_at: owner.deleted_at?.toISOString() ?? null,
     token,
-  };
+  } satisfies IRedditLikeOwner.IAuthorized;
 }

@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -19,16 +20,36 @@ export namespace ShoppingMallMemberTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: true,
-        passwordResets: true,
-        emailVerifications: true,
-        oauthConnections: true,
-        sellerProducts: true,
-        wishlists: true,
-        carts: true,
-        orders: true,
-        reviews: true,
-        addresses: true,
+        sessions: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_member_sessionsFindManyArgs,
+        passwordResets: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_member_password_resetsFindManyArgs,
+        emailVerifications: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_member_email_verificationsFindManyArgs,
+        oauthConnections: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_member_oauth_connectionsFindManyArgs,
+        sellerProducts: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_productsFindManyArgs,
+        wishlists: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_wishlistsFindManyArgs,
+        carts: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_cartsFindManyArgs,
+        orders: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_ordersFindManyArgs,
+        reviews: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_reviewsFindManyArgs,
+        addresses: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_addressesFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_membersFindManyArgs;
   }

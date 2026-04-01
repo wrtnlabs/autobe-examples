@@ -20,21 +20,20 @@ export async function patchHrmPlatformMemberSessions(props: {
   member: MemberPayload;
   body: IHrmPlatformMemberSession.IRequest;
 }): Promise<IPageIHrmPlatformMemberSession.ISummary> {
-  const page = props.body.page ?? 1;
+  const page = Math.max(props.body.page ?? 1, 1);
   const limit = Math.min(Math.max(props.body.limit ?? 100, 1), 100);
   const skip = (page - 1) * limit;
-  const sort = props.body.sort ?? "created_at";
-  const order = props.body.order ?? "desc";
-  const whereInput = {
+  const now = new Date();
+  const whereInput: Prisma.hrm_platform_member_sessionsWhereInput = {
     hrm_platform_member_id: props.member.id,
     ...(props.body.dateRange?.start && {
       created_at: {
-        gte: props.body.dateRange.start,
+        gte: new Date(props.body.dateRange.start),
       },
     }),
     ...(props.body.dateRange?.end && {
       created_at: {
-        lte: props.body.dateRange.end,
+        lte: new Date(props.body.dateRange.end),
       },
     }),
     ...(props.body.ipPattern && {
@@ -44,18 +43,25 @@ export async function patchHrmPlatformMemberSessions(props: {
     }),
     ...(props.body.status === "active" && {
       expired_at: {
-        gt: new Date().toISOString(),
+        gt: now,
       },
     }),
     ...(props.body.status === "expired" && {
       expired_at: {
-        lte: new Date().toISOString(),
+        lte: now,
       },
     }),
   } satisfies Prisma.hrm_platform_member_sessionsWhereInput;
-  const orderByInput = {
-    [sort]: order,
-  } satisfies Prisma.hrm_platform_member_sessionsOrderByWithRelationInput;
+  const validSortFields = ["created_at", "expired_at", "ip"] as const;
+  const sortField =
+    props.body.sort && validSortFields.includes(props.body.sort as any)
+      ? (props.body
+          .sort as keyof Prisma.hrm_platform_member_sessionsOrderByWithRelationInput)
+      : "created_at";
+  const orderByInput: Prisma.hrm_platform_member_sessionsOrderByWithRelationInput =
+    {
+      [sortField]: props.body.order ?? "desc",
+    } satisfies Prisma.hrm_platform_member_sessionsOrderByWithRelationInput;
   const [data, total] = await Promise.all([
     MyGlobal.prisma.hrm_platform_member_sessions.findMany({
       where: whereInput,
@@ -75,9 +81,9 @@ export async function patchHrmPlatformMemberSessions(props: {
     ),
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIHrmPlatformMemberSession.ISummary;
+  };
 }

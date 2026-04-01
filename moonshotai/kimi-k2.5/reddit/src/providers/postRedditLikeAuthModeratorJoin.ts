@@ -12,7 +12,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditLikeMemberAtSummaryTransformer } from "../transformers/RedditLikeMemberAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -34,36 +33,36 @@ export async function postRedditLikeAuthModeratorJoin(props: {
   if (existingUsername) {
     throw new HttpException("Username already taken", 409);
   }
-  // Hash password
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  // Generate IDs and timestamps as strings
-  const memberId: string & tags.Format<"uuid"> = v4();
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  const nowISO: string & tags.Format<"date-time"> = new Date().toISOString();
-  // Create member using Prisma (Prisma accepts Date for DateTime columns)
-  const member = await MyGlobal.prisma.reddit_like_members.create({
+  const memberId = v4() as string & tags.Format<"uuid">;
+  const sessionId = v4() as string & tags.Format<"uuid">;
+  const nowISO = toISOStringSafe(new Date());
+  // Create member with hashed password
+  await MyGlobal.prisma.reddit_like_members.create({
     data: {
       id: memberId,
       email: props.body.email,
       username: props.body.username,
-      password_hash: passwordHash,
+      password_hash: await PasswordUtil.hash(props.body.password),
       email_verified: false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
     },
-    ...RedditLikeMemberAtSummaryTransformer.select(),
   });
-  // Calculate expiration timestamps
-  const nowMs = Date.now();
-  const accessExpiresMs = nowMs + 15 * 60 * 1000; // 15 minutes
-  const refreshExpiresMs = nowMs + 7 * 24 * 60 * 60 * 1000; // 7 days
-  const accessExpires: string & tags.Format<"date-time"> = new Date(
-    accessExpiresMs,
-  ).toISOString();
-  const refreshExpires: string & tags.Format<"date-time"> = new Date(
-    refreshExpiresMs,
-  ).toISOString();
+  // Calculate expiration times
+  const accessExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // Fetch created member for response
+  const member = await MyGlobal.prisma.reddit_like_members.findUniqueOrThrow({
+    where: { id: memberId },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      email_verified: true,
+      created_at: true,
+    },
+  });
   // Generate JWT tokens
   const token: IAuthorizationToken = {
     access: jwt.sign(
@@ -87,32 +86,25 @@ export async function postRedditLikeAuthModeratorJoin(props: {
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
+    expired_at: toISOStringSafe(accessExpiresAt),
+    refreshable_until: toISOStringSafe(refreshExpiresAt),
   };
-  // Transform member to summary
-  const memberSummary =
-    await RedditLikeMemberAtSummaryTransformer.transform(member);
-  // Construct response - for join, no community assigned yet
-  // Use minimal valid community summary to satisfy type requirements
-  const communityId: string & tags.Format<"uuid"> = v4();
-  const response: IRedditLikeModerator.IAuthorized = {
-    id: sessionId,
+  // Return authorized response
+  // Note: Since this is registration, no moderator role or community exists yet
+  return {
+    id: undefined as unknown as string & tags.Format<"uuid">, // No moderator record yet
     can_add_moderators: false,
-    member: memberSummary,
-    community: {
-      id: communityId,
-      name: "",
-      description: "",
-      owner: memberSummary,
-      icon: null,
-      subscriberCount: 0,
-      createdAt: nowISO,
-    },
+    member: {
+      id: member.id,
+      email: member.email,
+      username: member.username,
+      emailVerified: member.email_verified,
+      createdAt: toISOStringSafe(member.created_at),
+    } satisfies IRedditLikeMember.ISummary,
+    community: undefined as unknown as IRedditLikeCommunity.ISummary, // No community assignment yet
     created_at: nowISO,
     updated_at: nowISO,
     deleted_at: null,
     token,
   };
-  return response;
 }

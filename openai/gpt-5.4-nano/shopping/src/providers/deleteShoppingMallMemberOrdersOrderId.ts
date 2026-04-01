@@ -15,33 +15,65 @@ export async function deleteShoppingMallMemberOrdersOrderId(props: {
   member: MemberPayload;
   orderId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const now = toISOStringSafe(new Date()) as unknown as string &
+  const now = toISOStringSafe(new Date()) satisfies string &
     tags.Format<"date-time">;
   await MyGlobal.prisma.$transaction(async (tx) => {
     const order = await tx.shopping_mall_orders.findUniqueOrThrow({
       where: { id: props.orderId },
       select: {
+        id: true,
         shopping_customer_id: true,
         deleted_at: true,
       },
     });
+    if (order.deleted_at !== null) {
+      throw new HttpException("Order not found", 404);
+    }
     if (order.shopping_customer_id !== props.member.id) {
       throw new HttpException("Forbidden", 403);
     }
-    await tx.shopping_mall_order_items.updateMany({
+    const orderItemIds = await tx.shopping_mall_order_items.findMany({
       where: {
         shopping_mall_order_id: props.orderId,
         deleted_at: null,
       },
-      data: {
-        deleted_at: now,
-      },
+      select: { id: true },
     });
-    await tx.shopping_mall_orders.update({
-      where: { id: props.orderId },
-      data: {
-        deleted_at: now,
-      },
-    });
+    await Promise.all([
+      tx.shopping_mall_orders.updateMany({
+        where: { id: props.orderId, deleted_at: null },
+        data: {
+          deleted_at: now,
+          updated_at: now,
+        },
+      }),
+      tx.shopping_mall_order_items.updateMany({
+        where: { shopping_mall_order_id: props.orderId, deleted_at: null },
+        data: {
+          deleted_at: now,
+          updated_at: now,
+        },
+      }),
+      tx.shopping_mall_cancellation_requests.updateMany({
+        where: {
+          shopping_mall_order_item_id: { in: orderItemIds.map((x) => x.id) },
+          deleted_at: null,
+        },
+        data: {
+          deleted_at: now,
+          updated_at: now,
+        },
+      }),
+      tx.shopping_mall_refund_requests.updateMany({
+        where: {
+          shopping_mall_order_item_id: { in: orderItemIds.map((x) => x.id) },
+          deleted_at: null,
+        },
+        data: {
+          deleted_at: now,
+          updated_at: now,
+        },
+      }),
+    ]);
   });
 }

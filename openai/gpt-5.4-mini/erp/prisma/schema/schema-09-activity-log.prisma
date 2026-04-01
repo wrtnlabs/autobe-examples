@@ -1,0 +1,70 @@
+/// Append-only audit trail entries for significant actions performed within
+/// an organization. Each record stores the organization scope, the acting
+/// member, the action type, the affected target entity, the event timestamp,
+/// and a human-readable details field for traceability.
+///
+/// This table is designed for immutable activity history and operational
+/// auditing. It supports administrative review, security analysis, and
+/// business event inspection without duplicating domain state from {@link
+/// Organization}, {@link Member}, or other business entities.
+///
+/// @namespace ActivityLog
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_activity_log_entries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization's {@link erp_hrm_time_organizations.id}.
+  organization_id String
+  
+  /// Acting member's {@link erp_hrm_time_members.id}.
+  member_id String
+  
+  /// Canonical activity type such as employee invitation, contract change,
+  /// project lifecycle action, task status change, timesheet review, or role
+  /// assignment.
+  action_type String
+  
+  /// Domain entity type affected by the action, stored as a normalized textual
+  /// discriminator.
+  target_entity_type String
+  
+  /// Identifier of the affected target entity within the organization.
+  target_entity_id String
+  
+  /// Human-readable audit details describing what changed or why the event was
+  /// recorded.
+  details String
+  
+  /// Timestamp when the activity event occurred.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for retention workflows, if ever required.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_time_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  member erp_hrm_time_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id])
+  // spellchecker: ignore-next-line
+  @@index([organization_id, created_at], map: "erp_hrm_time_activity_log_entries_organization_id_crea_dedad25a")
+  // spellchecker: ignore-next-line
+  @@index([organization_id, action_type, created_at], map: "erp_hrm_time_activity_log_entries_organization_id_acti_90b13357")
+  // spellchecker: ignore-next-line
+  @@index([organization_id, member_id, created_at], map: "erp_hrm_time_activity_log_entries_organization_id_memb_e4cbe520")
+  // spellchecker: ignore-next-line
+  @@index([organization_id, target_entity_type, target_entity_id], map: "erp_hrm_time_activity_log_entries_organization_id_targ_2c270cf9")
+}

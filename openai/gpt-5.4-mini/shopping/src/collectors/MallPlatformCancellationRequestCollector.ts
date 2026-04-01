@@ -1,0 +1,33 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IMallPlatformCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCancellationRequest";
+import { ArrayUtil } from "@nestia/e2e";
+import { Prisma } from "@prisma/sdk";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { PasswordUtil } from "../utils/PasswordUtil";
+
+export namespace MallPlatformCancellationRequestCollector {
+  export async function collect(props: {
+    body: IMallPlatformCancellationRequest.ICreate;
+    orderItem: IEntity;
+  }) {
+    const id: string = v4();
+    const now = new Date();
+    return {
+      id,
+      reason: props.body.reason,
+      status: "pending",
+      reviewed_at: null,
+      review_result: null,
+      reviewer_note: null,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+      orderItem: {
+        connect: { id: props.orderItem.id },
+      },
+      reviewer: undefined,
+    } satisfies Prisma.mall_platform_cancellation_requestsCreateInput;
+  }
+}

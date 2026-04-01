@@ -26,17 +26,18 @@ export async function patchHrmPlatformMemberReportsWeeklySummary(props: {
     const end = new Date(endDate);
     if (start > end) {
       throw new HttpException(
-        "start_date must be before or equal to end_date",
+        "Start date must be before or equal to end date",
         400,
       );
     }
+    // Check date range not too large (max 2 years)
     const diffYears =
       (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365);
     if (diffYears > 2) {
       throw new HttpException("Date range cannot exceed 2 years", 400);
     }
   }
-  // Get member's employee record to determine organization
+  // Get member's organization
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
@@ -44,18 +45,21 @@ export async function patchHrmPlatformMemberReportsWeeklySummary(props: {
     },
   });
   if (!employee) {
-    throw new HttpException("Employee record not found", 404);
+    throw new HttpException("Employee record not found", 403);
   }
+  const organizationId = employee.hrm_platform_organization_id;
   // Validate project if provided
   if (props.body.project_id) {
-    const project = await MyGlobal.prisma.hrm_platform_projects.findFirst({
+    const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
       where: {
         id: props.body.project_id,
-        hrm_platform_organization_id: employee.hrm_platform_organization_id,
         deleted_at: null,
       },
     });
     if (!project) {
+      throw new HttpException("Project not found", 404);
+    }
+    if (project.hrm_platform_organization_id !== organizationId) {
       throw new HttpException("Project not found", 404);
     }
   }
@@ -63,7 +67,7 @@ export async function patchHrmPlatformMemberReportsWeeklySummary(props: {
   const whereInput: Prisma.hrm_platform_timelogsWhereInput = {
     deleted_at: null,
     employee: {
-      hrm_platform_organization_id: employee.hrm_platform_organization_id,
+      hrm_platform_organization_id: organizationId,
       deleted_at: null,
     },
     ...(startDate && {
@@ -79,12 +83,12 @@ export async function patchHrmPlatformMemberReportsWeeklySummary(props: {
     ...(props.body.project_id && {
       hrm_platform_project_id: props.body.project_id,
     }),
-  };
-  // Pagination parameters
-  const page = props.body.page ?? 1;
-  const limit = props.body.page_size ?? 20;
+  } satisfies Prisma.hrm_platform_timelogsWhereInput;
+  // Get pagination parameters
+  const page = Math.max(1, props.body.page ?? 1);
+  const limit = Math.min(100, Math.max(1, props.body.page_size ?? 20));
   const skip = (page - 1) * limit;
-  // Fetch all timelogs for aggregation
+  // Get all timelogs for aggregation (Prisma groupBy doesn't support date truncation)
   const timelogs = await MyGlobal.prisma.hrm_platform_timelogs.findMany({
     where: whereInput,
     select: {
@@ -92,11 +96,8 @@ export async function patchHrmPlatformMemberReportsWeeklySummary(props: {
       duration_minutes: true,
       hrm_platform_employee_id: true,
     },
-    orderBy: {
-      date: "asc",
-    },
   });
-  // Group by ISO week (Monday-based)
+  // Group by ISO week in memory
   const weekMap = new Map<
     string,
     {
@@ -107,58 +108,52 @@ export async function patchHrmPlatformMemberReportsWeeklySummary(props: {
   >();
   for (const timelog of timelogs) {
     const date = new Date(timelog.date);
-    // Calculate Monday of the ISO week
-    const dayOfWeek = date.getUTCDay() || 7; // Convert Sunday (0) to 7
+    // Get Monday of the week (ISO week start)
+    const dayOfWeek = date.getUTCDay();
     const monday = new Date(
       Date.UTC(
         date.getUTCFullYear(),
         date.getUTCMonth(),
-        date.getUTCDate() - (dayOfWeek - 1),
+        date.getUTCDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1),
+        0,
+        0,
+        0,
+        0,
       ),
     );
-    monday.setUTCHours(0, 0, 0, 0);
-    const weekStartKey = monday.toISOString().split("T")[0];
-    const existing = weekMap.get(weekStartKey) ?? {
+    const weekKey = monday.toISOString().split("T")[0];
+    const existing = weekMap.get(weekKey) ?? {
       totalMinutes: 0,
       timelogCount: 0,
-      employeeIds: new Set<string>(),
+      employeeIds: new Set(),
     };
     existing.totalMinutes += timelog.duration_minutes;
     existing.timelogCount += 1;
     existing.employeeIds.add(timelog.hrm_platform_employee_id);
-    weekMap.set(weekStartKey, existing);
+    weekMap.set(weekKey, existing);
   }
-  // Convert to array and sort
-  const weekData = Array.from(weekMap.entries()).map(([weekStart, data]) => ({
-    weekStartDate: new Date(weekStart),
-    totalHours: data.totalMinutes / 60,
-    timelogCount: data.timelogCount,
-    employeeCount: data.employeeIds.size,
+  // Convert to summary array
+  const summaries = Array.from(weekMap.entries()).map(([weekKey, data]) => ({
+    week_start_date: `${weekKey}T00:00:00Z` as string &
+      tags.Format<"date-time">,
+    total_hours: data.totalMinutes / 60,
+    timelog_count: data.timelogCount as number & tags.Type<"int32">,
+    employee_count: data.employeeIds.size as number & tags.Type<"int32">,
   }));
-  // Apply sorting
-  const sortedData = weekData.sort((a, b) => {
+  // Sort
+  summaries.sort((a, b) => {
     if (props.body.order_by === "total_hours") {
-      return b.totalHours - a.totalHours;
+      return b.total_hours - a.total_hours;
     } else if (props.body.order_by === "employee_count") {
-      return b.employeeCount - a.employeeCount;
-    } else {
-      return a.weekStartDate.getTime() - b.weekStartDate.getTime();
+      return b.employee_count - a.employee_count;
     }
+    return a.week_start_date.localeCompare(b.week_start_date);
   });
-  // Apply pagination
-  const total = sortedData.length;
-  const paginatedData = sortedData.slice(skip, skip + limit);
-  // Transform to DTO format
-  const data = await ArrayUtil.asyncMap(paginatedData, async (week) => {
-    return {
-      week_start_date: week.weekStartDate.toISOString() as string &
-        tags.Format<"date-time">,
-      total_hours: week.totalHours,
-      timelog_count: week.timelogCount as number & tags.Type<"int32">,
-      employee_count: week.employeeCount as number & tags.Type<"int32">,
-    } satisfies IWeeklySummaryReport.ISummary;
-  });
+  // Paginate
+  const total = summaries.length;
+  const paginatedData = summaries.slice(skip, skip + limit);
   return {
+    data: paginatedData,
     pagination: {
       current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
       limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
@@ -167,6 +162,5 @@ export async function patchHrmPlatformMemberReportsWeeklySummary(props: {
         tags.Type<"int32"> &
         tags.Minimum<0>,
     } satisfies IPage.IPagination,
-    data,
   } satisfies IPageIWeeklySummaryReport.ISummary;
 }

@@ -3,8 +3,10 @@ import { IRedditLikeAttachmentAccessLog } from "@ORGANIZATION/PROJECT-api/lib/st
 import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeMemberAtSummaryTransformer } from "./RedditLikeMemberAtSummaryTransformer";
 
@@ -24,8 +26,8 @@ export namespace RedditLikeAttachmentAccessLogAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        attachment: true,
         actor: RedditLikeMemberAtSummaryTransformer.select(),
+        attachment: true,
       },
     } satisfies Prisma.reddit_like_attachment_access_logsFindManyArgs;
   }
@@ -34,11 +36,11 @@ export namespace RedditLikeAttachmentAccessLogAtSummaryTransformer {
   ): Promise<IRedditLikeAttachmentAccessLog.ISummary> {
     return {
       id: input.id,
-      actorType: input.actor_type,
+      actorType: input.actor_type ?? null,
       accessType: input.access_type,
-      ipAddress: input.ip_address,
-      userAgent: input.user_agent,
-      referer: input.referer,
+      ipAddress: input.ip_address ?? null,
+      userAgent: input.user_agent ?? null,
+      referer: input.referer ?? null,
       createdAt: input.created_at.toISOString(),
       actor: input.actor
         ? await RedditLikeMemberAtSummaryTransformer.transform(input.actor)

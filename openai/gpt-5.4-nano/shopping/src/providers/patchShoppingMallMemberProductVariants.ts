@@ -23,160 +23,141 @@ export async function patchShoppingMallMemberProductVariants(props: {
 }): Promise<IPageIShoppingMallProductVariant.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
   const sort = props.body.sort ?? "created_at";
   const order = props.body.order ?? "desc";
+  // Authorization/scoping: member can only see variants whose parent product belongs to the same member as seller.
   const whereInput = {
     deleted_at: null,
+    product: {
+      shopping_mall_seller_id: props.member.id,
+    },
     ...(props.body.shopping_mall_product_id
       ? { shopping_mall_product_id: props.body.shopping_mall_product_id }
-      : {}),
-    ...(props.body.is_active !== undefined
-      ? { is_active: props.body.is_active }
-      : {}),
+      : undefined),
+    ...(props.body.is_active === undefined
+      ? undefined
+      : { is_active: props.body.is_active }),
     ...(props.body.code
-      ? { code: { contains: props.body.code, mode: "insensitive" } }
-      : {}),
+      ? { code: { contains: props.body.code, mode: "insensitive" as const } }
+      : undefined),
     ...(props.body.title
-      ? { title: { contains: props.body.title, mode: "insensitive" } }
-      : {}),
+      ? { title: { contains: props.body.title, mode: "insensitive" as const } }
+      : undefined),
     ...(props.body.option_value
       ? {
           option_value: {
             contains: props.body.option_value,
-            mode: "insensitive",
+            mode: "insensitive" as const,
           },
         }
-      : {}),
-    ...(props.body.shopping_mall_product_id
-      ? {
-          product: {
-            deleted_at: null,
-          },
-        }
-      : {}),
-  } satisfies Prisma.shopping_mall_product_variantsWhereInput;
+      : undefined),
+  };
   const orderByInput =
     sort === "created_at"
-      ? ({
-          created_at: order,
-        } satisfies Prisma.shopping_mall_product_variantsOrderByWithRelationInput)
+      ? { created_at: order }
       : sort === "code"
-        ? ({
-            code: order,
-          } satisfies Prisma.shopping_mall_product_variantsOrderByWithRelationInput)
+        ? { code: order }
         : sort === "title"
-          ? ({
-              title: order,
-            } satisfies Prisma.shopping_mall_product_variantsOrderByWithRelationInput)
+          ? { title: order }
           : sort === "price"
-            ? ({
-                price: order,
-              } satisfies Prisma.shopping_mall_product_variantsOrderByWithRelationInput)
-            : ({
-                option_value: order,
-              } satisfies Prisma.shopping_mall_product_variantsOrderByWithRelationInput);
-  const items = await MyGlobal.prisma.shopping_mall_product_variants.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    select: {
-      id: true,
-      code: true,
-      title: true,
-      option_value: true,
-      price: true,
-      is_active: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      product: {
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          description: true,
-          is_featured: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-          seller: {
-            select: {
-              id: true,
+            ? { price: order }
+            : { option_value: order };
+  const [variants, total] = await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.shopping_mall_product_variants.findMany({
+      where: whereInput,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: orderByInput,
+      select: {
+        id: true,
+        code: true,
+        title: true,
+        option_value: true,
+        price: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        product: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            description: true,
+            is_featured: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+            seller: {
+              select: {
+                id: true,
+              },
             },
-          },
-          category: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              slug: true,
-              visibility: true,
-              display_order: true,
-              created_at: true,
-              updated_at: true,
-              deleted_at: true,
-              parent_category_id: true,
+            category: {
+              select: {
+                id: true,
+                parent_category_id: true,
+                name: true,
+                description: true,
+                slug: true,
+                visibility: true,
+                display_order: true,
+                created_at: true,
+                updated_at: true,
+                deleted_at: true,
+              },
             },
           },
         },
       },
-    },
+    }),
+    MyGlobal.prisma.shopping_mall_product_variants.count({ where: whereInput }),
+  ]);
+  const data = variants.map((v) => {
+    const p = v.product;
+    const c = p.category;
+    return {
+      id: v.id,
+      code: v.code,
+      title: v.title,
+      option_value: v.option_value,
+      price: v.price,
+      is_active: v.is_active,
+      created_at: v.created_at.toISOString(),
+      updated_at: v.updated_at.toISOString(),
+      deleted_at: v.deleted_at?.toISOString() ?? null,
+      product: {
+        id: p.id,
+        code: p.code,
+        name: p.name,
+        description: p.description,
+        is_featured: p.is_featured,
+        seller: {},
+        category: {
+          id: c.id,
+          parent_category_id: c.parent_category_id,
+          name: c.name,
+          description: c.description,
+          slug: c.slug,
+          visibility: c.visibility,
+          display_order: c.display_order,
+          created_at: c.created_at.toISOString(),
+          updated_at: c.updated_at.toISOString(),
+          deleted_at: c.deleted_at?.toISOString() ?? null,
+        },
+        created_at: p.created_at.toISOString(),
+        updated_at: p.updated_at.toISOString(),
+        deleted_at: p.deleted_at?.toISOString() ?? null,
+      },
+    } satisfies IShoppingMallProductVariant.ISummary;
   });
-  const records = await MyGlobal.prisma.shopping_mall_product_variants.count({
-    where: whereInput,
-  });
-  return {
-    data: items.map(
-      (v) =>
-        ({
-          id: v.id,
-          code: v.code,
-          title: v.title,
-          option_value: v.option_value,
-          price: v.price,
-          is_active: v.is_active,
-          created_at: toISOStringSafe(v.created_at),
-          updated_at: toISOStringSafe(v.updated_at),
-          deleted_at:
-            v.deleted_at === null ? null : toISOStringSafe(v.deleted_at),
-          product: {
-            id: v.product.id,
-            code: v.product.code,
-            name: v.product.name,
-            description: v.product.description,
-            is_featured: v.product.is_featured,
-            seller: {} satisfies IShoppingMallMember.ISummary,
-            category: {
-              id: v.product.category.id,
-              name: v.product.category.name,
-              description: v.product.category.description,
-              slug: v.product.category.slug,
-              visibility: v.product.category.visibility,
-              display_order: v.product.category.display_order,
-              created_at: toISOStringSafe(v.product.category.created_at),
-              updated_at: toISOStringSafe(v.product.category.updated_at),
-              deleted_at:
-                v.product.category.deleted_at === null
-                  ? null
-                  : toISOStringSafe(v.product.category.deleted_at),
-              parent_category_id: v.product.category.parent_category_id,
-            } satisfies IShoppingMallCategory.ISummary,
-            created_at: toISOStringSafe(v.product.created_at),
-            updated_at: toISOStringSafe(v.product.updated_at),
-            deleted_at:
-              v.product.deleted_at === null
-                ? null
-                : toISOStringSafe(v.product.deleted_at),
-          } satisfies IShoppingMallProduct.ISummary,
-        }) satisfies IShoppingMallProductVariant.ISummary,
-    ),
+  return typia.assert<IPageIShoppingMallProductVariant.ISummary>({
+    data,
     pagination: {
       current: page,
       limit: limit,
-      records,
-      pages: Math.ceil(records / limit),
+      records: total,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+  });
 }

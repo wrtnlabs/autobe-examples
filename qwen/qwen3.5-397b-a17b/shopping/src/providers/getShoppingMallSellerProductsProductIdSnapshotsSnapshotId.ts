@@ -1,14 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
-import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
 import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
-import { IShoppingMallProductSnapshotImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshotImage";
-import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
-import { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -27,15 +20,27 @@ export async function getShoppingMallSellerProductsProductIdSnapshotsSnapshotId(
   productId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallProductSnapshot> {
+  const selectConfig = ShoppingMallProductSnapshotTransformer.select();
   const snapshot =
     await MyGlobal.prisma.shopping_mall_product_snapshots.findUniqueOrThrow({
       where: { id: props.snapshotId },
-      ...ShoppingMallProductSnapshotTransformer.select(),
+      select: {
+        ...selectConfig.select,
+        shopping_mall_product_id: true,
+      },
     });
-  if (snapshot.product.id !== props.productId) {
-    throw new HttpException("Not Found", 404);
+  if (snapshot.shopping_mall_product_id !== props.productId) {
+    throw new HttpException(
+      "Snapshot does not belong to the specified product",
+      404,
+    );
   }
-  if (snapshot.snapshotBy.id !== props.seller.id) {
+  const product =
+    await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      select: { seller_id: true },
+    });
+  if (product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await ShoppingMallProductSnapshotTransformer.transform(snapshot);

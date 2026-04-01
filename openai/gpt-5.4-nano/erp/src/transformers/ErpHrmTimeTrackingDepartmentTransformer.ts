@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingDepartment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingDepartmentTransformer {
@@ -16,15 +18,15 @@ export namespace ErpHrmTimeTrackingDepartmentTransformer {
         id: true,
         name: true,
         description: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        organization: {
+        parentDepartment: {
           select: {
             id: true,
           },
         },
-        parentDepartment: {
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        organization: {
           select: {
             id: true,
           },

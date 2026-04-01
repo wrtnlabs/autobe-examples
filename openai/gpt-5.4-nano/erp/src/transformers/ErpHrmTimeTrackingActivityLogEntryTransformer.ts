@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingActivityLogEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingActivityLogEntry";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingActivityLogEntryTransformer {
@@ -15,6 +17,8 @@ export namespace ErpHrmTimeTrackingActivityLogEntryTransformer {
     return {
       select: {
         id: true,
+        organization_id: true,
+        performed_by_member_id: true,
         action_type: true,
         target_entity_type: true,
         target_entity_id: true,
@@ -41,13 +45,13 @@ export namespace ErpHrmTimeTrackingActivityLogEntryTransformer {
   ): Promise<IErpHrmTimeTrackingActivityLogEntry> {
     return {
       id: input.id,
-      organization_id: input.organization.id,
-      performed_by_member_id: input.performedByMember.id,
+      organization_id: input.organization_id,
+      performed_by_member_id: input.performed_by_member_id,
       action_type: input.action_type,
       target_entity_type: input.target_entity_type,
       target_entity_id: input.target_entity_id,
       summary: input.summary,
-      details: input.details ?? null,
+      details: input.details,
       occurred_at: input.occurred_at.toISOString(),
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),

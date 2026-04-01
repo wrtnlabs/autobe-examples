@@ -24,23 +24,11 @@ export async function getEcommerceMallProductsProductId(props: {
       where: { id: props.productId, deleted_at: null },
       ...EcommerceMallProductTransformer.select(),
     });
-  const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findUniqueOrThrow(
-    {
-      where: { id: product.seller.id },
-      select: { id: true, deleted_at: true },
-    },
-  );
-  if (seller.deleted_at !== null) {
-    throw new HttpException("Product not found", 404);
-  }
-  const approvalRequest =
-    await MyGlobal.prisma.ecommerce_mall_seller_approval_requests.findFirst({
-      where: {
-        seller_id: product.seller.id,
-        status: { in: ["pending", "rejected"] },
-      },
-    });
-  if (approvalRequest !== null) {
+  if (
+    product.seller.approvalRequests.length === 0 ||
+    product.seller.approvalRequests[product.seller.approvalRequests.length - 1]
+      .status !== "approved"
+  ) {
     throw new HttpException("Product not found", 404);
   }
   return await EcommerceMallProductTransformer.transform(product);

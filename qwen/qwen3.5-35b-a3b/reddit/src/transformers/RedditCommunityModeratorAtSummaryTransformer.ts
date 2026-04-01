@@ -5,8 +5,10 @@ import { IRedditCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structu
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityCommunityAtSummaryTransformer } from "./RedditCommunityCommunityAtSummaryTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
@@ -20,13 +22,9 @@ export namespace RedditCommunityModeratorAtSummaryTransformer {
       select: {
         id: true,
         created_at: true,
-        updated_at: true,
-        deleted_at: true,
         community: RedditCommunityCommunityAtSummaryTransformer.select(),
         moderator: RedditCommunityMemberAtSummaryTransformer.select(),
         addedBy: RedditCommunityMemberAtSummaryTransformer.select(),
-        issuedBans: true,
-        moderationActions: true,
       },
     } satisfies Prisma.reddit_community_moderatorsFindManyArgs;
   }
@@ -44,7 +42,7 @@ export namespace RedditCommunityModeratorAtSummaryTransformer {
       addedBy: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.addedBy,
       ),
-      createdAt: input.created_at.toISOString(),
+      createdAt: toISOStringSafe(input.created_at),
     };
   }
 }

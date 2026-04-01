@@ -15,117 +15,62 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getEcommerceMallCustomerRefundRequestsAnalytics(props: {
   customer: CustomerPayload;
 }): Promise<IEcommerceMallRefundRequestAnalytic> {
-  const totalRequests =
-    await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
-      where: {
-        deleted_at: null,
-      },
-    });
-  const pendingCount =
-    await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
-      where: {
-        deleted_at: null,
-        status: "pending",
-      },
-    });
-  const approvedCount =
-    await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
-      where: {
-        deleted_at: null,
-        status: "approved",
-      },
-    });
-  const rejectedCount =
-    await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
-      where: {
-        deleted_at: null,
-        status: "rejected",
-      },
-    });
-  const refundedCount =
-    await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
-      where: {
-        deleted_at: null,
-        status: "refunded",
-      },
-    });
-  const last7DaysCount =
-    await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
-      where: {
-        deleted_at: null,
-        created_at: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        },
-      },
-    });
-  const last30DaysCount =
-    await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
-      where: {
-        deleted_at: null,
-        created_at: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        },
-      },
-    });
-  const resolvedRequests =
+  const allRequests =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findMany({
-      where: {
-        deleted_at: null,
-        status: {
-          in: ["approved", "rejected"],
-        },
-        decision_at: {
-          not: null,
-        },
-        submitted_at: {
-          not: null,
-        },
-      },
+      where: { deleted_at: null },
     });
-  const averageProcessingTime:
-    | (number & tags.Type<"int32"> & tags.Minimum<0>)
-    | null =
-    resolvedRequests.length > 0
-      ? Math.round(
-          resolvedRequests
-            .map((r) => {
-              if (r.decision_at === null || r.submitted_at === null) {
-                return 0;
-              }
-              const diff = r.decision_at.getTime() - r.submitted_at.getTime();
-              return diff / 1000;
-            })
-            .reduce((a, b) => a + b, 0) / resolvedRequests.length,
-        )
-      : null;
-  const approvalRate: number & tags.Minimum<0> & tags.Maximum<100> =
+  const totalRequests = allRequests.length;
+  const approvedCount = allRequests.filter(
+    (r) => r.status === "approved",
+  ).length;
+  const rejectedCount = allRequests.filter(
+    (r) => r.status === "rejected",
+  ).length;
+  const refundedCount = allRequests.filter(
+    (r) => r.status === "refunded",
+  ).length;
+  const pendingCount = allRequests.filter((r) => r.status === "pending").length;
+  const approvalRate =
     totalRequests > 0
-      ? Math.round(((approvedCount + refundedCount) / totalRequests) * 100)
+      ? ((approvedCount + refundedCount) / totalRequests) * 100
       : 0;
-  const rejectionRate: number & tags.Minimum<0> & tags.Maximum<100> =
-    totalRequests > 0 ? Math.round((rejectedCount / totalRequests) * 100) : 0;
+  const rejectionRate =
+    totalRequests > 0 ? (rejectedCount / totalRequests) * 100 : 0;
+  const resolvedRequests = allRequests.filter(
+    (r) => r.status === "approved" || r.status === "rejected",
+  );
+  let averageProcessingTime: number | null = null;
+  if (resolvedRequests.length > 0) {
+    const totalProcessingTime = resolvedRequests.reduce((sum, r) => {
+      if (r.submitted_at && r.decision_at) {
+        const diffMs = r.decision_at.getTime() - r.submitted_at.getTime();
+        return sum + diffMs / 1000;
+      }
+      return sum;
+    }, 0);
+    averageProcessingTime = Math.round(
+      totalProcessingTime / resolvedRequests.length,
+    );
+  }
+  const now = new Date();
+  const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const last7DaysCount = allRequests.filter((r) => {
+    return r.created_at && r.created_at >= last7Days;
+  }).length;
+  const last30DaysCount = allRequests.filter((r) => {
+    return r.created_at && r.created_at >= last30Days;
+  }).length;
   return {
-    totalRequests: totalRequests as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    pendingCount: pendingCount as number & tags.Type<"int32"> & tags.Minimum<0>,
-    approvedCount: approvedCount as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    rejectedCount: rejectedCount as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    refundedCount: refundedCount as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    last7DaysCount: last7DaysCount as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    last30DaysCount: last30DaysCount as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    averageProcessingTime,
+    totalRequests,
+    approvedCount,
+    rejectedCount,
+    refundedCount,
+    pendingCount,
     approvalRate,
     rejectionRate,
-  } satisfies IEcommerceMallRefundRequestAnalytic;
+    last7DaysCount,
+    last30DaysCount,
+    averageProcessingTime,
+  };
 }

@@ -19,8 +19,11 @@ export async function patchEcommerceMallProducts(props: {
   body: IEcommerceMallProduct.IRequest;
 }): Promise<IPageIEcommerceMallProduct.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? props.body.page_size ?? 20;
-  const skip = (page - 1) * limit;
+  const pageSize = props.body.page_size ?? 20;
+  const limit = props.body.limit ?? 100;
+  const effectiveLimit = limit !== null && limit < pageSize ? pageSize : limit;
+  const actualLimit = effectiveLimit > 100 ? 100 : effectiveLimit;
+  const skip = (page - 1) * actualLimit;
   const whereInput: Prisma.ecommerce_mall_productsWhereInput = {
     deleted_at: null,
     ...(props.body.category_id !== undefined && {
@@ -35,6 +38,7 @@ export async function patchEcommerceMallProducts(props: {
     ...(props.body.name !== undefined && {
       name: {
         contains: props.body.name,
+        mode: "insensitive" as const,
       },
     }),
     ...(props.body.base_price_min !== undefined && {
@@ -48,44 +52,39 @@ export async function patchEcommerceMallProducts(props: {
       },
     }),
   } satisfies Prisma.ecommerce_mall_productsWhereInput;
-  const orderByInput = (() => {
-    const sortBy = props.body.sort_by ?? "created_at";
-    const sortOrder = props.body.sort_order ?? "desc";
-    switch (sortBy) {
-      case "name":
-        return { name: sortOrder };
-      case "created_at":
-        return { created_at: sortOrder };
-      case "updated_at":
-        return { updated_at: sortOrder };
-      case "base_price":
-        return { base_price: sortOrder };
-      case "display_order":
-        return { category: { display_order: sortOrder } };
-      default:
-        return { created_at: sortOrder };
-    }
-  })() satisfies Prisma.ecommerce_mall_productsOrderByWithRelationInput;
+  const orderByInput:
+    | Prisma.ecommerce_mall_productsOrderByWithRelationInput[]
+    | undefined =
+    props.body.sort_by !== undefined
+      ? [
+          {
+            [props.body.sort_by]:
+              props.body.sort_order === "asc" ? "asc" : "desc",
+          },
+        ]
+      : undefined;
   const [data, total] = await Promise.all([
     MyGlobal.prisma.ecommerce_mall_products.findMany({
       where: whereInput,
-      skip,
-      take: limit,
       orderBy: orderByInput,
+      skip,
+      take: actualLimit,
       ...EcommerceMallProductAtSummaryTransformer.select(),
     }),
     MyGlobal.prisma.ecommerce_mall_products.count({ where: whereInput }),
   ]);
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    EcommerceMallProductAtSummaryTransformer.transform,
+  );
+  const pages = Math.ceil(total / actualLimit);
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallProductAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
-      limit,
+      limit: actualLimit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages,
     } satisfies IPage.IPagination,
-  };
+    data: transformedData,
+  } satisfies IPageIEcommerceMallProduct.ISummary;
 }

@@ -25,41 +25,48 @@ export async function patchRedditCommunityMemberPopularFeed(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  const sortMethod: "hot" | "new" | "top" | "controversial" = "hot";
+  const search = props.body.search;
+  const communityId = props.body.community_id;
+  const timeFilterDateObj: Date | null = null;
   const whereInput: Prisma.reddit_community_postsWhereInput = {
     deleted_at: null,
-    ...(props.body.community_id !== undefined && {
-      community_id: props.body.community_id,
+    ...(search && {
+      title: {
+        contains: search,
+        mode: "insensitive",
+      } satisfies Prisma.StringFilter,
     }),
-    ...(props.body.search !== undefined && props.body.search.trim().length > 0
-      ? {
-          title: {
-            contains: props.body.search.trim(),
-            mode: "insensitive",
-          },
-        }
-      : {}),
-  } satisfies Prisma.reddit_community_postsWhereInput;
-  const data = await MyGlobal.prisma.reddit_community_posts.findMany({
-    where: whereInput,
-    orderBy: [{ vote_score: "desc" }, { created_at: "desc" }],
-    skip,
-    take: limit,
-    ...RedditCommunityPostAtSummaryTransformer.select(),
+    ...(communityId && {
+      community_id: communityId,
+    }),
+  };
+  const orderByInput: Prisma.reddit_community_postsOrderByWithRelationInput[] =
+    [];
+  orderByInput.push({
+    vote_score: "desc",
+    created_at: "desc",
   });
-  const total = await MyGlobal.prisma.reddit_community_posts.count({
-    where: whereInput,
-  });
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    RedditCommunityPostAtSummaryTransformer.transform,
-  );
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.reddit_community_posts.findMany({
+      where: whereInput,
+      orderBy: orderByInput,
+      skip,
+      take: limit,
+      ...RedditCommunityPostAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.reddit_community_posts.count({ where: whereInput }),
+  ]);
   return {
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditCommunityPostAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: total > 0 ? Math.ceil(total / limit) : 0,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIRedditCommunityPost.ISummary;
+  };
 }

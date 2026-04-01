@@ -19,212 +19,147 @@ export async function patchHrmsMemberProjectsProjectIdMembers(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmsProjectMember.IRequest;
 }): Promise<IPageIHrmsProjectMember.ISummary> {
-  // Validate project exists
-  const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
-    where: { id: props.projectId, deleted_at: null },
-  });
-  // Get user's organization membership
-  const userMember = await MyGlobal.prisma.hrms_organization_members.findFirst({
-    where: {
-      hrms_member_id: props.member.id,
-      hrms_organization_id: project.hrms_organization_id,
-      deleted_at: null,
-    },
-    include: {
-      organizationRole: true,
-    },
-  });
-  if (!userMember) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Pagination params
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Build where clause
-  const whereClause: Prisma.hrms_project_membersWhereInput = {
+  const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
+    where: {
+      id: props.projectId,
+      deleted_at: null,
+    },
+    select: {
+      hrms_organization_id: true,
+    },
+  });
+  const organizationMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        id: props.member.id,
+        organization: {
+          id: project.hrms_organization_id,
+        },
+        deleted_at: null,
+      },
+    });
+  if (organizationMember === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const metric = props.body.metric ?? "total";
+  const includeInactive = props.body.includeInactive ?? false;
+  const topN = props.body.topN ?? 10;
+  const whereBase = {
     project_id: props.projectId,
+    status: "active" as const,
     deleted_at: null,
   };
-  // Filter by status based on includeInactive
-  if (props.body.includeInactive === true) {
-    // Include all statuses
-  } else {
-    whereClause.status = "active";
-  }
-  // Get total count
-  const total = await MyGlobal.prisma.hrms_project_members.count({
-    where: whereClause,
-  });
-  // Get members with employee details
-  const data = await MyGlobal.prisma.hrms_project_members.findMany({
-    where: whereClause,
-    skip,
-    take: limit,
-    orderBy: { created_at: "desc" },
+  const employeeStatusFilter = includeInactive
+    ? {}
+    : { status: "active" as const };
+  const projectMembers = await MyGlobal.prisma.hrms_project_members.findMany({
+    where: whereBase,
     include: {
       employee: {
         include: {
-          department: true,
+          department: {
+            select: { name: true },
+          },
+          role: {
+            select: { name: true },
+          },
         },
       },
     },
+    orderBy: {
+      created_at: "desc",
+    },
   });
-  // If timelog metrics are requested, we need to aggregate
-  const metric = props.body.metric ?? "total";
-  let transformedData: IHrmsProjectMember.ISummary[] = [];
-  if (
-    metric === "total" ||
-    metric === "billable" ||
-    metric === "billable_rate"
-  ) {
-    // Aggregate timelog data for each employee
-    transformedData = await Promise.all(
-      data.map(async (pm) => {
-        const employee = pm.employee;
-        const departmentName = employee.department?.name ?? "";
-        // Query timelog metrics for this employee, optionally filtered by projectIds and date range
-        const timelogMetrics = await MyGlobal.prisma.hrms_timelogs.groupBy({
-          by: ["employee_id"],
-          where: {
-            employee_id: employee.id,
-            ...(props.body.startDate && {
-              date: {
-                gte: new Date(props.body.startDate),
-              },
-            }),
-            ...(props.body.endDate && {
-              date: {
-                lte: new Date(props.body.endDate),
-              },
-            }),
-            ...(props.body.projectIds &&
-              props.body.projectIds.length > 0 && {
-                project_id: {
-                  in: props.body.projectIds,
-                },
-              }),
-          },
-          _sum: {
-            duration_minutes: true,
-            ...(props.body.projectIds &&
-              props.body.projectIds.length > 0 && {
-                duration_minutes: true,
-              }),
-          },
-        });
-        const employeeTimelog = timelogMetrics.find(
-          (t) => t.employee_id === employee.id,
-        );
-        const totalMinutes = employeeTimelog?._sum.duration_minutes ?? 0;
-        const totalHours = totalMinutes / 60;
-        // Billable hours
-        const billableTimelogs = await MyGlobal.prisma.hrms_timelogs.aggregate({
-          where: {
-            employee_id: employee.id,
-            billable: true,
-            ...(props.body.startDate && {
-              date: {
-                gte: new Date(props.body.startDate),
-              },
-            }),
-            ...(props.body.endDate && {
-              date: {
-                lte: new Date(props.body.endDate),
-              },
-            }),
-            ...(props.body.projectIds &&
-              props.body.projectIds.length > 0 && {
-                project_id: {
-                  in: props.body.projectIds,
-                },
-              }),
-          },
-          _sum: {
-            duration_minutes: true,
-          },
-        });
-        const billableMinutes = billableTimelogs._sum.duration_minutes ?? 0;
-        const billableHours = billableMinutes / 60;
-        const billableRate = totalHours > 0 ? billableHours / totalHours : 0;
-        // Hours by project if filtered
-        const hoursByProject: IHrmsProjectMember.IHoursByProject[] | undefined =
-          props.body.projectIds && props.body.projectIds.length > 0
-            ? await ArrayUtil.asyncMap(
-                await MyGlobal.prisma.hrms_timelogs.groupBy({
-                  by: ["project_id"],
-                  where: {
-                    employee_id: employee.id,
-                    ...(props.body.startDate && {
-                      date: {
-                        gte: new Date(props.body.startDate),
-                      },
-                    }),
-                    ...(props.body.endDate && {
-                      date: {
-                        lte: new Date(props.body.endDate),
-                      },
-                    }),
-                    project_id: {
-                      in: props.body.projectIds,
-                    },
-                  },
-                  _sum: {
-                    duration_minutes: true,
-                  },
-                }),
-                async (t) => {
-                  const projectRecord =
-                    await MyGlobal.prisma.hrms_projects.findUnique({
-                      where: { id: t.project_id },
-                      select: { name: true },
-                    });
-                  return {
-                    projectName: projectRecord?.name ?? "Unknown",
-                    totalHours: (t._sum.duration_minutes ?? 0) / 60,
-                    billableHours: 0, // Would need separate billable aggregation per project
-                  } satisfies IHrmsProjectMember.IHoursByProject;
-                },
-              )
-            : undefined;
-        return {
-          id: employee.id as string & tags.Format<"uuid">,
-          displayName: employee.display_name,
-          departmentName: departmentName,
-          totalHours: totalHours,
-          billableHours: billableHours,
-          billableRate: billableRate,
-          projectName:
-            props.body.projectIds && props.body.projectIds.length > 0
-              ? undefined
-              : project.name,
-          hoursByProject: hoursByProject,
-        } satisfies IHrmsProjectMember.ISummary;
+  const total = projectMembers.length;
+  const limitedMembers = projectMembers.slice(skip, skip + limit);
+  const employeeIds = limitedMembers.map((pm) => pm.employee_id);
+  const timelogAggregations = await MyGlobal.prisma.hrms_timelogs.groupBy({
+    by: ["employee_id"],
+    where: {
+      employee_id: { in: employeeIds },
+      ...(props.body.startDate && {
+        date: { gte: props.body.startDate as any },
       }),
-    );
-  } else {
-    // No metrics - simple mapping
-    transformedData = data.map((pm) => {
-      const employee = pm.employee;
-      return {
-        id: employee.id as string & tags.Format<"uuid">,
-        displayName: employee.display_name,
-        departmentName: employee.department?.name ?? "",
-        totalHours: 0,
-        billableHours: 0,
-        billableRate: 0,
-        projectName: project.name,
-        hoursByProject: undefined,
-      } satisfies IHrmsProjectMember.ISummary;
-    });
-  }
+      ...(props.body.endDate && { date: { lte: props.body.endDate as any } }),
+      ...(props.body.projectIds && {
+        project_id: { in: props.body.projectIds },
+      }),
+    },
+    _sum: {
+      duration_minutes: true,
+    },
+    _count: {
+      duration_minutes: true,
+    },
+  });
+  const timelogMap = new Map(
+    timelogAggregations.map((agg) => [
+      agg.employee_id,
+      {
+        totalMinutes: agg._sum?.duration_minutes ?? 0,
+        billableMinutes: 0,
+        count: agg._count?.duration_minutes ?? 0,
+      },
+    ]),
+  );
+  const data = limitedMembers.map((pm) => {
+    const timelogData = timelogMap.get(pm.employee_id) ?? {
+      totalMinutes: 0,
+      billableMinutes: 0,
+      count: 0,
+    };
+    const totalHours = timelogData.totalMinutes / 60;
+    const billableHours = timelogData.billableMinutes / 60;
+    const billableRate = totalHours > 0 ? billableHours / totalHours : 0;
+    let rankValue: number;
+    switch (metric) {
+      case "billable":
+        rankValue = billableHours;
+        break;
+      case "total":
+        rankValue = totalHours;
+        break;
+      case "billable_rate":
+        rankValue = billableRate;
+        break;
+      default:
+        rankValue = totalHours;
+    }
+    return {
+      id: pm.employee_id as string & tags.Format<"uuid">,
+      displayName: pm.employee.display_name,
+      departmentName: pm.employee.department?.name ?? "",
+      totalHours,
+      billableHours,
+      billableRate,
+      _rank: rankValue,
+    } satisfies IHrmsProjectMember.ISummary & {
+      _rank: number;
+    };
+  });
+  data.sort((a, b) => {
+    if (metric === "billable_rate") {
+      return b.billableRate - a.billableRate;
+    }
+    if (metric === "billable") {
+      return b.billableHours - a.billableHours;
+    }
+    return b.totalHours - a.totalHours;
+  });
+  const rankedData = data.slice(0, topN).map((item) => {
+    const { _rank, ...rest } = item;
+    return rest;
+  });
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformedData,
+    data: rankedData,
   } satisfies IPageIHrmsProjectMember.ISummary;
 }

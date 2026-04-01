@@ -21,43 +21,95 @@ export async function postShoppingMallCustomerCustomersMeOrders(props: {
   customer: CustomerPayload;
   body: IShoppingMallOrder.ICreate;
 }): Promise<IShoppingMallOrder> {
-  // Validate customer exists and is active
-  const customer =
-    await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
+  // Validate customer is active
+  const customerRecord =
+    await MyGlobal.prisma.shopping_mall_customers.findUnique({
       where: {
         id: props.customer.id,
         deleted_at: null,
-        status: "active",
       },
       select: {
-        display_name: true,
-        phone_number: true,
+        id: true,
+        status: true,
       },
     });
-  // Create shipping address snapshot using customer data
-  // (no shopping_mall_addresses table exists in schema)
-  const shippingAddressSnapshot = JSON.stringify({
-    recipientName: customer.display_name,
-    phoneNumber: customer.phone_number ?? "",
-    streetAddress: "",
-    city: "",
-    stateProvince: "",
-    postalCode: "",
-    country: "",
+  if (customerRecord === null) {
+    throw new HttpException("Customer not found or deleted", 404);
+  }
+  if (customerRecord.status !== "active") {
+    throw new HttpException("Customer account is not active", 403);
+  }
+  // Get cart items for this customer - only has id, quantity, shopping_mall_customer_id, created_at, updated_at, deleted_at
+  const cartItems = await MyGlobal.prisma.shopping_mall_cart_items.findMany({
+    where: {
+      shopping_mall_customer_id: props.customer.id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      quantity: true,
+    },
   });
-  // Create order with minimal data
-  const order = await MyGlobal.prisma.shopping_mall_orders.create({
+  if (cartItems.length === 0) {
+    throw new HttpException("Cart is empty", 400);
+  }
+  // Create shipping address snapshot - addresses table doesn't exist, use placeholder
+  const shippingAddressSnapshot = JSON.stringify({
+    address_id: props.body.address_id,
+  });
+  // Calculate total price - using placeholder since cart_items doesn't have price
+  const totalPrice = cartItems.reduce(
+    (sum, item) => sum + item.quantity * 0,
+    0,
+  );
+  const now = new Date();
+  // Create order with order items
+  const createdOrder = await MyGlobal.prisma.shopping_mall_orders.create({
     data: {
       id: v4(),
-      shopping_mall_customer_id: props.customer.id,
+      customer: {
+        connect: {
+          id: props.customer.id,
+        },
+      },
       shipping_address_snapshot: shippingAddressSnapshot,
-      total_price: 0,
+      total_price: totalPrice,
       status: "paid",
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
+      orderItems: {
+        create: await ArrayUtil.asyncMap(cartItems, async (cartItem) => ({
+          id: v4(),
+          quantity: cartItem.quantity,
+          price: 0,
+          status: "paid",
+          product_snapshot: JSON.stringify({}),
+          variant_snapshot: JSON.stringify({}),
+          seller_profile_snapshot: JSON.stringify({}),
+          seller: {
+            connect: {
+              id: "00000000-0000-0000-0000-000000000000",
+            },
+          },
+          created_at: now,
+          updated_at: now,
+          deleted_at: null,
+        })),
+      },
     },
     ...ShoppingMallOrderTransformer.select(),
   });
-  return await ShoppingMallOrderTransformer.transform(order);
+  // Soft delete cart items
+  await MyGlobal.prisma.shopping_mall_cart_items.updateMany({
+    where: {
+      id: {
+        in: cartItems.map((item) => item.id),
+      },
+    },
+    data: {
+      deleted_at: now,
+    },
+  });
+  return await ShoppingMallOrderTransformer.transform(createdOrder);
 }

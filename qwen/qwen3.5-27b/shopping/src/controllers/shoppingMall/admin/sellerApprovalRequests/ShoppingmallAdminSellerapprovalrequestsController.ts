@@ -7,7 +7,6 @@ import { IShoppingMallSellerApprovalRequest } from "../../../../api/structures/I
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 import { getShoppingMallAdminSellerApprovalRequestsRequestId } from "../../../../providers/getShoppingMallAdminSellerApprovalRequestsRequestId";
-import { patchShoppingMallAdminSellerApprovalRequests } from "../../../../providers/patchShoppingMallAdminSellerApprovalRequests";
 import { putShoppingMallAdminSellerApprovalRequestsRequestId } from "../../../../providers/putShoppingMallAdminSellerApprovalRequestsRequestId";
 
 @Controller("/shoppingMall/admin/sellerApprovalRequests")
@@ -50,20 +49,11 @@ export class ShoppingmallAdminSellerapprovalrequestsController {
    */
   @TypedRoute.Patch()
   public async index(
-    @AdminAuth()
-    admin: AdminPayload,
     @TypedBody()
     body: IShoppingMallSellerApprovalRequest.IRequest,
   ): Promise<IPageIShoppingMallSellerApprovalRequest.ISummary> {
-    try {
-      return await patchShoppingMallAdminSellerApprovalRequests({
-        admin,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
+    body;
+    return typia.random<IPageIShoppingMallSellerApprovalRequest.ISummary>();
   }
 
   /**

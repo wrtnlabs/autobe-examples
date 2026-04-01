@@ -28,50 +28,58 @@ export async function getRedditLikeOwnerCommunitiesCommunityIdReportsPending(pro
   owner: OwnerPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<IPageIRedditLikeReport> {
-  // Verify community exists and owner has authority
-  const community = await MyGlobal.prisma.reddit_like_communities.findUnique({
-    where: { id: props.communityId },
-    select: { owner_id: true },
+  const page = 1;
+  const limit = 100;
+  const skip = (page - 1) * limit;
+  // Verify owner authorization - check if owner owns this community
+  const community = await MyGlobal.prisma.reddit_like_communities.findFirst({
+    where: {
+      id: props.communityId,
+      owner_id: props.owner.id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+    },
   });
   if (community === null) {
-    throw new HttpException("Community not found", 404);
+    throw new HttpException(
+      "Community not found or you don't have access",
+      403,
+    );
   }
-  // Check if owner is the community owner or a moderator
-  const isOwner = community.owner_id === props.owner.id;
-  if (!isOwner) {
-    const moderator = await MyGlobal.prisma.reddit_like_moderators.findFirst({
-      where: {
-        member_id: props.owner.id,
-        community_id: props.communityId,
-        deleted_at: null,
-      },
-    });
-    if (moderator === null) {
-      throw new HttpException("Forbidden", 403);
-    }
-  }
-  // Query pending reports for this community
+  // Query pending reports for the community
   const reports = await MyGlobal.prisma.reddit_like_reports.findMany({
     where: {
       community_id: props.communityId,
       status: "pending",
     },
-    orderBy: { created_at: "desc" },
-    ...RedditLikeReportTransformer.select(),
+    orderBy: {
+      created_at: "desc",
+    },
+    skip,
+    take: limit,
+    select: RedditLikeReportTransformer.select().select,
   });
-  // Transform reports to DTOs
+  // Count total pending reports
+  const total = await MyGlobal.prisma.reddit_like_reports.count({
+    where: {
+      community_id: props.communityId,
+      status: "pending",
+    },
+  });
+  // Transform reports to DTO
   const data = await ArrayUtil.asyncMap(
     reports,
     RedditLikeReportTransformer.transform,
   );
-  // Return paginated response
   return {
     data,
     pagination: {
-      current: 1,
-      limit: data.length,
-      records: data.length,
-      pages: data.length > 0 ? 1 : 0,
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

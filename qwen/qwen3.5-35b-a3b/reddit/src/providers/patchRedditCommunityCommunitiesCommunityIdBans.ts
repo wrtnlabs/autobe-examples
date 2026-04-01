@@ -22,56 +22,53 @@ export async function patchRedditCommunityCommunitiesCommunityIdBans(props: {
   communityId: string & tags.Format<"uuid">;
   body: IRedditCommunityBan.IRequest;
 }): Promise<IPageIRedditCommunityBan.ISummary> {
-  // Validate community exists
-  const community =
-    await MyGlobal.prisma.reddit_community_communities.findUnique({
-      where: { id: props.communityId },
-      select: { id: true, deleted_at: true },
-    });
-  if (!community || community.deleted_at !== null) {
-    throw new HttpException("Community not found", 404);
-  }
-  // Build WHERE clause
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // Build filters
   const whereInput: Prisma.reddit_community_bansWhereInput = {
     reddit_community_id: props.communityId,
     deleted_at: null,
     banned_at: {
-      ...(props.body.banned_at_from !== undefined && {
-        gte: props.body.banned_at_from,
+      ...(props.body.banned_at_from && {
+        gte: new Date(props.body.banned_at_from),
       }),
-      ...(props.body.banned_at_to !== undefined && {
-        lte: props.body.banned_at_to,
+      ...(props.body.banned_at_to && {
+        lte: new Date(props.body.banned_at_to),
       }),
     },
     banned_by_moderator_id: props.body.banned_by_moderator_id,
-  } satisfies Prisma.reddit_community_bansWhereInput;
-  // Calculate pagination
-  const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
-  const skip = (page - 1) * limit;
-  // Get total count
-  const total = await MyGlobal.prisma.reddit_community_bans.count({
-    where: whereInput,
-  });
-  // Get paginated data
-  const data = await MyGlobal.prisma.reddit_community_bans.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: { banned_at: "desc" },
-    ...RedditCommunityBanAtSummaryTransformer.select(),
-  });
-  // Transform and return
+    bannedMember: props.body.text_search
+      ? {
+          username: {
+            contains: props.body.text_search,
+          },
+        }
+      : undefined,
+  };
+  // Query bans with pagination
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.reddit_community_bans.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: { banned_at: "desc" },
+      ...RedditCommunityBanAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.reddit_community_bans.count({
+      where: whereInput,
+    }),
+  ]);
+  const transformed = await ArrayUtil.asyncMap(data, (ban) =>
+    RedditCommunityBanAtSummaryTransformer.transform(ban),
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      RedditCommunityBanAtSummaryTransformer.transform,
-    ),
+    data: transformed,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

@@ -19,6 +19,10 @@ export namespace HrmPlatformTaskHistoryAtSummaryTransformer {
         changed_at: true,
         old_status: true,
         new_status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        task: { select: { id: true } },
         member: HrmPlatformMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_task_historiesFindManyArgs;

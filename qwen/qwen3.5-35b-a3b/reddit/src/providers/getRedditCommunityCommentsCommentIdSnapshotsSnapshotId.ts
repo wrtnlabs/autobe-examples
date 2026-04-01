@@ -13,10 +13,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditCommunityCommentAtSummaryTransformer } from "../transformers/RedditCommunityCommentAtSummaryTransformer";
 import { RedditCommunityCommentSnapshotTransformer } from "../transformers/RedditCommunityCommentSnapshotTransformer";
-import { RedditCommunityMemberAtSummaryTransformer } from "../transformers/RedditCommunityMemberAtSummaryTransformer";
-import { RedditCommunityPostAtSummaryTransformer } from "../transformers/RedditCommunityPostAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -26,20 +23,11 @@ export async function getRedditCommunityCommentsCommentIdSnapshotsSnapshotId(pro
 }): Promise<IRedditCommunityCommentSnapshot> {
   const snapshot =
     await MyGlobal.prisma.reddit_community_comment_snapshots.findUniqueOrThrow({
-      where: {
-        id: props.snapshotId,
-        comment_id: props.commentId,
-      },
-      select: {
-        id: true,
-        content: true,
-        version: true,
-        created_at: true,
-        comment: RedditCommunityCommentAtSummaryTransformer.select(),
-        author: RedditCommunityMemberAtSummaryTransformer.select(),
-        post: RedditCommunityPostAtSummaryTransformer.select(),
-        parentComment: RedditCommunityCommentAtSummaryTransformer.select(),
-      },
+      where: { id: props.snapshotId },
+      ...RedditCommunityCommentSnapshotTransformer.select(),
     });
+  if (snapshot.comment.id !== props.commentId) {
+    throw new HttpException("Not found", 404);
+  }
   return await RedditCommunityCommentSnapshotTransformer.transform(snapshot);
 }

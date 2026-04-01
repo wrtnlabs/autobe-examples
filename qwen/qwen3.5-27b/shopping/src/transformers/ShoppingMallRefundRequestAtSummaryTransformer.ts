@@ -3,8 +3,10 @@ import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallOrderItemAtSummaryTransformer } from "./ShoppingMallOrderItemAtSummaryTransformer";
 
@@ -20,7 +22,13 @@ export namespace ShoppingMallRefundRequestAtSummaryTransformer {
         status: true,
         requested_at: true,
         responded_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
         orderItem: ShoppingMallOrderItemAtSummaryTransformer.select(),
+        customer: { select: { id: true } },
+        customerSession: { select: { id: true } },
+        refundSnapshots: { select: { id: true } },
       },
     } satisfies Prisma.shopping_mall_refund_requestsFindManyArgs;
   }

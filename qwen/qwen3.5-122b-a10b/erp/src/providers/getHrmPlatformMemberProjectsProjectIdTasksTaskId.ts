@@ -24,32 +24,65 @@ export async function getHrmPlatformMemberProjectsProjectIdTasksTaskId(props: {
   projectId: string & tags.Format<"uuid">;
   taskId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTask> {
-  // Verify member has access to the project through project membership
-  const projectMembership =
+  // Step 1: Validate project exists
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
+    where: { id: props.projectId },
+    select: { id: true, hrm_platform_organization_id: true },
+  });
+  if (project === null) {
+    throw new HttpException("Project not found", 404);
+  }
+  // Step 2: Find employee record for this member in the project's organization
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      hrm_platform_user_id: props.member.id,
+      hrm_platform_organization_id: project.hrm_platform_organization_id,
+      deleted_at: null,
+    },
+    select: { id: true },
+  });
+  if (employee === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Step 3: Verify member has access to the project (project membership check)
+  const projectMember =
     await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
         hrm_platform_project_id: props.projectId,
-        employee: {
-          hrm_platform_user_id: props.member.id,
-        },
+        hrm_platform_employee_id: employee.id,
       },
+      select: { id: true },
     });
-  if (!projectMembership) {
+  if (projectMember === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Retrieve task with all required relations using transformer select
-  const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
+  // Step 4: Validate task exists, belongs to project, and is not soft-deleted
+  const task = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
     where: { id: props.taskId },
-    ...HrmPlatformTaskTransformer.select(),
+    select: {
+      id: true,
+      hrm_platform_projects_id: true,
+      deleted_at: true,
+    },
   });
-  // Verify task belongs to the specified project
-  if (task.project.id !== props.projectId) {
-    throw new HttpException("Not Found", 404);
+  if (task === null) {
+    throw new HttpException("Task not found", 404);
   }
-  // Check for soft deletion - return 404 if task is deleted
+  if (task.hrm_platform_projects_id !== props.projectId) {
+    throw new HttpException(
+      "Task does not belong to the specified project",
+      404,
+    );
+  }
   if (task.deleted_at !== null) {
-    throw new HttpException("Not Found", 404);
+    throw new HttpException("Task not found", 404);
   }
-  // Transform database record to DTO (handles date conversion and nested relations)
-  return await HrmPlatformTaskTransformer.transform(task);
+  // Step 5: Fetch the task with all required relations
+  const taskWithRelations =
+    await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
+      where: { id: props.taskId },
+      ...HrmPlatformTaskTransformer.select(),
+    });
+  // Step 6: Transform the result
+  return await HrmPlatformTaskTransformer.transform(taskWithRelations);
 }

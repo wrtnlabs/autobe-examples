@@ -11,7 +11,7 @@ export namespace ErpHrmTimeTrackingOrganizationCollector {
   export async function collect(props: {
     body: IErpHrmTimeTrackingOrganization.ICreate;
   }) {
-    const id: string = v4();
+    const id = v4();
     const now = new Date();
     return {
       id,

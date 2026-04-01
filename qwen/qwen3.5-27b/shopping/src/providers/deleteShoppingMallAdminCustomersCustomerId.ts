@@ -16,16 +16,21 @@ export async function deleteShoppingMallAdminCustomersCustomerId(props: {
   customerId: string & tags.Format<"uuid">;
 }): Promise<void> {
   // Verify customer exists and is not already deleted
-  await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
-    where: {
-      id: props.customerId,
-      deleted_at: null,
-    },
-  });
-  // Check for blocking conditions
-  const blockingConditions: string[] = [];
-  // Check for orders with 'paid' or 'shipped' status
-  const ordersCount = await MyGlobal.prisma.shopping_mall_orders.count({
+  const customer =
+    await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
+      where: {
+        id: props.customerId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        display_name: true,
+        status: true,
+      },
+    });
+  // Check for blocking orders with 'paid' or 'shipped' status
+  const blockingOrders = await MyGlobal.prisma.shopping_mall_orders.findMany({
     where: {
       shopping_mall_customer_id: props.customerId,
       deleted_at: null,
@@ -33,49 +38,60 @@ export async function deleteShoppingMallAdminCustomersCustomerId(props: {
         in: ["paid", "shipped"],
       },
     },
+    select: {
+      id: true,
+      status: true,
+    },
   });
-  if (ordersCount > 0) {
-    blockingConditions.push(
-      `Has ${ordersCount} order(s) with paid or shipped status`,
-    );
-  }
   // Check for pending cancellation requests
-  const cancellationRequestsCount =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.count({
+  const pendingCancellations =
+    await MyGlobal.prisma.shopping_mall_cancellation_requests.findMany({
       where: {
         shopping_mall_customer_id: props.customerId,
         deleted_at: null,
         status: "pending",
       },
+      select: {
+        id: true,
+      },
     });
-  if (cancellationRequestsCount > 0) {
-    blockingConditions.push(
-      `Has ${cancellationRequestsCount} pending cancellation request(s)`,
-    );
-  }
   // Check for pending refund requests
-  const refundRequestsCount =
-    await MyGlobal.prisma.shopping_mall_refund_requests.count({
+  const pendingRefunds =
+    await MyGlobal.prisma.shopping_mall_refund_requests.findMany({
       where: {
         shopping_mall_customer_id: props.customerId,
         deleted_at: null,
         status: "pending",
       },
+      select: {
+        id: true,
+      },
     });
-  if (refundRequestsCount > 0) {
+  // Collect blocking conditions
+  const blockingConditions: string[] = [];
+  if (blockingOrders.length > 0) {
     blockingConditions.push(
-      `Has ${refundRequestsCount} pending refund request(s)`,
+      `Has ${blockingOrders.length} order(s) with paid or shipped status`,
     );
   }
-  // If blocking conditions exist, reject the deletion
+  if (pendingCancellations.length > 0) {
+    blockingConditions.push(
+      `Has ${pendingCancellations.length} pending cancellation request(s)`,
+    );
+  }
+  if (pendingRefunds.length > 0) {
+    blockingConditions.push(
+      `Has ${pendingRefunds.length} pending refund request(s)`,
+    );
+  }
+  // If blocking conditions exist, reject deletion
   if (blockingConditions.length > 0) {
     throw new HttpException(
-      `Cannot delete account. Blocking conditions: ${blockingConditions.join(", ")}`,
+      `Cannot delete customer account. Blocking conditions: ${blockingConditions.join(", ")}`,
       400,
     );
   }
   // Perform soft delete with anonymization
-  const nullifiedEmail = `deleted_${v4()}@deleted.local`;
   await MyGlobal.prisma.shopping_mall_customers.update({
     where: {
       id: props.customerId,
@@ -83,7 +99,7 @@ export async function deleteShoppingMallAdminCustomersCustomerId(props: {
     data: {
       deleted_at: new Date(),
       display_name: "Deleted User",
-      email: nullifiedEmail,
+      email: `deleted_${v4()}@deleted.local`,
       password_hash: "",
     },
   });

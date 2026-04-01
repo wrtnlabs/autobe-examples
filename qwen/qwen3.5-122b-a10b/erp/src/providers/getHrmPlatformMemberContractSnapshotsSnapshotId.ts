@@ -22,52 +22,60 @@ export async function getHrmPlatformMemberContractSnapshotsSnapshotId(props: {
   member: MemberPayload;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformContractSnapshot> {
-  // Step 1: Find the snapshot by ID using transformer's select
   const snapshot =
     await MyGlobal.prisma.hrm_platform_contract_snapshots.findUniqueOrThrow({
       where: { id: props.snapshotId },
       ...HrmPlatformContractSnapshotTransformer.select(),
     });
-  // Step 2: Verify contract is not soft-deleted (already handled by findUniqueOrThrow if contract doesn't exist)
-  // The contract relation is included via transformer.select()
-  // Step 3: Check authorization - need to get employee's user_id
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findUnique({
-    where: { id: snapshot.contract.employee.id },
-    select: {
-      id: true,
-      hrm_platform_user_id: true,
-      hrm_platform_organization_id: true,
-      hrm_platform_role_id: true,
-      deleted_at: true,
+  // Get the contract to find the employee
+  const contract =
+    await MyGlobal.prisma.hrm_platform_contracts.findUniqueOrThrow({
+      where: { id: snapshot.contract.id },
+      select: { hrm_platform_employee_id: true },
+    });
+  // Check if member owns the contract (is the employee)
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      id: contract.hrm_platform_employee_id,
+      hrm_platform_user_id: props.member.id,
+      deleted_at: null,
     },
   });
-  if (!employee || employee.deleted_at !== null) {
-    throw new HttpException("Employee not found", 404);
-  }
-  // Step 4: Check if member is the owner of the employee
-  const isOwner = employee.hrm_platform_user_id === props.member.id;
-  if (!isOwner) {
-    // Step 5: Check if member has employee:view or org:manage permission
-    const rolePermissions =
-      await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
-        where: {
-          hrm_platform_role_id: employee.hrm_platform_role_id,
-          deleted_at: null,
-          permission: {
+  if (!employee) {
+    // Check for employee:view or org:manage permission
+    const role = await MyGlobal.prisma.hrm_platform_roles.findFirst({
+      where: {
+        employeeAssignments: {
+          some: {
+            hrm_platform_user_id: props.member.id,
             deleted_at: null,
-            code: { in: ["employee:view", "org:manage"] },
           },
         },
-        select: {
-          permission: {
-            select: { code: true },
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        permissions: {
+          where: { deleted_at: null },
+          select: {
+            permission: {
+              select: { code: true },
+            },
           },
         },
-      });
-    if (rolePermissions.length === 0) {
+      },
+    });
+    if (!role) {
+      throw new HttpException("Forbidden", 403);
+    }
+    const hasPermission = role.permissions.some(
+      (rp) =>
+        rp.permission.code === "employee:view" ||
+        rp.permission.code === "org:manage",
+    );
+    if (!hasPermission) {
       throw new HttpException("Forbidden", 403);
     }
   }
-  // Step 6: Transform and return using transformer
   return await HrmPlatformContractSnapshotTransformer.transform(snapshot);
 }

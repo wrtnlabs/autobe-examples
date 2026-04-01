@@ -22,66 +22,60 @@ export async function patchEcommerceMallSellerShipmentsShipmentIdTrackingCodes(p
   shipmentId: string & tags.Format<"uuid">;
   body: IEcommerceMallShipment.IUpdateTrackingCode;
 }): Promise<IEcommerceMallShipment> {
+  // Validate tracking codes are provided
+  if (props.body.tracking_codes.length === 0) {
+    throw new HttpException("At least one tracking code is required", 400);
+  }
+  // Check for duplicate tracking codes within the request body
+  const trackingCodes = props.body.tracking_codes;
+  const uniqueTrackingCodes = new Set<string>();
+  for (const trackingCode of trackingCodes) {
+    if (uniqueTrackingCodes.has(trackingCode.trackingCode)) {
+      throw new HttpException("Duplicate tracking code found", 400);
+    }
+    uniqueTrackingCodes.add(trackingCode.trackingCode);
+  }
+  // Verify shipment exists, is not deleted, and belongs to the seller
   const shipment =
     await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
       where: {
         id: props.shipmentId,
         deleted_at: null,
+        ecommerce_mall_seller_id: props.seller.id,
       },
       select: {
         id: true,
+        ecommerce_mall_order_id: true,
         ecommerce_mall_seller_id: true,
-        status: true,
       },
     });
-  if (shipment.ecommerce_mall_seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (shipment.status === "delivered") {
-    throw new HttpException(
-      "Cannot update tracking codes for delivered shipment",
-      400,
-    );
-  }
-  const trackingCodes = props.body.tracking_codes;
-  if (trackingCodes.length < 1) {
-    throw new HttpException("At least one tracking code is required", 400);
-  }
-  const seenCodes = new Set<string>();
-  for (const code of trackingCodes) {
-    if (seenCodes.has(code.trackingCode)) {
-      throw new HttpException("Duplicate tracking code", 400);
-    }
-    seenCodes.add(code.trackingCode);
-  }
+  // Delete all existing tracking codes for this shipment
   await MyGlobal.prisma.ecommerce_mall_shipment_tracking_codes.deleteMany({
-    where: { shipment_id: props.shipmentId },
-  });
-  await MyGlobal.prisma.ecommerce_mall_shipment_tracking_codes.createMany({
-    data: trackingCodes.map((code) => ({
-      id: v4() as string & tags.Format<"uuid">,
+    where: {
       shipment_id: props.shipmentId,
-      carrier_name: code.carrierName,
-      tracking_code: code.trackingCode,
-      created_at: new Date(),
-      updated_at: new Date(),
-    })),
+    },
   });
+  // Insert new tracking codes from request body
+  for (const trackingCode of trackingCodes) {
+    await MyGlobal.prisma.ecommerce_mall_shipment_tracking_codes.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        shipment_id: props.shipmentId,
+        carrier_name: trackingCode.carrierName,
+        tracking_code: trackingCode.trackingCode,
+        created_at: toISOStringSafe(new Date()),
+        updated_at: toISOStringSafe(new Date()),
+      },
+    });
+  }
+  // Update shipment's updated_at timestamp
   await MyGlobal.prisma.ecommerce_mall_shipments.update({
     where: { id: props.shipmentId },
     data: {
-      updated_at: new Date(),
-      ...(props.body.carrier_name !== undefined && {
-        carrier_name: props.body.carrier_name,
-      }),
-      ...(props.body.carrier_phone !== undefined && {
-        carrier_phone: props.body.carrier_phone,
-      }),
-      ...(props.body.carrier_website !== undefined && {
-        carrier_website: props.body.carrier_website,
-      }),
+      updated_at: toISOStringSafe(new Date()),
     },
   });
+  // Return complete shipment object with order and seller
   const updatedShipment =
     await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
       where: { id: props.shipmentId },

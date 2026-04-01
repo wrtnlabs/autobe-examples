@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IUploadRequestValidationStatusResponse } from "@ORGANIZATION/PROJECT-api/lib/structures/IUploadRequestValidationStatusResponse";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace UploadRequestValidationStatusResponseTransformer {
@@ -13,12 +15,20 @@ export namespace UploadRequestValidationStatusResponseTransformer {
   export function select() {
     return {
       select: {
+        id: true,
+        original_filename: true,
+        file_type: true,
+        file_size: true,
         validation_status: true,
+        temporary_storage_path: true,
         permanent_storage_path: true,
         upload_state: true,
         error_message: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
+        organization: true,
+        member: true,
         file: true,
       },
     } satisfies Prisma.hrms_file_uploadsFindManyArgs;

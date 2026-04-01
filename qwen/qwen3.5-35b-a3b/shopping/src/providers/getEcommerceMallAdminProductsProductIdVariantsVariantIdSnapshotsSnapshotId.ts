@@ -12,8 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { EcommerceMallProductAtSummaryTransformer } from "../transformers/EcommerceMallProductAtSummaryTransformer";
-import { EcommerceMallProductVariantAtSummaryTransformer } from "../transformers/EcommerceMallProductVariantAtSummaryTransformer";
+import { EcommerceMallProductVariantSnapshotTransformer } from "../transformers/EcommerceMallProductVariantSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,54 +22,32 @@ export async function getEcommerceMallAdminProductsProductIdVariantsVariantIdSna
   variantId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallProductVariantSnapshot> {
+  // Query snapshot with product and variant relations for validation
   const snapshot =
     await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findUniqueOrThrow(
       {
         where: { id: props.snapshotId },
-        select: {
-          id: true,
-          product_id: true,
-          product_variant_id: true,
-          sku_code: true,
-          options: true,
-          price: true,
-          stock_quantity: true,
-          status: true,
-          created_at: true,
-          product: EcommerceMallProductAtSummaryTransformer.select(),
-          productVariant:
-            EcommerceMallProductVariantAtSummaryTransformer.select(),
-        },
+        ...EcommerceMallProductVariantSnapshotTransformer.select(),
       },
     );
-  // Verify snapshot belongs to the specified product
-  if (snapshot.product_id !== props.productId) {
-    throw new HttpException(
-      "Snapshot does not belong to the specified product",
-      404,
-    );
-  }
-  // Verify snapshot belongs to the specified variant
-  if (snapshot.product_variant_id !== props.variantId) {
+  // Validate the snapshot belongs to the specified variant
+  if (snapshot.productVariant.id !== props.variantId) {
     throw new HttpException(
       "Snapshot does not belong to the specified variant",
       404,
     );
   }
-  return {
-    id: snapshot.id,
-    sku_code: snapshot.sku_code,
-    options: snapshot.options,
-    price: snapshot.price,
-    stock_quantity: snapshot.stock_quantity,
-    status: snapshot.status,
-    created_at: toISOStringSafe(snapshot.created_at),
-    product: await EcommerceMallProductAtSummaryTransformer.transform(
-      snapshot.product,
-    ),
-    productVariant:
-      await EcommerceMallProductVariantAtSummaryTransformer.transform(
-        snapshot.productVariant,
-      ),
-  };
+  // Validate the variant belongs to the specified product
+  if (snapshot.productVariant.product.id !== props.productId) {
+    throw new HttpException(
+      "Snapshot does not belong to the specified product",
+      404,
+    );
+  }
+  // Admins have full access per business rules
+  // No additional authorization check needed as admin is already authenticated
+  // Transform and return the snapshot
+  return await EcommerceMallProductVariantSnapshotTransformer.transform(
+    snapshot,
+  );
 }

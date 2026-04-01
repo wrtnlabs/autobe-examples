@@ -39,12 +39,12 @@ export namespace HrmPlatformTimerTransformer {
   export async function transform(input: Payload): Promise<IHrmPlatformTimer> {
     return {
       id: input.id,
-      started_at: toISOStringSafe(input.started_at),
-      stopped_at: input.stopped_at ? toISOStringSafe(input.stopped_at) : null,
+      started_at: input.started_at.toISOString(),
+      stopped_at: input.stopped_at?.toISOString() ?? null,
       description: input.description,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,
       ),

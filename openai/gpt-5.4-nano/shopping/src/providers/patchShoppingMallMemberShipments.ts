@@ -12,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { ShoppingMallShipmentAtSummaryTransformer } from "../transformers/ShoppingMallShipmentAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,174 +21,78 @@ export async function patchShoppingMallMemberShipments(props: {
   body: IShoppingMallShipment.IRequest;
 }): Promise<IPageIShoppingMallShipment.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  if (page < 1) {
-    throw new HttpException("Invalid page", 400);
-  }
-  if (limit < 1 || limit > 100) {
-    throw new HttpException("Invalid limit", 400);
-  }
-  const skip = (page - 1) * limit;
-  const orderScopeId = props.body.shopping_mall_order_id;
-  const statusFilter = props.body.status;
-  const sellerSnapshotIdFilter = props.body.seller_snapshot_id;
-  const sort = props.body.sort;
-  const orderBy = (() => {
-    if (sort === "created_at_desc") {
-      return { created_at: "desc" as const };
-    }
-    if (sort === "created_at_asc") {
-      return { created_at: "asc" as const };
-    }
-    if (sort === "updated_at_desc") {
-      return { updated_at: "desc" as const };
-    }
-    if (sort === "updated_at_asc") {
-      return { updated_at: "asc" as const };
-    }
-    if (sort === "status_desc") {
-      return { status: "desc" as const };
-    }
-    if (sort === "status_asc") {
-      return { status: "asc" as const };
-    }
-    return { created_at: "desc" as const };
-  })();
-  const whereShipments = {
-    deleted_at: null,
-    ...(orderScopeId !== undefined && { shopping_mall_order_id: orderScopeId }),
-    ...(statusFilter !== undefined && { status: statusFilter }),
-    ...(sellerSnapshotIdFilter !== undefined && {
-      seller_snapshot_id: sellerSnapshotIdFilter,
-    }),
-  } satisfies Prisma.shopping_mall_shipmentsWhereInput;
-  const shipments = await MyGlobal.prisma.shopping_mall_shipments.findMany({
-    where: whereShipments,
-    skip,
-    take: limit,
-    orderBy:
-      orderBy satisfies Prisma.shopping_mall_shipmentsOrderByWithRelationInput,
-    select: {
-      id: true,
-      shopping_mall_order_id: true,
-      seller_snapshot_id: true,
-      status: true,
-      created_at: true,
-      deleted_at: true,
-      order: {
-        select: {
-          id: true,
-          order_code: true,
-          placed_at: true,
-          deleted_at: true,
-        },
-      },
-    },
-  });
-  const recordCount = await MyGlobal.prisma.shopping_mall_shipments.count({
-    where: whereShipments,
-  });
-  const orderIds = Array.from(
-    new Set(shipments.map((s) => s.shopping_mall_order_id)),
-  );
-  type OrderItemRow = {
-    shopping_mall_order_id: string;
-    quantity: number;
-    seller_price_at_purchase: number;
-    line_item_status: string;
-  };
-  const orderItemsByOrderId = new Map<string, OrderItemRow[]>();
-  if (orderIds.length > 0) {
-    const orderItems = await MyGlobal.prisma.shopping_mall_order_items.findMany(
-      {
-        where: {
-          shopping_mall_order_id: { in: orderIds },
+  const limit = props.body.limit ?? 20;
+  const safePage = page < 1 ? 1 : page;
+  const safeLimit = limit > 100 ? 100 : limit < 1 ? 1 : limit;
+  const orderWhere = (
+    props.body.shopping_mall_order_id
+      ? {
+          id: props.body.shopping_mall_order_id,
           deleted_at: null,
-        },
-        orderBy: { created_at: "desc" },
-        select: {
-          shopping_mall_order_id: true,
-          quantity: true,
-          seller_price_at_purchase: true,
-          line_item_status: true,
-        },
-      },
-    );
-    for (const item of orderItems as OrderItemRow[]) {
-      const list = orderItemsByOrderId.get(item.shopping_mall_order_id) ?? [];
-      list.push(item);
-      orderItemsByOrderId.set(item.shopping_mall_order_id, list);
-    }
-  }
-  const shipmentIds = shipments.map((s) => s.id);
-  const confirmations =
-    await MyGlobal.prisma.shopping_mall_shipment_confirmations.findMany({
-      where: {
-        deleted_at: null,
-        shopping_mall_shipment_id: { in: shipmentIds },
-      },
-      orderBy: { confirmed_at: "desc" },
-      select: {
-        shopping_mall_shipment_id: true,
-        tracking_url: true,
-        tracking_number: true,
-        carrier_name: true,
-        confirmation_type: true,
-        confirmed_at: true,
-      },
-    });
-  const latestConfirmationByShipmentId = new Map<
-    string,
-    (typeof confirmations)[number]
-  >();
-  for (const c of confirmations) {
-    if (!latestConfirmationByShipmentId.has(c.shopping_mall_shipment_id)) {
-      latestConfirmationByShipmentId.set(c.shopping_mall_shipment_id, c);
-    }
-  }
-  const data: IShoppingMallShipment.ISummary[] = shipments.map((s) => {
-    const orderItems = orderItemsByOrderId.get(s.shopping_mall_order_id) ?? [];
-    const totalPrice = orderItems.reduce(
-      (acc, it) => acc + it.seller_price_at_purchase * it.quantity,
-      0,
-    );
-    const overallStatus =
-      orderItems.length > 0 ? orderItems[0].line_item_status : "";
-    const orderSummary: IShoppingMallOrder.ISummary = {
-      id: s.order.id,
-      orderCode: s.order.order_code,
-      placedAt: toISOStringSafe(s.order.placed_at),
-      totalPrice,
-      overallStatus,
-      deletedAt:
-        s.order.deleted_at === null
-          ? null
-          : toISOStringSafe(s.order.deleted_at),
-    };
-    const latest = latestConfirmationByShipmentId.get(s.id) ?? null;
-    return {
-      id: s.id,
-      order: orderSummary,
-      sellerSnapshotId: s.seller_snapshot_id,
-      status: s.status,
-      trackingUrl: latest === null ? null : latest.tracking_url,
-      trackingNumber: latest === null ? null : latest.tracking_number,
-      carrierName: latest === null ? null : latest.carrier_name,
-      confirmationType: latest === null ? null : latest.confirmation_type,
-      confirmedAt:
-        latest === null ? null : toISOStringSafe(latest.confirmed_at),
-      createdAt: toISOStringSafe(s.created_at),
-      deletedAt: s.deleted_at === null ? null : toISOStringSafe(s.deleted_at),
-    };
+          shopping_customer_id: props.member.id,
+        }
+      : {
+          deleted_at: null,
+          shopping_customer_id: props.member.id,
+        }
+  ) satisfies Prisma.shopping_mall_ordersWhereInput;
+  const accessibleOrders = await MyGlobal.prisma.shopping_mall_orders.findMany({
+    where: orderWhere,
+    select: { id: true },
   });
-  const pages = Math.ceil(recordCount / limit);
+  const accessibleOrderIds = accessibleOrders.map((o) => o.id);
+  if (props.body.shopping_mall_order_id && accessibleOrderIds.length === 0) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const shipmentWhereBase = {
+    deleted_at: null,
+    shopping_mall_order_id: { in: accessibleOrderIds },
+    ...(props.body.status !== undefined && props.body.status !== null
+      ? { status: props.body.status }
+      : {}),
+    ...(props.body.seller_snapshot_id !== undefined &&
+    props.body.seller_snapshot_id !== null
+      ? { seller_snapshot_id: props.body.seller_snapshot_id }
+      : {}),
+  } satisfies Prisma.shopping_mall_shipmentsWhereInput;
+  const sortInput = (() => {
+    const sort = props.body.sort?.trim();
+    if (!sort) return { created_at: "desc" as const };
+    const [keyRaw, dirRaw] = sort.split(":").map((s) => s.trim());
+    const dir = dirRaw?.toLowerCase() === "asc" ? "asc" : "desc";
+    switch (keyRaw) {
+      case "created_at":
+        return { created_at: dir as "asc" | "desc" };
+      case "updated_at":
+        return { updated_at: dir as "asc" | "desc" };
+      case "status":
+        return { status: dir as "asc" | "desc" };
+      default:
+        return { created_at: "desc" as const };
+    }
+  })() satisfies Prisma.shopping_mall_shipmentsOrderByWithRelationInput;
+  const whereInput = shipmentWhereBase;
+  const total = await MyGlobal.prisma.shopping_mall_shipments.count({
+    where: whereInput,
+  });
+  const skip = (safePage - 1) * safeLimit;
+  const shipments = await MyGlobal.prisma.shopping_mall_shipments.findMany({
+    where: whereInput,
+    skip,
+    take: safeLimit,
+    orderBy: sortInput,
+    ...ShoppingMallShipmentAtSummaryTransformer.select(),
+  });
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      shipments,
+      ShoppingMallShipmentAtSummaryTransformer.transform,
+    ),
     pagination: {
-      current: page,
-      limit,
-      records: recordCount,
-      pages,
-    },
-  } satisfies IPageIShoppingMallShipment.ISummary;
+      current: safePage,
+      limit: safeLimit,
+      records: total,
+      pages: Math.ceil(total / safeLimit),
+    } satisfies IPage.IPagination,
+  };
 }

@@ -10,24 +10,23 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
+import { EcommerceMallPlatformConfigurationAtSummaryTransformer } from "../transformers/EcommerceMallPlatformConfigurationAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallSuperAdminPlatformConfigurations(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IEcommerceMallPlatformConfiguration.IRequest;
 }): Promise<IPageIEcommerceMallPlatformConfiguration.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  // Build where clause with all filters
   const whereInput: Prisma.ecommerce_mall_platform_configurationsWhereInput = {
     deleted_at: null,
     ...(props.body.search !== undefined && {
-      description: {
-        contains: props.body.search,
-        mode: "insensitive" as const,
-      },
+      description: { contains: props.body.search },
     }),
     ...(props.body.configuration_key_exact !== undefined && {
       configuration_key: props.body.configuration_key_exact,
@@ -42,54 +41,42 @@ export async function patchEcommerceMallSuperAdminPlatformConfigurations(props: 
       is_active: props.body.is_active,
     }),
   };
-  const orderByField =
-    props.body.sort_by === "updated_at"
-      ? "updated_at"
-      : props.body.sort_by === "configuration_key"
-        ? "configuration_key"
-        : "created_at";
-  const sortOrder = props.body.sort_order === "desc" ? "desc" : "asc";
-  const orderByInput: Prisma.ecommerce_mall_platform_configurationsOrderByWithRelationInput[] =
-    [{ [orderByField]: sortOrder }];
-  const data =
-    await MyGlobal.prisma.ecommerce_mall_platform_configurations.findMany({
+  // Build orderBy clause
+  const orderByInput = (() => {
+    const sortBy = props.body.sort_by ?? "created_at";
+    const sortOrder = (props.body.sort_order ?? "desc") as "asc" | "desc";
+    if (sortBy === "configuration_key") {
+      return { configuration_key: sortOrder };
+    } else if (sortBy === "updated_at") {
+      return { updated_at: sortOrder };
+    }
+    // Default to created_at
+    return { created_at: sortOrder };
+  })();
+  // Execute queries in parallel
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_platform_configurations.findMany({
       where: whereInput,
       orderBy: orderByInput,
       skip,
       take: limit,
-      select: {
-        id: true,
-        configuration_key: true,
-        description: true,
-        configuration_type: true,
-        scope: true,
-        default_value: true,
-        is_active: true,
-        created_at: true,
-      },
-    });
-  const total =
-    await MyGlobal.prisma.ecommerce_mall_platform_configurations.count({
+      ...EcommerceMallPlatformConfigurationAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.ecommerce_mall_platform_configurations.count({
       where: whereInput,
-    });
-  const transformedData: IEcommerceMallPlatformConfiguration.ISummary[] =
-    data.map((record) => ({
-      id: record.id as string & tags.Format<"uuid">,
-      configuration_key: record.configuration_key,
-      description: record.description,
-      configuration_type: record.configuration_type,
-      scope: record.scope,
-      default_value:
-        record.default_value === null ? undefined : record.default_value,
-      is_active: record.is_active,
-    })) satisfies IEcommerceMallPlatformConfiguration.ISummary[];
+    }),
+  ]);
+  // Transform data and return paginated response
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data: transformedData,
+    },
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallPlatformConfigurationAtSummaryTransformer.transform,
+    ),
   };
 }

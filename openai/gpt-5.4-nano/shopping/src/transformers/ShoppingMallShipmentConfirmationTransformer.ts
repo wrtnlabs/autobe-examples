@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallShipmentConfirmation } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentConfirmation";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -24,6 +25,9 @@ export namespace ShoppingMallShipmentConfirmationTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        shipment: {
+          select: { id: true },
+        },
       },
     } satisfies Prisma.shopping_mall_shipment_confirmationsFindManyArgs;
   }
@@ -41,7 +45,7 @@ export namespace ShoppingMallShipmentConfirmationTransformer {
       note: input.note ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

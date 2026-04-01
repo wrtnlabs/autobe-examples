@@ -21,52 +21,64 @@ export async function putRedditLikeModeratorModeratorsModeratorId(props: {
   moderatorId: string & tags.Format<"uuid">;
   body: IRedditLikeModerator.IUpdate;
 }): Promise<IRedditLikeModerator> {
-  // Step 1: Find the moderator record to update
+  // Fetch requester's member_id from moderator record
+  const requesterModerator =
+    await MyGlobal.prisma.reddit_like_moderators.findUnique({
+      where: { id: props.moderator.id },
+      select: { member_id: true },
+    });
+  if (requesterModerator === null) {
+    throw new HttpException("Requester moderator not found", 403);
+  }
+  const requesterMemberId = requesterModerator.member_id;
+  // Fetch target moderator with community for ownership check
   const targetModerator =
-    await MyGlobal.prisma.reddit_like_moderators.findUniqueOrThrow({
+    await MyGlobal.prisma.reddit_like_moderators.findFirst({
       where: {
         id: props.moderatorId,
         deleted_at: null,
       },
       select: {
         id: true,
-        community_id: true,
         member_id: true,
+        community: {
+          select: {
+            id: true,
+            owner_id: true,
+          },
+        },
       },
     });
-  // Step 2: Verify the requesting user is the community owner
-  const community =
-    await MyGlobal.prisma.reddit_like_communities.findUniqueOrThrow({
-      where: { id: targetModerator.community_id },
-      select: { owner_id: true },
-    });
-  if (community.owner_id !== props.moderator.id) {
+  if (targetModerator === null) {
+    throw new HttpException("Moderator not found", 404);
+  }
+  // Verify requester is the community owner
+  if (targetModerator.community.owner_id !== requesterMemberId) {
     throw new HttpException(
       "Only the community owner can update moderator permissions",
       403,
     );
   }
-  // Step 3: Prevent self-modification
-  if (targetModerator.member_id === props.moderator.id) {
+  // Prevent self-modification
+  if (targetModerator.member_id === requesterMemberId) {
     throw new HttpException(
       "Cannot modify your own moderator permissions",
       403,
     );
   }
-  // Step 4: Determine can_add_moderators value from role
-  // Role 'admin' or 'moderator_plus' grants add-moderator permission
-  const canAddModerators =
-    props.body.role !== undefined &&
-    (props.body.role === "admin" || props.body.role === "moderator_plus");
-  // Step 5: Update the moderator record
-  await MyGlobal.prisma.reddit_like_moderators.update({
-    where: { id: props.moderatorId },
-    data: {
-      can_add_moderators: canAddModerators,
-      updated_at: new Date().toISOString(),
-    },
-  });
-  // Step 6: Fetch and return the updated record
+  // Update the moderator record if role is provided
+  if (props.body.role !== undefined) {
+    // Map role string to can_add_moderators boolean
+    const canAddModerators = props.body.role === "senior_moderator";
+    await MyGlobal.prisma.reddit_like_moderators.update({
+      where: { id: props.moderatorId },
+      data: {
+        can_add_moderators: canAddModerators,
+        updated_at: new Date(),
+      },
+    });
+  }
+  // Fetch updated record with full transformation
   const updated =
     await MyGlobal.prisma.reddit_like_moderators.findUniqueOrThrow({
       where: { id: props.moderatorId },

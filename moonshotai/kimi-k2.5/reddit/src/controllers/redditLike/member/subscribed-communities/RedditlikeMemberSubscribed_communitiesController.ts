@@ -4,8 +4,8 @@ import typia from "typia";
 
 import { IPageIRedditLikeCommunitySubscription } from "../../../../api/structures/IPageIRedditLikeCommunitySubscription";
 import { IRedditLikeCommunitySubscription } from "../../../../api/structures/IRedditLikeCommunitySubscription";
-import { AdminAuth } from "../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { patchRedditLikeMemberSubscribedCommunities } from "../../../../providers/patchRedditLikeMemberSubscribedCommunities";
 
 @Controller("/redditLike/member/subscribed-communities")
@@ -40,8 +40,8 @@ export class RedditlikeMemberSubscribed_communitiesController {
    */
   @TypedRoute.Patch()
   public async index(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedBody()
     body: IRedditLikeCommunitySubscription.IRequest,
   ): Promise<IPageIRedditLikeCommunitySubscription.ISummary> {

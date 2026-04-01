@@ -10,23 +10,24 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace HrmPlatformTimelogCollector {
   export async function collect(props: {
     body: IHrmPlatformTimelog.ICreate;
-    hrmPlatformEmployees: IEntity;
-    hrmPlatformMemberSessions: IEntity;
+    employee: IEntity;
   }) {
     const id: string = v4();
     return {
+      // Scalar fields
       id,
       date: new Date(props.body.date),
-      duration_minutes: props.body.duration_minutes,
+      duration_minutes: props.body.durationMinutes,
       description: props.body.description ?? null,
-      billable: props.body.billable,
+      billable: props.body.billable ?? true,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      employee: { connect: { id: props.hrmPlatformEmployees.id } },
-      project: { connect: { id: props.body.project_id } },
-      task: props.body.task_id
-        ? { connect: { id: props.body.task_id } }
+      // BelongsTo relations
+      employee: { connect: { id: props.employee.id } },
+      project: { connect: { id: props.body.projectId } },
+      task: props.body.taskId
+        ? { connect: { id: props.body.taskId } }
         : undefined,
       timesheet: undefined,
     } satisfies Prisma.hrm_platform_timelogsCreateInput;

@@ -11,16 +11,12 @@ export namespace HrmPlatformTimesheetCollector {
   export async function collect(props: {
     body: IHrmPlatformTimesheet.ICreate;
     hrmPlatformEmployees: IEntity;
-    hrmPlatformMemberSessions: IEntity;
   }) {
     const id: string = v4();
-    const weekStartDate = new Date(props.body.week_start_date);
-    const weekEndDate = new Date(weekStartDate);
-    weekEndDate.setDate(weekEndDate.getDate() + 6);
     return {
       id,
-      week_start_date: weekStartDate,
-      week_end_date: weekEndDate,
+      week_start_date: props.body.week_start_date,
+      week_end_date: props.body.week_end_date,
       status: "draft",
       submitted_at: null,
       reviewed_at: null,
@@ -29,7 +25,7 @@ export namespace HrmPlatformTimesheetCollector {
       updated_at: new Date(),
       deleted_at: null,
       employee: { connect: { id: props.hrmPlatformEmployees.id } },
-      reviewedBy: undefined,
+      reviewedByEmployee: undefined,
       timelogs: undefined,
     } satisfies Prisma.hrm_platform_timesheetsCreateInput;
   }

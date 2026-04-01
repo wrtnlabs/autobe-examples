@@ -8,24 +8,35 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { EcommerceMallPlatformConfigurationTransformer } from "../transformers/EcommerceMallPlatformConfigurationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putEcommerceMallSuperAdminPlatformConfigurationsConfigId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   configId: string & tags.Format<"uuid">;
   body: IEcommerceMallPlatformConfiguration.IUpdate;
 }): Promise<IEcommerceMallPlatformConfiguration> {
-  const configuration =
-    await MyGlobal.prisma.ecommerce_mall_platform_configurations.findUniqueOrThrow(
-      {
-        where: { id: props.configId, deleted_at: null },
-        ...EcommerceMallPlatformConfigurationTransformer.select(),
+  await MyGlobal.prisma.ecommerce_mall_platform_configurations.findUniqueOrThrow(
+    {
+      where: {
+        id: props.configId,
+        deleted_at: null,
       },
-    );
-  const updateData: Record<string, unknown> = {};
+      ...EcommerceMallPlatformConfigurationTransformer.select(),
+    },
+  );
+  const updateData: {
+    description?: string;
+    configuration_type?: "string" | "integer" | "boolean" | "json";
+    scope?: "global" | "staging" | "production";
+    default_value?: string | null;
+    is_active?: boolean;
+    updated_at: Date;
+  } = {
+    updated_at: new Date(),
+  };
   if (props.body.description !== undefined) {
     updateData.description = props.body.description;
   }

@@ -18,60 +18,52 @@ export async function patchHrmPlatformMemberProjectsProjectIdArchive(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmPlatformProject.IArchive;
 }): Promise<IHrmPlatformProject> {
-  // Step 1: Find and validate project exists and is in active status
-  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
-    {
-      where: {
-        id: props.projectId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        hrm_platform_organization_id: true,
-        status: true,
-      },
-    } satisfies Prisma.hrm_platform_projectsFindManyArgs,
-  );
-  // Step 2: Validate project status is 'active'
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
+    where: { id: props.projectId },
+    select: {
+      id: true,
+      hrm_platform_organization_id: true,
+      status: true,
+      deleted_at: true,
+    },
+  });
+  if (project === null || project.deleted_at !== null) {
+    throw new HttpException("Project not found", 404);
+  }
   if (project.status !== "active") {
     throw new HttpException(
-      `Project is not in active status (current: ${project.status})`,
+      `Project is already ${project.status}, cannot archive`,
       409,
     );
   }
-  // Step 3: Perform transaction - update project status and create activity log
-  const now = new Date();
-  const updatedProject = await MyGlobal.prisma.$transaction(async (tx) => {
-    // Update project status to 'archived'
-    await tx.hrm_platform_projects.update({
-      where: { id: props.projectId },
-      data: {
-        status: "archived",
-        updated_at: now,
-      },
-    });
-    // Create activity log entry using correct field names and relation connect
-    const activityLogId = typia.assert<string & tags.Format<"uuid">>(v4());
+  await MyGlobal.prisma.$transaction(async (tx) => {
     await tx.hrm_platform_activity_logs.create({
       data: {
-        id: activityLogId,
-        organization: { connect: { id: project.hrm_platform_organization_id } },
-        user: { connect: { id: props.member.id } },
-        action_type: "project:archive",
+        id: v4() as string & tags.Format<"uuid">,
+        organization_id: project.hrm_platform_organization_id,
+        user_id: props.member.id,
+        action_type: "project:archived",
         target_entity: "project",
         target_id: props.projectId,
         details: props.body.reason
           ? JSON.stringify({ reason: props.body.reason })
           : null,
-        created_at: now,
+        created_at: new Date(),
       },
     });
-    // Fetch updated project with full data for response
-    return tx.hrm_platform_projects.findUniqueOrThrow({
+    await tx.hrm_platform_projects.update({
+      where: { id: props.projectId },
+      data: {
+        status: "archived",
+        updated_at: new Date(),
+      },
+    });
+  });
+  const updated = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
+    {
       where: { id: props.projectId },
       ...HrmPlatformProjectTransformer.select(),
-    } satisfies Prisma.hrm_platform_projectsFindManyArgs);
-  });
-  // Step 4: Transform and return
-  return await HrmPlatformProjectTransformer.transform(updatedProject);
+    },
+  );
+  return await HrmPlatformProjectTransformer.transform(updated);
 }

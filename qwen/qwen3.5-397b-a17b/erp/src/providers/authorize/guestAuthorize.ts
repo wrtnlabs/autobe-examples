@@ -26,7 +26,7 @@ export async function guestAuthorize(request: {
   const session = await MyGlobal.prisma.hrm_platform_guest_sessions.findFirst({
     where: {
       id: payload.session_id,
-      guest_id: payload.id,
+      hrm_platform_guest_id: payload.id,
       expired_at: { gt: new Date() },
     },
   });

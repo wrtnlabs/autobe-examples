@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { HrmsTaskStatusHistoryAtSummaryTransformer } from "../transformers/HrmsTaskStatusHistoryAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,9 +17,14 @@ export async function getHrmsMemberProjectsProjectIdTasksTaskIdStatusHistory(pro
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
   taskId: string & tags.Format<"uuid">;
-}): Promise<IHrmsTaskStatusHistory[]> {
-  // Verify task exists and belongs to the specified project
-  await MyGlobal.prisma.hrms_tasks.findFirstOrThrow({
+}): Promise<IHrmsTaskStatusHistory> {
+  // Verify project exists and belongs to member's organization
+  const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
+    where: { id: props.projectId, deleted_at: null },
+    select: { id: true, hrms_organization_id: true },
+  });
+  // Verify task exists and belongs to the project
+  const task = await MyGlobal.prisma.hrms_tasks.findUniqueOrThrow({
     where: {
       id: props.taskId,
       hrms_project_id: props.projectId,
@@ -26,52 +32,53 @@ export async function getHrmsMemberProjectsProjectIdTasksTaskIdStatusHistory(pro
     },
     select: { id: true },
   });
-  // Query status history ordered by most recent first, excluding soft-deleted records
+  // Verify member has project:view permission
+  const organizationMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        hrms_member_id: props.member.id,
+        hrms_organization_id: project.hrms_organization_id,
+        deleted_at: null,
+      },
+    });
+  if (!organizationMember) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const role = await MyGlobal.prisma.hrms_organization_roles.findFirst({
+    where: {
+      id: organizationMember.hrms_organization_role_id,
+    },
+  });
+  if (!role) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const rolePermissions =
+    await MyGlobal.prisma.hrms_organization_role_permissions.findMany({
+      where: {
+        hrms_organization_role_id: role.id,
+      },
+    });
+  if (
+    !rolePermissions.some(
+      (p: { permission: string }) => p.permission === "project:view",
+    )
+  ) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Query status history
   const statusHistories =
     await MyGlobal.prisma.hrms_task_status_histories.findMany({
       where: {
         hrms_task_id: props.taskId,
         deleted_at: null,
       },
-      select: {
-        id: true,
-        old_status: true,
-        new_status: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        member: {
-          select: {
-            id: true,
-            display_name: true,
-            avatar_uri: true,
-          },
-        },
-        task: {
-          select: {
-            id: true,
-          },
-        },
-      },
-      orderBy: {
-        created_at: "desc",
-      },
+      orderBy: { created_at: "desc" },
+      ...HrmsTaskStatusHistoryAtSummaryTransformer.select(),
     });
-  // Transform each record using the transformer
-  return await ArrayUtil.asyncMap(statusHistories, async (record) => ({
-    id: record.id as string & tags.Format<"uuid">,
-    old_status: record.old_status,
-    new_status: record.new_status,
-    created_at: toISOStringSafe(record.created_at),
-    updated_at: toISOStringSafe(record.updated_at),
-    deleted_at: toISOStringSafe(record.deleted_at ?? new Date()),
-    performed_by: {
-      id: record.member.id as string & tags.Format<"uuid">,
-      display_name: record.member.display_name,
-      avatar_uri: record.member.avatar_uri ?? null,
-    },
-    task: {
-      id: record.task.id as string & tags.Format<"uuid">,
-    },
-  }));
+  // Transform results
+  const transformed = await ArrayUtil.asyncMap(
+    statusHistories,
+    HrmsTaskStatusHistoryAtSummaryTransformer.transform,
+  );
+  return typia.assert<IHrmsTaskStatusHistory>(transformed);
 }

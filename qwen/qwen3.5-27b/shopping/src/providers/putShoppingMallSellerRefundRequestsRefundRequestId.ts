@@ -20,6 +20,7 @@ export async function putShoppingMallSellerRefundRequestsRefundRequestId(props: 
   refundRequestId: string & tags.Format<"uuid">;
   body: IShoppingMallRefundRequest.IUpdate;
 }): Promise<IShoppingMallRefundRequest> {
+  // Fetch refund request with order item to verify seller ownership
   const refundRequest =
     await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
       where: {
@@ -28,8 +29,8 @@ export async function putShoppingMallSellerRefundRequestsRefundRequestId(props: 
       },
       select: {
         id: true,
-        reason: true,
         status: true,
+        reason: true,
         shopping_mall_order_item_id: true,
         orderItem: {
           select: {
@@ -39,47 +40,54 @@ export async function putShoppingMallSellerRefundRequestsRefundRequestId(props: 
         },
       },
     });
+  // Validate status is pending
   if (refundRequest.status !== "pending") {
-    throw new HttpException("Refund request is not pending", 409);
+    throw new HttpException("Refund request is not in pending status", 409);
   }
+  // Validate seller owns the order item
   if (refundRequest.orderItem.shopping_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const now = new Date();
+  // Create refund snapshot before updating
   await MyGlobal.prisma.shopping_mall_refund_snapshots.create({
     data: {
-      id: v4(),
-      shopping_mall_refund_request_id: refundRequest.id,
+      id: v4() as string & tags.Format<"uuid">,
+      shopping_mall_refund_request_id: props.refundRequestId,
       snapshot_data: JSON.stringify({
         reason: refundRequest.reason,
-        status_before: refundRequest.status,
+        status_before: "pending",
         status_after: props.body.status,
-        responded_at: now.toISOString(),
+        responded_at: new Date().toISOString(),
       }),
-      created_at: now,
+      created_at: new Date(),
     },
   });
-  await MyGlobal.prisma.shopping_mall_refund_requests.update({
-    where: { id: refundRequest.id },
-    data: {
-      status: props.body.status,
-      responded_at: now,
-      updated_at: now,
-    },
-  });
+  // Update refund request
+  const updatedRefundRequest =
+    await MyGlobal.prisma.shopping_mall_refund_requests.update({
+      where: {
+        id: props.refundRequestId,
+      },
+      data: {
+        status: props.body.status,
+        responded_at: new Date(),
+        updated_at: new Date(),
+      },
+      ...ShoppingMallRefundRequestTransformer.select(),
+    });
+  // If approved, update order item status to refunded
   if (props.body.status === "approved") {
     await MyGlobal.prisma.shopping_mall_order_items.update({
-      where: { id: refundRequest.shopping_mall_order_item_id },
+      where: {
+        id: refundRequest.shopping_mall_order_item_id,
+      },
       data: {
         status: "refunded",
-        updated_at: now,
+        updated_at: new Date(),
       },
     });
   }
-  const updated =
-    await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
-      where: { id: props.refundRequestId },
-      ...ShoppingMallRefundRequestTransformer.select(),
-    });
-  return await ShoppingMallRefundRequestTransformer.transform(updated);
+  return await ShoppingMallRefundRequestTransformer.transform(
+    updatedRefundRequest,
+  );
 }

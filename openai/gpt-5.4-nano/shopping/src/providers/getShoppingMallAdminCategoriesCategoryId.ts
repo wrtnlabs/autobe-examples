@@ -19,18 +19,13 @@ export async function getShoppingMallAdminCategoriesCategoryId(props: {
 }): Promise<IShoppingMallCategory> {
   const category = await MyGlobal.prisma.shopping_mall_categories.findUnique({
     where: { id: props.categoryId },
-    select: ShoppingMallCategoryTransformer.select().select,
+    ...ShoppingMallCategoryTransformer.select(),
   });
-  if (category === null) {
-    throw new HttpException("Category not found", 404);
+  if (category === null || category.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
   }
-  if (category.deleted_at !== null) {
-    throw new HttpException("Category not found", 404);
-  }
-  // Customer browseability is controlled by `visibility`.
-  // Only return when visibility indicates it can be shown.
-  if (category.visibility !== "active") {
-    throw new HttpException("Category not found", 404);
+  if (category.visibility === "hidden") {
+    throw new HttpException("Not Found", 404);
   }
   return await ShoppingMallCategoryTransformer.transform(category);
 }

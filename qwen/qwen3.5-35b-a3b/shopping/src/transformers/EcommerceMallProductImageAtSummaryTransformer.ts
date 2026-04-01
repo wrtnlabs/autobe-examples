@@ -2,8 +2,10 @@ import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallProductImageAtSummaryTransformer {
@@ -20,6 +22,11 @@ export namespace EcommerceMallProductImageAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        product: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_product_imagesFindManyArgs;
   }
@@ -34,6 +41,6 @@ export namespace EcommerceMallProductImageAtSummaryTransformer {
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IEcommerceMallProductImage.ISummary;
   }
 }

@@ -25,80 +25,61 @@ export async function getHrmPlatformMemberTimesheetsTimesheetId(props: {
   member: MemberPayload;
   timesheetId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTimesheet> {
-  // Fetch timesheet for authorization check
-  const timesheet =
-    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-      where: {
-        id: props.timesheetId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        hrm_platform_employee_id: true,
-        hrm_platform_member_id: true,
-        week_start_date: true,
-        week_end_date: true,
-        status: true,
-        submitted_at: true,
-        reviewed_at: true,
-        rejection_reason: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-    });
-  // Fetch employee to get organization_id and check ownership
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: {
-        id: timesheet.hrm_platform_employee_id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        hrm_platform_user_id: true,
-        hrm_platform_organization_id: true,
-      },
-    });
-  // Check authorization: owner or time:approve permission
-  const isOwner = timesheet.hrm_platform_member_id === props.member.id;
-  if (!isOwner) {
-    // Check if member has time:approve permission in the organization
-    const memberEmployee =
-      await MyGlobal.prisma.hrm_platform_employees.findFirst({
-        where: {
-          hrm_platform_user_id: props.member.id,
-          hrm_platform_organization_id: employee.hrm_platform_organization_id,
-          deleted_at: null,
-        },
+  // Fetch timesheet with employee relation for authorization check
+  const timesheet = await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
+    where: {
+      id: props.timesheetId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      hrm_platform_employee_id: true,
+      employee: {
         select: {
-          hrm_platform_role_id: true,
+          hrm_platform_user_id: true,
+          hrm_platform_organization_id: true,
         },
-      });
-    if (!memberEmployee) {
-      throw new HttpException("Forbidden", 403);
-    }
-    // Check if the role has time:approve permission
-    const hasApprovePermission =
-      await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-        where: {
-          hrm_platform_role_id: memberEmployee.hrm_platform_role_id,
-          permission: {
-            code: "time:approve",
+      },
+    },
+  });
+  // 404 if not found
+  if (!timesheet) {
+    throw new HttpException("Timesheet not found", 404);
+  }
+  // Authorization check: member owns the timesheet OR has time:approve permission in the organization
+  const isOwner = timesheet.employee.hrm_platform_user_id === props.member.id;
+  if (!isOwner) {
+    // Check if member has time:approve permission in the timesheet's organization
+    const memberRole = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+      where: {
+        hrm_platform_user_id: props.member.id,
+        hrm_platform_organization_id:
+          timesheet.employee.hrm_platform_organization_id,
+        deleted_at: null,
+      },
+      select: {
+        role: {
+          select: {
+            permissions: {
+              select: {
+                permission: true,
+              },
+            },
           },
         },
-      });
-    if (!hasApprovePermission) {
+      },
+    });
+    const hasTimeApprovePermission = memberRole?.role?.permissions.some(
+      (rp) => rp.permission.code === "time:approve",
+    );
+    if (!hasTimeApprovePermission) {
       throw new HttpException("Forbidden", 403);
     }
   }
-  // Fetch full timesheet with all relations using transformer select
+  // Fetch full timesheet data using transformer
   const fullTimesheet =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-      where: {
-        id: props.timesheetId,
-        deleted_at: null,
-      },
+      where: { id: props.timesheetId },
       ...HrmPlatformTimesheetTransformer.select(),
     });
   return await HrmPlatformTimesheetTransformer.transform(fullTimesheet);

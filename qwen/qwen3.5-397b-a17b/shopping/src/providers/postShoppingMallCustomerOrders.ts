@@ -1,13 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
-import { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
@@ -28,74 +25,137 @@ export async function postShoppingMallCustomerOrders(props: {
   customer: CustomerPayload;
   body: IShoppingMallOrder.ICreate;
 }): Promise<IShoppingMallOrder> {
-  // Validate customer has active cart with items
-  const cart = await MyGlobal.prisma.shopping_mall_carts.findFirstOrThrow({
+  const now = new Date();
+  // Validate address exists and belongs to customer
+  const address =
+    await MyGlobal.prisma.shopping_mall_addresses.findFirstOrThrow({
+      where: {
+        id: props.body.shopping_mall_address_id,
+        shopping_mall_customer_id: props.customer.id,
+        deleted_at: null,
+      },
+    });
+  // Get customer's cart
+  const customerCart = await MyGlobal.prisma.shopping_mall_carts.findFirst({
     where: {
-      shopping_customer_id: props.customer.id,
+      customer_id: props.customer.id,
+      deleted_at: null,
+    },
+  });
+  if (!customerCart) {
+    throw new HttpException("Customer has no cart", 400);
+  }
+  // Get cart items - either specified or all active
+  const cartItems = await MyGlobal.prisma.shopping_mall_cart_items.findMany({
+    where: {
+      shopping_mall_cart_id: customerCart.id,
+      ...(props.body.cart_item_ids && props.body.cart_item_ids.length > 0
+        ? {
+            id: { in: props.body.cart_item_ids },
+          }
+        : {}),
       deleted_at: null,
     },
     include: {
-      items: {
-        include: {
-          variant: {
-            include: {
-              product: true,
+      productVariant: {
+        select: {
+          id: true,
+          sku_code: true,
+          price_override: true,
+          product: {
+            select: {
+              id: true,
+              base_price: true,
+              seller_id: true,
             },
           },
         },
       },
     },
   });
-  if (cart.items.length === 0) {
+  if (cartItems.length === 0) {
     throw new HttpException("Cart is empty", 400);
   }
-  // Verify all cart items are available (in stock)
-  for (const item of cart.items) {
-    if (item.variant.stock_quantity < item.quantity) {
+  // Validate stock availability and build inventory update data
+  const stockChecks = await Promise.all(
+    cartItems.map(async (cartItem) => {
+      const inventoryRecords =
+        await MyGlobal.prisma.shopping_mall_inventory_records.findMany({
+          where: {
+            product_variant_id: cartItem.shopping_mall_product_variant_id,
+          },
+        });
+      const currentStock = inventoryRecords.reduce(
+        (sum, record) => sum + record.quantity_change,
+        0,
+      );
+      return { cartItem, currentStock };
+    }),
+  );
+  for (const { cartItem, currentStock } of stockChecks) {
+    if (currentStock < cartItem.quantity) {
       throw new HttpException(
-        `Insufficient stock for product variant ${item.variant.sku_code}`,
+        `Insufficient stock for variant ${cartItem.productVariant.sku_code}`,
         400,
       );
     }
   }
-  // Execute order creation in transaction
-  const created = await MyGlobal.prisma.$transaction(async (tx) => {
-    // Create order using collector (modified to use transaction client)
-    const orderData = await ShoppingMallOrderCollector.collect({
-      body: props.body,
-      customer: { id: props.customer.id },
-    });
-    const order = await tx.shopping_mall_orders.create({
-      data: orderData,
-      ...ShoppingMallOrderTransformer.select(),
-    });
-    // Create inventory records for stock decrease
-    for (const item of cart.items) {
-      await tx.shopping_mall_inventory_records.create({
-        data: {
-          id: v4(),
-          product_variant_id: item.variant.id,
-          quantity_change: -item.quantity,
-          reason: "ORDER",
-          created_at: new Date(),
-        },
-      });
-      // Update variant stock quantity
-      await tx.shopping_mall_product_variants.update({
-        where: { id: item.variant.id },
-        data: {
-          stock_quantity: item.variant.stock_quantity - item.quantity,
-          updated_at: new Date(),
-        },
-      });
-    }
-    // Clear cart items after successful order creation
-    await tx.shopping_mall_cart_items.deleteMany({
+  // Generate order number
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const order_number = `ORD-${dateStr}-${randomSuffix}`;
+  // Create order using collector
+  const orderData = await ShoppingMallOrderCollector.collect({
+    body: props.body,
+    customer: { id: props.customer.id },
+    session: { id: props.customer.session_id },
+  });
+  // Create order with order_items in transaction
+  const order = await MyGlobal.prisma.shopping_mall_orders.create({
+    data: {
+      ...orderData,
+      order_number,
+      orderItems: {
+        create: cartItems.map((cartItem) => ({
+          id: v4() as string & tags.Format<"uuid">,
+          quantity: cartItem.quantity,
+          price: cartItem.price,
+          status: "paid",
+          shopping_mall_product_id: cartItem.productVariant.product.id,
+          shopping_mall_product_variant_id:
+            cartItem.shopping_mall_product_variant_id,
+          shopping_mall_seller_id: cartItem.productVariant.product.seller_id,
+          created_at: now,
+          updated_at: now,
+          deleted_at: null,
+        })),
+      },
+    },
+    ...ShoppingMallOrderTransformer.select(),
+  });
+  // Delete cart items after order creation
+  if (cartItems.length > 0) {
+    await MyGlobal.prisma.shopping_mall_cart_items.updateMany({
       where: {
-        shopping_mall_cart_id: cart.id,
+        id: { in: cartItems.map((item) => item.id) },
+      },
+      data: {
+        deleted_at: now,
+        updated_at: now,
       },
     });
-    return order;
-  });
-  return await ShoppingMallOrderTransformer.transform(created);
+  }
+  // Create inventory records for stock reduction
+  for (const cartItem of cartItems) {
+    await MyGlobal.prisma.shopping_mall_inventory_records.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        product_variant_id: cartItem.shopping_mall_product_variant_id,
+        quantity_change: -cartItem.quantity,
+        reason: "order",
+        created_at: now,
+      },
+    });
+  }
+  return await ShoppingMallOrderTransformer.transform(order);
 }

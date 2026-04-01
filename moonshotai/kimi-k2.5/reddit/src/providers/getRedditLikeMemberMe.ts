@@ -8,13 +8,13 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeMemberTransformer } from "../transformers/RedditLikeMemberTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getRedditLikeMemberMe(props: {
-  member: AdminPayload;
+  member: MemberPayload;
 }): Promise<IRedditLikeMember> {
   const member = await MyGlobal.prisma.reddit_like_members.findUniqueOrThrow({
     where: { id: props.member.id },

@@ -18,20 +18,12 @@ export async function postEcommerceMallCustomerAddresses(props: {
   customer: CustomerPayload;
   body: IEcommerceMallAddress.ICreate;
 }): Promise<IEcommerceMallAddress> {
-  const addressCount = await MyGlobal.prisma.ecommerce_mall_addresses.count({
-    where: {
-      ecommerce_mall_customer_id: props.customer.id,
-      deleted_at: null,
-    },
-  });
-  const is_default: boolean = addressCount === 0;
-  const customerEntity: IEntity = {
-    id: props.customer.id,
-  };
   const created = await MyGlobal.prisma.ecommerce_mall_addresses.create({
     data: await EcommerceMallAddressCollector.collect({
       body: props.body,
-      ecommerceMallCustomers: customerEntity,
+      ecommerceMallCustomers: {
+        id: props.customer.id,
+      } satisfies IEntity,
     }),
     ...EcommerceMallAddressTransformer.select(),
   });

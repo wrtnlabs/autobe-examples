@@ -19,137 +19,75 @@ export async function patchShoppingMallAdminOrdersOrderIdOrderItems(props: {
   orderId: string & tags.Format<"uuid">;
   body: IShoppingMallOrderItem.IRequest;
 }): Promise<IPageIShoppingMallOrderItem.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  if (
-    props.body.shoppingOrderId !== undefined &&
-    props.body.shoppingOrderId !== props.orderId
-  ) {
-    throw new HttpException("Bad Request", 400);
-  }
-  const placedAt = (() => {
-    const gte = props.body.placedAtFrom;
-    const lte = props.body.placedAtTo;
-    if (gte === undefined && lte === undefined) return undefined;
-    return {
-      ...(gte !== undefined && { gte }),
-      ...(lte !== undefined && { lte }),
-    } satisfies {
-      gte?: string & tags.Format<"date-time">;
-      lte?: string & tags.Format<"date-time">;
-    };
-  })();
-  const createdAt = (() => {
-    const gte = props.body.createdAtFrom;
-    const lte = props.body.createdAtTo;
-    if (gte === undefined && lte === undefined) return undefined;
-    return {
-      ...(gte !== undefined && { gte }),
-      ...(lte !== undefined && { lte }),
-    } satisfies {
-      gte?: string & tags.Format<"date-time">;
-      lte?: string & tags.Format<"date-time">;
-    };
-  })();
-  const updatedAt = (() => {
-    const gte = props.body.updatedAtFrom;
-    const lte = props.body.updatedAtTo;
-    if (gte === undefined && lte === undefined) return undefined;
-    return {
-      ...(gte !== undefined && { gte }),
-      ...(lte !== undefined && { lte }),
-    } satisfies {
-      gte?: string & tags.Format<"date-time">;
-      lte?: string & tags.Format<"date-time">;
-    };
-  })();
-  const where = {
-    deleted_at: null,
-    shopping_mall_order_id: props.orderId,
-    ...(props.body.productVariantId !== undefined && {
-      shopping_mall_product_variant_id: props.body.productVariantId,
-    }),
-    ...(props.body.sellerSnapshotId !== undefined && {
-      seller_snapshot_id: props.body.sellerSnapshotId,
-    }),
-    ...(props.body.shipmentId !== undefined && {
-      shopping_mall_shipment_id:
-        props.body.shipmentId === null ? null : props.body.shipmentId,
-    }),
-    ...(props.body.lineItemStatus !== undefined && {
-      line_item_status: props.body.lineItemStatus,
-    }),
-    ...(placedAt !== undefined && { placed_at: placedAt }),
-    ...(createdAt !== undefined && { created_at: createdAt }),
-    ...(updatedAt !== undefined && { updated_at: updatedAt }),
-  } satisfies Prisma.shopping_mall_order_itemsWhereInput;
-  await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
+  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
     where: { id: props.orderId },
     select: { id: true, deleted_at: true },
   });
+  if (order.deleted_at !== null) {
+    throw new HttpException("Order not found", 404);
+  }
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const sortBy = props.body.sortBy ?? "placed_at";
+  const sortDirection = props.body.sortDirection ?? "desc";
+  const direction = sortDirection === "asc" ? "asc" : "desc";
   const orderBy: Prisma.shopping_mall_order_itemsOrderByWithRelationInput =
-    (() => {
-      const sortDirection = props.body.sortDirection ?? "desc";
-      const dir: Prisma.SortOrder = sortDirection === "asc" ? "asc" : "desc";
-      switch (props.body.sortBy) {
-        case "placed_at":
-          return { placed_at: dir };
-        case "created_at":
-          return { created_at: dir };
-        case "updated_at":
-          return { updated_at: dir };
-        default:
-          return { placed_at: dir };
-      }
-    })();
-  const [items, total] = await Promise.all([
-    MyGlobal.prisma.shopping_mall_order_items.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy,
-      select: {
-        id: true,
-        shopping_mall_order_id: true,
-        shopping_mall_product_variant_id: true,
-        seller_snapshot_id: true,
-        shopping_mall_shipment_id: true,
-        seller_price_at_purchase: true,
-        quantity: true,
-        line_item_status: true,
-        placed_at: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-    }),
-    MyGlobal.prisma.shopping_mall_order_items.count({ where }),
-  ]);
+    sortBy === "placed_at"
+      ? { placed_at: direction }
+      : sortBy === "created_at"
+        ? { created_at: direction }
+        : sortBy === "updated_at"
+          ? { updated_at: direction }
+          : { placed_at: "desc" };
+  const where = {
+    shopping_mall_order_id: props.orderId,
+    deleted_at: null,
+  } satisfies Prisma.shopping_mall_order_itemsWhereInput;
+  const items = await MyGlobal.prisma.shopping_mall_order_items.findMany({
+    where,
+    skip,
+    take: limit,
+    orderBy: [orderBy, { created_at: "desc" }],
+    select: {
+      id: true,
+      shopping_mall_order_id: true,
+      shopping_mall_product_variant_id: true,
+      seller_snapshot_id: true,
+      shopping_mall_shipment_id: true,
+      seller_price_at_purchase: true,
+      quantity: true,
+      line_item_status: true,
+      placed_at: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
+  });
+  const total = await MyGlobal.prisma.shopping_mall_order_items.count({
+    where,
+  });
   return {
+    data: items.map((item) => ({
+      id: item.id,
+      shopping_mall_order_id: item.shopping_mall_order_id,
+      shopping_mall_product_variant_id: item.shopping_mall_product_variant_id,
+      seller_snapshot_id: item.seller_snapshot_id,
+      shopping_mall_shipment_id: item.shopping_mall_shipment_id,
+      seller_price_at_purchase: item.seller_price_at_purchase,
+      quantity: item.quantity,
+      line_item_status: item.line_item_status,
+      placed_at: toISOStringSafe(item.placed_at),
+      created_at: toISOStringSafe(item.created_at),
+      updated_at: toISOStringSafe(item.updated_at),
+      deleted_at:
+        item.deleted_at === null ? null : toISOStringSafe(item.deleted_at),
+    })),
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: items.map(
-      (it) =>
-        ({
-          id: it.id,
-          shopping_mall_order_id: it.shopping_mall_order_id,
-          shopping_mall_product_variant_id: it.shopping_mall_product_variant_id,
-          seller_snapshot_id: it.seller_snapshot_id,
-          shopping_mall_shipment_id: it.shopping_mall_shipment_id,
-          seller_price_at_purchase: it.seller_price_at_purchase,
-          quantity: it.quantity as number & tags.Type<"int32">,
-          line_item_status: it.line_item_status,
-          placed_at: toISOStringSafe(it.placed_at),
-          created_at: toISOStringSafe(it.created_at),
-          updated_at: toISOStringSafe(it.updated_at),
-          deleted_at:
-            it.deleted_at === null ? null : toISOStringSafe(it.deleted_at),
-        }) satisfies IShoppingMallOrderItem.ISummary,
-    ),
-  } satisfies IPageIShoppingMallOrderItem.ISummary;
+  };
 }

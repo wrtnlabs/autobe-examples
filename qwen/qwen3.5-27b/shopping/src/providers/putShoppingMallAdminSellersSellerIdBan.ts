@@ -17,7 +17,7 @@ export async function putShoppingMallAdminSellersSellerIdBan(props: {
   admin: AdminPayload;
   sellerId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallSeller> {
-  // Find seller and check if already banned
+  // Step 1: Verify seller exists and check current status
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
     where: {
       id: props.sellerId,
@@ -28,11 +28,11 @@ export async function putShoppingMallAdminSellersSellerIdBan(props: {
       status: true,
     },
   });
-  // Check if already banned
+  // Step 2: Check if already banned - return 409 conflict
   if (seller.status === "banned") {
     throw new HttpException("Seller is already banned", 409);
   }
-  // Ban the seller
+  // Step 3: Update seller status to banned
   await MyGlobal.prisma.shopping_mall_sellers.update({
     where: {
       id: props.sellerId,
@@ -42,7 +42,7 @@ export async function putShoppingMallAdminSellersSellerIdBan(props: {
       updated_at: new Date(),
     },
   });
-  // Revoke all active sessions
+  // Step 4: Invalidate all active seller sessions
   await MyGlobal.prisma.shopping_mall_seller_sessions.updateMany({
     where: {
       shopping_mall_seller_id: props.sellerId,
@@ -52,7 +52,7 @@ export async function putShoppingMallAdminSellersSellerIdBan(props: {
       revoked_at: new Date(),
     },
   });
-  // Fetch updated seller
+  // Step 5: Fetch and return updated seller record using transformer
   const updatedSeller =
     await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
       where: {

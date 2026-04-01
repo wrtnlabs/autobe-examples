@@ -20,62 +20,55 @@ export async function patchShoppingMallCustomerReviewsReviewIdSnapshots(props: {
   reviewId: string & tags.Format<"uuid">;
   body: IShoppingMallReviewSnapshot.IRequest;
 }): Promise<IPageIShoppingMallReviewSnapshot.ISummary> {
-  // Verify the review belongs to the customer
-  const review = await MyGlobal.prisma.shopping_mall_reviews.findUnique({
+  // Verify review exists and belongs to customer
+  await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
     where: {
       id: props.reviewId,
+      shopping_customer_id: props.customer.id,
     },
-    select: {
-      id: true,
-      shopping_customer_id: true,
-    },
+    select: { id: true },
   });
-  if (review === null || review.shopping_customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Apply pagination
+  // Pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build orderBy based on sortBy and sortOrder
+  // Sorting parameters
   const sortBy = props.body.sortBy ?? "created_at";
   const sortOrder = props.body.sortOrder ?? "desc";
-  const orderBy: Prisma.shopping_mall_review_snapshotsOrderByWithRelationInput =
+  // Build orderBy with type assertion
+  const orderByInput = (
     sortBy === "created_at"
-      ? ({
-          created_at: sortOrder,
-        } satisfies Prisma.shopping_mall_review_snapshotsOrderByWithRelationInput)
-      : ({
-          created_at: "desc",
-        } satisfies Prisma.shopping_mall_review_snapshotsOrderByWithRelationInput);
-  // Fetch snapshots with pagination
+      ? { created_at: sortOrder === "asc" ? "asc" : "desc" }
+      : { created_at: sortOrder === "asc" ? "asc" : "desc" }
+  ) satisfies Prisma.shopping_mall_review_snapshotsOrderByWithRelationInput;
+  // Query snapshots with pagination and sorting
   const data = await MyGlobal.prisma.shopping_mall_review_snapshots.findMany({
     where: {
       shopping_mall_review_id: props.reviewId,
     },
     skip,
     take: limit,
-    orderBy,
+    orderBy: orderByInput,
     ...ShoppingMallReviewSnapshotAtSummaryTransformer.select(),
   });
-  // Count total snapshots
+  // Get total count for pagination metadata
   const total = await MyGlobal.prisma.shopping_mall_review_snapshots.count({
     where: {
       shopping_mall_review_id: props.reviewId,
     },
   });
-  // Transform snapshots
+  // Transform snapshots to DTO format
   const transformedData = await ArrayUtil.asyncMap(
     data,
     ShoppingMallReviewSnapshotAtSummaryTransformer.transform,
   );
   return {
+    data: transformedData,
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformedData,
   };
 }

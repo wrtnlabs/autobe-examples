@@ -21,69 +21,62 @@ export async function patchRedditCommunityCommentsCommentIdDeletions(props: {
   commentId: string & tags.Format<"uuid">;
   body: IRedditCommunityCommentDeletion.IRequest;
 }): Promise<IPageIRedditCommunityCommentDeletion.ISummary> {
-  // Parse pagination parameters with defaults
-  const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
-  const skip = (page - 1) * limit;
-  // Parse sort order with default (deleted_at descending)
-  const orderByInput: Prisma.reddit_community_comment_deletionsOrderByWithRelationInput =
-    (() => {
-      const sort = props.body.sort ?? "-deleted_at";
-      if (sort === "deleted_at") {
-        return { deleted_at: "asc" as const };
-      }
-      return { deleted_at: "desc" as const };
-    })();
-  // Build WHERE clause properly without self-reference
-  const baseWhere: Prisma.reddit_community_comment_deletionsWhereInput = {
+  // Validate comment exists
+  await MyGlobal.prisma.reddit_community_comments.findUniqueOrThrow({
+    where: { id: props.commentId },
+    select: { id: true },
+  });
+  // Pagination parameters with defaults
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 20;
+  const pageLimit: number = Math.min(limit, 100);
+  const skip: number = (page - 1) * pageLimit;
+  // Sort order
+  const orderByInput: Prisma.reddit_community_comment_deletionsOrderByWithRelationInput[] =
+    props.body.sort === "-deleted_at"
+      ? [{ deleted_at: "desc" as const }]
+      : [{ deleted_at: "asc" as const }];
+  // Build filter conditions
+  const whereInput: Prisma.reddit_community_comment_deletionsWhereInput = {
     reddit_community_comment_id: props.commentId,
-  };
-  const whereCondition: Prisma.reddit_community_comment_deletionsWhereInput = {
-    ...baseWhere,
-    ...(props.body.deleted_atFrom !== undefined && {
-      deleted_at: { gte: new Date(props.body.deleted_atFrom) },
-    }),
-    ...(props.body.deleted_atTo !== undefined && {
-      deleted_at: { lte: new Date(props.body.deleted_atTo) },
-    }),
-    ...(props.body.deleted_by_id !== null && {
-      deleted_by_id: props.body.deleted_by_id,
-    }),
-    ...(props.body.deletion_reason !== null &&
-      props.body.deletion_reason !== undefined && {
-        deletion_reason: {
-          contains: props.body.deletion_reason,
-          mode: "insensitive" as const,
-        },
-      }),
-  };
-  // Query for paginated data
-  const data =
+    ...(props.body.deleted_atFrom
+      ? { deleted_at: { gte: props.body.deleted_atFrom } }
+      : {}),
+    ...(props.body.deleted_atTo
+      ? { deleted_at: { lte: props.body.deleted_atTo } }
+      : {}),
+    ...(props.body.deleted_by_id !== null
+      ? { deleted_by_id: props.body.deleted_by_id }
+      : {}),
+    ...(props.body.deletion_reason !== null
+      ? { deletion_reason: { contains: props.body.deletion_reason } }
+      : {}),
+  } satisfies Prisma.reddit_community_comment_deletionsWhereInput;
+  // Query with pagination and join
+  const data: Array<RedditCommunityCommentDeletionAtSummaryTransformer.Payload> =
     await MyGlobal.prisma.reddit_community_comment_deletions.findMany({
-      where: whereCondition,
+      where: whereInput,
       skip,
-      take: limit,
+      take: pageLimit,
       orderBy: orderByInput,
       ...RedditCommunityCommentDeletionAtSummaryTransformer.select(),
     });
-  // Query for total count
-  const total = await MyGlobal.prisma.reddit_community_comment_deletions.count({
-    where: whereCondition,
-  });
-  // Transform data
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    RedditCommunityCommentDeletionAtSummaryTransformer.transform,
-  );
-  // Build pagination metadata
-  const pagination: IPage.IPagination = {
-    current: page,
-    limit,
-    records: total,
-    pages: Math.ceil(total / limit),
-  } satisfies IPage.IPagination;
+  // Get total count
+  const total: number =
+    await MyGlobal.prisma.reddit_community_comment_deletions.count({
+      where: whereInput,
+    });
+  // Transform and return
   return {
-    data: transformedData,
-    pagination,
+    pagination: {
+      current: page,
+      limit: pageLimit,
+      records: total,
+      pages: Math.ceil(total / pageLimit),
+    } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditCommunityCommentDeletionAtSummaryTransformer.transform,
+    ),
   } satisfies IPageIRedditCommunityCommentDeletion.ISummary;
 }

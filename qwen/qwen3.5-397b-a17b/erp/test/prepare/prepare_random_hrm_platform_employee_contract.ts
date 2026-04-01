@@ -20,7 +20,10 @@ export function prepare_random_hrm_platform_employee_contract(
     pay_rate:
       input?.pay_rate ??
       typia.random<
-        number & tags.Type<"double"> & tags.Minimum<1000> & tags.Maximum<100000>
+        number &
+          tags.Type<"double"> &
+          tags.Minimum<1000> &
+          tags.Maximum<1000000>
       >(),
     pay_period:
       input?.pay_period ??

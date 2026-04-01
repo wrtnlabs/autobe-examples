@@ -1,5 +1,5 @@
 import { SwaggerCustomizer } from "@nestia/core";
-import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { ExecutionContext, createParamDecorator } from "@nestjs/common";
 import { Singleton } from "tstl";
 import { adminAuthorize } from "../providers/authorize/adminAuthorize";
 

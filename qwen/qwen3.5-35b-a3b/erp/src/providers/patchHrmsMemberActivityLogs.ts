@@ -12,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { HrmsActivityLogAtSummaryTransformer } from "../transformers/HrmsActivityLogAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,153 +20,85 @@ export async function patchHrmsMemberActivityLogs(props: {
   member: MemberPayload;
   body: IHrmsActivityLog.IRequest;
 }): Promise<IPageIHrmsActivityLog.ISummary> {
-  // Extract pagination parameters with validation
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const validatedLimit = Math.min(Math.max(limit, 1), 100);
-  const validatedPage = Math.max(page, 1);
-  const skip = (validatedPage - 1) * validatedLimit;
-  // Get member's organizations to filter activity logs
-  const memberOrgs = await MyGlobal.prisma.hrms_organization_members.findMany({
-    where: {
-      hrms_member_id: props.member.id,
-      deleted_at: null,
-    },
-    select: { hrms_organization_id: true },
-  });
-  const orgIds = memberOrgs.map((om) => om.hrms_organization_id);
-  // Build WHERE clause for activity log filtering
-  const whereClause: Prisma.hrms_activity_logsWhereInput = {
-    organization_id: { in: orgIds },
-    deleted_at: null,
-    ...(props.body.actionType !== undefined && {
-      action_type: props.body.actionType,
-    }),
-    ...(props.body.performedByUserId !== undefined && {
-      performed_by_id: props.body.performedByUserId,
-    }),
-    ...(props.body.targetEntityType !== undefined && {
-      target_entity: props.body.targetEntityType,
-    }),
-    ...(props.body.createdAtFrom !== undefined && {
-      created_at: { gte: new Date(props.body.createdAtFrom) },
-    }),
-    ...(props.body.createdAtTo !== undefined && {
-      created_at: { lte: new Date(props.body.createdAtTo) },
-    }),
-  };
-  // Build ORDER BY clause with validation
-  const allowedSortFields = [
-    "created_at",
-    "updated_at",
-    "action_type",
-    "target_entity",
-  ] as const;
-  const sortBy = allowedSortFields.includes(props.body.sortBy as any)
-    ? (props.body.sortBy ?? "created_at")
-    : "created_at";
-  const sortOrder =
-    props.body.sortOrder === "asc" || props.body.sortOrder === "desc"
-      ? props.body.sortOrder
-      : "desc";
-  const orderByClause = {
-    [sortBy]: sortOrder,
-  } satisfies Prisma.hrms_activity_logsOrderByWithRelationInput;
-  // Apply cursor pagination if cursor provided
-  if (props.body.cursor !== undefined) {
-    whereClause.created_at = { lt: new Date(props.body.cursor) };
+  const limit = Math.min(props.body.limit ?? 20, 100);
+  const skip = (page - 1) * limit;
+  // Get all organization memberships for the member
+  const memberOrgMemberships =
+    await MyGlobal.prisma.hrms_organization_members.findMany({
+      where: {
+        hrms_member_id: props.member.id,
+        deleted_at: null,
+      },
+      select: { hrms_organization_id: true },
+    });
+  if (memberOrgMemberships.length === 0) {
+    throw new HttpException("Member has no organization memberships", 404);
   }
-  // Query activity logs with performedBy member relation
+  const organizationIds = memberOrgMemberships.map(
+    (m) => m.hrms_organization_id,
+  );
+  const whereInput: Prisma.hrms_activity_logsWhereInput = {
+    organization_id: { in: organizationIds },
+    deleted_at: null,
+  };
+  if (props.body.actionType !== undefined) {
+    whereInput.action_type = props.body.actionType;
+  }
+  if (props.body.performedByUserId !== undefined) {
+    whereInput.performed_by_id = props.body.performedByUserId;
+  }
+  if (props.body.targetEntityType !== undefined) {
+    whereInput.target_entity = props.body.targetEntityType;
+  }
+  if (props.body.createdAtFrom !== undefined) {
+    whereInput.created_at = { gte: new Date(props.body.createdAtFrom) };
+  }
+  if (props.body.createdAtTo !== undefined) {
+    if (
+      whereInput.created_at !== undefined &&
+      typeof whereInput.created_at === "object" &&
+      "gte" in whereInput.created_at
+    ) {
+      const existingCreated = whereInput.created_at;
+      whereInput.created_at = {
+        gte: existingCreated.gte,
+        lte: new Date(props.body.createdAtTo),
+      };
+    } else {
+      whereInput.created_at = { lte: new Date(props.body.createdAtTo) };
+    }
+  }
+  const sortBy = props.body.sortBy ?? "created_at";
+  const sortOrder = props.body.sortOrder ?? "desc";
+  const orderByInput =
+    sortBy === "updated_at"
+      ? { updated_at: sortOrder as "asc" | "desc" }
+      : sortBy === "action_type"
+        ? { action_type: sortOrder as "asc" | "desc" }
+        : sortBy === "target_entity"
+          ? { target_entity: sortOrder as "asc" | "desc" }
+          : { created_at: sortOrder as "asc" | "desc" };
   const data = await MyGlobal.prisma.hrms_activity_logs.findMany({
-    where: whereClause,
+    where: whereInput,
     skip,
-    take: validatedLimit,
-    orderBy: orderByClause,
-    select: {
-      id: true,
-      action_type: true,
-      target_entity: true,
-      target_id: true,
-      performed_by_id: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      performedBy: {
-        select: {
-          id: true,
-          email: true,
-          display_name: true,
-          avatar_uri: true,
-          phone_number: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-        },
-      } satisfies Prisma.hrms_membersFindManyArgs,
-    },
+    take: limit,
+    orderBy: orderByInput,
+    ...HrmsActivityLogAtSummaryTransformer.select(),
   });
-  // Get total count for pagination metadata
   const total = await MyGlobal.prisma.hrms_activity_logs.count({
-    where: whereClause,
+    where: whereInput,
   });
-  // Query organization membership count for all performedBy users (optimize with batch)
-  const performedByIds = Array.from(
-    new Set(data.map((log) => log.performed_by_id)),
-  );
-  const memberCounts = await MyGlobal.prisma.hrms_organization_members.groupBy({
-    by: ["hrms_member_id"],
-    _count: true,
-    where: {
-      hrms_member_id: { in: performedByIds },
-      deleted_at: null,
-    },
-  });
-  const membershipCountMap = new Map(
-    memberCounts.map((m) => [
-      m.hrms_member_id,
-      (m._count as any).hrms_member_id ?? 0,
-    ]),
-  );
-  // Transform database results to DTO format
-  const transformedData = data.map((log) => {
-    const memberSummary: IHrmsMember.ISummary = {
-      id: log.performedBy.id as string & tags.Format<"uuid">,
-      email: log.performedBy.email,
-      display_name: log.performedBy.display_name,
-      avatar_uri: log.performedBy.avatar_uri,
-      phone_number: log.performedBy.phone_number,
-      organization_membership_count: membershipCountMap.get(
-        log.performedBy.id,
-      ) as number & tags.Type<"int32">,
-      created_at: log.performedBy.created_at.toISOString(),
-      updated_at: log.performedBy.updated_at.toISOString(),
-      deleted_at: log.performedBy.deleted_at?.toISOString() ?? null,
-    };
-    return {
-      id: log.id as string & tags.Format<"uuid">,
-      actionType: log.action_type,
-      targetEntity: log.target_entity,
-      targetId: log.target_id as
-        | (string & tags.Format<"uuid">)
-        | null
-        | undefined,
-      performedBy: memberSummary,
-      createdAt: log.created_at.toISOString(),
-      updatedAt: log.updated_at.toISOString(),
-      deletedAt: log.deleted_at?.toISOString() ?? null,
-    } as IHrmsActivityLog.ISummary;
-  });
-  // Build pagination metadata
-  const totalPages = total === 0 ? 0 : Math.ceil(total / validatedLimit);
-  const effectivePage =
-    totalPages === 0 ? 1 : Math.min(validatedPage, totalPages);
   return {
     pagination: {
-      current: effectivePage,
-      limit: validatedLimit,
+      current: page,
+      limit: limit,
       records: total,
-      pages: totalPages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmsActivityLogAtSummaryTransformer.transform,
+    ),
   } satisfies IPageIHrmsActivityLog.ISummary;
 }

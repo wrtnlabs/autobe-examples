@@ -6,8 +6,10 @@ import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IS
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallOrderAtSummaryTransformer } from "./ShoppingMallOrderAtSummaryTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
@@ -21,6 +23,8 @@ export namespace ShoppingMallOrderItemTransformer {
     return {
       select: {
         id: true,
+        shopping_mall_order_id: true,
+        shopping_mall_seller_id: true,
         quantity: true,
         price: true,
         status: true,
@@ -36,22 +40,10 @@ export namespace ShoppingMallOrderItemTransformer {
           select: {
             shipment: ShoppingMallShipmentAtSummaryTransformer.select(),
           },
-        },
-        reviews: {
-          select: {
-            id: true,
-          },
-        },
-        cancellationRequests: {
-          select: {
-            id: true,
-          },
-        },
-        refundRequests: {
-          select: {
-            id: true,
-          },
-        },
+        } satisfies Prisma.shopping_mall_shipment_itemsFindManyArgs,
+        reviews: true,
+        cancellationRequests: true,
+        refundRequests: true,
       },
     } satisfies Prisma.shopping_mall_order_itemsFindManyArgs;
   }
@@ -60,8 +52,8 @@ export namespace ShoppingMallOrderItemTransformer {
   ): Promise<IShoppingMallOrderItem> {
     return {
       id: input.id,
-      orderId: input.order.id,
-      sellerId: input.seller.id,
+      orderId: input.shopping_mall_order_id,
+      sellerId: input.shopping_mall_seller_id,
       quantity: input.quantity,
       price: input.price,
       status: input.status,

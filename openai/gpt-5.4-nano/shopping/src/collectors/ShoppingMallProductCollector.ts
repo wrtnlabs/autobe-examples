@@ -12,8 +12,9 @@ export namespace ShoppingMallProductCollector {
     body: IShoppingMallProduct.ICreate;
     seller: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       code: props.body.code,
       name: props.body.name,
       description: props.body.description,
@@ -23,6 +24,11 @@ export namespace ShoppingMallProductCollector {
       deleted_at: null,
       seller: { connect: { id: props.seller.id } },
       category: { connect: { id: props.body.shopping_mall_category_id } },
+      productImages: undefined,
+      snapshots: undefined,
+      productVariants: undefined,
+      wishlistItems: undefined,
+      reviews: undefined,
     } satisfies Prisma.shopping_mall_productsCreateInput;
   }
 }

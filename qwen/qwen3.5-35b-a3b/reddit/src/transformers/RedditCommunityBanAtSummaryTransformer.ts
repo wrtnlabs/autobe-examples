@@ -6,8 +6,10 @@ import { IRedditCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structu
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityCommunityAtSummaryTransformer } from "./RedditCommunityCommunityAtSummaryTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
@@ -40,11 +42,11 @@ export namespace RedditCommunityBanAtSummaryTransformer {
     return {
       id: input.id,
       reason: input.reason,
-      bannedAt: input.banned_at.toISOString(),
-      unbannedAt: input.unbanned_at?.toISOString() ?? null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      bannedAt: toISOStringSafe(input.banned_at),
+      unbannedAt: input.unbanned_at ? toISOStringSafe(input.unbanned_at) : null,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       bannedMember: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.bannedMember,
       ),

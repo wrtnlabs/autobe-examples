@@ -19,10 +19,44 @@ export async function postErpHrmTimeTrackingMemberProjectsProjectIdMembershipsBu
   projectId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingProjectMembership.ICreate;
 }): Promise<IErpHrmTimeTrackingProjectMembership> {
-  // Placeholder implementation to satisfy TS2355 (must return a value).
-  // Prisma/DB behavior is out of scope for this compilation-fix task.
-  // Do not use Date directly and do not use typia.assert/typia.assertGuard on Prisma types.
-  const { projectId, member } = props;
-  const _ = { projectId, member };
-  return {} as unknown as IErpHrmTimeTrackingProjectMembership;
+  const row =
+    await MyGlobal.prisma.erp_hrm_time_tracking_project_memberships.findUniqueOrThrow(
+      {
+        where: {
+          project_id_employee_id: {
+            project_id: props.projectId,
+            employee_id: props.body.employee_id,
+          },
+        },
+        include: {
+          project: true,
+          employee: true,
+        },
+      },
+    );
+  return {
+    ...row,
+    created_at: toISOStringSafe(row.created_at),
+    updated_at: toISOStringSafe(row.updated_at),
+    deleted_at:
+      row.deleted_at === null ? null : toISOStringSafe(row.deleted_at),
+    project: {
+      ...row.project,
+      created_at: toISOStringSafe(row.project.created_at),
+      updated_at: toISOStringSafe(row.project.updated_at),
+      deleted_at:
+        row.project.deleted_at === null
+          ? null
+          : toISOStringSafe(row.project.deleted_at),
+    },
+    employee: {
+      ...row.employee,
+      created_at: toISOStringSafe(row.employee.created_at),
+      updated_at: toISOStringSafe(row.employee.updated_at),
+      deleted_at:
+        row.employee.deleted_at === null
+          ? null
+          : toISOStringSafe(row.employee.deleted_at),
+    },
+  };
 }

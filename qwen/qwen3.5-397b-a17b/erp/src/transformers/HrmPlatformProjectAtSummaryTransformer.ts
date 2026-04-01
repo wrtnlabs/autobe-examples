@@ -18,14 +18,9 @@ export namespace HrmPlatformProjectAtSummaryTransformer {
         color_code: true,
         status: true,
         budget_hours: true,
-        started_at: true,
-        ended_at: true,
+        start_date: true,
+        end_date: true,
         created_at: true,
-        members: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.hrm_platform_project_membersFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_projectsFindManyArgs;
   }
@@ -37,11 +32,10 @@ export namespace HrmPlatformProjectAtSummaryTransformer {
       name: input.name,
       color_code: input.color_code,
       status: input.status,
-      budget_hours: input.budget_hours ?? null,
-      started_at: input.started_at?.toISOString() ?? null,
-      ended_at: input.ended_at?.toISOString() ?? null,
+      budget_hours: input.budget_hours ?? undefined,
+      start_date: input.start_date?.toISOString() ?? undefined,
+      end_date: input.end_date?.toISOString() ?? undefined,
       created_at: input.created_at.toISOString(),
-      members_count: input.members.length,
     };
   }
 }

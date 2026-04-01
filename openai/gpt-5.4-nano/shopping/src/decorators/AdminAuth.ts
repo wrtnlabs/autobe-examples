@@ -14,7 +14,6 @@ export const AdminAuth =
       props.route.security ??= [];
       props.route.security.push({ bearer: [] });
     })(target, propertyKey as string, undefined!);
-
     singleton.get()(target, propertyKey, parameterIndex);
   };
 

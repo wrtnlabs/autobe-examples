@@ -19,69 +19,64 @@ export async function patchEcommerceMallAdminCustomers(props: {
   admin: AdminPayload;
   body: IEcommerceMallCustomer.IRequest;
 }): Promise<IPageIEcommerceMallCustomer.ISummary> {
-  const page = Math.max(1, Number(props.body.page ?? 1));
-  const limit = Math.min(Math.max(1, Number(props.body.limit ?? 20)), 100);
-  const skip = (page - 1) * limit;
-  const emailFilter = props.body.email
-    ? { email: { contains: props.body.email } }
-    : undefined;
-  const statusFilter = props.body.status
-    ? { status: props.body.status }
-    : undefined;
-  const createdAtFilter = props.body.createdAtRange
-    ? {
-        created_at: {
-          gte: new Date(props.body.createdAtRange.gte),
-          lte: new Date(props.body.createdAtRange.lte),
-        },
-      }
-    : undefined;
+  const email = props.body.email;
+  const status = props.body.status;
+  const createdAtRange = props.body.createdAtRange;
   const includeDeleted = props.body.includeDeleted ?? false;
-  const deletedFilter = includeDeleted ? undefined : { deleted_at: null };
-  const whereInput: Prisma.ecommerce_mall_customersWhereInput = {
-    ...((emailFilter !== undefined && emailFilter) || {}),
-    ...((statusFilter !== undefined && statusFilter) || {}),
-    ...((createdAtFilter !== undefined && createdAtFilter) || {}),
-    ...((deletedFilter !== undefined && deletedFilter) || {}),
-  };
-  const validSortFields = ["id", "email", "status", "created_at"] as const;
-  const validSortDirections = ["asc", "desc"] as const;
+  const page = Number(props.body.page ?? 1);
+  const limit = Number(props.body.limit ?? 20);
   const sortBy = props.body.sortBy ?? "created_at";
   const sortOrder = props.body.sortOrder ?? "desc";
-  if (!validSortFields.includes(sortBy as (typeof validSortFields)[number])) {
+  if (limit < 1 || limit > 100) {
+    throw new HttpException("Limit must be between 1 and 100", 400);
+  }
+  const validSortFields: Array<"id" | "email" | "status" | "created_at"> = [
+    "id",
+    "email",
+    "status",
+    "created_at",
+  ];
+  if (!validSortFields.includes(sortBy)) {
     throw new HttpException("Invalid sort field", 400);
   }
-  if (
-    !validSortDirections.includes(
-      sortOrder as (typeof validSortDirections)[number],
-    )
-  ) {
+  if (sortOrder !== "asc" && sortOrder !== "desc") {
     throw new HttpException("Invalid sort order", 400);
   }
-  const orderByInput = {
-    [sortBy]: sortOrder,
-  } satisfies Prisma.ecommerce_mall_customersOrderByWithRelationInput;
+  const whereInput: Prisma.ecommerce_mall_customersWhereInput = {
+    ...(email !== undefined && { email: { contains: email } }),
+    ...(status !== undefined && { status: status }),
+    ...(createdAtRange !== undefined && {
+      created_at: {
+        gte: new Date(createdAtRange.gte),
+        lte: new Date(createdAtRange.lte),
+      },
+    }),
+  } satisfies Prisma.ecommerce_mall_customersWhereInput;
+  if (includeDeleted === false) {
+    whereInput.deleted_at = null;
+  }
+  const data = await MyGlobal.prisma.ecommerce_mall_customers.findMany({
+    where: whereInput,
+    orderBy: {
+      [sortBy]: sortOrder,
+    },
+    skip: (page - 1) * limit,
+    take: limit,
+    ...EcommerceMallCustomerAtSummaryTransformer.select(),
+  });
   const total = await MyGlobal.prisma.ecommerce_mall_customers.count({
     where: whereInput,
   });
-  const data = await MyGlobal.prisma.ecommerce_mall_customers.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...EcommerceMallCustomerAtSummaryTransformer.select(),
-  });
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallCustomerAtSummaryTransformer.transform,
-  );
   return {
-    data: transformedData,
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallCustomerAtSummaryTransformer.transform,
+    ),
   };
 }

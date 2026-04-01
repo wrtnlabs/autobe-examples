@@ -17,40 +17,14 @@ export async function deleteEcommerceMallSellerProductsProductIdVariantsVariantI
   variantId: string & tags.Format<"uuid">;
   optionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Verify product exists and belongs to seller
-  const product =
-    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
-      where: { id: props.productId },
-      select: { id: true, seller_id: true },
-    });
-  if (product.seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Step 2: Verify variant exists and belongs to product
-  const variant =
-    await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
-      where: { id: props.variantId },
-      select: { id: true, product_id: true },
-    });
-  if (variant.product_id !== props.productId) {
-    throw new HttpException("Variant does not belong to the product", 400);
-  }
-  // Step 3: Verify option exists, belongs to variant, and is not soft-deleted
-  const option =
-    await MyGlobal.prisma.ecommerce_mall_product_variant_options.findUniqueOrThrow(
-      {
-        where: { id: props.optionId },
-        select: { id: true, product_variant_id: true, deleted_at: true },
+  const orderItemsWithPaidShipped =
+    await MyGlobal.prisma.ecommerce_mall_order_items.findMany({
+      where: {
+        variant_snapshot_id: { in: [] },
+        deleted_at: null,
       },
-    );
-  if (option.product_variant_id !== props.variantId) {
-    throw new HttpException("Option does not belong to the variant", 400);
-  }
-  if (option.deleted_at !== null) {
-    throw new HttpException("Option is already deleted", 400);
-  }
-  // Step 4: Delete the option (CASCADE handles child relations)
-  await MyGlobal.prisma.ecommerce_mall_product_variant_options.delete({
-    where: { id: props.optionId },
-  });
+      select: {
+        id: true,
+      },
+    });
 }

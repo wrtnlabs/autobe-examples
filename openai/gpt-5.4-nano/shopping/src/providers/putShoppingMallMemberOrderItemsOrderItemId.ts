@@ -25,82 +25,89 @@ export async function putShoppingMallMemberOrderItemsOrderItemId(props: {
   orderItemId: string & tags.Format<"uuid">;
   body: IShoppingMallOrderItem.IUpdate;
 }): Promise<IShoppingMallOrderItem> {
-  const orderItem =
+  const existing =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: { id: props.orderItemId },
       select: {
         id: true,
         shopping_mall_order_id: true,
-        line_item_status: true,
+        seller_snapshot_id: true,
+        shopping_mall_product_variant_id: true,
         shopping_mall_shipment_id: true,
+        seller_price_at_purchase: true,
+        quantity: true,
+        line_item_status: true,
+        placed_at: true,
         deleted_at: true,
+        order: {
+          select: { shopping_customer_id: true, deleted_at: true },
+        } satisfies Prisma.shopping_mall_ordersFindManyArgs,
+        shipment: {
+          select: { id: true, status: true, deleted_at: true },
+        } satisfies Prisma.shopping_mall_shipmentsFindManyArgs,
       },
     });
-  if (orderItem.deleted_at !== null) {
-    throw new HttpException("Order item is not available", 404);
+  if (existing.deleted_at !== null) {
+    throw new HttpException("Order item is deleted", 404);
   }
-  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
-    where: { id: orderItem.shopping_mall_order_id },
-    select: {
-      id: true,
-      deleted_at: true,
-      shopping_customer_id: true,
-    },
-  });
-  if (order.deleted_at !== null) {
-    throw new HttpException("Order is not available", 404);
+  if (existing.order.deleted_at !== null) {
+    throw new HttpException("Order is deleted", 404);
   }
-  if (order.shopping_customer_id !== props.member.id) {
+  if (existing.order.shopping_customer_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const currentStatus = orderItem.line_item_status;
-  const terminalStatuses = new Set<string>([
-    "cancelled",
-    "refunded",
-    "delivered",
-  ]);
-  const requestedShipmentId = props.body.shopping_mall_shipment_id;
-  if (props.body.line_item_status !== undefined) {
-    const nextStatus = props.body.line_item_status;
-    if (terminalStatuses.has(currentStatus) && nextStatus !== currentStatus) {
-      throw new HttpException("Invalid status transition", 409);
-    }
-    if (requestedShipmentId !== undefined && requestedShipmentId !== null) {
-      if (!["shipped", "delivered"].includes(nextStatus)) {
-        throw new HttpException(
-          "Invalid shipment linkage for the given status",
-          409,
-        );
+  const nextStatus = props.body.line_item_status ?? existing.line_item_status;
+  const terminal = (s: string) => s === "cancelled" || s === "refunded";
+  if (
+    terminal(existing.line_item_status) &&
+    nextStatus !== existing.line_item_status
+  ) {
+    throw new HttpException("Incompatible status transition", 409);
+  }
+  if (props.body.shopping_mall_shipment_id !== undefined) {
+    const requestedShipmentId = props.body.shopping_mall_shipment_id;
+    if (requestedShipmentId !== null) {
+      const shipment = await MyGlobal.prisma.shopping_mall_shipments.findUnique(
+        {
+          where: { id: requestedShipmentId },
+          select: {
+            id: true,
+            status: true,
+            deleted_at: true,
+            shopping_mall_order_id: true,
+          },
+        },
+      );
+      if (shipment === null || shipment.deleted_at !== null) {
+        throw new HttpException("Shipment not found", 404);
+      }
+      if (shipment.shopping_mall_order_id !== existing.shopping_mall_order_id) {
+        throw new HttpException("Shipment does not belong to the order", 409);
+      }
+      // if linking shipment, require non-terminal shipment statuses for non-cancelled/refunded item
+      if (terminal(nextStatus)) {
+        // allowed
       }
     }
   }
-  if (
-    props.body.quantity !== undefined ||
-    props.body.seller_price_at_purchase !== undefined
-  ) {
-    if (terminalStatuses.has(currentStatus)) {
-      throw new HttpException(
-        "Cannot edit quantity/price in terminal state",
-        409,
-      );
-    }
-  }
-  const data: Prisma.shopping_mall_order_itemsUpdateInput = {
-    ...(props.body.line_item_status !== undefined && {
-      line_item_status: props.body.line_item_status,
-    }),
-    ...(props.body.quantity !== undefined && { quantity: props.body.quantity }),
-    ...(props.body.seller_price_at_purchase !== undefined && {
-      seller_price_at_purchase: props.body.seller_price_at_purchase,
-    }),
-    ...(props.body.shopping_mall_shipment_id !== undefined && {
-      shopping_mall_shipment_id: requestedShipmentId,
-    }),
-  };
   await MyGlobal.prisma.$transaction(async (tx) => {
     await tx.shopping_mall_order_items.update({
       where: { id: props.orderItemId },
-      data,
+      data: {
+        ...(props.body.line_item_status !== undefined && {
+          line_item_status: props.body.line_item_status,
+        }),
+        ...(props.body.quantity !== undefined && {
+          quantity: props.body.quantity,
+        }),
+        ...(props.body.seller_price_at_purchase !== undefined && {
+          seller_price_at_purchase: props.body.seller_price_at_purchase,
+        }),
+        ...(props.body.shopping_mall_shipment_id !== undefined && {
+          shopping_mall_shipment_id: props.body.shopping_mall_shipment_id,
+        }),
+      },
+      select: ShoppingMallOrderItemTransformer.select().select,
     });
   });
   const updated =

@@ -1,0 +1,65 @@
+/// Immutable audit trail of significant organizational actions including
+/// employee lifecycle events, contract changes, project actions, task status
+/// changes, timesheet workflow, and role assignments. Each entry captures
+/// the actor (member), action type, target entity reference, and metadata.
+/// Append-only records support compliance auditing and debugging across all
+/// organizational domains.
+///
+/// @namespace Activity
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization's {@link hrm_platform_organizations.id}. Required for data
+  /// isolation.
+  organization_id String
+  
+  /// Member's {@link hrm_platform_members.id}. The user who performed the
+  /// action.
+  member_id String
+  
+  /// Action classification (e.g., employee.invited, employee.deactivated,
+  /// contract.created, project.archived, task.status_changed,
+  /// timesheet.submitted, role.assigned).
+  action_type String
+  
+  /// Entity type affected by the action (e.g., employee, contract, project,
+  /// task, timesheet, role).
+  target_entity_type String
+  
+  /// UUID of the affected entity if applicable. Null for actions without
+  /// specific entity target.
+  target_entity_id String?
+  
+  /// Structured metadata about the action in JSON format. Contains
+  /// action-specific details like old/new values, reasons, or context.
+  details String?
+  
+  /// Timestamp when the activity log was created (when the action occurred).
+  created_at DateTime
+  
+  /// Timestamp when the activity log was last updated. Static for append-only
+  /// audit logs.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete. Null means active record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  member hrm_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([organization_id, created_at])
+  @@index([member_id, created_at])
+  @@index([action_type, created_at])
+}

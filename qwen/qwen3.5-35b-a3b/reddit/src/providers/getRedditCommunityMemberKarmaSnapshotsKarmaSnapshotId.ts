@@ -22,12 +22,12 @@ export async function getRedditCommunityMemberKarmaSnapshotsKarmaSnapshotId(prop
 }): Promise<IRedditCommunityKarmaSnapshot.ISummary> {
   const snapshot =
     await MyGlobal.prisma.reddit_community_karma_snapshots.findUniqueOrThrow({
-      where: { id: props.karmaSnapshotId },
-      ...RedditCommunityKarmaSnapshotAtSummaryTransformer.select(),
+      where: {
+        id: props.karmaSnapshotId,
+        deleted_at: null,
+      },
+      select: RedditCommunityKarmaSnapshotAtSummaryTransformer.select().select,
     });
-  if (snapshot.deleted_at !== null) {
-    throw new HttpException("Not Found", 404);
-  }
   return await RedditCommunityKarmaSnapshotAtSummaryTransformer.transform(
     snapshot,
   );

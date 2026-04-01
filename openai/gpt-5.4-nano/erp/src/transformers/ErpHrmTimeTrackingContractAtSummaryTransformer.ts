@@ -3,8 +3,10 @@ import { IErpHrmTimeTrackingContract } from "@ORGANIZATION/PROJECT-api/lib/struc
 import { IErpHrmTimeTrackingMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "./ErpHrmTimeTrackingMemberAtSummaryTransformer";
 
@@ -29,8 +31,8 @@ export namespace ErpHrmTimeTrackingContractAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         employee: ErpHrmTimeTrackingMemberAtSummaryTransformer.select(),
-        organization: true as any,
-        snapshots: true as any,
+        organization: true,
+        snapshots: true,
       },
     } satisfies Prisma.erp_hrm_time_tracking_contractsFindManyArgs;
   }
@@ -41,7 +43,7 @@ export namespace ErpHrmTimeTrackingContractAtSummaryTransformer {
       id: input.id,
       contract_number: input.contract_number,
       contract_title: input.contract_title,
-      pay_amount: input.pay_amount,
+      pay_amount: Number(input.pay_amount),
       pay_currency: input.pay_currency,
       pay_frequency: input.pay_frequency,
       work_term_start_date: input.work_term_start_date.toISOString(),

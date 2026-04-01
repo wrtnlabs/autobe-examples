@@ -22,54 +22,59 @@ export async function patchShoppingMallSellerCancellationSnapshots(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const orderItemFilter: Prisma.shopping_mall_order_itemsWhereInput = {
+  const cancellationRequest: any = {
     shopping_mall_seller_id: props.seller.id,
   };
-  if (props.body.orderId !== undefined) {
-    orderItemFilter.shopping_mall_order_id = props.body.orderId;
-  }
-  const cancellationRequestFilter: Prisma.shopping_mall_cancellation_requestsWhereInput =
-    {
-      orderItem: orderItemFilter,
-    };
   if (props.body.cancellationRequestId !== undefined) {
-    cancellationRequestFilter.id = props.body.cancellationRequestId;
+    cancellationRequest.shopping_mall_cancellation_request_id =
+      props.body.cancellationRequestId;
   }
   if (props.body.customerId !== undefined) {
-    cancellationRequestFilter.shopping_mall_customer_id = props.body.customerId;
+    cancellationRequest.shopping_mall_customer_id = props.body.customerId;
   }
   if (props.body.sellerId !== undefined) {
-    cancellationRequestFilter.shopping_mall_seller_id = props.body.sellerId;
+    cancellationRequest.shopping_mall_seller_id = props.body.sellerId;
   }
   if (props.body.status !== undefined) {
-    cancellationRequestFilter.status = props.body.status;
+    cancellationRequest.status = props.body.status as any;
   }
-  const whereInput: Prisma.shopping_mall_cancellation_snapshotsWhereInput = {
-    cancellationRequest: cancellationRequestFilter,
+  const whereInput: any = {
+    cancellationRequest,
   };
-  if (props.body.dateRange !== undefined) {
-    const dateFilters: Prisma.shopping_mall_cancellation_snapshotsWhereInput[] =
-      [];
-    if (props.body.dateRange.from !== undefined) {
-      dateFilters.push({
-        created_at: { gte: new Date(props.body.dateRange.from) },
-      });
-    }
-    if (props.body.dateRange.to !== undefined) {
-      dateFilters.push({
-        created_at: { lte: new Date(props.body.dateRange.to) },
-      });
-    }
-    if (dateFilters.length > 0) {
-      whereInput.AND = dateFilters;
-    }
+  if (props.body.dateRange?.from !== undefined) {
+    whereInput.created_at = {
+      gte: new Date(props.body.dateRange.from),
+    };
   }
-  const orderByInput: Prisma.shopping_mall_cancellation_snapshotsOrderByWithRelationInput =
+  if (props.body.dateRange?.to !== undefined) {
+    whereInput.created_at = {
+      lte: new Date(props.body.dateRange.to),
+    };
+  }
+  if (props.body.orderId !== undefined) {
+    const orderItems = await MyGlobal.prisma.shopping_mall_order_items.findMany(
+      {
+        where: {
+          shopping_mall_order_id: props.body.orderId,
+        },
+        select: {
+          id: true,
+        },
+      },
+    );
+    const orderItemIds = orderItems.map((item) => item.id);
+    cancellationRequest.shopping_mall_order_item_id = {
+      in: orderItemIds,
+    };
+  }
+  const orderByInput =
     props.body.sortBy !== undefined && props.body.sortOrder !== undefined
-      ? ({
-          [props.body.sortBy]: props.body.sortOrder,
-        } as Prisma.shopping_mall_cancellation_snapshotsOrderByWithRelationInput)
-      : { created_at: "desc" };
+      ? props.body.sortBy === "id"
+        ? ({ id: props.body.sortOrder } as const)
+        : props.body.sortBy === "cancellationRequestId"
+          ? { cancellationRequest: { id: props.body.sortOrder } }
+          : { created_at: props.body.sortOrder }
+      : { created_at: "desc" as const };
   const data =
     await MyGlobal.prisma.shopping_mall_cancellation_snapshots.findMany({
       where: whereInput,
@@ -83,15 +88,15 @@ export async function patchShoppingMallSellerCancellationSnapshots(props: {
       where: whereInput,
     });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallCancellationSnapshotAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallCancellationSnapshotAtSummaryTransformer.transform,
+    ),
   };
 }

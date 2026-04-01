@@ -15,87 +15,64 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getEcommerceMallSellerStatus(props: {
   seller: SellerPayload;
 }): Promise<IEcommerceMallStatus.ISummary> {
-  const orders = await MyGlobal.prisma.ecommerce_mall_orders.findMany({
+  const orderStats = await MyGlobal.prisma.ecommerce_mall_orders.groupBy({
+    by: ["status"],
     where: {
       deleted_at: null,
-      status: {
-        in: [
-          "paid",
-          "shipped",
-          "delivered",
-          "cancelled",
-          "refunded",
-          "partiallyCompleted",
-        ],
-      },
     },
-    select: { status: true },
+    _count: {
+      id: true,
+    },
   });
-  const shipments = await MyGlobal.prisma.ecommerce_mall_shipments.findMany({
+  const shipmentStats = await MyGlobal.prisma.ecommerce_mall_shipments.groupBy({
+    by: ["status"],
     where: {
       deleted_at: null,
-      status: { in: ["created", "inTransit", "delivered"] },
     },
-    select: { status: true },
+    _count: {
+      id: true,
+    },
   });
+  const totalOrders = orderStats.reduce((sum, stat) => sum + stat._count.id, 0);
+  const deliveredOrders =
+    orderStats.find((s) => s.status === "delivered")?._count.id ?? 0;
+  const totalShipments = shipmentStats.reduce(
+    (sum, stat) => sum + stat._count.id,
+    0,
+  );
+  const deliveredShipments =
+    shipmentStats.find((s) => s.status === "delivered")?._count.id ?? 0;
+  const deliveryRatio = totalOrders > 0 ? deliveredOrders / totalOrders : 0;
+  const shipmentDeliveryRatio =
+    totalShipments > 0 ? deliveredShipments / totalShipments : 0;
+  const availabilityPercentage = 100;
+  const healthScore = Math.round(
+    availabilityPercentage * 0.6 +
+      deliveryRatio * 100 * 0.2 +
+      shipmentDeliveryRatio * 100 * 0.2,
+  );
+  const platformStatus: "healthy" | "degraded" | "unhealthy" =
+    healthScore >= 95
+      ? "healthy"
+      : healthScore >= 80
+        ? "degraded"
+        : "unhealthy";
   const orderCounts: {
     [key: string]: number & tags.Type<"int32"> & tags.Minimum<0>;
   } = {};
-  orders.forEach((order) => {
-    if (order.status in orderCounts) {
-      orderCounts[order.status] = (orderCounts[order.status] + 1) as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>;
-    } else {
-      orderCounts[order.status] = 1 as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>;
-    }
-  });
+  for (const stat of orderStats) {
+    orderCounts[stat.status] = stat._count.id;
+  }
   const shipmentCounts: {
     [key: string]: number & tags.Type<"int32"> & tags.Minimum<0>;
   } = {};
-  shipments.forEach((shipment) => {
-    if (shipment.status in shipmentCounts) {
-      shipmentCounts[shipment.status] = (shipmentCounts[shipment.status] +
-        1) as number & tags.Type<"int32"> & tags.Minimum<0>;
-    } else {
-      shipmentCounts[shipment.status] = 1 as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>;
-    }
-  });
-  const totalPaidOrders = orderCounts["paid"] || 0;
-  const totalDeliveredOrders = orderCounts["delivered"] || 0;
-  const totalCreatedShipments = shipmentCounts["created"] || 0;
-  const totalDeliveredShipments = shipmentCounts["delivered"] || 0;
-  const deliveryRateOrders =
-    totalPaidOrders > 0 ? (totalDeliveredOrders / totalPaidOrders) * 100 : 0;
-  const deliveryRateShipments =
-    totalCreatedShipments > 0
-      ? (totalDeliveredShipments / totalCreatedShipments) * 100
-      : 0;
-  const availabilityPercentage = 100;
-  const healthScore =
-    availabilityPercentage * 0.6 +
-    deliveryRateOrders * 0.2 +
-    deliveryRateShipments * 0.2;
-  const cappedHealthScore = Math.min(Math.max(healthScore, 0), 100) as number &
-    tags.Minimum<0> &
-    tags.Maximum<100>;
-  let platformStatus: "healthy" | "degraded" | "unhealthy" = "healthy";
-  if (cappedHealthScore >= 95) {
-    platformStatus = "healthy";
-  } else if (cappedHealthScore >= 80) {
-    platformStatus = "degraded";
-  } else {
-    platformStatus = "unhealthy";
+  for (const stat of shipmentStats) {
+    shipmentCounts[stat.status] = stat._count.id;
   }
   return {
     platformStatus,
-    orderCounts: Object.keys(orderCounts).length > 0 ? orderCounts : undefined,
-    shipmentCounts:
-      Object.keys(shipmentCounts).length > 0 ? shipmentCounts : undefined,
-    healthScore: cappedHealthScore,
+    orderCounts,
+    shipmentCounts,
+    healthScore,
   } satisfies IEcommerceMallStatus.ISummary;
 }

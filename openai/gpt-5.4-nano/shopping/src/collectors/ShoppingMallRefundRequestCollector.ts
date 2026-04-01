@@ -11,9 +11,8 @@ export namespace ShoppingMallRefundRequestCollector {
   export async function collect(props: {
     body: IShoppingMallRefundRequest.ICreate;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       customer_reason: props.body.customerReason,
       status: "pending",
       seller_comment: null,

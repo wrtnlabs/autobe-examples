@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
@@ -9,7 +9,7 @@ export async function adminAuthorize(request: {
   const payload: AdminPayload = jwtAuthorize({ request }) as AdminPayload;
 
   if (payload.type !== "admin") {
-    throw new ForbiddenException(`You're not ${payload.type}`);
+    throw new ForbiddenException("You're not an admin");
   }
 
   const admin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({

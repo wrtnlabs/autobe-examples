@@ -1,10 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { HrmPlatformOrganizationAtSummaryTransformer } from "./HrmPlatformOrganizationAtSummaryTransformer";
 
 export namespace HrmPlatformRoleAtSummaryTransformer {
   export type Payload = Prisma.hrm_platform_rolesGetPayload<
@@ -15,13 +17,10 @@ export namespace HrmPlatformRoleAtSummaryTransformer {
       select: {
         id: true,
         name: true,
-        built_in: true,
+        description: true,
+        is_builtin: true,
         created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        organization: true,
-        employees: true,
-        permissions: true,
+        organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_rolesFindManyArgs;
   }
@@ -31,7 +30,11 @@ export namespace HrmPlatformRoleAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      built_in: input.built_in,
+      description: input.description ?? undefined,
+      is_builtin: input.is_builtin,
+      organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(
+        input.organization,
+      ),
       created_at: input.created_at.toISOString(),
     };
   }

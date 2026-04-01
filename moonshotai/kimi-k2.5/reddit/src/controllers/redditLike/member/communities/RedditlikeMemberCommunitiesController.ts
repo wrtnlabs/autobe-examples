@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IRedditLikeCommunity } from "../../../../api/structures/IRedditLikeCommunity";
-import { AdminAuth } from "../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { deleteRedditLikeMemberCommunitiesCommunityId } from "../../../../providers/deleteRedditLikeMemberCommunitiesCommunityId";
 import { postRedditLikeMemberCommunities } from "../../../../providers/postRedditLikeMemberCommunities";
 import { putRedditLikeMemberCommunitiesCommunityId } from "../../../../providers/putRedditLikeMemberCommunitiesCommunityId";
@@ -50,8 +50,8 @@ export class RedditlikeMemberCommunitiesController {
    */
   @TypedRoute.Post()
   public async create(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedBody()
     body: IRedditLikeCommunity.ICreate,
   ): Promise<IRedditLikeCommunity> {
@@ -110,8 +110,8 @@ export class RedditlikeMemberCommunitiesController {
    */
   @TypedRoute.Put(":communityId")
   public async update(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("communityId")
     communityId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -153,8 +153,8 @@ export class RedditlikeMemberCommunitiesController {
    */
   @TypedRoute.Delete(":communityId")
   public async erase(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("communityId")
     communityId: string & tags.Format<"uuid">,
   ): Promise<void> {

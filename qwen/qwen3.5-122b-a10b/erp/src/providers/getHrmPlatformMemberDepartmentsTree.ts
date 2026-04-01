@@ -17,28 +17,33 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getHrmPlatformMemberDepartmentsTree(props: {
   member: MemberPayload;
 }): Promise<IHrmPlatformDepartment[]> {
+  // Resolve member's organization through employee relationship
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
       deleted_at: null,
     },
+    select: {
+      hrm_platform_organization_id: true,
+    },
   });
-  if (employee === null) {
-    throw new HttpException("Member not found in organization", 404);
+  if (!employee) {
+    throw new HttpException("Member has no organization context", 403);
   }
-  const departments = await MyGlobal.prisma.hrm_platform_departments.findMany({
-    where: {
-      hrm_platform_organization_id: employee.hrm_platform_organization_id,
-      parent_department_id: null,
-      deleted_at: null,
-    },
-    orderBy: {
-      name: "asc",
-    },
-    ...HrmPlatformDepartmentTransformer.select(),
-  });
+  // Query top-level departments for the organization
+  const topDepartments =
+    await MyGlobal.prisma.hrm_platform_departments.findMany({
+      where: {
+        hrm_platform_organization_id: employee.hrm_platform_organization_id,
+        parent_department_id: null,
+        deleted_at: null,
+      },
+      ...HrmPlatformDepartmentTransformer.select(),
+      orderBy: { name: "asc" },
+    } satisfies Prisma.hrm_platform_departmentsFindManyArgs);
+  // Transform all departments to DTO format
   return await ArrayUtil.asyncMap(
-    departments,
+    topDepartments,
     HrmPlatformDepartmentTransformer.transform,
   );
 }

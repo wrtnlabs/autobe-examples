@@ -8,21 +8,23 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { EcommerceMallPlatformConfigurationTransformer } from "../transformers/EcommerceMallPlatformConfigurationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallSuperAdminPlatformConfigurationsConfigId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   configId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallPlatformConfiguration> {
-  const config =
+  const configuration =
     await MyGlobal.prisma.ecommerce_mall_platform_configurations.findUniqueOrThrow(
       {
         where: { id: props.configId },
         ...EcommerceMallPlatformConfigurationTransformer.select(),
       },
     );
-  return await EcommerceMallPlatformConfigurationTransformer.transform(config);
+  return await EcommerceMallPlatformConfigurationTransformer.transform(
+    configuration,
+  );
 }

@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallPayment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallPayment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -39,12 +40,12 @@ export namespace ShoppingMallPaymentTransformer {
       provider: input.provider,
       provider_reference: input.provider_reference,
       status: input.status,
-      paid_at: input.paid_at?.toISOString() ?? null,
+      paid_at: input.paid_at ? input.paid_at.toISOString() : null,
       error_code: input.error_code ?? null,
       error_message: input.error_message ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

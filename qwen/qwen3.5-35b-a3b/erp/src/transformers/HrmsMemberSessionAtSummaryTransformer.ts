@@ -4,10 +4,11 @@ import { IHrmsMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IHr
 import { IHrmsOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { HrmsMemberAtSummaryTransformer } from "./HrmsMemberAtSummaryTransformer";
 import { HrmsOrganizationAtSummaryTransformer } from "./HrmsOrganizationAtSummaryTransformer";
 
 export namespace HrmsMemberSessionAtSummaryTransformer {
@@ -26,7 +27,9 @@ export namespace HrmsMemberSessionAtSummaryTransformer {
         user_agent: true,
         created_at: true,
         expired_at: true,
-        member: HrmsMemberAtSummaryTransformer.select(),
+        member: {
+          select: { id: true },
+        } satisfies Prisma.hrms_membersFindManyArgs,
         currentOrganization: HrmsOrganizationAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrms_member_sessionsFindManyArgs;

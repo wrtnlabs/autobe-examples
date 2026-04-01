@@ -3,8 +3,10 @@ import { IErpHrmTimeTrackingDepartment } from "@ORGANIZATION/PROJECT-api/lib/str
 import { IErpHrmTimeTrackingOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingDepartmentAtSummaryTransformer {
@@ -20,7 +22,12 @@ export namespace ErpHrmTimeTrackingDepartmentAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: true,
+        organization: {
+          select: {
+            // IErpHrmTimeTrackingOrganization.ISummary is an empty object DTO,
+            // so selecting no fields is acceptable.
+          },
+        },
         parentDepartment: {
           select: {
             id: true,
@@ -42,10 +49,10 @@ export namespace ErpHrmTimeTrackingDepartmentAtSummaryTransformer {
       organization: {},
       parent_department_id: input.parentDepartment?.id ?? null,
       name: input.name,
-      description: input.description,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      description: input.description ?? null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

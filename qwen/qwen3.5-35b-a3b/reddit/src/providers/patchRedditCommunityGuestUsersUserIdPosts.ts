@@ -23,56 +23,54 @@ export async function patchRedditCommunityGuestUsersUserIdPosts(props: {
   userId: string & tags.Format<"uuid">;
   body: IRedditCommunityPost.IRequest;
 }): Promise<IPageIRedditCommunityPost.ISummary> {
-  // Validate target user exists and is not deleted
-  const targetUser = await MyGlobal.prisma.reddit_community_members.findUnique({
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const search = props.body.search ?? undefined;
+  const community_id = props.body.community_id ?? undefined;
+  await MyGlobal.prisma.reddit_community_members.findUniqueOrThrow({
     where: {
       id: props.userId,
       deleted_at: null,
     },
-    select: { id: true },
   });
-  if (targetUser === null) {
-    throw new HttpException("User not found", 404);
-  }
-  // Build filter conditions
   const whereInput: Prisma.reddit_community_postsWhereInput = {
     author_id: props.userId,
     deleted_at: null,
-    ...(props.body.community_id !== undefined && {
-      community_id: props.body.community_id,
+    ...(search !== undefined && {
+      title: {
+        contains: search,
+        mode: "insensitive",
+      },
     }),
-    ...(props.body.search !== undefined &&
-      props.body.search !== "" && {
-        title: {
-          contains: props.body.search,
-        },
-      }),
+    ...(community_id !== undefined && {
+      community_id,
+    }),
   } satisfies Prisma.reddit_community_postsWhereInput;
-  // Get total count
+  const orderByInput = {
+    created_at: "desc",
+  } satisfies Prisma.reddit_community_postsOrderByWithRelationInput;
+  const data = await MyGlobal.prisma.reddit_community_posts.findMany({
+    where: whereInput,
+    orderBy: orderByInput,
+    skip: (page - 1) * limit,
+    take: limit,
+    ...RedditCommunityPostAtSummaryTransformer.select(),
+  });
   const total = await MyGlobal.prisma.reddit_community_posts.count({
     where: whereInput,
   });
-  // Get paginated results
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  const posts = await MyGlobal.prisma.reddit_community_posts.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: { created_at: "desc" },
-    ...RedditCommunityPostAtSummaryTransformer.select(),
-  });
+  const records = await ArrayUtil.asyncMap(
+    data,
+    RedditCommunityPostAtSummaryTransformer.transform,
+  );
+  const pages = Math.ceil(total / limit);
   return {
+    data: records,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: pages,
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      posts,
-      RedditCommunityPostAtSummaryTransformer.transform,
-    ),
   } satisfies IPageIRedditCommunityPost.ISummary;
 }

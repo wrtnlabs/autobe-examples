@@ -12,7 +12,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditLikeModeratorTransformer } from "../transformers/RedditLikeModeratorTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -24,12 +23,15 @@ export async function putRedditLikeAuthModeratorRefresh(props: {
     id: string;
     session_id: string;
     type: string;
-    created_at: string;
   };
   try {
     decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as typeof decoded;
+    }) as {
+      id: string;
+      session_id: string;
+      type: string;
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
@@ -37,44 +39,95 @@ export async function putRedditLikeAuthModeratorRefresh(props: {
   if (decoded.type !== "moderator") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session exists and is active
-  const session =
-    await MyGlobal.prisma.reddit_like_moderator_sessions.findFirst({
-      where: {
-        id: decoded.session_id,
-        moderator_id: decoded.id,
-      },
-    });
-  if (!session) {
-    throw new HttpException("Session expired or revoked", 401);
-  }
-  // 4. Validate moderator exists and is not deleted
-  const moderator =
-    await MyGlobal.prisma.reddit_like_moderators.findUniqueOrThrow({
-      where: { id: decoded.id },
-      select: { id: true, deleted_at: true, member_id: true },
-    });
-  if (moderator.deleted_at !== null) {
-    throw new HttpException("Moderator role has been revoked", 403);
-  }
-  // 5. Validate member exists and is not deleted
+  // 3. Validate member exists and is active
   const member = await MyGlobal.prisma.reddit_like_members.findUniqueOrThrow({
-    where: { id: moderator.member_id },
-    select: { id: true, deleted_at: true },
+    where: { id: decoded.id },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      email_verified: true,
+      created_at: true,
+      deleted_at: true,
+    },
   });
   if (member.deleted_at !== null) {
-    throw new HttpException("Member account has been deleted", 403);
+    throw new HttpException("Account has been deleted", 403);
   }
+  // 4. Validate moderator role exists and is active with community
+  const moderator =
+    await MyGlobal.prisma.reddit_like_moderators.findFirstOrThrow({
+      where: {
+        member_id: decoded.id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        member_id: true,
+        community_id: true,
+        can_add_moderators: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        community: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            owner_id: true,
+            icon_attachment_id: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+            owner: {
+              select: {
+                id: true,
+                email: true,
+                username: true,
+                email_verified: true,
+                created_at: true,
+              },
+            },
+            iconAttachment: {
+              select: {
+                id: true,
+                original_filename: true,
+                mime_type: true,
+                file_size_bytes: true,
+                created_at: true,
+                uploadedByMember: {
+                  select: {
+                    id: true,
+                    email: true,
+                    username: true,
+                    email_verified: true,
+                    created_at: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  // 5. Calculate subscriber count
+  const subscriberCount =
+    await MyGlobal.prisma.reddit_like_community_subscriptions.count({
+      where: {
+        community: { id: moderator.community_id },
+        deleted_at: null,
+      },
+    });
   // 6. Generate new tokens with same session_id
-  const now = Date.now();
-  const accessExpires = new Date(now + 60 * 60 * 1000);
-  const refreshExpires = new Date(now + 7 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const accessToken = jwt.sign(
     {
       type: "moderator",
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: new Date(now).toISOString(),
+      created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -85,32 +138,66 @@ export async function putRedditLikeAuthModeratorRefresh(props: {
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: new Date(now).toISOString(),
+      created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 7. Update session expiration
-  await MyGlobal.prisma.reddit_like_moderator_sessions.update({
-    where: { id: decoded.session_id },
-    data: { expired_at: refreshExpires },
-  });
-  // 8. Fetch full moderator data with relations
-  const moderatorData =
-    await MyGlobal.prisma.reddit_like_moderators.findUniqueOrThrow({
-      where: { id: decoded.id },
-      ...RedditLikeModeratorTransformer.select(),
-    });
-  // 9. Transform and return
-  const transformed =
-    await RedditLikeModeratorTransformer.transform(moderatorData);
+  // 7. Construct response
+  const community = moderator.community;
+  const iconAttachment = community.iconAttachment;
   return {
-    ...transformed,
+    id: moderator.id,
+    can_add_moderators: moderator.can_add_moderators,
+    member: {
+      id: member.id,
+      email: member.email,
+      username: member.username,
+      emailVerified: member.email_verified,
+      createdAt: toISOStringSafe(member.created_at),
+    },
+    community: {
+      id: community.id,
+      name: community.name,
+      description: community.description,
+      owner: {
+        id: community.owner.id,
+        email: community.owner.email,
+        username: community.owner.username,
+        emailVerified: community.owner.email_verified,
+        createdAt: toISOStringSafe(community.owner.created_at),
+      },
+      icon: iconAttachment?.uploadedByMember
+        ? {
+            id: iconAttachment.id,
+            originalFilename: iconAttachment.original_filename,
+            mimeType: iconAttachment.mime_type,
+            fileSizeBytes: iconAttachment.file_size_bytes,
+            uploadedByMember: {
+              id: iconAttachment.uploadedByMember.id,
+              email: iconAttachment.uploadedByMember.email,
+              username: iconAttachment.uploadedByMember.username,
+              emailVerified: iconAttachment.uploadedByMember.email_verified,
+              createdAt: toISOStringSafe(
+                iconAttachment.uploadedByMember.created_at,
+              ),
+            },
+            createdAt: toISOStringSafe(iconAttachment.created_at),
+          }
+        : null,
+      subscriberCount,
+      createdAt: toISOStringSafe(community.created_at),
+    },
+    created_at: toISOStringSafe(moderator.created_at),
+    updated_at: toISOStringSafe(moderator.updated_at),
+    deleted_at: moderator.deleted_at
+      ? toISOStringSafe(moderator.deleted_at)
+      : null,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessExpires.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
     },
   };
 }

@@ -12,42 +12,33 @@ import { patchShoppingMallSellerProductsProductIdSnapshots } from "../../../../.
 @Controller("/shoppingMall/seller/products/:productId/snapshots")
 export class ShoppingmallSellerProductsSnapshotsController {
   /**
-   * Retrieve a paginated and filtered list of historical product snapshots for a specific product.
+   * Retrieve a filtered and paginated list of product snapshots for a specific product.
    *
-   * This endpoint provides access to immutable point-in-time captures of product state, automatically created whenever a seller edits any field of their product. Each snapshot preserves the complete product state including name, description, category assignment, base price, and timestamp when the snapshot was created. Snapshots enable order history accuracy by maintaining the exact product state at the time of purchase, even if the original product is later modified or deleted.
+   * This operation provides access to the immutable audit trail of all product state changes. Each snapshot captures the complete product state including name, description, category assignment, and base price at the moment of change. Snapshots are created automatically whenever a product is edited.
    *
-   * The operation supports comprehensive filtering capabilities including snapshot date ranges, name-based text search, and flexible sorting options. Results are returned with cursor-based pagination to efficiently handle large snapshot histories. Each snapshot entry includes essential information for chronological reference and state comparison.
+   * Sellers can view snapshots of their own products. Administrators can view snapshots of any product on the platform. Snapshots are preserved even after product deletion, allowing historical review for dispute resolution and audit purposes.
    *
-   * Authorization is restricted to the product's owner (seller) who can view snapshots of their own products, and administrators who have platform-wide oversight capabilities to view snapshots across all products including those from deleted or suspended sellers. This ensures proper access control while maintaining audit trail transparency.
-   *
-   * Snapshots are system-generated and cannot be manually created, modified, or deleted through API operations. The snapshot creation is triggered automatically by product edit operations, with each edit creating exactly one snapshot regardless of the number of fields changed. This endpoint provides read-only access to browse and filter the snapshot history.
+   * Supports filtering by creation date range and pagination with configurable page sizes. Results are sorted by creation timestamp in descending order (newest first) by default.
    *
    * @param connection
-   * @param productId Target product's ID (UUID format)
-   * @param body Search criteria and pagination parameters for snapshot filtering
+   * @param productId Product UUID to retrieve snapshots for (global scope)
+   * @param body Search criteria and pagination parameters for filtering product snapshots
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_product_snapshots table filtered by shopping_mall_product_id path parameter.
+   * @x-autobe-specification Query shopping_mall_product_snapshots table filtered by shopping_mall_product_id parameter.
    *
-   * Apply search filters from request body:
-   * - snapshotAt range (from/to) for chronological filtering
-   * - name partial match using gin_trgm_ops index
-   * - Pagination with page and limit parameters
-   * - Sorting by snapshot_at, created_at, or name
+   * Apply date range filters on created_at if provided in request body.
+   * Join with shopping_mall_products to verify product ownership for authorization.
+   * For seller actors: verify the product belongs to the requesting seller.
+   * For administrator actors: allow access to any product snapshots.
    *
-   * Join with shopping_mall_products to verify product existence and ownership.
-   * Join with shopping_mall_sellers to include seller information in response.
-   *
-   * Authorization check:
-   * - Seller actor: Verify shopping_mall_product_id belongs to authenticated seller
-   * - Admin actor: Allow access to all snapshots
-   *
-   * Return IPageIShoppingMallProductSnapshot.ISummary with pagination metadata and snapshot summary array.
+   * Return cursor-based pagination with snapshots sorted by created_at DESC.
+   * Include snapshot metadata: id, product_id, category_id, name, description, base_price, created_at.
    *
    * Handle edge cases:
-   * - Product not found: Return 404
-   * - No snapshots exist: Return empty array with pagination info
-   * - Unauthorized access: Return 403
+   * - Product not found: return 404
+   * - No snapshots exist: return empty page with zero total count
+   * - Unauthorized access: return 403 for sellers accessing another seller's product snapshots
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -72,48 +63,30 @@ export class ShoppingmallSellerProductsSnapshotsController {
   }
 
   /**
-   * Retrieve a specific product snapshot by its identifier.
+   * Retrieve a specific product snapshot by ID for historical review.
    *
-   * This operation provides access to an immutable point-in-time capture of a product's state, including the product name, description, category, base price, and all associated variant snapshots. Each snapshot preserves the exact product configuration at the moment it was created, ensuring historical accuracy for order references and dispute resolution.
+   * This operation returns the complete state of a product at a specific point in time when a snapshot was created. Product snapshots are immutable records automatically generated whenever a product is edited, preserving the product's name, description, category assignment, and base price at that moment.
    *
-   * Product snapshots are automatically created whenever a seller edits their product, capturing all fields before the changes are applied. The snapshot includes complete variant information with SKU codes, option values (such as color and size), prices, and stock quantities at the time of capture.
+   * Sellers can access snapshots of their own products to track changes over time and review historical product states. Administrators can view snapshots of any product on the platform for oversight and dispute resolution purposes. Snapshots remain accessible even after the original product has been deleted.
    *
-   * Access to product snapshots is restricted based on ownership and role:
-   * - Sellers can view all snapshots of products they own, even after the product is deleted
-   * - Administrators can view snapshots of any product on the platform, including deleted products
-   * - Customers and unauthorized users cannot access product snapshots
-   *
-   * This endpoint returns the complete snapshot state including the snapshot timestamp, allowing users to understand when the product state was captured. The response includes all variant snapshots nested within the parent snapshot, providing a complete historical view of the product configuration.
-   *
-   * Snapshots are append-only records that are never modified or deleted after creation, ensuring reliable audit trails for platform transactions.
+   * The snapshot includes the timestamp when it was created, allowing users to understand the chronological sequence of product modifications. All snapshot data is read-only and cannot be modified.
    *
    * @param connection
-   * @param productId Target product's ID (used for access control validation and scoping)
-   * @param snapshotId Target product snapshot's ID to retrieve
+   * @param productId Product ID (UUID format)
+   * @param snapshotId Product snapshot ID (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_product_snapshots table by snapshotId with productId validation for access control.
+   * @x-autobe-specification Query shopping_mall_product_snapshots table by snapshot ID.
    *
-   * Implementation steps:
-   * 1. Validate snapshotId exists in shopping_mall_product_snapshots table
-   * 2. Verify productId matches the snapshot's shopping_mall_product_id field
-   * 3. Check authorization: current user must be seller who owns the product OR administrator
-   * 4. Load snapshot record including: id, shopping_mall_product_id, shopping_mall_category_id, shopping_mall_seller_id, name, description, base_price, snapshot_at, created_at
-   * 5. Load associated variantSnapshots from shopping_mall_product_variant_snapshots table where product_snapshot_id matches
-   * 6. For each variant snapshot, include: id, product_variant_id, product_snapshot_id, sku_code, option_values (parsed from JSON string), price, stock_quantity, snapshot_at
-   * 7. Return complete snapshot object with embedded variantSnapshots array
+   * Validate that the snapshot exists and belongs to the specified product (match shopping_mall_product_id).
    *
-   * Access control enforcement:
-   * - IF current user is seller: verify shopping_mall_seller_id matches user's seller ID
-   * - IF current user is admin: allow access to any snapshot
-   * - IF user is customer or unauthorized: reject with 403 Forbidden
-   * - IF seller account is deleted: revoke access (per section 331)
+   * For seller actors: verify ownership by joining with shopping_mall_products to confirm seller_id matches the authenticated seller.
    *
-   * Edge cases:
-   * - Snapshot exists but product is deleted: ALLOW (per section 287, snapshots preserved after product deletion)
-   * - productId doesn't match snapshot's product_id: Return 404 Not Found
-   * - snapshotId doesn't exist: Return 404 Not Found
-   * - User lacks permission: Return 403 Forbidden
+   * For administrator actors: allow access to any product snapshot without ownership validation.
+   *
+   * Return the complete snapshot record including id, shopping_mall_product_id, shopping_mall_category_id, name, description, base_price, and created_at.
+   *
+   * Handle 404 if snapshot not found or if seller lacks permission to view the product's snapshots.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")

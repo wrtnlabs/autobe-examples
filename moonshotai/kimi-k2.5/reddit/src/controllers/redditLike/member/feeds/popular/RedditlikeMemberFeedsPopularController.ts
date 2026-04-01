@@ -4,8 +4,8 @@ import typia from "typia";
 
 import { IPageIRedditLikePost } from "../../../../../api/structures/IPageIRedditLikePost";
 import { IRedditLikePost } from "../../../../../api/structures/IRedditLikePost";
-import { AdminAuth } from "../../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { patchRedditLikeMemberFeedsPopular } from "../../../../../providers/patchRedditLikeMemberFeedsPopular";
 
 @Controller("/redditLike/member/feeds/popular")
@@ -49,8 +49,8 @@ export class RedditlikeMemberFeedsPopularController {
    */
   @TypedRoute.Patch()
   public async index(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedBody()
     body: IRedditLikePost.IRequest,
   ): Promise<IPageIRedditLikePost.ISummary> {

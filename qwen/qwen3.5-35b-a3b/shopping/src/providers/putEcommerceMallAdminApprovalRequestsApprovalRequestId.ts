@@ -19,47 +19,78 @@ export async function putEcommerceMallAdminApprovalRequestsApprovalRequestId(pro
   approvalRequestId: string & tags.Format<"uuid">;
   body: IEcommerceMallSellerApprovalRequest.IUpdate;
 }): Promise<IEcommerceMallSellerApprovalRequest> {
-  const { approvalRequestId, body } = props;
-  const { status, rejection_reason } = body;
-  if (status === "rejected" && rejection_reason === null) {
+  const approvalRequest =
+    await MyGlobal.prisma.ecommerce_mall_seller_approval_requests.findUniqueOrThrow(
+      {
+        where: {
+          id: props.approvalRequestId,
+          deleted_at: null,
+        },
+        select: {
+          id: true,
+          status: true,
+          seller_id: true,
+          created_at: true,
+        },
+      },
+    );
+  if (approvalRequest.status === props.body.status) {
+    throw new HttpException("Status cannot be updated to the same value", 400);
+  }
+  if (
+    props.body.status === "rejected" &&
+    props.body.rejection_reason === null
+  ) {
     throw new HttpException(
-      "Rejection reason is required when status is rejected",
+      "rejection_reason is required when status is rejected",
       400,
     );
   }
-  if (status === "approved" && rejection_reason !== null) {
+  if (
+    props.body.status === "approved" &&
+    props.body.rejection_reason !== null
+  ) {
     throw new HttpException(
-      "Rejection reason must be null when status is approved",
+      "rejection_reason must be null when status is approved",
       400,
     );
   }
-  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
-    const existing =
-      await tx.ecommerce_mall_seller_approval_requests.findUniqueOrThrow({
-        where: { id: approvalRequestId, deleted_at: null },
-      });
-    await tx.ecommerce_mall_seller_approval_snapshots.create({
+  const now = toISOStringSafe(new Date());
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    const snapshot = await tx.ecommerce_mall_seller_approval_snapshots.create({
       data: {
-        id: v4(),
-        ecommerce_mall_seller_approval_request_id: existing.id,
-        ecommerce_mall_seller_id: existing.seller_id,
+        id: v4() as string & tags.Format<"uuid">,
+        ecommerce_mall_seller_approval_request_id: props.approvalRequestId,
+        ecommerce_mall_seller_id: approvalRequest.seller_id,
+        actor_type: "Admin",
         actor_id: props.admin.id,
-        actor_type: "admin" as const,
-        from_status: existing.status,
-        to_status: status,
-        rejection_reason,
-        created_at: new Date(),
+        from_status: approvalRequest.status,
+        to_status: props.body.status,
+        created_at: now,
       },
     });
-    return tx.ecommerce_mall_seller_approval_requests.update({
-      where: { id: approvalRequestId },
+    const updated = await tx.ecommerce_mall_seller_approval_requests.update({
+      where: {
+        id: props.approvalRequestId,
+      },
       data: {
-        status,
-        rejection_reason,
-        updated_at: new Date(),
+        status: props.body.status,
+        rejection_reason: props.body.rejection_reason,
+        updated_at: now,
       },
-      ...EcommerceMallSellerApprovalRequestTransformer.select(),
     });
+    return updated;
   });
-  return await EcommerceMallSellerApprovalRequestTransformer.transform(updated);
+  const queryResult =
+    await MyGlobal.prisma.ecommerce_mall_seller_approval_requests.findUniqueOrThrow(
+      {
+        where: {
+          id: props.approvalRequestId,
+        },
+        ...EcommerceMallSellerApprovalRequestTransformer.select(),
+      },
+    );
+  return await EcommerceMallSellerApprovalRequestTransformer.transform(
+    queryResult,
+  );
 }

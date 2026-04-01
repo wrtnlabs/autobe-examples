@@ -43,9 +43,9 @@ export namespace HrmPlatformProjectMemberAtSummaryTransformer {
       project: await HrmPlatformProjectAtSummaryTransformer.transform(
         input.project,
       ),
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

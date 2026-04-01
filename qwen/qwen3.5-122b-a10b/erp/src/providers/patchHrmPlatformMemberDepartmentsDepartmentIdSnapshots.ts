@@ -11,6 +11,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { HrmPlatformDepartmentSnapshotAtSummaryTransformer } from "../transformers/HrmPlatformDepartmentSnapshotAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,50 +20,62 @@ export async function patchHrmPlatformMemberDepartmentsDepartmentIdSnapshots(pro
   departmentId: string & tags.Format<"uuid">;
   body: IHrmPlatformDepartmentSnapshot.IRequest;
 }): Promise<IPageIHrmPlatformDepartmentSnapshot.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  const department = await MyGlobal.prisma.hrm_platform_departments.findFirst({
-    where: {
-      id: props.departmentId,
-      deleted_at: null,
-    },
+  // Validate department exists
+  await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
+    where: { id: props.departmentId },
   });
-  if (department === null) {
-    throw new HttpException("Department not found", 404);
-  }
+  // Build where clause with filters
+  const createdAtFilter: Prisma.DateTimeFilter | undefined = (() => {
+    const conditions: Record<string, Date> = {};
+    if (props.body.date_from !== undefined) {
+      conditions.gte = new Date(props.body.date_from);
+    }
+    if (props.body.date_to !== undefined) {
+      conditions.lte = new Date(props.body.date_to);
+    }
+    return Object.keys(conditions).length > 0 ? conditions : undefined;
+  })();
   const whereInput: Prisma.hrm_platform_department_snapshotsWhereInput = {
     hrm_platform_department_id: props.departmentId,
     deleted_at: null,
-    ...(props.body.parent_department_id && {
+    ...(props.body.parent_department_id !== undefined && {
       parent_department_id: props.body.parent_department_id,
     }),
-    ...(props.body.name && {
+    ...(props.body.name !== undefined && {
       name: {
         contains: props.body.name,
+        mode: "insensitive",
       },
     }),
-    ...(props.body.date_from && {
-      created_at: {
-        gte: new Date(props.body.date_from),
-      },
+    ...(createdAtFilter !== undefined && {
+      created_at: createdAtFilter,
     }),
-    ...(props.body.date_to && {
-      created_at: {
-        lte: new Date(props.body.date_to),
-      },
-    }),
-  } satisfies Prisma.hrm_platform_department_snapshotsWhereInput;
+  };
+  // Pagination parameters
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 100;
+  const skip: number = (page - 1) * limit;
+  // Query snapshots
   const snapshots =
     await MyGlobal.prisma.hrm_platform_department_snapshots.findMany({
       where: whereInput,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
+      ...HrmPlatformDepartmentSnapshotAtSummaryTransformer.select(),
     });
-  const total = await MyGlobal.prisma.hrm_platform_department_snapshots.count({
-    where: whereInput,
-  });
+  // Count total records
+  const total: number =
+    await MyGlobal.prisma.hrm_platform_department_snapshots.count({
+      where: whereInput,
+    });
+  // Transform results
+  const data: IHrmPlatformDepartmentSnapshot.ISummary[] =
+    await ArrayUtil.asyncMap(
+      snapshots,
+      HrmPlatformDepartmentSnapshotAtSummaryTransformer.transform,
+    );
+  // Return paginated response
   return {
     pagination: {
       current: page,
@@ -70,22 +83,6 @@ export async function patchHrmPlatformMemberDepartmentsDepartmentIdSnapshots(pro
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: snapshots.map(
-      (snapshot) =>
-        ({
-          id: snapshot.id as string & tags.Format<"uuid">,
-          hrm_platform_department_id:
-            snapshot.hrm_platform_department_id as string & tags.Format<"uuid">,
-          parent_department_id: snapshot.parent_department_id
-            ? (snapshot.parent_department_id as string & tags.Format<"uuid">)
-            : null,
-          name: snapshot.name,
-          description: snapshot.description,
-          created_at: toISOStringSafe(snapshot.created_at),
-          deleted_at: snapshot.deleted_at
-            ? toISOStringSafe(snapshot.deleted_at)
-            : null,
-        }) satisfies IHrmPlatformDepartmentSnapshot.ISummary,
-    ),
+    data: data,
   } satisfies IPageIHrmPlatformDepartmentSnapshot.ISummary;
 }

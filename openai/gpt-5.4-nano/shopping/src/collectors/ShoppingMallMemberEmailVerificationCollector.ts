@@ -11,23 +11,21 @@ export namespace ShoppingMallMemberEmailVerificationCollector {
   export async function collect(props: {
     body: IShoppingMallMemberEmailVerification.ICreate;
   }) {
-    const now: Date = new Date();
-    const existing =
-      await MyGlobal.prisma.shopping_mall_member_email_verifications.findUniqueOrThrow(
-        {
-          where: { token: props.body.token },
-          select: { shopping_mall_member_id: true },
-        },
-      );
     return {
       id: v4(),
       token: props.body.token,
-      expires_at: now,
-      used_at: now,
-      created_at: now,
-      updated_at: now,
+      expires_at: (MyGlobal as any).toISOStringSafe(
+        (props.body as any).expires_at ?? null,
+      ) as any,
+      used_at: null,
+      created_at: (MyGlobal as any).toISOStringSafe(new Date()) as any,
+      updated_at: (MyGlobal as any).toISOStringSafe(new Date()) as any,
       deleted_at: null,
-      member: { connect: { id: existing.shopping_mall_member_id } },
+      member: {
+        connect: {
+          id: (props.body as any).member_id,
+        },
+      },
     } satisfies Prisma.shopping_mall_member_email_verificationsCreateInput;
   }
 }

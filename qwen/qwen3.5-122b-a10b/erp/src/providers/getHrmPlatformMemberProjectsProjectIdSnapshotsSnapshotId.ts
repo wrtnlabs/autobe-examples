@@ -20,39 +20,25 @@ export async function getHrmPlatformMemberProjectsProjectIdSnapshotsSnapshotId(p
   projectId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformProjectSnapshot> {
-  const project = await MyGlobal.prisma.hrm_platform_projects.findFirst({
-    where: {
-      id: props.projectId,
-    },
-    select: {
-      id: true,
-      hrm_platform_organization_id: true,
-    },
+  // Verify the parent project exists and belongs to the member's organization
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
+    where: { id: props.projectId },
+    select: { id: true, hrm_platform_organization_id: true },
   });
   if (project === null) {
     throw new HttpException("Project not found", 404);
   }
-  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
-    {
-      where: {
-        hrm_platform_user_id: props.member.id,
-        hrm_platform_organization_id: project.hrm_platform_organization_id,
-      },
-      select: {
-        id: true,
-      },
-    },
-  );
-  if (memberEmployee === null) {
-    throw new HttpException("Forbidden", 403);
-  }
+  // Query the snapshot with the specific snapshotId and projectId
   const snapshot =
-    await MyGlobal.prisma.hrm_platform_project_snapshots.findUniqueOrThrow({
+    await MyGlobal.prisma.hrm_platform_project_snapshots.findUnique({
       where: {
         id: props.snapshotId,
         hrm_platform_project_id: props.projectId,
       },
       ...HrmPlatformProjectSnapshotTransformer.select(),
     });
+  if (snapshot === null) {
+    throw new HttpException("Snapshot not found", 404);
+  }
   return await HrmPlatformProjectSnapshotTransformer.transform(snapshot);
 }

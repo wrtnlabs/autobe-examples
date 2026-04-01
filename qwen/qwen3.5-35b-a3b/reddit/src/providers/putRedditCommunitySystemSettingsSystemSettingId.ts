@@ -16,9 +16,6 @@ export async function putRedditCommunitySystemSettingsSystemSettingId(props: {
   systemSettingId: string & tags.Format<"uuid">;
   body: IRedditCommunitySystemSetting.IUpdate;
 }): Promise<IRedditCommunitySystemSetting> {
-  // Update the system setting with new value and description
-  // The key field cannot be changed as it must remain unique across all settings
-  // updateWithSelect returns the complete updated record in one query
   const updated = await MyGlobal.prisma.reddit_community_system_settings.update(
     {
       where: {
@@ -27,15 +24,13 @@ export async function putRedditCommunitySystemSettingsSystemSettingId(props: {
       },
       data: {
         value: props.body.value,
-        ...(props.body.description !== undefined
-          ? { description: props.body.description }
-          : {}),
+        ...(props.body.description !== undefined && {
+          description: props.body.description,
+        }),
         updated_at: new Date(),
       },
-      select: RedditCommunitySystemSettingTransformer.select().select,
+      ...RedditCommunitySystemSettingTransformer.select(),
     },
   );
-  // Transform the database record to the response DTO using the transformer
-  // The transformer handles all type conversions including date formatting to ISO strings
   return await RedditCommunitySystemSettingTransformer.transform(updated);
 }

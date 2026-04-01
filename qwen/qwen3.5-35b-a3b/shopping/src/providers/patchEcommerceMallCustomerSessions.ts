@@ -12,7 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { EcommerceMallCustomerAtSummaryTransformer } from "../transformers/EcommerceMallCustomerAtSummaryTransformer";
+import { EcommerceMallCustomerSessionAtSummaryTransformer } from "../transformers/EcommerceMallCustomerSessionAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,47 +20,42 @@ export async function patchEcommerceMallCustomerSessions(props: {
   customer: CustomerPayload;
   body: IEcommerceMallCustomerSession.IRequest;
 }): Promise<IPageIEcommerceMallCustomerSession.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
+  const page: number & tags.Type<"int32"> & tags.Minimum<1> =
+    props.body.page ?? 1;
+  const limit: number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> &
+    tags.Maximum<100> = props.body.limit ?? 100;
+  const skip: number = (page - 1) * limit;
   const whereInput: Prisma.ecommerce_mall_customer_sessionsWhereInput = {
+    ecommerce_mall_customer_id: props.customer.id,
     deleted_at: null,
-    ...(props.body.status === "active" ? { status: "active" } : {}),
-    ...(props.body.status === "inactive" ? { status: "inactive" } : {}),
-    ...(props.body.device_type !== undefined
-      ? { device_type: props.body.device_type }
-      : {}),
-    ...(props.body.ip !== undefined ? { ip: { contains: props.body.ip } } : {}),
-    ...(props.body.created_at !== undefined
+    ...(props.body.status === "active" ? { deleted_at: null } : {}),
+    ...(props.body.status === "inactive" ? { deleted_at: { not: null } } : {}),
+    ...(props.body.ip ? { ip: { contains: props.body.ip } } : {}),
+    ...(props.body.created_at
       ? { created_at: { gte: new Date(props.body.created_at) } }
       : {}),
-    ...(props.body.updated_at !== undefined
+    ...(props.body.updated_at
       ? { updated_at: { gte: new Date(props.body.updated_at) } }
       : {}),
-  } satisfies Prisma.ecommerce_mall_customer_sessionsWhereInput;
-  const orderByInput = {
-    created_at: "desc",
-  } satisfies Prisma.ecommerce_mall_customer_sessionsOrderByWithRelationInput;
-  const data = await MyGlobal.prisma.ecommerce_mall_customer_sessions.findMany({
-    where: whereInput,
-    orderBy: orderByInput,
-    skip,
-    take: limit,
-    select: {
-      id: true,
-      ip: true,
-      href: true,
-      referrer: true,
-      customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-      created_at: true,
-      updated_at: true,
-      expired_at: true,
-      deleted_at: true,
-    } satisfies Prisma.ecommerce_mall_customer_sessionsSelect,
-  });
-  const total = await MyGlobal.prisma.ecommerce_mall_customer_sessions.count({
-    where: whereInput,
-  });
+  };
+  const orderByInput: Prisma.ecommerce_mall_customer_sessionsOrderByWithRelationInput =
+    {
+      created_at: "desc",
+    } satisfies Prisma.ecommerce_mall_customer_sessionsOrderByWithRelationInput;
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_customer_sessions.findMany({
+      where: whereInput,
+      orderBy: orderByInput,
+      skip,
+      take: limit,
+      ...EcommerceMallCustomerSessionAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.ecommerce_mall_customer_sessions.count({
+      where: whereInput,
+    }),
+  ]);
   return {
     pagination: {
       current: page,
@@ -68,18 +63,9 @@ export async function patchEcommerceMallCustomerSessions(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(data, async (session) => ({
-      id: session.id,
-      ip: session.ip,
-      href: session.href,
-      referrer: session.referrer,
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        session.customer,
-      ),
-      created_at: session.created_at.toISOString(),
-      updated_at: session.updated_at.toISOString(),
-      expired_at: session.expired_at.toISOString(),
-      deleted_at: session.deleted_at?.toISOString() ?? null,
-    })),
-  };
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallCustomerSessionAtSummaryTransformer.transform,
+    ),
+  } as IPageIEcommerceMallCustomerSession.ISummary;
 }

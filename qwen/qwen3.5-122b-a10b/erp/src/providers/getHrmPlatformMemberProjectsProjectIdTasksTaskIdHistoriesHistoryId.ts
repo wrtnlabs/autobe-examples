@@ -27,64 +27,92 @@ export async function getHrmPlatformMemberProjectsProjectIdTasksTaskIdHistoriesH
   historyId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTaskHistory> {
   // Step 1: Validate projectId exists and is not soft-deleted
-  const project = await MyGlobal.prisma.hrm_platform_projects.findFirst({
-    where: {
-      id: props.projectId,
-      deleted_at: null,
-    },
+  await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow({
+    where: { id: props.projectId },
+    select: { id: true },
   });
-  if (project === null) {
-    throw new HttpException("Project not found", 404);
-  }
   // Step 2: Validate taskId exists, belongs to projectId, and is not soft-deleted
-  const task = await MyGlobal.prisma.hrm_platform_tasks.findFirst({
-    where: {
-      id: props.taskId,
-      hrm_platform_projects_id: props.projectId,
-      deleted_at: null,
-    },
+  const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
+    where: { id: props.taskId },
+    select: { id: true, hrm_platform_projects_id: true },
   });
-  if (task === null) {
-    throw new HttpException("Task not found", 404);
+  if (task.hrm_platform_projects_id !== props.projectId) {
+    throw new HttpException(
+      "Task does not belong to the specified project",
+      404,
+    );
   }
-  // Step 3: Find the employee record for this member
+  // Step 3: Validate historyId exists, belongs to taskId, and is not soft-deleted
+  const history =
+    await MyGlobal.prisma.hrm_platform_task_histories.findUniqueOrThrow({
+      where: { id: props.historyId },
+      select: { id: true, hrm_platform_task_id: true },
+    });
+  if (history.hrm_platform_task_id !== props.taskId) {
+    throw new HttpException(
+      "History record does not belong to the specified task",
+      404,
+    );
+  }
+  // Step 4: Verify member has project access (project member or project:manage permission)
+  // Find employee record for this member
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
+      hrm_platform_organization_id: task.hrm_platform_projects_id,
       deleted_at: null,
     },
+    select: { hrm_platform_role_id: true, id: true },
   });
-  if (employee === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Step 4: Verify member has project access (project member or project:manage permission)
+  // Check if member is a project member
   const projectMember =
     await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
         hrm_platform_project_id: props.projectId,
-        hrm_platform_employee_id: employee.id,
+        hrm_platform_employee_id: employee?.id,
         deleted_at: null,
       },
     });
-  if (projectMember === null) {
-    throw new HttpException("Forbidden", 403);
+  // Check if member has project:manage permission through their organization role
+  let hasProjectManagePermission = false;
+  if (employee && employee.hrm_platform_role_id) {
+    const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
+      where: { id: employee.hrm_platform_role_id },
+      select: {
+        id: true,
+        permissions: {
+          select: {
+            hrm_platform_permission_id: true,
+          },
+        },
+      },
+    });
+    if (role) {
+      // Get permission codes for this role
+      const permissionIds = role.permissions.map(
+        (rp) => rp.hrm_platform_permission_id,
+      );
+      const permissions =
+        await MyGlobal.prisma.hrm_platform_permissions.findMany({
+          where: { id: { in: permissionIds } },
+          select: { code: true },
+        });
+      hasProjectManagePermission = permissions.some(
+        (p) => p.code === "project:manage",
+      );
+    }
   }
-  // Step 5: Validate historyId exists, belongs to taskId, and is not soft-deleted
-  const history = await MyGlobal.prisma.hrm_platform_task_histories.findFirst({
-    where: {
-      id: props.historyId,
-      hrm_platform_task_id: props.taskId,
-      deleted_at: null,
-    },
-  });
-  if (history === null) {
-    throw new HttpException("History record not found", 404);
+  if (!projectMember && !hasProjectManagePermission) {
+    throw new HttpException("You do not have access to this project", 403);
   }
-  // Step 6: Load full history with relations and transform
-  const fullHistory =
+  // Step 5: Load history record with task and member details
+  const historyWithRelations =
     await MyGlobal.prisma.hrm_platform_task_histories.findUniqueOrThrow({
       where: { id: props.historyId },
       ...HrmPlatformTaskHistoryTransformer.select(),
     });
-  return await HrmPlatformTaskHistoryTransformer.transform(fullHistory);
+  // Step 6: Transform and return
+  return await HrmPlatformTaskHistoryTransformer.transform(
+    historyWithRelations,
+  );
 }

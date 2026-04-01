@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { ShoppingMallSnapshotPartyTransformer } from "../transformers/ShoppingMallSnapshotPartyTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,33 +18,10 @@ export async function getShoppingMallAdminSnapshotsSnapshotIdPartiesSnapshotPart
   snapshotId: string & tags.Format<"uuid">;
   snapshotPartyId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallSnapshotParty> {
-  const snapshot =
-    await MyGlobal.prisma.shopping_mall_snapshots.findUniqueOrThrow({
-      where: { id: props.snapshotId },
-      select: { id: true },
-    });
-  const snapshotParty =
-    await MyGlobal.prisma.shopping_mall_snapshot_parties.findFirstOrThrow({
-      where: {
-        id: props.snapshotPartyId,
-        shopping_mall_snapshot_id: snapshot.id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        shopping_mall_snapshot_id: true,
-        party_type: true,
-        party_id: true,
-        can_view: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-    });
-  const adminVisibility =
+  const authorized =
     await MyGlobal.prisma.shopping_mall_snapshot_parties.findFirst({
       where: {
-        shopping_mall_snapshot_id: snapshot.id,
+        shopping_mall_snapshot_id: props.snapshotId,
         party_type: "admin",
         party_id: props.admin.id,
         can_view: true,
@@ -51,21 +29,24 @@ export async function getShoppingMallAdminSnapshotsSnapshotIdPartiesSnapshotPart
       },
       select: { id: true },
     });
-  if (adminVisibility === null) {
+  if (authorized === null) {
     throw new HttpException("Forbidden", 403);
   }
-  return {
-    id: snapshotParty.id,
-    shopping_mall_snapshot_id: snapshotParty.shopping_mall_snapshot_id,
-    party_type: snapshotParty.party_type,
-    party_id: snapshotParty.party_id,
-    can_view: snapshotParty.can_view,
-    created_at: snapshotParty.created_at.toISOString() as string &
-      tags.Format<"date-time">,
-    updated_at: snapshotParty.updated_at.toISOString() as string &
-      tags.Format<"date-time">,
-    deleted_at: snapshotParty.deleted_at?.toISOString() as
-      | (string & tags.Format<"date-time">)
-      | null,
-  };
+  await MyGlobal.prisma.shopping_mall_snapshots.findUniqueOrThrow({
+    where: { id: props.snapshotId, deleted_at: null },
+    select: { id: true },
+  });
+  const select = ShoppingMallSnapshotPartyTransformer.select().select;
+  const row =
+    await MyGlobal.prisma.shopping_mall_snapshot_parties.findFirstOrThrow({
+      where: {
+        id: props.snapshotPartyId,
+        shopping_mall_snapshot_id: props.snapshotId,
+        deleted_at: null,
+      },
+      select,
+    });
+  return ShoppingMallSnapshotPartyTransformer.transform(
+    row as unknown as ShoppingMallSnapshotPartyTransformer.Payload,
+  );
 }

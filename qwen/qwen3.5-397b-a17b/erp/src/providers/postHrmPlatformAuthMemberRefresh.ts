@@ -16,112 +16,118 @@ export async function postHrmPlatformAuthMemberRefresh(props: {
   body: IHrmPlatformMember.IRefresh;
 }): Promise<IHrmPlatformMember.IAuthorized> {
   // 1. Verify refresh token
-  let decoded: {
-    member_id: string;
-    session_id: string;
+  interface IRefreshTokenPayload {
     type: "member";
-  };
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    tokenType: "refresh";
+    created_at: string & tags.Format<"date-time">;
+  }
+  let decoded: IRefreshTokenPayload;
   try {
     decoded = jwt.verify(
       props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
       { issuer: "autobe" },
-    ) as typeof decoded;
+    ) as IRefreshTokenPayload;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate type
+  // 2. Validate token type
   if (decoded.type !== "member") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Find session by refresh_token
+  // 3. Validate session exists and get session data
   const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
     where: {
-      refresh_token: props.body.refresh_token,
-      member_id: decoded.member_id,
+      id: decoded.session_id,
+      member_id: decoded.id,
     },
   });
   if (!session) {
-    throw new HttpException("Session not found or revoked", 401);
+    throw new HttpException("Session not found", 401);
   }
   // 4. Validate session not expired
   const now = new Date();
   if (session.expired_at < now) {
     throw new HttpException("Session expired", 401);
   }
-  // 5. Find member and verify not deleted
+  // 5. Validate refresh token hash matches
+  const refreshMatches = await PasswordUtil.verify(
+    props.body.refresh_token,
+    session.refresh_token_hash,
+  );
+  if (!refreshMatches) {
+    throw new HttpException("Invalid refresh token", 401);
+  }
+  // 6. Validate member not deleted
   const member = await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
-    where: { id: decoded.member_id },
+    where: { id: decoded.id },
+    select: {
+      id: true,
+      email: true,
+      display_name: true,
+      avatar_image: true,
+      phone_number: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
   });
   if (member.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 6. Generate new tokens
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const access = jwt.sign(
+  // 7. Generate new tokens
+  const accessExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const newAccessToken = jwt.sign(
     {
-      type: "member",
-      id: member.id,
-      session_id: session.id,
-      created_at: toISOStringSafe(new Date()),
+      type: "member" as const,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const refresh = jwt.sign(
+  const newRefreshToken = jwt.sign(
     {
-      type: "member",
-      id: member.id,
-      session_id: session.id,
-      tokenType: "refresh",
-      created_at: toISOStringSafe(new Date()),
+      type: "member" as const,
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh" as const,
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 7. Update session with new tokens and extended expiration
-  const updateData: Prisma.hrm_platform_member_sessionsUpdateInput = {
-    access_token: access,
-    refresh_token: refresh,
-    expired_at: refreshExpires,
-  };
-  if (props.body.ip !== undefined) {
-    updateData.ip = props.body.ip;
-  }
-  if (props.body.href !== undefined) {
-    updateData.href = props.body.href;
-  }
-  if (props.body.referrer !== undefined) {
-    updateData.referrer = props.body.referrer;
-  }
+  // 8. Hash new tokens
+  const newAccessTokenHash = await PasswordUtil.hash(newAccessToken);
+  const newRefreshTokenHash = await PasswordUtil.hash(newRefreshToken);
+  // 9. Update session with new token hashes and extended expiration
   await MyGlobal.prisma.hrm_platform_member_sessions.update({
-    where: { id: session.id },
-    data: updateData,
+    where: { id: decoded.session_id },
+    data: {
+      access_token_hash: newAccessTokenHash,
+      refresh_token_hash: newRefreshTokenHash,
+      expired_at: refreshExpiresAt,
+    },
   });
-  // 8. Return authorized response
+  // 10. Return member profile with new tokens
   return {
     id: member.id,
     email: member.email,
-    displayName: member.display_name,
-    avatarUrl: member.avatar_url ?? null,
-    phoneNumber: member.phone_number ?? null,
-    createdAt: toISOStringSafe(member.created_at),
-    updatedAt: toISOStringSafe(member.updated_at),
-    deletedAt: null,
-    member: {
-      id: member.id,
-      email: member.email,
-      display_name: member.display_name,
-      avatar_url: member.avatar_url ?? null,
-      phone_number: member.phone_number ?? null,
-      created_at: toISOStringSafe(member.created_at),
-    } satisfies IHrmPlatformMember.ISummary,
+    display_name: member.display_name,
+    avatar_image: member.avatar_image ?? undefined,
+    phone_number: member.phone_number ?? undefined,
+    created_at: member.created_at.toISOString(),
+    updated_at: member.updated_at.toISOString(),
+    deleted_at: null,
     token: {
-      access: access,
-      refresh: refresh,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    } satisfies IAuthorizationToken,
+      access: newAccessToken,
+      refresh: newRefreshToken,
+      expired_at: accessExpiresAt.toISOString(),
+      refreshable_until: refreshExpiresAt.toISOString(),
+    },
   };
 }

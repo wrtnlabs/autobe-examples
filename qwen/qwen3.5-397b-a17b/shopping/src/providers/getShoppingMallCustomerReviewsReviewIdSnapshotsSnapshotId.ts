@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { IShoppingMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReviewSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
@@ -26,9 +27,12 @@ export async function getShoppingMallCustomerReviewsReviewIdSnapshotsSnapshotId(
       ...ShoppingMallReviewSnapshotTransformer.select(),
     });
   if (snapshot.review.id !== props.reviewId) {
-    throw new HttpException("Not Found", 404);
+    throw new HttpException(
+      "Snapshot does not belong to the specified review",
+      404,
+    );
   }
-  if (snapshot.snapshotByUser.id !== props.customer.id) {
+  if (snapshot.review.customer.id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await ShoppingMallReviewSnapshotTransformer.transform(snapshot);

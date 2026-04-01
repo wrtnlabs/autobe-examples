@@ -21,37 +21,34 @@ export async function postShoppingMallCustomerCancellationRequests(props: {
   customer: CustomerPayload;
   body: IShoppingMallCancellationRequest.ICreate;
 }): Promise<IShoppingMallCancellationRequest> {
-  // Validate order item exists and belongs to customer
-  const orderItem = await MyGlobal.prisma.shopping_mall_order_items.findUnique({
-    where: {
-      id: props.body.orderItemId,
-    },
-    select: {
-      id: true,
-      status: true,
-      shopping_mall_order_id: true,
-    },
-  });
-  if (orderItem === null) {
-    throw new HttpException("Order item not found", 404);
-  }
-  // Verify order item belongs to authenticated customer
-  const order = await MyGlobal.prisma.shopping_mall_orders.findUnique({
+  // Validate order item exists and belongs to the authenticated customer
+  const orderItem =
+    await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
+      where: {
+        id: props.body.orderItemId,
+      },
+      select: {
+        id: true,
+        shopping_mall_order_id: true,
+        status: true,
+      },
+    });
+  // Verify order item belongs to the authenticated customer
+  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
     where: {
       id: orderItem.shopping_mall_order_id,
     },
     select: {
-      id: true,
       shopping_mall_customer_id: true,
     },
   });
-  if (order === null || order.shopping_mall_customer_id !== props.customer.id) {
+  if (order.shopping_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Check order item status is 'paid'
+  // Validate order item status is "paid" (not yet shipped)
   if (orderItem.status !== "paid") {
     throw new HttpException(
-      "Order item cannot be cancelled - already shipped or processed",
+      "Order item cannot be cancelled - already shipped or delivered",
       400,
     );
   }
@@ -70,16 +67,17 @@ export async function postShoppingMallCustomerCancellationRequests(props: {
       400,
     );
   }
-  // Create cancellation request
+  // Create the cancellation request using the Collector
   const created =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.create({
       data: await ShoppingMallCancellationRequestCollector.collect({
         body: props.body,
-        shoppingMallCustomers: {
+        customer: {
           id: props.customer.id,
-        } satisfies IEntity,
+        },
       }),
       ...ShoppingMallCancellationRequestTransformer.select(),
     });
+  // Transform and return the created cancellation request
   return await ShoppingMallCancellationRequestTransformer.transform(created);
 }

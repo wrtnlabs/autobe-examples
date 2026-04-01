@@ -4,8 +4,10 @@ import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
@@ -24,21 +26,20 @@ export namespace RedditCommunityCommunityAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         owner: RedditCommunityMemberAtSummaryTransformer.select(),
-        subscriptions: true,
-        moderators: true,
-        bans: true,
-        posts: true,
-        reports: true,
-        homeFeedCaches: true,
-        icon: true,
-        iconFiles: true,
-        systemLogs: true,
+        icon: {
+          select: {
+            file_id: true,
+          },
+        },
       },
     } satisfies Prisma.reddit_community_communitiesFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IRedditCommunityCommunity.ISummary> {
+    const iconUrl = input.icon?.file_id
+      ? `https://cdn.example.com/files/${input.icon.file_id}`
+      : undefined;
     return {
       id: input.id,
       name: input.name,
@@ -50,7 +51,7 @@ export namespace RedditCommunityCommunityAtSummaryTransformer {
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
       deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      icon_url: input.icon ? undefined : undefined,
+      icon_url: iconUrl,
     };
   }
 }

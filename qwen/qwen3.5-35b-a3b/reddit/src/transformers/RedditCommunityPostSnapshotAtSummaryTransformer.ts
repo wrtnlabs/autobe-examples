@@ -4,8 +4,10 @@ import { IRedditCommunityPostSnapshot } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
@@ -25,6 +27,9 @@ export namespace RedditCommunityPostSnapshotAtSummaryTransformer {
         vote_score: true,
         comment_count: true,
         created_at: true,
+        post: {
+          select: { id: true },
+        },
         editedByMember: RedditCommunityMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_community_post_snapshotsFindManyArgs;
@@ -47,6 +52,6 @@ export namespace RedditCommunityPostSnapshotAtSummaryTransformer {
           input.editedByMember,
         ),
       created_at: toISOStringSafe(input.created_at),
-    } satisfies IRedditCommunityPostSnapshot.ISummary;
+    };
   }
 }

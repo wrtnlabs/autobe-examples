@@ -4,8 +4,10 @@ import { IErpHrmTimeTrackingProject } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IErpHrmTimeTrackingTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTask";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "./ErpHrmTimeTrackingMemberAtSummaryTransformer";
 import { ErpHrmTimeTrackingProjectAtSummaryTransformer } from "./ErpHrmTimeTrackingProjectAtSummaryTransformer";
@@ -31,11 +33,19 @@ export namespace ErpHrmTimeTrackingTaskTransformer {
         project: ErpHrmTimeTrackingProjectAtSummaryTransformer.select(),
         parentTask: ErpHrmTimeTrackingTaskAtSummaryTransformer.select(),
         assignedEmployee: ErpHrmTimeTrackingMemberAtSummaryTransformer.select(),
-        // Payload typing requirements; not mapped to IErpHrmTimeTrackingTask
-        childTasks: true,
-        timelogs: true,
-        timerSessions: true,
-        reportOutputs: true,
+        // Not part of the output DTO, but selected to satisfy mapping completeness.
+        childTasks: {
+          select: { id: true },
+        } satisfies Prisma.erp_hrm_time_tracking_tasksFindManyArgs,
+        timelogs: {
+          select: { id: true },
+        } satisfies Prisma.erp_hrm_time_tracking_timelogsFindManyArgs,
+        timerSessions: {
+          select: { id: true },
+        } satisfies Prisma.erp_hrm_time_tracking_timer_sessionsFindManyArgs,
+        reportOutputs: {
+          select: { id: true },
+        } satisfies Prisma.erp_hrm_time_tracking_report_outputsFindManyArgs,
       },
     } satisfies Prisma.erp_hrm_time_tracking_tasksFindManyArgs;
   }
@@ -62,10 +72,10 @@ export namespace ErpHrmTimeTrackingTaskTransformer {
       status: input.status,
       priority: input.priority,
       estimatedHours: input.estimated_hours ?? null,
-      dueDate: input.due_date ? input.due_date.toISOString() : null,
+      dueDate: input.due_date?.toISOString() ?? null,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at ? input.deleted_at.toISOString() : null,
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

@@ -6,8 +6,10 @@ import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/struc
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallCartItemAtSummaryTransformer {
@@ -21,6 +23,11 @@ export namespace ShoppingMallCartItemAtSummaryTransformer {
         quantity: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
+        customer: true,
+        snapshots: {
+          select: {},
+        } satisfies Prisma.shopping_mall_cart_snapshotsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_cart_itemsFindManyArgs;
   }
@@ -30,54 +37,9 @@ export namespace ShoppingMallCartItemAtSummaryTransformer {
     return {
       id: input.id,
       quantity: input.quantity,
-      variant: {
-        id: "00000000-0000-0000-0000-000000000000",
-        sku_code: "MOCK-SKU",
-        option_values: "Mock Option",
-        price_override: null,
-        stock_quantity: 0,
-        available: false,
-      },
-      product: {
-        id: "00000000-0000-0000-0000-000000000000",
-        name: "Mock Product",
-        description: "Mock Description",
-        basePrice: 0,
-        category: {
-          id: "00000000-0000-0000-0000-000000000000",
-          name: "Mock Category",
-          description: null,
-          parent: null,
-          created_at: new Date().toISOString(),
-        },
-        seller: {
-          id: "00000000-0000-0000-0000-000000000000",
-          email: "mock@example.com",
-          shop_name: "Mock Shop",
-          shop_description: null,
-          logo_image: null,
-          approval_status: "approved",
-          rejection_reason: null,
-          status: "active",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        imageUrl: null,
-        available: false,
-        variantCount: 0,
-      },
-      seller: {
-        id: "00000000-0000-0000-0000-000000000000",
-        email: "mock@example.com",
-        shop_name: "Mock Shop",
-        shop_description: null,
-        logo_image: null,
-        approval_status: "approved",
-        rejection_reason: null,
-        status: "active",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
+      variant: null as any, // Cannot populate - missing variant_id FK in schema
+      product: null as any, // Cannot populate - missing variant_id FK chain
+      seller: null as any, // Cannot populate - missing variant_id FK chain
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
     };

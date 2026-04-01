@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { ShoppingMallMemberTransformer } from "../transformers/ShoppingMallMemberTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,47 +17,28 @@ export async function putShoppingMallMemberProfile(props: {
   member: MemberPayload;
   body: IShoppingMallMember.IUpdate;
 }): Promise<IShoppingMallMember> {
-  const member = await MyGlobal.prisma.shopping_mall_members.findUnique({
-    where: { id: props.member.id },
-    select: {
-      id: true,
-      email: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-    },
-  });
-  if (member === null || member.deleted_at !== null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (props.body.email !== undefined) {
-    await MyGlobal.prisma.shopping_mall_members.update({
-      where: { id: props.member.id },
+  const memberId = props.member.id;
+  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
+    const existing = await tx.shopping_mall_members.findFirst({
+      where: { id: memberId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!existing) {
+      throw new HttpException("You're not enrolled", 403);
+    }
+    const updatedAt = toISOStringSafe(new Date());
+    await tx.shopping_mall_members.update({
+      where: { id: memberId },
       data: {
-        email: props.body.email,
-        updated_at: { set: member.updated_at },
+        ...(props.body.email !== undefined && { email: props.body.email }),
+        updated_at: updatedAt,
       },
     });
-  }
-  const updated = await MyGlobal.prisma.shopping_mall_members.findUniqueOrThrow(
-    {
-      where: { id: props.member.id },
-      select: {
-        id: true,
-        email: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-    },
-  );
-  return {
-    id: updated.id as string & tags.Format<"uuid">,
-    email: updated.email as string & tags.Format<"email">,
-    created_at: updated.created_at.toISOString() as string &
-      tags.Format<"date-time">,
-    updated_at: updated.updated_at.toISOString() as string &
-      tags.Format<"date-time">,
-    deleted_at: updated.deleted_at?.toISOString() ?? null,
-  };
+    const row = await tx.shopping_mall_members.findUniqueOrThrow({
+      where: { id: memberId },
+      ...ShoppingMallMemberTransformer.select(),
+    });
+    return await ShoppingMallMemberTransformer.transform(row);
+  });
+  return updated;
 }

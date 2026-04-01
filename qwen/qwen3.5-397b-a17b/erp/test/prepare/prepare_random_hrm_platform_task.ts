@@ -11,14 +11,15 @@ export function prepare_random_hrm_platform_task(
   return {
     title:
       input?.title ??
-      RandomGenerator.paragraph({ sentences: 2, wordMin: 3, wordMax: 8 }),
+      RandomGenerator.paragraph({ sentences: 3, wordMin: 2, wordMax: 5 }),
     description:
       input?.description ??
       RandomGenerator.content({
         paragraphs: 2,
         sentenceMin: 3,
         sentenceMax: 5,
-      }),
+      }) ??
+      null,
     status:
       input?.status ??
       RandomGenerator.pick([
@@ -34,12 +35,19 @@ export function prepare_random_hrm_platform_task(
       input?.estimated_hours ??
       typia.random<
         number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<100>
-      >(),
+      >() ??
+      null,
     due_date:
-      input?.due_date ?? typia.random<string & tags.Format<"date-time">>(),
+      input?.due_date ??
+      typia.random<string & tags.Format<"date-time">>() ??
+      null,
     hrm_platform_employee_id:
       input?.hrm_platform_employee_id ??
-      typia.random<string & tags.Format<"uuid">>(),
-    parent_id: input?.parent_id ?? typia.random<string & tags.Format<"uuid">>(),
+      typia.random<string & tags.Format<"uuid">>() ??
+      null,
+    parent_task_id:
+      input?.parent_task_id ??
+      typia.random<string & tags.Format<"uuid">>() ??
+      null,
   };
 }

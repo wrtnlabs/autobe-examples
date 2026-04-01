@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditLikeAttachmentThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeAttachmentThumbnail";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace RedditLikeAttachmentThumbnailTransformer {
@@ -14,11 +16,6 @@ export namespace RedditLikeAttachmentThumbnailTransformer {
     return {
       select: {
         id: true,
-        attachment: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.reddit_like_attachmentsFindManyArgs,
         width: true,
         height: true,
         quality: true,
@@ -27,6 +24,7 @@ export namespace RedditLikeAttachmentThumbnailTransformer {
         file_size: true,
         created_at: true,
         updated_at: true,
+        reddit_like_attachment_id: true,
       },
     } satisfies Prisma.reddit_like_attachment_thumbnailsFindManyArgs;
   }
@@ -35,7 +33,7 @@ export namespace RedditLikeAttachmentThumbnailTransformer {
   ): Promise<IRedditLikeAttachmentThumbnail> {
     return {
       id: input.id,
-      attachmentId: input.attachment.id,
+      attachmentId: input.reddit_like_attachment_id,
       width: input.width,
       height: input.height,
       quality: input.quality,

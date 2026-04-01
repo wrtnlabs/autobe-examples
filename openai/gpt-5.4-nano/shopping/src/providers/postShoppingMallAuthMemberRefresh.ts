@@ -15,107 +15,90 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallAuthMemberRefresh(props: {
   body: IShoppingMallMember.IRefresh;
 }): Promise<IShoppingMallMember.IAuthorized> {
-  const secret = MyGlobal.env.JWT_SECRET_KEY;
-  const issuer = "autobe";
-  const decoded = (() => {
-    try {
-      return jwt.verify(props.body.refreshToken, secret, { issuer }) as unknown;
-    } catch {
+  try {
+    const decoded = jwt.verify(
+      props.body.refreshToken,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    );
+    if (!decoded || typeof decoded !== "object") {
       throw new HttpException("Invalid or expired refresh token", 401);
     }
-  })();
-  if (
-    !decoded ||
-    typeof decoded !== "object" ||
-    (decoded as any).session_id === undefined ||
-    (decoded as any).id === undefined ||
-    (decoded as any).type === undefined
-  ) {
-    throw new HttpException("Invalid refresh token payload", 401);
-  }
-  const payload = decoded as {
-    id: string;
-    session_id: string;
-    type: string;
-  };
-  if (payload.type !== "member") {
-    throw new HttpException("Invalid token type", 401);
-  }
-  const session = await MyGlobal.prisma.shopping_mall_member_sessions.findFirst(
-    {
-      where: {
-        id: payload.session_id,
-        shopping_mall_member_id: payload.id,
+    const payload = decoded as Record<string, unknown>;
+    const type = payload.type;
+    const id = payload.id;
+    const sessionId = payload.session_id;
+    if (type !== "member") {
+      throw new HttpException("Invalid token type", 401);
+    }
+    if (typeof id !== "string" || typeof sessionId !== "string") {
+      throw new HttpException("Invalid or expired refresh token", 401);
+    }
+    const session =
+      await MyGlobal.prisma.shopping_mall_member_sessions.findFirstOrThrow({
+        where: {
+          id: sessionId,
+          shopping_mall_member_id: id,
+        },
+      });
+    if (session.expired_at.getTime() <= Date.now()) {
+      throw new HttpException("Session expired or revoked", 401);
+    }
+    const member =
+      await MyGlobal.prisma.shopping_mall_members.findUniqueOrThrow({
+        where: { id },
+      });
+    if (member.deleted_at !== null) {
+      throw new HttpException("Account has been deleted", 403);
+    }
+    const nowIso = toISOStringSafe(new Date());
+    const accessExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const accessExpiredAt = toISOStringSafe(accessExpiresAt);
+    const refreshableUntil = toISOStringSafe(refreshExpiresAt);
+    const accessToken = jwt.sign(
+      {
+        type: "member",
+        id,
+        session_id: sessionId,
+        created_at: nowIso,
       },
-      select: {
-        id: true,
-        expired_at: true,
-        shopping_mall_member_id: true,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    );
+    const refreshToken = jwt.sign(
+      {
+        type: "member",
+        id,
+        session_id: sessionId,
+        created_at: nowIso,
+        tokenType: "refresh",
       },
-    },
-  );
-  if (!session) {
-    throw new HttpException("Session expired or revoked", 401);
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    );
+    await MyGlobal.prisma.shopping_mall_member_sessions.update({
+      where: { id: sessionId },
+      data: { expired_at: refreshExpiresAt },
+    });
+    return {
+      id: member.id,
+      email: member.email,
+      created_at: toISOStringSafe(member.created_at),
+      updated_at: toISOStringSafe(member.updated_at),
+      deleted_at:
+        member.deleted_at === null ? null : toISOStringSafe(member.deleted_at),
+      token: {
+        access: accessToken,
+        refresh: refreshToken,
+        expired_at: accessExpiredAt,
+        refreshable_until: refreshableUntil,
+      },
+    };
+  } catch (e) {
+    if (e instanceof HttpException) {
+      throw e;
+    }
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
-  const nowIso = toISOStringSafe(new Date());
-  const sessionExpiredIso = toISOStringSafe(session.expired_at);
-  if (sessionExpiredIso <= nowIso) {
-    throw new HttpException("Session expired or revoked", 401);
-  }
-  const member = await MyGlobal.prisma.shopping_mall_members.findUniqueOrThrow({
-    where: { id: payload.id },
-    select: {
-      id: true,
-      email: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-    },
-  });
-  if (member.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
-  }
-  const createdAtIso = toISOStringSafe(new Date());
-  const accessExpiresMs = Date.now() + 60 * 60 * 1000;
-  const refreshExpiresMs = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  const accessExpiredAt = toISOStringSafe(new Date(accessExpiresMs));
-  const refreshableUntil = toISOStringSafe(new Date(refreshExpiresMs));
-  const access = jwt.sign(
-    {
-      type: payload.type,
-      id: payload.id,
-      session_id: payload.session_id,
-      created_at: createdAtIso,
-    },
-    secret,
-    { expiresIn: "1h", issuer },
-  );
-  const refresh = jwt.sign(
-    {
-      type: payload.type,
-      id: payload.id,
-      session_id: payload.session_id,
-      tokenType: "refresh",
-      created_at: createdAtIso,
-    },
-    secret,
-    { expiresIn: "7d", issuer },
-  );
-  await MyGlobal.prisma.shopping_mall_member_sessions.update({
-    where: { id: payload.session_id },
-    data: { expired_at: new Date(refreshExpiresMs) },
-  });
-  return {
-    id: member.id,
-    email: member.email,
-    created_at: toISOStringSafe(member.created_at),
-    updated_at: toISOStringSafe(member.updated_at),
-    deleted_at: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
-    token: {
-      access,
-      refresh,
-      expired_at: accessExpiredAt,
-      refreshable_until: refreshableUntil,
-    },
-  };
 }

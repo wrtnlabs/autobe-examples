@@ -1,152 +1,115 @@
 import { tags } from "typia";
 
-import { IEHrmPlatformProjectStatus } from "./IEHrmPlatformProjectStatus";
-
 export namespace IHrmPlatformProjectBudgetReport {
   /**
-   * Request parameters for querying project budget utilization reports. Supports filtering by project name search, status, date range for timelog filtering, and budget utilization thresholds. Includes pagination and sorting options for navigating result sets. All parameters are optional to allow flexible report queries. Used by managers and owners with report:view permission to monitor project financial health.
+   * Project budget report summary showing allocated budget hours, actual consumed hours, and utilization percentage for list display in organization reports.
+   */
+  export type ISummary = {
+    /**
+     * Unique identifier of the project.
+     *
+     * @x-autobe-specification Source: hrm_platform_projects.id. Retrieved via JOIN with timelogs aggregation on project_id.
+     */
+    id: string & tags.Format<"uuid">;
+
+    /**
+     * Name of the project.
+     *
+     * @x-autobe-specification Source: hrm_platform_projects.name. Retrieved via JOIN with timelogs aggregation on project_id.
+     */
+    name: string;
+
+    /**
+     * Color code for visual project identification in the UI.
+     *
+     * @x-autobe-specification Source: hrm_platform_projects.color_code. Hex color code for UI display, retrieved via JOIN.
+     */
+    color: string;
+
+    /**
+     * Current status of the project (active, archived, or completed).
+     *
+     * @x-autobe-specification Source: hrm_platform_projects.status. Enum values: active, archived, completed. Retrieved via JOIN.
+     */
+    status: "active" | "archived" | "completed";
+
+    /**
+     * Total budgeted hours allocated to the project.
+     *
+     * @x-autobe-specification Source: hrm_platform_projects.budget_hours. Filtered to non-null only in this report. Retrieved via JOIN.
+     */
+    budget_hours: number;
+
+    /**
+     * Total hours actually logged to the project within the report period.
+     *
+     * @x-autobe-specification Computed from hrm_platform_timelogs: SUM(duration_minutes) / 60 per project within the report's date range. Requires JOIN on project_id.
+     */
+    actual_hours: number;
+
+    /**
+     * Percentage of budget hours consumed (actual hours divided by budget hours, multiplied by 100).
+     *
+     * @x-autobe-specification Computed as (actual_hours / budget_hours) * 100. Represents percentage of budget consumed.
+     */
+    utilization_percentage: number;
+  };
+
+  /**
+   * Query parameters for project budget report listing with filtering and pagination support. Allows clients to filter reports by date range, project status, and minimum utilization threshold, with configurable pagination and sorting options.
    */
   export type IRequest = {
     /**
-     * Search term for filtering projects by name. Performs case-insensitive partial matching on project names.
+     * Start date for filtering timelogs in ISO date format (YYYY-MM-DD). Only timelogs on or after this date are included in the budget calculation.
      *
-     * @x-autobe-specification Filters projects by name using LIKE operator on hrm_platform_projects.name. Case-insensitive partial match. Applied before aggregation.
+     * @x-autobe-specification ISO date format (YYYY-MM-DD). Filters timelogs where date >= date_from. Used in WHERE clause: timelogs.date >= :date_from. Optional - if omitted, no lower bound on date range.
      */
-    search?: string | undefined;
+    date_from?: (string & tags.Format<"date">) | undefined;
 
     /**
-     * Filter projects by status. Accepts active, archived, or completed to focus on specific project states.
+     * End date for filtering timelogs in ISO date format (YYYY-MM-DD). Only timelogs on or before this date are included in the budget calculation.
      *
-     * @x-autobe-specification Filters by hrm_platform_projects.status enum values (active, archived, completed). Exact match filter applied to projects table before aggregation.
+     * @x-autobe-specification ISO date format (YYYY-MM-DD). Filters timelogs where date <= date_to. Used in WHERE clause: timelogs.date <= :date_to. Optional - if omitted, no upper bound on date range.
      */
-    status?: string | undefined;
+    date_to?: (string & tags.Format<"date">) | undefined;
 
     /**
-     * Start date for filtering timelogs (inclusive). Only timelogs on or after this date are included in actual hours calculation. Format: YYYY-MM-DD.
+     * Filter projects by their current status. Only projects matching the specified status will be included in the report.
      *
-     * @x-autobe-specification Filters hrm_platform_timelogs.date >= dateFrom (inclusive). Used to calculate actual_hours within the specified date range. ISO 8601 date format (YYYY-MM-DD).
+     * @x-autobe-specification Enum filter: 'active', 'archived', or 'completed'. Filters projects by status field. Used in WHERE clause: projects.status = :project_status. Optional - if omitted, includes projects of all statuses.
      */
-    dateFrom?: (string & tags.Format<"date">) | undefined;
+    project_status?: "active" | "archived" | "completed" | undefined;
 
     /**
-     * End date for filtering timelogs (inclusive). Only timelogs on or before this date are included in actual hours calculation. Format: YYYY-MM-DD.
+     * Minimum budget utilization percentage threshold (0-100). Only projects with utilization at or above this percentage are included in the results.
      *
-     * @x-autobe-specification Filters hrm_platform_timelogs.date <= dateTo (inclusive). Used to calculate actual_hours within the specified date range. ISO 8601 date format (YYYY-MM-DD).
+     * @x-autobe-specification Number 0-100 representing minimum budget utilization percentage. Filters projects where (actual_hours / budget_hours) * 100 >= min_utilization. Computed from aggregation of timelog durations. Optional - if omitted, no minimum utilization threshold applied.
      */
-    dateTo?: (string & tags.Format<"date">) | undefined;
+    min_utilization?:
+      | (number & tags.Minimum<0> & tags.Maximum<100>)
+      | undefined;
 
     /**
-     * Minimum budget utilization percentage to include in results. Filters projects that have consumed at least this percentage of their budget. Range: 0-100.
+     * Page number for pagination (1-indexed). Specifies which page of results to retrieve, with the first page being page 1.
      *
-     * @x-autobe-specification Filters results where calculated utilization_percentage >= minUtilization. utilization_percentage = (actual_hours / budget_hours) * 100. Applied after aggregation. Range: 0-100.
-     */
-    minUtilization?: (number & tags.Minimum<0> & tags.Maximum<100>) | undefined;
-
-    /**
-     * Maximum budget utilization percentage to include in results. Filters projects that have not exceeded this percentage of their budget. Range: 0-100.
-     *
-     * @x-autobe-specification Filters results where calculated utilization_percentage <= maxUtilization. utilization_percentage = (actual_hours / budget_hours) * 100. Applied after aggregation. Range: 0-100.
-     */
-    maxUtilization?: (number & tags.Minimum<0> & tags.Maximum<100>) | undefined;
-
-    /**
-     * Page number for pagination. Starts from 1 (first page). Used together with limit to control result set pagination.
-     *
-     * @x-autobe-specification Page number for offset-based pagination. Defaults to 1. Used with limit to calculate OFFSET: (page - 1) * limit. Minimum value: 1.
+     * @x-autobe-specification 1-indexed page number (minimum 1). Used with LIMIT/OFFSET: OFFSET = (page - 1) * limit, LIMIT = limit. Defaults to 1 if omitted. Controls which page of results to return.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
-     * Number of items to return per page. Minimum: 1, Maximum: 100. Default: 20. Controls the size of the paginated response.
+     * Maximum number of records to return per page (1-100). Controls the page size for paginated results.
      *
-     * @x-autobe-specification Number of items per page. Defaults to 20, maximum 100. Used with page to calculate LIMIT and OFFSET for query. Controls response payload size.
+     * @x-autobe-specification Number of records per page (1-100). Used in LIMIT clause. Defaults to application default if omitted. Maximum 100 records per page enforced for performance.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
       | undefined;
 
     /**
-     * Field to sort results by. Accepts: utilization_percentage, project_name, budget_hours, or actual_hours. Determines the ordering of projects in the response.
+     * Field to sort results by. Choose 'utilization_percentage' to sort by budget utilization rate, or 'budget_consumption' to sort by actual hours consumed.
      *
-     * @x-autobe-specification Field to sort results by. Valid values: utilization_percentage, project_name, budget_hours, actual_hours. Maps to ORDER BY clause. Default: utilization_percentage.
+     * @x-autobe-specification Enum: 'utilization_percentage' or 'budget_consumption'. Determines ORDER BY clause for query results. utilization_percentage: (actual_hours / budget_hours) * 100. budget_consumption: actual_hours. Optional - if omitted, uses default sort order.
      */
-    sort?: string | undefined;
-
-    /**
-     * Sort direction. Accepts asc for ascending order or desc for descending order. Applied to the field specified in the sort parameter.
-     *
-     * @x-autobe-specification Sort direction for the sort field. Values: asc (ascending) or desc (descending). Default: desc when sorting by utilization_percentage, asc for other fields. Applied to ORDER BY clause.
-     */
-    direction?: "asc" | "desc" | undefined;
-  };
-
-  /**
-   * Summary representation of a project's budget utilization in the budget report. Displays essential project identification (name, color code, status) alongside budget tracking metrics including planned budget hours, actual logged hours from timelogs, and the percentage of budget consumed. Projects without budget_hours have null utilization_percentage but still show actual hours. Used in paginated budget report lists for managers and owners to monitor project financial health.
-   */
-  export type ISummary = {
-    /**
-     * Unique identifier of the project.
-     *
-     * @x-autobe-specification From hrm_platform_projects.id via JOIN. UUID format. Primary key identifying the project.
-     */
-    id: string & tags.Format<"uuid">;
-
-    /**
-     * Project name for identification.
-     *
-     * @x-autobe-specification From hrm_platform_projects.name via JOIN. Project name for identification.
-     */
-    name: string;
-
-    /**
-     * Hex color code for visual identification in UI components.
-     *
-     * @x-autobe-specification From hrm_platform_projects.color_code via JOIN. Hex color code for UI display.
-     */
-    color_code: string;
-
-    /**
-     * Project lifecycle status: active, archived, or completed.
-     *
-     * @x-autobe-specification From hrm_platform_projects.status via JOIN. References IEHrmPlatformProjectStatus enum (active, archived, completed).
-     */
-    status: IEHrmPlatformProjectStatus;
-
-    /**
-     * Total estimated budget hours for tracking budget utilization percentage.
-     *
-     * @x-autobe-specification From hrm_platform_projects.budget_hours via JOIN. Nullable in DB but required in DTO (backend uses 0 when null).
-     */
-    budget_hours: number & tags.Minimum<0>;
-
-    /**
-     * Total actual hours logged by employees on this project, calculated from timelog entries.
-     *
-     * @x-autobe-specification Computed: SUM(timelogs.duration_minutes) WHERE timelogs.project_id = projects.id AND timelogs.deleted_at IS NULL, divided by 60 to convert minutes to hours. Filtered by date range if provided in request.
-     */
-    actual_hours: number & tags.Minimum<0>;
-
-    /**
-     * Percentage of budget hours consumed. Null when project has no budget_hours defined.
-     *
-     * @x-autobe-specification Computed: (actual_hours / budget_hours) * 100 when budget_hours is not null and > 0. Returns null when budget_hours is null. Clamped to 0-100 range.
-     */
-    utilization_percentage:
-      | (number & tags.Minimum<0> & tags.Maximum<100>)
-      | null;
-
-    /**
-     * Optional project start date for timeline tracking.
-     *
-     * @x-autobe-specification From hrm_platform_projects.started_at via JOIN. Convert DateTime to date format (YYYY-MM-DD). Nullable.
-     */
-    start_date?: (string & tags.Format<"date">) | null | undefined;
-
-    /**
-     * Optional project end date or actual completion date.
-     *
-     * @x-autobe-specification From hrm_platform_projects.ended_at via JOIN. Convert DateTime to date format (YYYY-MM-DD). Nullable.
-     */
-    end_date?: (string & tags.Format<"date">) | null | undefined;
+    sort?: "utilization_percentage" | "budget_consumption" | undefined;
   };
 }

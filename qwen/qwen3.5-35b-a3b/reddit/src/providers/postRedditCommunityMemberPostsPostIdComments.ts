@@ -23,24 +23,30 @@ export async function postRedditCommunityMemberPostsPostIdComments(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditCommunityComment.ICreate;
 }): Promise<IRedditCommunityComment> {
-  const post = await MyGlobal.prisma.reddit_community_posts.findFirst({
+  const postWithCommunity =
+    await MyGlobal.prisma.reddit_community_posts.findUniqueOrThrow({
+      where: { id: props.postId, deleted_at: null },
+      select: { community_id: true },
+    });
+  const ban = await MyGlobal.prisma.reddit_community_bans.findFirst({
     where: {
-      id: props.postId,
+      reddit_community_member_id: props.member.id,
+      reddit_community_id: postWithCommunity.community_id,
       deleted_at: null,
     },
   });
-  if (post === null) {
-    throw new HttpException("Post not found", 404);
+  if (ban !== null) {
+    throw new HttpException("Forbidden", 403);
   }
   const created = await MyGlobal.prisma.reddit_community_comments.create({
     data: await RedditCommunityCommentCollector.collect({
       body: props.body,
       redditCommunityMembers: {
         id: props.member.id,
-      },
+      } satisfies IEntity,
       redditCommunityPosts: {
         id: props.postId,
-      },
+      } satisfies IEntity,
     }),
     ...RedditCommunityCommentTransformer.select(),
   });

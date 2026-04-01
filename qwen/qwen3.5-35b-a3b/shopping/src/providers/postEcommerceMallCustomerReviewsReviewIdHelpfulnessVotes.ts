@@ -23,11 +23,9 @@ export async function postEcommerceMallCustomerReviewsReviewIdHelpfulnessVotes(p
   reviewId: string & tags.Format<"uuid">;
   body: IEcommerceMallReviewHelpfulnessVote.ICreate;
 }): Promise<IEcommerceMallReviewHelpfulnessVote> {
-  const review = await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow(
-    {
-      where: { id: props.reviewId },
-    },
-  );
+  await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow({
+    where: { id: props.reviewId },
+  });
   const existingVote =
     await MyGlobal.prisma.ecommerce_mall_review_helpfulness_votes.findFirst({
       where: {
@@ -37,23 +35,14 @@ export async function postEcommerceMallCustomerReviewsReviewIdHelpfulnessVotes(p
       },
     });
   if (existingVote !== null) {
-    throw new HttpException("Already voted on this review", 409);
+    throw new HttpException("Review already voted by this customer", 409);
   }
-  const customer =
-    await MyGlobal.prisma.ecommerce_mall_customers.findUniqueOrThrow({
-      where: { id: props.customer.id },
-    });
-  const session =
-    await MyGlobal.prisma.ecommerce_mall_customer_sessions.findUniqueOrThrow({
-      where: { id: props.customer.session_id },
-    });
   const created =
     await MyGlobal.prisma.ecommerce_mall_review_helpfulness_votes.create({
       data: await EcommerceMallReviewHelpfulnessVoteCollector.collect({
         body: props.body,
-        ecommerceMallCustomers: { id: customer.id } as const,
-        ecommerceMallCustomerSessions: { id: session.id } as const,
-        ecommerceMallReviews: { id: review.id } as const,
+        ecommerceMallReviews: { id: props.reviewId },
+        ecommerceMallCustomers: { id: props.customer.id },
       }),
       ...EcommerceMallReviewHelpfulnessVoteTransformer.select(),
     });

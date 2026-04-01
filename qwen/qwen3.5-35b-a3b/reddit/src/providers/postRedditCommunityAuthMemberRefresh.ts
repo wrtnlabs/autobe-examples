@@ -15,91 +15,91 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postRedditCommunityAuthMemberRefresh(props: {
   body: IRedditCommunityMember.IRefresh;
 }): Promise<IRedditCommunityMember.IAuthorized> {
-  const { refreshToken } = props.body;
-  // 1. Verify refresh token
-  const decoded: {
-    type: "member";
-    id: string;
+  // Verify refresh token and extract payload
+  let decoded: {
+    id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
-    created_at: string;
-  } = jwt.verify(refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-    issuer: "autobe",
-  }) as typeof decoded;
-  // 2. Validate session exists and belongs to this member
+    type: "member";
+    created_at: string & tags.Format<"date-time">;
+  };
+  try {
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+      issuer: "autobe",
+    }) as typeof decoded;
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
+  }
+  // Validate token type
+  if (decoded.type !== "member") {
+    throw new HttpException("Invalid token type", 401);
+  }
+  // Validate session exists and is active
   const session =
     await MyGlobal.prisma.reddit_community_member_sessions.findFirst({
       where: {
         id: decoded.session_id,
         member_id: decoded.id,
+        deleted_at: null,
+        expired_at: {
+          gt: new Date(),
+        },
       },
     });
   if (!session) {
-    throw new HttpException("Invalid or expired refresh token", 401);
+    throw new HttpException("Session expired or revoked", 401);
   }
-  // 3. Check session not deleted
-  if (session.deleted_at !== null) {
-    throw new HttpException("Session has been revoked", 401);
-  }
-  // 4. Check session not expired
-  const expiredAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    session.expired_at,
-  );
-  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
-  if (expiredAt <= now) {
-    throw new HttpException("Session has expired", 401);
-  }
-  // 5. Validate member not deleted
+  // Validate member account is not deleted
   const member =
     await MyGlobal.prisma.reddit_community_members.findUniqueOrThrow({
       where: { id: decoded.id },
+      select: { id: true, deleted_at: true },
     });
   if (member.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 6. Calculate new expiration times as ISO strings
-  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-  // 7. Generate new tokens
-  const newAccessToken: string = jwt.sign(
+  // Calculate new expiration times
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // Generate new tokens with SAME session_id
+  const accessToken = jwt.sign(
     {
       type: "member",
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: now,
+      created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const newRefreshToken: string = jwt.sign(
+  const refreshToken = jwt.sign(
     {
       type: "member",
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: now,
+      created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 8. Update session with new tokens
+  // Revoke old access token and update session with new tokens
   await MyGlobal.prisma.reddit_community_member_sessions.update({
     where: { id: decoded.session_id },
     data: {
-      access_token: newAccessToken,
-      refresh_token: newRefreshToken,
-      expired_at: new Date(refreshExpires),
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      updated_at: now,
+      expired_at: refreshExpires,
     },
   });
+  // Return new tokens
   return {
     token: {
-      access: newAccessToken,
-      refresh: newRefreshToken,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
-    },
-  };
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires.toISOString(),
+      refreshable_until: refreshExpires.toISOString(),
+    } satisfies IAuthorizationToken,
+  } satisfies IRedditCommunityMember.IAuthorized;
 }

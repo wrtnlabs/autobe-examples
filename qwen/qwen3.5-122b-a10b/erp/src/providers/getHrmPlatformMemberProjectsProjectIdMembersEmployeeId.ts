@@ -31,6 +31,7 @@ export async function getHrmPlatformMemberProjectsProjectIdMembersEmployeeId(pro
           hrm_platform_employee_id: props.employeeId,
           hrm_platform_project_id: props.projectId,
         },
+        deleted_at: null,
       },
       ...HrmPlatformProjectMemberTransformer.select(),
     });

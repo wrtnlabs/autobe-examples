@@ -17,37 +17,57 @@ export async function putShoppingMallCustomerProfile(props: {
   customer: CustomerPayload;
   body: IShoppingMallCustomer.IUpdate;
 }): Promise<IShoppingMallCustomer> {
-  // Check if account is banned
-  const customer =
-    await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
-      where: { id: props.customer.id },
-      select: { id: true, status: true },
-    });
-  if (customer.status === "banned") {
-    throw new HttpException("Access denied", 403);
-  }
-  // Get current values to check for changes
+  // Get current customer profile
   const current =
     await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
       where: { id: props.customer.id },
-      select: { display_name: true, phone_number: true },
+      select: {
+        id: true,
+        display_name: true,
+        phone_number: true,
+        status: true,
+      },
     });
-  // Validate at least one field is provided and different
-  const hasDisplayNameChange =
-    props.body.display_name !== undefined &&
-    props.body.display_name !== current.display_name;
-  const hasPhoneNumberChange =
-    props.body.phone_number !== undefined &&
-    props.body.phone_number !== current.phone_number;
-  if (!hasDisplayNameChange && !hasPhoneNumberChange) {
-    throw new HttpException("No fields to update", 400);
+  // Check if account is banned
+  if (current.status === "banned") {
+    throw new HttpException("Access denied - account is banned", 403);
   }
-  // Update the customer profile
+  // Validate at least one field is provided
+  if (
+    props.body.display_name === undefined &&
+    props.body.phone_number === undefined
+  ) {
+    throw new HttpException("At least one field must be provided", 400);
+  }
+  // Validate display_name is not empty if provided
+  if (
+    props.body.display_name !== undefined &&
+    props.body.display_name.length === 0
+  ) {
+    throw new HttpException("Display name cannot be empty", 400);
+  }
+  // Check if any field actually changed
+  const hasChanges =
+    (props.body.display_name !== undefined &&
+      props.body.display_name !== current.display_name) ||
+    (props.body.phone_number !== undefined &&
+      props.body.phone_number !== current.phone_number);
+  if (!hasChanges) {
+    throw new HttpException(
+      "No changes detected - values must differ from current",
+      400,
+    );
+  }
+  // Update the profile
   const updated = await MyGlobal.prisma.shopping_mall_customers.update({
     where: { id: props.customer.id },
     data: {
-      ...(hasDisplayNameChange && { display_name: props.body.display_name }),
-      ...(hasPhoneNumberChange && { phone_number: props.body.phone_number }),
+      ...(props.body.display_name !== undefined && {
+        display_name: props.body.display_name,
+      }),
+      ...(props.body.phone_number !== undefined && {
+        phone_number: props.body.phone_number,
+      }),
       updated_at: new Date(),
     },
     ...ShoppingMallCustomerTransformer.select(),

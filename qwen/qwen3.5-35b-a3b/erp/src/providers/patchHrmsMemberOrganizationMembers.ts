@@ -24,60 +24,58 @@ export async function patchHrmsMemberOrganizationMembers(props: {
 }): Promise<IPageIHrmsOrganizationMember.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  const searchLimit = props.body.search_limit ?? 1000;
-  // Validate pagination limits
-  const validatedLimit = Math.min(Math.max(limit, 1), 100);
-  const validatedSearchLimit = Math.min(Math.max(searchLimit, 1), 1000);
-  // Calculate skip for pagination
-  const skip = (page - 1) * validatedLimit;
-  // Get member's selected organization from current session
+  const validatedPage = page < 1 ? 1 : page;
+  const validatedLimit = limit < 1 ? 1 : limit > 100 ? 100 : limit;
+  const skip = (validatedPage - 1) * validatedLimit;
+  // Get organization context from session
   const session = await MyGlobal.prisma.hrms_member_sessions.findFirst({
-    where: {
-      hrms_member_id: props.member.id,
-      id: props.member.session_id,
-      expired_at: { gt: new Date() },
-    },
+    where: { id: props.member.session_id },
     select: { current_organization_id: true },
   });
   if (!session) {
-    throw new HttpException("Session not found or expired", 401);
+    throw new HttpException("Unauthorized", 401);
   }
-  // Validate organization_id is not null
-  if (session.current_organization_id === null) {
-    throw new HttpException("Organization not selected", 400);
+  if (!session.current_organization_id) {
+    throw new HttpException("No organization context", 400);
   }
-  // Build where clause (no member search filter - filter manually if needed)
-  const whereClause: Prisma.hrms_organization_membersWhereInput = {
+  const whereInput: Prisma.hrms_organization_membersWhereInput = {
     deleted_at: null,
-    hrms_organization_id: session.current_organization_id,
-    ...(props.body.role_id
-      ? { hrms_organization_role_id: props.body.role_id }
-      : {}),
+    organization: {
+      id: session.current_organization_id,
+    },
   };
-  // Query with pagination and select for transformer
+  if (props.body.search) {
+    whereInput.member = {
+      OR: [
+        { display_name: { contains: props.body.search, mode: "insensitive" } },
+        { email: { contains: props.body.search, mode: "insensitive" } },
+      ],
+    };
+  }
+  if (props.body.role_id) {
+    whereInput.organizationRole = { id: props.body.role_id };
+  }
   const data = await MyGlobal.prisma.hrms_organization_members.findMany({
-    where: whereClause,
+    where: whereInput,
     skip,
     take: validatedLimit,
     orderBy: { created_at: "desc" },
-    select: HrmsOrganizationMemberAtSummaryTransformer.select().select,
+    ...HrmsOrganizationMemberAtSummaryTransformer.select(),
   });
-  // Get total count
   const total = await MyGlobal.prisma.hrms_organization_members.count({
-    where: whereClause,
+    where: whereInput,
   });
-  // Calculate pagination metadata
-  const totalPages = Math.ceil(total / validatedLimit);
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    HrmsOrganizationMemberAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmsOrganizationMemberAtSummaryTransformer.transform,
-    ),
     pagination: {
-      current: page,
+      current: validatedPage,
       limit: validatedLimit,
       records: total,
-      pages: totalPages,
+      pages: Math.ceil(total / validatedLimit),
     } satisfies IPage.IPagination,
-  };
+    data: transformedData,
+  } satisfies IPageIHrmsOrganizationMember.ISummary;
 }

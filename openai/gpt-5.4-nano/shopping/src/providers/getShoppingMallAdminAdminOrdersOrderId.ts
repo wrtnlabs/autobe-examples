@@ -21,6 +21,9 @@ export async function getShoppingMallAdminAdminOrdersOrderId(props: {
   admin: AdminPayload;
   orderId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallOrder> {
+  if (props.admin.type !== "admin") {
+    throw new HttpException("Forbidden", 403);
+  }
   const order = await MyGlobal.prisma.shopping_mall_orders.findFirstOrThrow({
     where: {
       id: props.orderId,

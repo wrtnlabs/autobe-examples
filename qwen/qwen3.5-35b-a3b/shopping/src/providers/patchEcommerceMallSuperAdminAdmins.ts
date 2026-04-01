@@ -10,13 +10,12 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
-import { EcommerceMallAdminAtSummaryTransformer } from "../transformers/EcommerceMallAdminAtSummaryTransformer";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallSuperAdminAdmins(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IEcommerceMallAdmin.IRequest;
 }): Promise<IPageIEcommerceMallAdmin.ISummary> {
   const page = props.body.page ?? 1;
@@ -27,53 +26,60 @@ export async function patchEcommerceMallSuperAdminAdmins(props: {
   };
   if (props.body.search !== undefined) {
     whereInput.email = {
-      contains: props.body.search.toLowerCase(),
+      contains: props.body.search,
       mode: "insensitive",
     };
   }
   if (props.body.status !== undefined) {
     whereInput.status = props.body.status;
   }
-  if (props.body.startDate !== undefined && props.body.endDate !== undefined) {
+  if (props.body.startDate !== undefined || props.body.endDate !== undefined) {
     whereInput.created_at = {
-      gte: new Date(props.body.startDate),
-      lte: new Date(props.body.endDate),
-    };
-  } else if (props.body.startDate !== undefined) {
-    whereInput.created_at = {
-      gte: new Date(props.body.startDate),
-    };
-  } else if (props.body.endDate !== undefined) {
-    whereInput.created_at = {
-      lte: new Date(props.body.endDate),
-    };
+      ...(props.body.startDate !== undefined
+        ? { gte: new Date(props.body.startDate) }
+        : undefined),
+      ...(props.body.endDate !== undefined
+        ? { lte: new Date(props.body.endDate) }
+        : undefined),
+    } as Prisma.DateTimeFilter;
   }
-  const orderByInput: Prisma.ecommerce_mall_adminsOrderByWithRelationInput =
-    props.body.sortBy === "email"
-      ? { email: props.body.sortOrder ?? ("asc" as const) }
-      : props.body.sortBy === "status"
-        ? { status: props.body.sortOrder ?? ("asc" as const) }
-        : { created_at: props.body.sortOrder === "asc" ? "asc" : "desc" };
+  const sortField = props.body.sortBy ?? "created_at";
+  const sortOrder = props.body.sortOrder ?? "desc";
+  const orderByInput = {
+    [sortField]: sortOrder,
+  } satisfies Prisma.ecommerce_mall_adminsOrderByWithRelationInput;
   const data = await MyGlobal.prisma.ecommerce_mall_admins.findMany({
     where: whereInput,
     skip,
     take: limit,
     orderBy: orderByInput,
-    ...EcommerceMallAdminAtSummaryTransformer.select(),
+    select: {
+      id: true,
+      email: true,
+      status: true,
+      created_at: true,
+    },
   });
   const total = await MyGlobal.prisma.ecommerce_mall_admins.count({
     where: whereInput,
   });
+  const summaryData = data.map(
+    (item) =>
+      ({
+        id: item.id,
+        email: item.email,
+        status: item.status,
+        created_at: toISOStringSafe(item.created_at),
+      }) satisfies IEcommerceMallAdmin.ISummary,
+  );
+  const totalPages = limit > 0 ? Math.ceil(total / limit) : 0;
   return {
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages: totalPages,
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallAdminAtSummaryTransformer.transform,
-    ),
-  } as IPageIEcommerceMallAdmin.ISummary;
+    data: summaryData,
+  } satisfies IPageIEcommerceMallAdmin.ISummary;
 }

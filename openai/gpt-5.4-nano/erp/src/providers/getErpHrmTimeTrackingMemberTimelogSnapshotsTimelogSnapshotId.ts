@@ -17,24 +17,15 @@ export async function getErpHrmTimeTrackingMemberTimelogSnapshotsTimelogSnapshot
   member: MemberPayload;
   timelogSnapshotId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingTimelogSnapshot> {
-  const { member, timelogSnapshotId } = props;
-  // Derive organization context if available on payload; otherwise fetch by timelogSnapshotId only.
-  const organizationId = (
-    member as {
-      organization_id?: string | null | undefined;
-    }
-  ).organization_id;
   const snapshot =
-    await MyGlobal.prisma.erp_hrm_time_tracking_timelog_snapshots.findUniqueOrThrow(
-      {
-        where: {
-          id: timelogSnapshotId,
-          ...(organizationId != null
-            ? { organization_id: organizationId }
-            : {}),
+    await MyGlobal.prisma.erp_hrm_time_tracking_timelog_snapshots.findUnique({
+      where: { id: props.timelogSnapshotId },
+      include: {
+        timelog: {
+          select: { id: true },
         },
-        ...ErpHrmTimeTrackingTimelogSnapshotTransformer.select(),
       },
-    );
+    });
+  if (snapshot === null) throw new HttpException("Not Found", 404);
   return await ErpHrmTimeTrackingTimelogSnapshotTransformer.transform(snapshot);
 }

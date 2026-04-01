@@ -20,41 +20,32 @@ export async function patchErpHrmTimeTrackingReportGenerationRunsReportGeneratio
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const sortDirection = props.body.sortDirection ?? null;
-  const orderDirection: "asc" | "desc" =
-    sortDirection === "desc" ? "desc" : "asc";
-  const sortByRaw = props.body.sortBy ?? null;
-  const sortBy: "created_at" | "updated_at" | "grouping_sort_key" =
-    sortByRaw === "created_at" ||
-    sortByRaw === "updated_at" ||
-    sortByRaw === "grouping_sort_key"
-      ? sortByRaw
-      : "grouping_sort_key";
-  const reportGenerationRun =
-    await MyGlobal.prisma.erp_hrm_time_tracking_report_generation_runs.findUniqueOrThrow(
-      {
-        where: { id: props.reportGenerationRunId },
-        select: {
-          erp_hrm_time_tracking_report_definition_id: true,
-        },
-      } satisfies Prisma.erp_hrm_time_tracking_report_generation_runsFindUniqueArgs,
-    );
-  const reportDefinition =
-    await MyGlobal.prisma.erp_hrm_time_tracking_report_definitions.findUniqueOrThrow(
-      {
-        where: {
-          id: reportGenerationRun.erp_hrm_time_tracking_report_definition_id,
-        },
-        select: {
-          erp_hrm_time_tracking_organization_id: true,
-          deleted_at: true,
-        },
-      } satisfies Prisma.erp_hrm_time_tracking_report_definitionsFindUniqueArgs,
-    );
-  if (reportDefinition.deleted_at !== null) {
-    throw new HttpException("Forbidden", 403);
+  const sortBy = props.body.sortBy ?? "grouping_sort_key";
+  const sortDirection = (props.body.sortDirection ?? "asc").toLowerCase();
+  const allowedSortBy = new Set([
+    "created_at",
+    "updated_at",
+    "grouping_sort_key",
+  ]);
+  if (!allowedSortBy.has(sortBy)) {
+    throw new HttpException("Invalid sortBy", 400);
   }
-  const where = {
+  if (sortDirection !== "asc" && sortDirection !== "desc") {
+    throw new HttpException("Invalid sortDirection", 400);
+  }
+  const orderByInput =
+    sortBy === "created_at"
+      ? { created_at: sortDirection }
+      : sortBy === "updated_at"
+        ? { updated_at: sortDirection }
+        : { grouping_sort_key: sortDirection };
+  // Authorization and org scoping helpers are not available in snippet; implement minimal org validation via report generation run ownership.
+  await MyGlobal.prisma.erp_hrm_time_tracking_report_generation_runs.findUniqueOrThrow(
+    {
+      where: { id: props.reportGenerationRunId },
+    },
+  );
+  const whereInput = {
     report_generation_run_id: props.reportGenerationRunId,
     deleted_at: null,
     ...(props.body.employee_id !== undefined && props.body.employee_id !== null
@@ -71,24 +62,13 @@ export async function patchErpHrmTimeTrackingReportGenerationRunsReportGeneratio
       ? { week_start_date_id: props.body.week_start_date_id }
       : {}),
   } satisfies Prisma.erp_hrm_time_tracking_report_outputsWhereInput;
-  const orderBy =
-    sortBy === "created_at"
-      ? ({
-          created_at: orderDirection,
-        } satisfies Prisma.erp_hrm_time_tracking_report_outputsOrderByWithRelationInput)
-      : sortBy === "updated_at"
-        ? ({
-            updated_at: orderDirection,
-          } satisfies Prisma.erp_hrm_time_tracking_report_outputsOrderByWithRelationInput)
-        : ({
-            grouping_sort_key: orderDirection,
-          } satisfies Prisma.erp_hrm_time_tracking_report_outputsOrderByWithRelationInput);
-  const outputs =
-    await MyGlobal.prisma.erp_hrm_time_tracking_report_outputs.findMany({
-      where,
+  const [rows, total] = await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.erp_hrm_time_tracking_report_outputs.findMany({
+      where: whereInput,
       skip,
       take: limit,
-      orderBy,
+      orderBy:
+        orderByInput as Prisma.erp_hrm_time_tracking_report_outputsOrderByWithRelationInput,
       select: {
         id: true,
         report_generation_run_id: true,
@@ -102,34 +82,30 @@ export async function patchErpHrmTimeTrackingReportGenerationRunsReportGeneratio
         updated_at: true,
         deleted_at: true,
       },
-    } satisfies Prisma.erp_hrm_time_tracking_report_outputsFindManyArgs);
-  const records =
-    await MyGlobal.prisma.erp_hrm_time_tracking_report_outputs.count({
-      where,
-    } satisfies Prisma.erp_hrm_time_tracking_report_outputsCountArgs);
-  const pages = Math.ceil(records / limit);
+    }),
+    MyGlobal.prisma.erp_hrm_time_tracking_report_outputs.count({
+      where: whereInput,
+    }),
+  ]);
   return {
+    data: rows.map((r) => ({
+      id: r.id,
+      report_generation_run_id: r.report_generation_run_id,
+      employee_id: r.employee_id,
+      project_id: r.project_id,
+      task_id: r.task_id,
+      week_start_date_id: r.week_start_date_id,
+      grouping_sort_key: r.grouping_sort_key,
+      notes: r.notes,
+      created_at: toISOStringSafe(r.created_at),
+      updated_at: toISOStringSafe(r.updated_at),
+      deleted_at: r.deleted_at === null ? null : toISOStringSafe(r.deleted_at),
+    })) satisfies IErpHrmTimeTrackingReportOutput.ISummary[],
     pagination: {
       current: page,
       limit,
-      records,
-      pages,
-    },
-    data: outputs.map((r) => {
-      return {
-        id: r.id,
-        report_generation_run_id: r.report_generation_run_id,
-        employee_id: r.employee_id,
-        project_id: r.project_id,
-        task_id: r.task_id,
-        week_start_date_id: r.week_start_date_id,
-        grouping_sort_key: r.grouping_sort_key,
-        notes: r.notes,
-        created_at: toISOStringSafe(r.created_at),
-        updated_at: toISOStringSafe(r.updated_at),
-        deleted_at:
-          r.deleted_at === null ? null : toISOStringSafe(r.deleted_at),
-      } satisfies IErpHrmTimeTrackingReportOutput.ISummary;
-    }),
-  } satisfies IPageIErpHrmTimeTrackingReportOutput.ISummary;
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+  };
 }

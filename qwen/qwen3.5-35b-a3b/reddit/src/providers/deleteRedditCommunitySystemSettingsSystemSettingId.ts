@@ -13,41 +13,32 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function deleteRedditCommunitySystemSettingsSystemSettingId(props: {
   systemSettingId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the system setting
   const setting =
     await MyGlobal.prisma.reddit_community_system_settings.findUniqueOrThrow({
       where: { id: props.systemSettingId },
-      select: {
-        id: true,
-        key: true,
-        value: true,
-        deleted_at: true,
-        updated_at: true,
-      },
     });
-  // Verify not already deleted
   if (setting.deleted_at !== null) {
-    throw new HttpException("Setting already deleted", 400);
+    throw new HttpException("Not Found", 404);
   }
-  // Soft delete the record
-  const now = new Date();
+  const deletedAt = new Date();
   await MyGlobal.prisma.reddit_community_system_settings.update({
     where: { id: props.systemSettingId },
-    data: {
-      deleted_at: now,
-      updated_at: now,
-    },
+    data: { deleted_at: deletedAt },
   });
-  // Log the deletion in system logs
   await MyGlobal.prisma.reddit_community_system_logs.create({
     data: {
       id: v4(),
-      activity_type: "system_settings_delete",
-      action_performed: "delete",
-      target_type: "system_settings",
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
+      actor_id: null,
+      target_post_id: null,
+      target_comment_id: null,
+      target_community_id: null,
+      target_report_id: null,
+      activity_type: "system_setting_delete",
+      action_performed: "DELETE",
+      target_type: "SYSTEM_SETTING",
+      metadata: JSON.stringify({ system_setting_id: props.systemSettingId }),
+      created_at: deletedAt,
+      updated_at: deletedAt,
     },
   });
 }

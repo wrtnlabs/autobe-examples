@@ -20,8 +20,8 @@ export async function putRedditLikeOwnerCommunitiesCommunityId(props: {
   communityId: string & tags.Format<"uuid">;
   body: IRedditLikeCommunity.IUpdate;
 }): Promise<IRedditLikeCommunity> {
-  // Fetch community and verify it exists and is not soft-deleted
-  const community = await MyGlobal.prisma.reddit_like_communities.findFirst({
+  // Fetch community and verify it exists and is not deleted
+  const community = await MyGlobal.prisma.reddit_like_communities.findUnique({
     where: {
       id: props.communityId,
       deleted_at: null,
@@ -29,28 +29,30 @@ export async function putRedditLikeOwnerCommunitiesCommunityId(props: {
     select: {
       id: true,
       owner_id: true,
-      name: true,
     },
   });
   if (community === null) {
     throw new HttpException("Community not found", 404);
   }
-  // Verify ownership
+  // Authorization: Only owner can update
   if (community.owner_id !== props.owner.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Check name uniqueness if name is being changed
-  if (props.body.name !== undefined && props.body.name !== community.name) {
-    const existingCommunity =
-      await MyGlobal.prisma.reddit_like_communities.findUnique({
-        where: { name: props.body.name },
-        select: { id: true },
-      });
-    if (existingCommunity !== null) {
-      throw new HttpException("Community name already in use", 409);
+  // Validate name uniqueness if name is being changed
+  if (props.body.name !== undefined) {
+    const existing = await MyGlobal.prisma.reddit_like_communities.findFirst({
+      where: {
+        name: props.body.name,
+        id: { not: props.communityId },
+        deleted_at: null,
+      },
+      select: { id: true },
+    });
+    if (existing !== null) {
+      throw new HttpException("Community name already exists", 409);
     }
   }
-  // Validate attachment exists if provided
+  // Validate icon attachment if provided
   if (
     props.body.icon_attachment_id !== undefined &&
     props.body.icon_attachment_id !== null
@@ -62,7 +64,7 @@ export async function putRedditLikeOwnerCommunitiesCommunityId(props: {
       },
     );
     if (attachment === null) {
-      throw new HttpException("Attachment not found", 400);
+      throw new HttpException("Invalid attachment", 400);
     }
   }
   // Build update data with only provided fields
@@ -79,16 +81,11 @@ export async function putRedditLikeOwnerCommunitiesCommunityId(props: {
     }),
     updated_at: new Date(),
   };
-  // Perform update
-  await MyGlobal.prisma.reddit_like_communities.update({
+  // Perform update and return with transformer
+  const updated = await MyGlobal.prisma.reddit_like_communities.update({
     where: { id: props.communityId },
     data: updateData,
+    ...RedditLikeCommunityTransformer.select(),
   });
-  // Fetch updated community with full relations for response
-  const updatedCommunity =
-    await MyGlobal.prisma.reddit_like_communities.findUniqueOrThrow({
-      where: { id: props.communityId },
-      ...RedditLikeCommunityTransformer.select(),
-    });
-  return await RedditLikeCommunityTransformer.transform(updatedCommunity);
+  return await RedditLikeCommunityTransformer.transform(updated);
 }

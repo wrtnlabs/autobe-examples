@@ -15,84 +15,80 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postErpHrmTimeTrackingAuthGuestRefresh(props: {
   body: IErpHrmTimeTrackingGuest.IRefresh;
 }): Promise<IErpHrmTimeTrackingGuest.IAuthorized> {
-  const secret = MyGlobal.env.JWT_SECRET_KEY;
-  const decoded = (() => {
-    try {
-      return jwt.verify(props.body.refreshToken, secret, { issuer: "autobe" });
-    } catch {
-      throw new HttpException("Unauthorized", 401);
-    }
-  })();
-  const payload: Record<string, unknown> =
-    typeof decoded === "object" && decoded !== null
-      ? (decoded as Record<string, unknown>)
-      : {};
-  const guestId = payload["id"];
-  const sessionId = payload["session_id"];
-  const tokenType = payload["type"];
-  if (
-    tokenType !== "guest" ||
-    typeof guestId !== "string" ||
-    typeof sessionId !== "string"
-  ) {
+  // verify jwt
+  let decoded: {
+    type: string;
+    id: string;
+    session_id: string;
+  };
+  try {
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+      issuer: "autobe",
+    }) as unknown as {
+      type: "guest";
+      id: string;
+      session_id: string;
+    };
+  } catch {
     throw new HttpException("Unauthorized", 401);
   }
+  if (decoded.type !== "guest") throw new HttpException("Forbidden", 403);
+  const nowIso = toISOStringSafe(new Date());
+  // session + guest check
   const session =
     await MyGlobal.prisma.erp_hrm_time_tracking_guest_sessions.findFirst({
       where: {
-        id: sessionId,
-        erp_hrm_time_tracking_guest_id: guestId,
+        id: decoded.session_id,
+        erp_hrm_time_tracking_guest_id: decoded.id,
       },
-      select: {
-        id: true,
-        erp_hrm_time_tracking_guest_id: true,
-        expired_at: true,
-      },
+      include: { guest: true },
     });
-  if (!session || session.expired_at === null) {
-    throw new HttpException("Unauthorized", 401);
-  }
-  const guest =
-    await MyGlobal.prisma.erp_hrm_time_tracking_guests.findUniqueOrThrow({
-      where: { id: guestId },
-      select: { id: true, deleted_at: true },
-    });
-  if (guest.deleted_at !== null) {
+  if (!session || session.guest.deleted_at !== null)
     throw new HttpException("Forbidden", 403);
-  }
-  const nowIso = toISOStringSafe(new Date());
+  const expiredAtIso = toISOStringSafe(session.expired_at as unknown as Date);
+  if (expiredAtIso <= nowIso) throw new HttpException("Unauthorized", 401);
+  // rotate by extending expiry
+  const newRefreshableUntil = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const newAccessExpiredAt = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.erp_hrm_time_tracking_guest_sessions.update({
+      where: { id: session.id },
+      data: { expired_at: newRefreshableUntil },
+    });
+    return session;
+  });
   const accessToken = jwt.sign(
     {
       type: "guest",
-      id: guestId,
-      session_id: sessionId,
+      id: updated.guest.id,
+      session_id: updated.id,
       created_at: nowIso,
     },
-    secret,
-    { issuer: "autobe", expiresIn: "1h" },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
   );
   const refreshToken = jwt.sign(
     {
       type: "guest",
-      id: guestId,
-      session_id: sessionId,
+      id: updated.guest.id,
+      session_id: updated.id,
       created_at: nowIso,
+      tokenType: "refresh",
     },
-    secret,
-    { issuer: "autobe", expiresIn: "7d" },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
   );
-  const newExpiredAt = toISOStringSafe(new Date());
-  await MyGlobal.prisma.erp_hrm_time_tracking_guest_sessions.update({
-    where: { id: sessionId },
-    data: { expired_at: newExpiredAt },
-  });
   return {
-    id: guestId,
+    id: updated.guest.id,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: nowIso,
-      refreshable_until: nowIso,
+      expired_at: newAccessExpiredAt,
+      refreshable_until: newRefreshableUntil,
     },
   };
 }

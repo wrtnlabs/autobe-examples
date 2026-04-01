@@ -2,8 +2,10 @@ import { IEcommerceMallPlatformConfigurationComparison } from "@ORGANIZATION/PRO
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallPlatformConfigurationComparisonAtSummaryTransformer {
@@ -26,6 +28,7 @@ export namespace EcommerceMallPlatformConfigurationComparisonAtSummaryTransforme
         values: {
           select: {
             value: true,
+            environment_scope: true,
           },
         } satisfies Prisma.ecommerce_mall_platform_configuration_valuesFindManyArgs,
       },
@@ -37,8 +40,10 @@ export namespace EcommerceMallPlatformConfigurationComparisonAtSummaryTransforme
     const environmentValues: {
       [key: string]: string | number | boolean | null;
     } = {};
-    for (const v of input.values) {
-      environmentValues[input.scope] = v.value;
+    for (const value of input.values) {
+      if (value.environment_scope) {
+        environmentValues[value.environment_scope] = value.value;
+      }
     }
     return {
       id: input.id,

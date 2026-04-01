@@ -18,160 +18,105 @@ export async function patchHrmsMemberReportsTopEmployees(props: {
   member: MemberPayload;
   body: IHrmsTopEmployee.IRequest;
 }): Promise<IPageIHrmsTopEmployee.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  // Validate date range if provided
-  if (props.body.dateRange?.startDate && props.body.dateRange?.endDate) {
-    if (props.body.dateRange.startDate > props.body.dateRange.endDate) {
-      throw new HttpException(
-        "start_date must be before or equal to end_date",
-        400,
-      );
-    }
-  }
-  // Use default to current week if not specified
-  const now = new Date();
-  const endOfWeek = new Date(now);
-  const startOfWeek = new Date(endOfWeek);
-  startOfWeek.setDate(endOfWeek.getDate() - 6);
-  const effectiveStartDate =
-    props.body.dateRange?.startDate || startOfWeek.toISOString().split("T")[0];
-  const effectiveEndDate =
-    props.body.dateRange?.endDate || endOfWeek.toISOString().split("T")[0];
-  // Build WHERE clause for timelogs
-  const timelogWhere: Prisma.hrms_timelogsWhereInput = {
-    date: {
-      gte: new Date(`${effectiveStartDate}T00:00:00.000Z`),
-      lte: new Date(`${effectiveEndDate}T23:59:59.999Z`),
-    },
-    deleted_at: null,
-    ...(props.body.employeeId && { employee_id: props.body.employeeId }),
-    ...(props.body.projectId && { project_id: props.body.projectId }),
-  };
-  // Aggregate timelog data by employee with conditional billable sum
-  const timelogAggregations = await MyGlobal.prisma.hrms_timelogs.groupBy({
-    by: ["employee_id"],
-    where: timelogWhere,
-    _sum: {
-      duration_minutes: true,
-    },
-    _count: {
-      project_id: true,
-      task_id: true,
-    },
+  const member = await MyGlobal.prisma.hrms_members.findUniqueOrThrow({
+    where: { id: props.member.id, deleted_at: null },
   });
-  // Calculate billable hours using additional query
-  const billableTimelogAggregations =
-    await MyGlobal.prisma.hrms_timelogs.groupBy({
-      by: ["employee_id"],
+  const organizationMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirstOrThrow({
       where: {
-        ...timelogWhere,
-        billable: true,
-      },
-      _sum: {
-        duration_minutes: true,
+        hrms_member_id: member.id,
+        deleted_at: null,
       },
     });
-  // Build maps for aggregation data
-  const totalHoursMap = new Map<string, number>();
-  const billableHoursMap = new Map<string, number>();
-  const projectCountMap = new Map<string, number>();
-  const taskCountMap = new Map<string, number>();
-  for (const agg of timelogAggregations) {
-    totalHoursMap.set(agg.employee_id, agg._sum.duration_minutes ?? 0);
-    projectCountMap.set(agg.employee_id, agg._count.project_id);
-    taskCountMap.set(agg.employee_id, agg._count.task_id);
-  }
-  for (const agg of billableTimelogAggregations) {
-    billableHoursMap.set(agg.employee_id, agg._sum.duration_minutes ?? 0);
-  }
-  // Get employee IDs from aggregations
-  const employeeIds = Array.from(totalHoursMap.keys());
-  if (employeeIds.length === 0) {
-    return {
-      pagination: {
-        current: page,
-        limit,
-        records: 0,
-        pages: 0,
-      } satisfies IPage.IPagination,
-      data: [],
-    };
-  }
-  // Build employee WHERE clause (active only)
-  const employeeWhere: Prisma.hrms_employeesWhereInput = {
-    id: { in: employeeIds },
-    status: "active",
-    deleted_at: null,
-  };
-  // Get employee details with aggregation data
-  const employeesWithAggregation =
-    await MyGlobal.prisma.hrms_employees.findMany({
-      where: employeeWhere,
-      select: {
-        id: true,
-        display_name: true,
-        position: true,
-        department_id: true,
-      },
-    });
-  // Build data with aggregation
-  const data: IHrmsTopEmployee.ISummary[] = [];
-  for (const employee of employeesWithAggregation) {
-    const totalHours = totalHoursMap.get(employee.id) || 0;
-    const billableHours = billableHoursMap.get(employee.id) || 0;
-    const projectCount = projectCountMap.get(employee.id) || 0;
-    const taskCount = taskCountMap.get(employee.id) || 0;
-    data.push({
-      id: employee.id as string & tags.Format<"uuid">,
-      display_name: employee.display_name,
-      position: employee.position ?? "",
-      department_id: employee.department_id,
-      total_hours: totalHours,
-      billable_hours: billableHours,
-      project_count: projectCount,
-      task_count: taskCount,
-    });
-  }
-  // Apply sorting
-  const sortField = props.body.sort ?? "total_hours";
-  data.sort((a, b) => {
-    switch (sortField) {
-      case "total_hours":
-        return b.total_hours - a.total_hours;
-      case "billable_hours":
-        return b.billable_hours - a.billable_hours;
-      case "project_count":
-        return b.project_count - a.project_count;
-      case "task_count":
-        return b.task_count - a.task_count;
-      case "employee_name":
-        return a.display_name.localeCompare(b.display_name);
-      case "department":
-        if (a.department_id && b.department_id) {
-          return a.department_id.localeCompare(b.department_id);
-        } else if (a.department_id) {
-          return -1;
-        } else if (b.department_id) {
-          return 1;
-        }
-        return 0;
-      default:
-        return b.total_hours - a.total_hours;
-    }
+  const role = await MyGlobal.prisma.hrms_organization_roles.findFirstOrThrow({
+    where: {
+      id: organizationMember.hrms_organization_role_id,
+    },
   });
-  // Apply pagination
-  const paginatedData = data.slice(skip, skip + limit);
-  // Count total
-  const total = data.length;
+  const hasReportPermission =
+    role.is_builtin || role.name === "Owner" || role.name === "Manager";
+  if (!hasReportPermission) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 5;
+  const skip = (page - 1) * limit;
+  const startDate = props.body.dateRange.startDate
+    ? new Date(props.body.dateRange.startDate + "T00:00:00Z")
+    : new Date(new Date().setDate(new Date().getDate() - new Date().getDay()));
+  const endDate = props.body.dateRange.endDate
+    ? new Date(props.body.dateRange.endDate + "T23:59:59Z")
+    : new Date(
+        new Date().setDate(new Date().getDate() + (6 - new Date().getDay())),
+      );
+  const [employees, total] = await Promise.all([
+    MyGlobal.prisma.$queryRaw<
+      Array<{
+        employee_id: string;
+        display_name: string;
+        position: string | null;
+        department_id: string | null;
+        total_hours: number;
+        billable_hours: number;
+        project_count: number;
+        task_count: number;
+      }>
+    >`
+      SELECT
+        e.id AS employee_id,
+        e.display_name,
+        e.position,
+        e.department_id,
+        SUM(COALESCE(t.duration_minutes, 0)) AS total_hours,
+        SUM(CASE WHEN t.billable THEN t.duration_minutes ELSE 0 END) AS billable_hours,
+        COUNT(DISTINCT t.project_id) AS project_count,
+        COUNT(DISTINCT t.task_id) AS task_count
+      FROM hrms_employees e
+      INNER JOIN hrms_timelogs t ON e.id = t.employee_id
+      WHERE
+        e.deleted_at IS NULL
+        AND e.status = 'active'
+        AND t.deleted_at IS NULL
+        AND t.date >= ${startDate}
+        AND t.date <= ${endDate}
+        ${props.body.employeeId ? `AND t.employee_id = ${props.body.employeeId}` : ""}
+        ${props.body.projectId ? `AND t.project_id = ${props.body.projectId}` : ""}
+      GROUP BY e.id, e.display_name, e.position, e.department_id
+      ORDER BY ${props.body.sort === "billable_hours" ? "billable_hours" : props.body.sort === "employee_name" ? "e.display_name" : props.body.sort === "department" ? "e.department_id" : "total_hours"} DESC
+      LIMIT ${limit}
+      OFFSET ${skip}
+    `,
+    MyGlobal.prisma.$queryRaw<Array<number>>`
+        SELECT COUNT(*)::int
+        FROM hrms_employees e
+        INNER JOIN hrms_timelogs t ON e.id = t.employee_id
+        WHERE
+          e.deleted_at IS NULL
+          AND e.status = 'active'
+          AND t.deleted_at IS NULL
+          AND t.date >= ${startDate}
+          AND t.date <= ${endDate}
+          ${props.body.employeeId ? `AND t.employee_id = ${props.body.employeeId}` : ""}
+          ${props.body.projectId ? `AND t.project_id = ${props.body.projectId}` : ""}
+      `,
+  ]);
+  const totalRecords = total[0] ?? 0;
   return {
     pagination: {
       current: page,
-      limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      limit: limit,
+      records: totalRecords,
+      pages: Math.ceil(totalRecords / limit),
     } satisfies IPage.IPagination,
-    data: paginatedData,
+    data: employees.map((e) => ({
+      id: e.employee_id as string & tags.Format<"uuid">,
+      display_name: e.display_name,
+      position: e.position ?? "",
+      department_id: e.department_id,
+      total_hours: e.total_hours,
+      billable_hours: e.billable_hours,
+      project_count: e.project_count,
+      task_count: e.task_count,
+    })),
   };
 }

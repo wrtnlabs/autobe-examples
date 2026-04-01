@@ -19,6 +19,9 @@ export namespace HrmPlatformMemberSessionAtSummaryTransformer {
         ip: true,
         href: true,
         referrer: true,
+        access_token_hash: true,
+        refresh_token_hash: true,
+        device_info: true,
         created_at: true,
         expired_at: true,
         member: HrmPlatformMemberAtSummaryTransformer.select(),
@@ -33,6 +36,7 @@ export namespace HrmPlatformMemberSessionAtSummaryTransformer {
       ip: input.ip,
       href: input.href,
       referrer: input.referrer,
+      device_info: input.device_info,
       created_at: input.created_at.toISOString(),
       expired_at: input.expired_at.toISOString(),
       member: await HrmPlatformMemberAtSummaryTransformer.transform(

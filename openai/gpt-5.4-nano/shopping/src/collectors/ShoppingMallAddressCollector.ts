@@ -13,7 +13,6 @@ export namespace ShoppingMallAddressCollector {
     shoppingMallMembers: IEntity;
   }) {
     const id: string = v4();
-    const now = new Date();
     return {
       id,
       recipient_name: props.body.recipient_name,
@@ -24,11 +23,13 @@ export namespace ShoppingMallAddressCollector {
       street_line1: props.body.street_line1,
       street_line2: props.body.street_line2 ?? null,
       is_default: props.body.is_default ?? false,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      customer: { connect: { id: props.shoppingMallMembers.id } },
-      // addressSnapshots is a reverse relation; do not set it here.
+      customer: {
+        connect: { id: props.shoppingMallMembers.id },
+      },
+      addressSnapshots: undefined,
     } satisfies Prisma.shopping_mall_addressesCreateInput;
   }
 }

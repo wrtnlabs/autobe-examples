@@ -7,44 +7,42 @@ import { IHrmPlatformRolePermission } from "../../../../../api/structures/IHrmPl
 import { MemberAuth } from "../../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { deleteHrmPlatformMemberRolesRoleIdPermissionsPermissionId } from "../../../../../providers/deleteHrmPlatformMemberRolesRoleIdPermissionsPermissionId";
+import { getHrmPlatformMemberRolesRoleIdPermissionsPermissionId } from "../../../../../providers/getHrmPlatformMemberRolesRoleIdPermissionsPermissionId";
 import { patchHrmPlatformMemberRolesRoleIdPermissions } from "../../../../../providers/patchHrmPlatformMemberRolesRoleIdPermissions";
 import { postHrmPlatformMemberRolesRoleIdPermissions } from "../../../../../providers/postHrmPlatformMemberRolesRoleIdPermissions";
 
 @Controller("/hrmPlatform/member/roles/:roleId/permissions")
 export class HrmplatformMemberRolesPermissionsController {
   /**
-   * Add a new permission to a custom role's permission set.
+   * Add a permission to a custom role's permission set by creating a new entry in the role-permissions junction table.
    *
-   * This operation creates a single permission assignment record linking a permission code to a custom role. Each permission grants specific access rights to employees assigned to that role. Available permissions include organization management, employee management and viewing, project management and viewing, time tracking management and approval, and report viewing capabilities.
+   * This operation grants a specific permission to a role by inserting a new record into the hrm_platform_role_permissions table. The permission code must be one of the nine available permissions: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, or report:view. Each permission assignment is uniquely identified by the combination of role ID and permission code.
    *
-   * The role must be a custom role created by the organization; built-in system roles (Owner, Manager, Employee) cannot have their permissions modified. The permission code must be one of the valid permission types defined in the system. Duplicate permission assignments for the same role are prevented by a unique constraint.
+   * Built-in roles (Owner, Manager, Employee) cannot have their permissions modified - attempting to add permissions to a built-in role will be rejected with a 403 Forbidden error. Only custom roles created by organization owners can have permissions added or removed. The operation enforces uniqueness at the database level: adding a permission that already exists for the role will result in a 409 Conflict error.
    *
-   * Permission changes take effect immediately for all employees currently assigned to the role. This operation requires organization owner access or the org:manage permission. The system records this action in the activity log for audit purposes.
-   *
-   * Related operations include GET /roles/{roleId} to retrieve role details, DELETE /roles/{roleId}/permissions/{permissionId} to remove a permission, and PATCH /roles to list all roles in the organization.
+   * Users must have organization management permissions (org:manage) to modify role permissions. The created permission assignment is immediately effective and applies to all employees currently assigned to the role.
    *
    * @param connection
-   * @param roleId Target role's unique identifier (UUID format). Must reference a custom role within the user's organization.
-   * @param body Permission code to assign to the role. Must be one of the valid permission types.
+   * @param roleId UUID of the role to add permission to (scoped to organization)
+   * @param body Permission code to assign to the role
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new permission assignment for a custom role.
+   * @x-autobe-specification Create a new permission assignment for a role in the hrm_platform_role_permissions table.
    *
    * Implementation steps:
-   * 1. Validate the roleId exists and belongs to the requesting user's organization
-   * 2. Check that the role is not a built-in role (built_in = false required)
-   * 3. Validate the permission code is from the allowed list: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view
-   * 4. Check for existing permission assignment with same role_id and permission (unique constraint)
-   * 5. Verify the user has org:manage permission or is the organization owner
-   * 6. Create the permission record with current timestamp
-   * 7. Log the action in hrm_platform_activity_logs
-   * 8. Return the created permission assignment
+   * 1. Validate the roleId exists in hrm_platform_roles table
+   * 2. Check if the role is built-in (is_builtin = true) - reject with 403 if true, as built-in role permissions are fixed
+   * 3. Validate the permission code is from the valid set: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view
+   * 4. Check unique constraint [hrm_platform_role_id, permission] - reject with 409 if duplicate exists
+   * 5. Insert new record into hrm_platform_role_permissions with generated UUID, role_id, permission, and timestamps
+   * 6. Return the created permission assignment
    *
-   * Business rules:
-   * - Built-in roles (Owner, Manager, Employee) cannot have permissions modified
-   * - Each permission can only be assigned once per role (unique constraint)
-   * - Permission changes take effect immediately for all employees assigned to the role
-   * - Only organization owners or users with org:manage permission can modify role permissions
+   * Edge cases:
+   * - Role not found: 404 error
+   * - Built-in role: 403 forbidden (cannot modify built-in role permissions)
+   * - Invalid permission code: 400 bad request
+   * - Duplicate permission: 409 conflict (unique constraint violation)
+   * - User lacks org:manage permission: 403 forbidden (only organization owners can manage role permissions)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -69,40 +67,20 @@ export class HrmplatformMemberRolesPermissionsController {
   }
 
   /**
-   * Update the permission set for a custom role within an organization.
+   * Update the permission set assigned to a specific role within an organization.
    *
-   * This operation allows organization owners to modify the permissions granted to a custom role by replacing the entire permission set with a new array of permission codes. The available permissions include: org:manage (edit organization settings), employee:manage (add/edit/deactivate employees), employee:view (view employee list), project:manage (create/edit/delete projects), project:view (view projects), time:manage (edit any timelog), time:approve (approve/reject timesheets), time:view_all (view all timelogs), and report:view (access organization reports).
+   * This operation allows organization owners to modify the permissions granted to a custom role by providing a complete list of permission codes. The system replaces the existing permission set with the new set provided in the request.
    *
-   * This endpoint only works for custom roles where built_in is false. Attempting to update permissions on built-in roles (Owner, Manager, Employee) will be rejected. The role must belong to the organization of the requesting user. Changes to a role's permissions take effect immediately for all employees currently assigned to that role.
+   * Built-in roles (Owner, Manager, Employee) cannot be modified through this endpoint. Attempting to update permissions for a built-in role results in an error. Only custom roles created by organization owners can be modified.
    *
-   * The operation performs a complete replacement of the permission set. Any permissions not included in the request array are removed, and any new permissions in the array are added. The system validates that all provided permission codes are valid values from the allowed set. If the role has employees assigned to it, the permission changes apply to those employees immediately without requiring reassignment.
-   *
-   * Access to this endpoint requires the user to be an organization owner with the org:manage permission. The operation returns the updated role object including its metadata but not the individual permission records. To retrieve the full permission set after update, use the GET /roles/{roleId} endpoint.
+   * The permission codes must be from the available permission set: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view. Invalid permission codes result in validation errors.
    *
    * @param connection
-   * @param roleId Target role's ID (UUID format)
-   * @param body New permission set for the role
+   * @param roleId Role UUID identifier (custom roles only, scoped to organization)
+   * @param body Complete list of permission codes to assign to the role
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate the roleId exists and is a valid UUID format.
-   * 2. Query hrm_platform_roles table to find the role by id.
-   * 3. Verify the role belongs to the authenticated user's organization (organization_id matches session context).
-   * 4. Check that built_in is false - reject if attempting to update built-in role permissions.
-   * 5. Validate the request body contains a valid array of permission codes from the allowed set: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view.
-   * 6. Begin database transaction.
-   * 7. Delete all existing permission records from hrm_platform_role_permissions where role_id matches the target role.
-   * 8. Insert new permission records for each permission code in the request array, creating one hrm_platform_role_permissions record per permission.
-   * 9. Commit the transaction.
-   * 10. Return the updated hrm_platform_roles record.
-   * 11. Log the action to hrm_platform_activity_logs with action type 'role.permissions.updated'.
-   *
-   * Edge cases:
-   * - Empty permission array: Valid, results in role with no permissions (though not recommended)
-   * - Duplicate permissions in request: Deduplicate before inserting
-   * - Invalid permission code: Return 400 Bad Request with list of valid codes
-   * - Role not found: Return 404 Not Found
-   * - Built-in role: Return 403 Forbidden
-   * - User lacks org:manage permission: Return 403 Forbidden
+   * @x-autobe-specification Query hrm_platform_roles table to verify role exists and is not built-in (is_builtin=false). Validate role belongs to the authenticated user's organization context. Validate all provided permission codes are from the available permission set. Delete existing hrm_platform_role_permissions entries for this role. Create new hrm_platform_role_permissions entries for each permission code in the request. Return updated permission list. Enforce organization context isolation. Reject if role is built-in or user lacks org:manage permission.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -112,8 +90,8 @@ export class HrmplatformMemberRolesPermissionsController {
     @TypedParam("roleId")
     roleId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IHrmPlatformRole.IUpdatePermission,
-  ): Promise<IHrmPlatformRole> {
+    body: IHrmPlatformRole.IPermissionsUpdate,
+  ): Promise<IHrmPlatformRolePermission> {
     try {
       return await patchHrmPlatformMemberRolesRoleIdPermissions({
         member,
@@ -127,38 +105,86 @@ export class HrmplatformMemberRolesPermissionsController {
   }
 
   /**
-   * Remove a specific permission assignment from a custom role within an organization.
+   * Retrieve a specific permission assignment for a role.
    *
-   * This operation deletes a single permission from a role's permission set by targeting the specific permission assignment record. The permission is identified by its unique ID in the hrm_platform_role_permissions table. This allows organization owners to fine-tune custom role permissions by removing individual access rights without deleting the entire role.
+   * This operation returns the details of a single permission granted to a role, including the permission code (e.g., org:manage, employee:manage, project:view) and metadata such as creation and update timestamps.
    *
-   * Built-in roles (Owner, Manager, Employee) are protected and cannot have their permissions modified. Attempting to remove permissions from built-in roles will be rejected. This operation only works for custom roles created by organization owners.
-   *
-   * The role must exist within the authenticated user's organization context. Permission assignments are soft-deleted, marking the deleted_at timestamp while preserving the record for audit purposes. Changes to role permissions take effect immediately for all employees assigned to that role.
-   *
-   * This operation requires appropriate authorization - typically members with organization management capabilities or role editing permissions. After removing permissions, employees assigned to the role will immediately lose access to the removed permission's associated features.
+   * The endpoint validates that the permission assignment belongs to the specified role and that the role exists within the current organization context. Returns 404 if the role or permission assignment is not found, or if the permission does not belong to the specified role.
    *
    * @param connection
-   * @param roleId Target role's ID (UUID format)
-   * @param permissionId Target permission assignment's ID (UUID format)
+   * @param roleId Role UUID (scoped to organization)
+   * @param permissionId Permission assignment UUID from hrm_platform_role_permissions
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Query hrm_platform_role_permissions table by ID with role ownership validation.
+   *
+   * 1. Validate roleId exists in hrm_platform_roles table and belongs to the current organization context
+   * 2. Validate permissionId exists in hrm_platform_role_permissions table
+   * 3. Verify the permission assignment belongs to the specified role (hrm_platform_role_id matches roleId)
+   * 4. Return the full permission assignment record including permission code, created_at, updated_at
+   * 5. Return 404 if role not found, permission assignment not found, or permission does not belong to the specified role
+   * 6. Enforce organization context - role must belong to the authenticated user's current organization
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":permissionId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("roleId")
+    roleId: string & tags.Format<"uuid">,
+    @TypedParam("permissionId")
+    permissionId: string & tags.Format<"uuid">,
+  ): Promise<IHrmPlatformRolePermission> {
+    try {
+      return await getHrmPlatformMemberRolesRoleIdPermissionsPermissionId({
+        member,
+        roleId,
+        permissionId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a specific permission from a custom role.
+   *
+   * This operation removes a single permission assignment from a role, effectively revoking that capability from all employees assigned to the role. The permission is identified by its code (e.g., org:manage, employee:view, project:manage).
+   *
+   * Built-in roles (Owner, Manager, Employee) cannot have permissions removed. Attempting to remove a permission from a built-in role will result in an error. Only custom roles created by organization owners can have their permissions modified.
+   *
+   * The permission removal takes effect immediately for all employees currently assigned to the role. Active sessions will reflect the updated permissions on their next request.
+   *
+   * @param connection
+   * @param roleId Role UUID (scoped to organization)
+   * @param permissionId Permission code to remove (e.g., org:manage, employee:view)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
    * @x-autobe-specification Delete a permission assignment from hrm_platform_role_permissions table.
    *
-   * 1. Validate roleId exists in hrm_platform_roles table
-   * 2. Verify the role is not built-in (built_in = false)
-   * 3. Verify the role belongs to the authenticated user's organization
-   * 4. Validate permissionId exists in hrm_platform_role_permissions table
-   * 5. Verify the permission belongs to the specified role
-   * 6. Check authorization: user must have role management capability
-   * 7. Perform soft delete by setting deleted_at timestamp
-   * 8. Return success response
+   * 1. Load the role by roleId and verify:
+   *    - Role exists
+   *    - Role is not built-in (is_builtin = false)
+   *    - Requester has org:manage permission for the role's organization
    *
-   * Edge cases:
-   * - Reject if role is built-in (Owner, Manager, Employee)
-   * - Reject if role doesn't belong to user's organization
-   * - Reject if permissionId doesn't belong to specified role
-   * - Reject if user lacks authorization
-   * - Handle concurrent deletion gracefully
+   * 2. Verify the permission assignment exists:
+   *    - Query hrm_platform_role_permissions where hrm_platform_role_id = roleId AND permission = permissionId AND deleted_at IS NULL
+   *    - If not found, return 404
+   *
+   * 3. Soft-delete the permission assignment:
+   *    - Set deleted_at = current timestamp
+   *    - Do NOT physically delete the row
+   *
+   * 4. Validation rules:
+   *    - permissionId must be one of the 9 valid permission codes: org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, report:view
+   *    - If permissionId is not a valid code, return 400
+   *    - If role is built-in, return 403 (forbidden)
+   *
+   * 5. Edge cases:
+   *    - Removing the last permission from a custom role is allowed (role becomes effectively useless but still exists)
+   *    - Concurrent permission removals are safe due to row-level locking
+   *    - Permission removal does not affect employees' existing role assignments
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":permissionId")
@@ -168,7 +194,7 @@ export class HrmplatformMemberRolesPermissionsController {
     @TypedParam("roleId")
     roleId: string & tags.Format<"uuid">,
     @TypedParam("permissionId")
-    permissionId: string & tags.Format<"uuid">,
+    permissionId: string,
   ): Promise<void> {
     try {
       return await deleteHrmPlatformMemberRolesRoleIdPermissionsPermissionId({

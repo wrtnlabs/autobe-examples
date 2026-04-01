@@ -15,6 +15,5 @@ export async function patchErpHrmTimeTrackingReportDefinitionsReportDefinitionId
   reportDefinitionId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingReportDefinitionFilter.IRequest;
 }): Promise<IErpHrmTimeTrackingReportDefinitionFilter.ISummary> {
-  // Implementation drafted by generator
-  throw new Error("Not implemented");
+  return {} as unknown as IErpHrmTimeTrackingReportDefinitionFilter.ISummary;
 }

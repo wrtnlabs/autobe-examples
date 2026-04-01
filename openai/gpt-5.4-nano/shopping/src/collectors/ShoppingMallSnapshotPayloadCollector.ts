@@ -10,7 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallSnapshotPayloadCollector {
   export async function collect(props: {
     body: IShoppingMallSnapshotPayload.ICreate;
-    snapshot: IEntity;
+    snapshotMallSnapshots: IEntity;
   }) {
     return {
       id: v4(),
@@ -18,7 +18,7 @@ export namespace ShoppingMallSnapshotPayloadCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      snapshot: { connect: { id: props.snapshot.id } },
+      snapshot: { connect: { id: props.snapshotMallSnapshots.id } },
     } satisfies Prisma.shopping_mall_snapshot_payloadsCreateInput;
   }
 }

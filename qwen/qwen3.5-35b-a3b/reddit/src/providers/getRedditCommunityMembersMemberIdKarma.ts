@@ -15,40 +15,21 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditCommunityMembersMemberIdKarma(props: {
   memberId: string & tags.Format<"uuid">;
 }): Promise<IRedditCommunityUserKarma> {
-  const karmaRecord =
-    await MyGlobal.prisma.reddit_community_user_karmas.findFirst({
-      where: {
-        reddit_community_member_id: props.memberId,
-      },
-      include: {
-        member: true,
-      },
-    });
-  if (karmaRecord) {
-    return await RedditCommunityUserKarmaTransformer.transform(karmaRecord);
-  }
-  const now = new Date();
-  const defaultKarma: Prisma.reddit_community_user_karmasCreateInput = {
-    id: v4(),
-    member: { connect: { id: props.memberId } },
-    current_score: 0,
-    created_at: toISOStringSafe(now),
-    updated_at: toISOStringSafe(now),
-  };
-  await MyGlobal.prisma.reddit_community_user_karmas.create({
-    data: defaultKarma,
+  let karma = await MyGlobal.prisma.reddit_community_user_karmas.findUnique({
+    where: { reddit_community_member_id: props.memberId },
+    ...RedditCommunityUserKarmaTransformer.select(),
   });
-  const createdRecord =
-    await MyGlobal.prisma.reddit_community_user_karmas.findFirst({
-      where: {
+  if (!karma) {
+    karma = await MyGlobal.prisma.reddit_community_user_karmas.create({
+      data: {
+        id: v4(),
         reddit_community_member_id: props.memberId,
+        current_score: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
       },
-      include: {
-        member: true,
-      },
+      ...RedditCommunityUserKarmaTransformer.select(),
     });
-  if (!createdRecord) {
-    throw new HttpException("Failed to create karma record", 500);
   }
-  return await RedditCommunityUserKarmaTransformer.transform(createdRecord);
+  return await RedditCommunityUserKarmaTransformer.transform(karma);
 }

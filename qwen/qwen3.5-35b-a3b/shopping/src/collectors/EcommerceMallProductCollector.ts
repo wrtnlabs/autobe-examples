@@ -11,16 +11,11 @@ export namespace EcommerceMallProductCollector {
   export async function collect(props: {
     body: IEcommerceMallProduct.ICreate;
     ecommerceMallSellers: IEntity;
-    ecommerceMallSellerSessions: IEntity;
   }) {
     const id: string = v4();
-    // Auto-generate slug from name if not provided
-    const slug =
-      props.body.slug ??
-      props.body.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+    const now: Date = new Date();
+    const slug: string =
+      props.body.slug ?? generateSlugFromName(props.body.name);
     return {
       id,
       name: props.body.name,
@@ -28,11 +23,26 @@ export namespace EcommerceMallProductCollector {
       base_price: props.body.base_price,
       slug,
       status: "active",
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
       seller: { connect: { id: props.ecommerceMallSellers.id } },
       category: { connect: { id: props.body.category_id } },
+      variants: undefined,
+      images: undefined,
+      productSnapshots: undefined,
+      variantSnapshots: undefined,
+      reviews: undefined,
+      wishlistItems: undefined,
+      entitySnapshots: undefined,
     } satisfies Prisma.ecommerce_mall_productsCreateInput;
+  }
+  function generateSlugFromName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[\s]+/g, "-")
+      .replace(/[^[\w\-]/g, "")
+      .replace(/\-+/g, "-")
+      .replace(/^\-+|\-+$/g, "");
   }
 }

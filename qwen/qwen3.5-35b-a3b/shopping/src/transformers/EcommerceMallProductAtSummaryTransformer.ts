@@ -3,8 +3,10 @@ import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCategoryAtSummaryTransformer } from "./EcommerceMallCategoryAtSummaryTransformer";
 
@@ -26,13 +28,13 @@ export namespace EcommerceMallProductAtSummaryTransformer {
         deleted_at: true,
         seller: true,
         category: EcommerceMallCategoryAtSummaryTransformer.select(),
-        variants: true,
-        images: true,
-        productSnapshots: true,
-        variantSnapshots: true,
-        reviews: true,
-        wishlistItems: true,
-        entitySnapshots: true,
+        variants: {},
+        images: {},
+        productSnapshots: {},
+        variantSnapshots: {},
+        reviews: {},
+        wishlistItems: {},
+        entitySnapshots: {},
       },
     } satisfies Prisma.ecommerce_mall_productsFindManyArgs;
   }
@@ -48,7 +50,7 @@ export namespace EcommerceMallProductAtSummaryTransformer {
       category: await EcommerceMallCategoryAtSummaryTransformer.transform(
         input.category,
       ),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

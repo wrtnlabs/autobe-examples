@@ -23,7 +23,11 @@ export async function getRedditCommunityMemberVotesVoteId(props: {
   voteId: string & tags.Format<"uuid">;
 }): Promise<IRedditCommunityVote> {
   const vote = await MyGlobal.prisma.reddit_community_votes.findUniqueOrThrow({
-    where: { id: props.voteId },
+    where: {
+      id: props.voteId,
+      member_id: props.member.id,
+      deleted_at: null,
+    },
     ...RedditCommunityVoteTransformer.select(),
   });
   return await RedditCommunityVoteTransformer.transform(vote);

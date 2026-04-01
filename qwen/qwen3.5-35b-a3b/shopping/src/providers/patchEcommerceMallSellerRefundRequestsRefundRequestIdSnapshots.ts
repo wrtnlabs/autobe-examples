@@ -20,71 +20,68 @@ export async function patchEcommerceMallSellerRefundRequestsRefundRequestIdSnaps
   body: IEcommerceMallRefundRequestSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallRefundRequestSnapshot.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 50, 100);
-  const whereInput: Prisma.ecommerce_mall_refund_request_snapshotsWhereInput = {
-    refund_request_id: props.refundRequestId,
-    ...(props.body.action_type && { action_type: props.body.action_type }),
-    ...(props.body.created_at_before && {
-      created_at: { lte: new Date(props.body.created_at_before) },
-    }),
-    ...(props.body.created_at_after && {
-      created_at: { gte: new Date(props.body.created_at_after) },
-    }),
-    ...(props.body.status_before && {
-      status_before: props.body.status_before,
-    }),
-    ...(props.body.status_after && { status_after: props.body.status_after }),
-    deleted_at: null,
-  } satisfies Prisma.ecommerce_mall_refund_request_snapshotsWhereInput;
-  const orderByInput = (
-    props.body.sort_by === "action_type"
-      ? {
-          action_type:
-            props.body.sort_order === "ASC" ? "asc" : ("desc" as const),
-        }
-      : props.body.sort_by === "actor_type"
+  const limit = props.body.limit ?? 50;
+  const whereCondition: Prisma.ecommerce_mall_refund_request_snapshotsWhereInput =
+    {
+      refund_request_id: props.refundRequestId,
+      deleted_at: null,
+    };
+  if (props.body.action_type !== undefined) {
+    whereCondition.action_type = props.body.action_type;
+  }
+  if (props.body.created_at_before !== undefined) {
+    whereCondition.created_at = { lte: new Date(props.body.created_at_before) };
+  }
+  if (props.body.created_at_after !== undefined) {
+    const existingFilter = whereCondition.created_at;
+    whereCondition.created_at =
+      existingFilter &&
+      typeof existingFilter === "object" &&
+      "lte" in existingFilter
         ? {
-            actor_type:
-              props.body.sort_order === "ASC" ? "asc" : ("desc" as const),
+            lte: existingFilter.lte,
+            gte: new Date(props.body.created_at_after),
           }
-        : {
-            created_at:
-              props.body.sort_order === "ASC" ? "asc" : ("desc" as const),
-          }
-  ) satisfies Prisma.ecommerce_mall_refund_request_snapshotsOrderByWithRelationInput;
+        : { gte: new Date(props.body.created_at_after) };
+  }
+  if (props.body.status_before !== undefined) {
+    whereCondition.status_before = props.body.status_before;
+  }
+  if (props.body.status_after !== undefined) {
+    whereCondition.status_after = props.body.status_after;
+  }
+  const orderByCondition =
+    props.body.sort_order === "ASC"
+      ? props.body.sort_by === "action_type"
+        ? { actor_type: "asc" as const }
+        : props.body.sort_by === "actor_type"
+          ? { actor_type: "asc" as const }
+          : { created_at: "asc" as const }
+      : props.body.sort_by === "action_type"
+        ? { actor_type: "desc" as const }
+        : props.body.sort_by === "actor_type"
+          ? { actor_type: "desc" as const }
+          : { created_at: "desc" as const };
   const data =
     await MyGlobal.prisma.ecommerce_mall_refund_request_snapshots.findMany({
-      where: whereInput,
-      orderBy: orderByInput,
-      take: limit,
+      where: whereCondition,
+      orderBy: orderByCondition,
       skip: (page - 1) * limit,
-      select: {
-        id: true,
-        refund_request_id: true,
-        actor_type: true,
-        action_type: true,
-        status_before: true,
-        status_after: true,
-        reason_before: true,
-        reason_after: true,
-        response_before: true,
-        response_after: true,
-        metadata_before: true,
-        metadata_after: true,
-        created_at: true,
-        deleted_at: true,
-      } satisfies Prisma.ecommerce_mall_refund_request_snapshotsSelect,
+      take: limit + 1,
     });
+  const hasMore = data.length > limit;
+  const resultData = hasMore ? data.slice(0, -1) : data;
   const total =
     await MyGlobal.prisma.ecommerce_mall_refund_request_snapshots.count({
-      where: whereInput,
+      where: whereCondition,
     });
-  const transformedData = await ArrayUtil.asyncMap(data, async (record) => {
-    return {
-      id: record.id,
-      refundRequestId: record.refund_request_id,
+  const transformedData = await ArrayUtil.asyncMap(
+    resultData,
+    async (snapshot) => ({
+      id: snapshot.id,
+      refundRequestId: snapshot.refund_request_id,
       actorType: typia.assert<"customer" | "seller" | "admin" | "super_admin">(
-        record.actor_type,
+        snapshot.actor_type,
       ),
       actionType: typia.assert<
         | "approved"
@@ -92,26 +89,28 @@ export async function patchEcommerceMallSellerRefundRequestsRefundRequestIdSnaps
         | "created"
         | "status_changed"
         | "response_added"
-      >(record.action_type),
-      statusBefore: record.status_before,
-      statusAfter: record.status_after,
-      reasonBefore: record.reason_before,
-      reasonAfter: record.reason_after,
-      responseBefore: record.response_before,
-      responseAfter: record.response_after,
-      metadataBefore: record.metadata_before,
-      metadataAfter: record.metadata_after,
-      createdAt: toISOStringSafe(record.created_at),
-      deletedAt: record.deleted_at ? toISOStringSafe(record.deleted_at) : null,
-    } satisfies IEcommerceMallRefundRequestSnapshot.ISummary;
-  });
+      >(snapshot.action_type),
+      statusBefore: snapshot.status_before,
+      statusAfter: snapshot.status_after,
+      reasonBefore: snapshot.reason_before,
+      reasonAfter: snapshot.reason_after,
+      responseBefore: snapshot.response_before,
+      responseAfter: snapshot.response_after,
+      metadataBefore: snapshot.metadata_before,
+      metadataAfter: snapshot.metadata_after,
+      createdAt: toISOStringSafe(snapshot.created_at),
+      deletedAt: snapshot.deleted_at
+        ? toISOStringSafe(snapshot.deleted_at)
+        : null,
+    }),
+  );
   return {
-    data: transformedData,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: total > 0 ? Math.ceil(total / limit) : 0,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: transformedData,
   };
 }

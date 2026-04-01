@@ -8,7 +8,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { ShoppingMallMemberEmailVerificationCollector } from "../collectors/ShoppingMallMemberEmailVerificationCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { ShoppingMallMemberEmailVerificationTransformer } from "../transformers/ShoppingMallMemberEmailVerificationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -18,14 +17,33 @@ export async function postShoppingMallMemberMemberEmailVerificationsRedeem(props
   member: MemberPayload;
   body: IShoppingMallMemberEmailVerification.ICreate;
 }): Promise<IShoppingMallMemberEmailVerification> {
-  const nowRecord =
-    await MyGlobal.prisma.shopping_mall_member_email_verifications.create({
-      data: await ShoppingMallMemberEmailVerificationCollector.collect({
-        body: props.body,
-      }),
-      ...ShoppingMallMemberEmailVerificationTransformer.select(),
-    });
-  return await ShoppingMallMemberEmailVerificationTransformer.transform(
-    nowRecord,
-  );
+  const token = props.body.token;
+  const now = new Date();
+  const result = await MyGlobal.prisma.$transaction(async (tx) => {
+    const updated =
+      await tx.shopping_mall_member_email_verifications.updateMany({
+        where: {
+          token,
+          deleted_at: null,
+          used_at: null,
+          expires_at: { gte: now },
+        },
+        data: {
+          used_at: now,
+          updated_at: now,
+        },
+      });
+    if (updated.count !== 1) {
+      throw new HttpException("Invalid or expired verification token", 400);
+    }
+    const record =
+      await tx.shopping_mall_member_email_verifications.findUniqueOrThrow({
+        where: { token },
+        ...ShoppingMallMemberEmailVerificationTransformer.select(),
+      });
+    return await ShoppingMallMemberEmailVerificationTransformer.transform(
+      record,
+    );
+  });
+  return result;
 }

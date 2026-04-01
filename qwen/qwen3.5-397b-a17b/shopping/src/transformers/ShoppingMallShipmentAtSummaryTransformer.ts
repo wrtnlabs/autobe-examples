@@ -1,12 +1,14 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallOrderAtSummaryTransformer } from "./ShoppingMallOrderAtSummaryTransformer";
+import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallShipmentAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_shipmentsGetPayload<
@@ -19,11 +21,9 @@ export namespace ShoppingMallShipmentAtSummaryTransformer {
         tracking_carrier: true,
         tracking_number: true,
         shipped_at: true,
-        delivered_at: true,
-        delivery_confirmed_at: true,
-        auto_delivered_at: true,
+        confirmed_at: true,
         created_at: true,
-        order: ShoppingMallOrderAtSummaryTransformer.select(),
+        seller: ShoppingMallSellerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_shipmentsFindManyArgs;
   }
@@ -32,14 +32,14 @@ export namespace ShoppingMallShipmentAtSummaryTransformer {
   ): Promise<IShoppingMallShipment.ISummary> {
     return {
       id: input.id,
-      tracking_carrier: input.tracking_carrier,
-      tracking_number: input.tracking_number,
-      shipped_at: input.shipped_at?.toISOString() ?? null,
-      delivered_at: input.delivered_at?.toISOString() ?? null,
-      delivery_confirmed_at: input.delivery_confirmed_at?.toISOString() ?? null,
-      auto_delivered_at: input.auto_delivered_at?.toISOString() ?? null,
-      created_at: input.created_at.toISOString(),
-      order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
+      trackingCarrier: input.tracking_carrier,
+      trackingNumber: input.tracking_number,
+      shippedAt: input.shipped_at.toISOString(),
+      confirmedAt: input.confirmed_at?.toISOString() ?? null,
+      seller: await ShoppingMallSellerAtSummaryTransformer.transform(
+        input.seller,
+      ),
+      createdAt: input.created_at.toISOString(),
     };
   }
 }

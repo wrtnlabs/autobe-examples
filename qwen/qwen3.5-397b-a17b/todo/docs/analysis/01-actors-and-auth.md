@@ -1,4 +1,4 @@
-**todoApp — Actor definitions, permission matrix, authentication, session, account lifecycle**
+**multiUserTodo — Actor definitions, permission matrix, authentication, session, account lifecycle**
 
 Actor definitions, permission matrix, authentication, session, account lifecycle
 
@@ -8,51 +8,39 @@ Define all user actor types with their identity, permissions, and access boundar
 
 ## guest Actor
 
-A guest is an unauthenticated visitor who has not yet created an account or logged into the application. Guests can access the public landing page and navigate to the registration or login screens. They cannot view any todo lists or individual todo items. Guests cannot create, edit, or delete todos. They cannot access the trash feature or view edit histories. To gain access to todo functionality, a guest must register for an account by providing an email and password. After successful registration, the guest becomes a member with full access to their own todos. Guests have no visibility into other users' data or profiles. The system maintains complete privacy by restricting all todo operations to authenticated members only. Guests exist in a read-only state limited to authentication-related pages.
+A guest is an unauthenticated visitor who has not yet created an account or logged in. Guests can access the registration page to sign up with email and password. Guests can access the login page to authenticate with existing credentials. Guests cannot view any todo lists or todo details. Guests cannot access user profiles or any private data. Guests have no permissions to create, edit, or delete todos. All todo content and user profiles remain completely inaccessible to guests. The guest role represents the most restricted access level in the system. Guests must authenticate to become members before accessing any application features. This separation ensures that private todo data is never exposed to unauthenticated users.
 
-### Guest Identity and Access Scope
+### Guest Identity and Access Boundaries
 
-A guest is an unauthenticated visitor who has not created an account or logged into the application. Guests can access the public landing page and navigate to authentication-related pages only. All other pages and features are restricted to authenticated members. Guests exist in a read-only state with no ability to interact with todo data or application features beyond viewing the landing page and accessing registration or login screens. The system enforces complete privacy by preventing guests from accessing any user data or todo functionality.
+A guest is an unauthenticated visitor who has not created an account or logged in. Guests represent the most restricted access level in the system. Guests cannot view any todo lists or todo details. Guests cannot access user profiles or any private data. All todo content and user profiles remain completely inaccessible to guests. Private data is never exposed to unauthenticated users. Guests must authenticate to become members before accessing any application features. This separation ensures that private todo data is protected from unauthorized access.
 
-### Guest Authentication Path
+### Guest Authentication Access
 
-Guests can access the registration screen to create a new account by providing an email and password. Guests can access the login screen to authenticate with existing credentials. Account registration is required to gain access to any todo functionality. Upon successful registration with email and password, the guest transitions to member status with full access to their own todos. Until registration or login is completed, the user remains in guest status with no access to personal data or todo features.
+Guests can access the registration page to sign up with email and password. Guests can access the login page to authenticate with existing credentials. Guests must authenticate to access any application features beyond registration and login. After successful authentication, guests become members and gain access to their own todos and profile. Authentication is the only path for guests to transition from restricted to full access.
 
-### Guest Permission Boundaries
+### Guest Permission Restrictions
 
-Guests have no permissions to view any todo lists or individual todo items. Guests cannot create, edit, or delete todos. Guests cannot access the trash feature to view or manage deleted todos. Guests cannot view edit histories for any todos. Guests have zero visibility into any user data, including their own data before authentication. The system enforces complete privacy by restricting all todo operations, data viewing, and feature access to authenticated members only. No guest can access, view, or interact with any todo-related content or user profiles.
+Guests have no permissions to create, edit, or delete todos. Guests cannot view todo lists in any form. Guests cannot access user profiles, including their own profile before authentication. Guests cannot filter, sort, or search todos. Guests cannot access the trash or view deleted todos. Guests cannot perform any operations that require user identity. All todo-related actions require member authentication. All profile-related actions require member authentication.
 
 ## member Actor
 
-A member is an authenticated user who has registered with an email and password and logged into the application. Members have full access to create, view, edit, and delete their own todos. They can mark todos as complete or incomplete with a simple toggle. Members can organize their todos using filters by completion status and sort by creation date, start date, or due date. They can view the complete edit history of any todo they own. Members can move todos to trash and either restore them or permanently delete them. Each member has a profile with a display name that they can edit at any time. Members can change their password through the account settings. The system enforces strict privacy rules where members cannot view, access, or share another user's todos. Members cannot view other users' profiles or any information about other accounts. All todo data is completely isolated per member with no cross-user visibility. When a member deletes their account, all their todos including those in trash are permanently removed.
+A member is an authenticated user who has successfully logged in with email and password. Members have full access to their own todo lists and can manage all their personal todos. Members can view and edit their own profile including display name. Members can manage their account settings including password changes and account deletion. Members cannot view other users' profiles as this is a private todo application. Members cannot access or view any todos belonging to other users. Each member's data is completely isolated from all other members. The member role represents the standard authenticated user with full personal workspace access. Members maintain exclusive ownership of all todos they create. This privacy model ensures that no member can ever access another member's data.
 
 ### Member Identity
 
-A member is an authenticated user who has registered with an email and password and successfully logged into the application. Members are identified by their email address used during registration. Once authenticated, members have access to all todo management features and account settings. Members remain authenticated until they explicitly log out or their session expires.
+A member is an authenticated user who has successfully logged in with email and password. The member role represents the standard authenticated user with full personal workspace access. Members are distinguished from guests by their authenticated status and ability to access personal todo data. Upon successful authentication, a user transitions from guest status to member status. Members maintain their identity throughout their session until logout or session expiration.
 
-### Todo Creation and Management
+### Member Permissions and Todo Access
 
-Members can create todos with a required title and an optional description that may be left empty. Members can optionally set a start date and due date when creating a todo, or leave both fields empty. Newly created todos are marked as incomplete by default. Members can edit their todo's title, description, start date, and due date at any time. Members can mark a todo as complete or mark it as incomplete using a simple toggle between the two states. Members can delete their own todos, which moves them to the trash rather than permanently removing them.
+Members have full access to their own todo lists and can manage all their personal todos. Members can create, view, edit, complete, and delete their own todos. Members maintain exclusive ownership of all todos they create. Each member has private workspace access to their personal todo collection. Members can filter their todo list by completion status (all, complete only, or incomplete only). Members can sort their todo list by creation date, start date, or due date in newest_first or oldest_first order. Members can view their todo list with pagination. Members can view individual todo details including full description. Members can mark todos as complete or incomplete. Members can edit todo title, description, start date, and due date. Members can view the edit history of their todos. Members can delete todos which moves them to trash. Members can view their trash list with pagination. Members can restore todos from trash. Members can hard delete todos from trash.
 
-### Todo Organization
+### Profile Management
 
-Members can filter their todo list by completion status: all todos, only complete todos, or only incomplete todos. Members can sort their todo list by creation date in either newest first or oldest first order. Members can sort their todo list by start date in either earliest first or latest first order, with todos that have no start date appearing at the end of the list. Members can sort their todo list by due date in either earliest first or latest first order, with todos that have no due date appearing at the end of the list.
-
-### Edit History
-
-Members can view the full edit history of any todo they own. Each time a todo is edited, a history entry is automatically created. Each history entry records when the edit was made and what changes were applied to the title, description, start date, or due date if any of these fields were modified. History entries are displayed sorted from most recent to oldest. Members can see what the title was changed to, what the description was changed to, what the start date was changed to, and what the due date was changed to for each edit in the history.
-
-### Trash Management
-
-Members can view a list of their deleted todos in the trash, which is paginated. Members can restore a deleted todo from the trash, which returns it to the normal todo list. Members can permanently delete a todo from the trash, which removes it and its edit history forever. When a todo is deleted by a member, it is soft deleted and no longer appears in the normal todo list but remains accessible in the trash until permanently deleted or until the member's account is deleted.
-
-### Profile and Account Management
-
-Each member has a profile with a display name that can be edited at any time. Members can change their password through the account settings. Members can delete their account, which permanently deletes all their todos including those in the trash along with all associated edit history. Account deletion is irreversible and removes all data owned by the member from the system.
+Members can view their own profile which displays their display name. Members can edit their display name at any time. The display name is part of the member's profile and can be updated through the account settings. Profile changes are saved immediately upon submission. Members must be authenticated to access their profile settings.
 
 ### Privacy and Data Isolation
 
-Each member's todos are completely private and isolated from all other users. Members can only see their own todos and cannot view, access, or share another user's todos in any way. Members cannot view other users' profiles or any information about other accounts. The system enforces strict data isolation where no cross-user todo access is possible. All todo data is scoped exclusively to the owning member with no exceptions for viewing or interaction.
+Members cannot view other users' profiles as this is a private todo application. Members cannot access or view any todos belonging to other users. Each member's data is completely isolated from all other members. This privacy model ensures that no member can ever access another member's data. There is no way to view, access, or share another user's todos. All todo operations are restricted to the member's own data only. When a member requests any todo or profile data, the system ensures the data belongs to that member before granting access. If a member attempts to access another member's data, the request is rejected.
 
 # Authentication Flows
 
@@ -64,31 +52,77 @@ Define user registration and login flows including validation and error handling
 
 ### User Registration
 
-Users can create an account by providing an email address and a password. The email address must be unique across all accounts. Upon successful registration, the user becomes authenticated and can access the todo application features. If the email address is already in use, the registration is rejected. If the email format is invalid, the registration is rejected. If the password does not meet requirements, the registration is rejected.
+Users can create an account by providing an email address and a password.
+
+The email address must be unique across all user accounts.
+If the email address is already registered, the registration request is rejected.
+
+The password must be provided during registration.
+If the password is missing or empty, the registration request is rejected.
+
+Upon successful registration, the user account is created and the user is authenticated.
+A newly registered user has a profile with a display name that can be edited later.
+
+Each user can only have one account per email address.
+If the registration fails for any reason, no account is created.
 
 ### User Login
 
-Users can log in to their account by providing their registered email address and password. Upon successful login, the user gains authenticated access to their private todo list. If the email address is not registered, the login is rejected. If the password is incorrect, the login is rejected. After successful login, the user can perform all member operations including creating, viewing, editing, and deleting their own todos.
+Users can log in to their account by providing their registered email address and password.
+
+The system verifies the email address and password combination.
+If the email address is not registered, the login request is rejected.
+If the password does not match the registered password, the login request is rejected.
+
+Upon successful login, the user is authenticated and gains access to their todos and profile.
+A logged-in user can perform all actions available to members.
+
+If the login fails, the user remains unauthenticated and retains guest access only.
+Users must be logged in to view or manage their todos.
 
 ### Authentication
 
-Authentication is required to access todo features. Only authenticated users can create, view, edit, and delete todos. Unauthenticated visitors cannot access any todo functionality. Unauthenticated visitors can only navigate to the registration and login screens. Each user's todos are completely private and accessible only to that authenticated user. There is no way for any user to view, access, or share another user's todos.
+Authentication is the process of verifying a user's identity using their email and password.
+
+WHEN a user provides credentials, THE system SHALL verify the email and password match a registered account.
+WHEN authentication succeeds, THE system SHALL grant the user member access.
+WHEN authentication fails, THE system SHALL deny access and maintain guest status.
+
+Only authenticated users can access their own todos and profile.
+Unauthenticated users (guests) cannot view any todo lists or user profiles.
+
+Authentication is required before any todo operations can be performed.
+Each user's authentication is tied to their unique email address.
 
 ## Session and Logout
 
 Define session behavior and logout from a user perspective.
 
-### Session
+### Session Management
 
-After successful login, users maintain an authenticated session that allows access to their todos and account features. The session persists until the user explicitly logs out or deletes their account. All todo operations and profile changes require an active authenticated session.
+When a user successfully logs in with their email and password, a session is created.
+The session allows the user to access their todos and profile without re-entering credentials.
+The session remains active until the user explicitly logs out or deletes their account.
+Each user's session is private and cannot be accessed by other users.
+If the login credentials are invalid, no session is created.
+If the session is no longer valid, the user is treated as a guest and cannot access their todos.
 
 ### Logout
 
-Users can log out to end their authenticated session. After logging out, users become guests and can no longer access their todos or account features. Users must log in again to regain access to their private todo list and profile settings.
+Users can log out from their account at any time.
+When a user logs out, their session is terminated.
+After logout, the user becomes a guest and loses access to their todos and profile.
+After logout, the user can access the registration page and login page.
+If the user attempts to view their todo list after logout, the request is rejected.
+If the user attempts to view their profile after logout, the request is rejected.
 
 ### Account Security
 
-Users can change their password to maintain account security. When changing password, the user must provide their current password and a new password. After a successful password change, the user remains logged in with the updated credentials. This ensures users can update their security credentials without interrupting their session.
+When a user changes their password, the change takes effect immediately.
+When a user performs a hard delete on their account, all active sessions for that account are terminated.
+When a user performs a hard delete on their account, the user can no longer log in with the deleted credentials.
+Each user's session data is private and cannot be viewed by other users.
+If a user attempts to access another user's session, the request is rejected.
 
 # Account Lifecycle
 
@@ -100,36 +134,27 @@ Define how users create accounts, delete accounts, and change passwords.
 
 ### Account Creation
 
-Users can create an account by providing an email address and a password.
-The email address must be unique across all user accounts.
-The password is required and must be provided during account creation.
-Upon successful account creation, the user becomes a member of the application.
-The account is created with a profile that includes a display name.
-The display name can be set or edited after account creation.
-If the email address is already registered, the account creation request is rejected.
-If the email address is missing, the account creation request is rejected.
-If the password is missing, the account creation request is rejected.
+Users can create an account by providing an email and a password.
+The email must be unique across all accounts in the system.
+Upon successful account creation, the user becomes a member with full access to their own todos.
+If the email is already in use by another account, the request is rejected.
+If the email format is invalid, the request is rejected.
+If the password does not meet security requirements, the request is rejected.
 
 ### Account Deletion
 
-Users can delete their own account at any time.
-When a user deletes their account, all of their todos are permanently deleted.
-This includes todos in the normal list and todos in the trash.
-The edit history of all todos is also permanently deleted when the account is deleted.
+Users can delete their own account.
+When an account is deleted, all todos owned by the user are hard deleted, including those in the trash.
+When an account is deleted, all edit history entries associated with the user's todos are hard deleted.
 Account deletion is irreversible and cannot be undone.
-Once an account is deleted, the user can no longer log in with that account.
-The email address from a deleted account becomes available for new account registration.
-If the user has no todos, the account can still be deleted.
-If the user has todos in any state (complete, incomplete, or in trash), they are all deleted along with the account.
+If the user does not own the account, the request is rejected.
+If the user has no account, the request is rejected.
 
 ### Password Change
 
-Users can change their password after creating their account.
-The user must provide their current password to change it.
-The user must provide a new password to replace the current one.
-The new password becomes effective immediately after the change is successful.
-After changing the password, the user can log in with the new password.
-The old password can no longer be used to log in after the change.
-If the current password provided is incorrect, the password change request is rejected.
-If the new password is missing, the password change request is rejected.
-If the user is not logged in, they cannot change their password.
+Users can change their password.
+The user must be authenticated to change their password.
+After a successful password change, the user's new password is used for all future authentication attempts.
+If the user is not authenticated, the request is rejected.
+If the current password provided does not match the stored password, the request is rejected.
+If the new password does not meet security requirements, the request is rejected.

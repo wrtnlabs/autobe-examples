@@ -21,74 +21,48 @@ export async function patchEcommerceMallCustomerReviewsHelpful(props: {
   customer: CustomerPayload;
   body: IEcommerceMallReviewHelpfulnessVote.IRequest;
 }): Promise<IEcommerceMallReviewHelpfulnessVote> {
-  const { review_id, helpfulness } = props.body;
-  // Verify review exists and get its order_id and product_id
+  // Verify review exists and get its order_id and product_id for purchase validation
   const review = await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow(
     {
-      where: { id: review_id },
-      select: {
-        id: true,
-        order_id: true,
-        product_id: true,
-      },
+      where: { id: props.body.review_id },
+      select: { id: true, order_id: true, product_id: true },
     },
   );
-  // Verify customer has purchased this specific product
-  const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
-    where: { id: review.order_id },
-    select: { id: true, customer_id: true },
-  });
-  if (order.customer_id !== props.customer.id) {
-    throw new HttpException(
-      "Forbidden: You haven't purchased this product",
-      403,
-    );
-  }
-  // Verify the customer actually purchased this product in this order
-  const orderItem = await MyGlobal.prisma.ecommerce_mall_order_items.findFirst({
+  // Verify customer has purchased this product through the order
+  const purchase = await MyGlobal.prisma.ecommerce_mall_order_items.findFirst({
     where: {
       ecommerce_mall_order_id: review.order_id,
       product_snapshot_id: review.product_id,
     },
     select: { id: true },
   });
-  if (!orderItem) {
-    throw new HttpException(
-      "Forbidden: You haven't purchased this product in this order",
-      403,
-    );
+  if (purchase === null) {
+    throw new HttpException("Customer has not purchased this product", 403);
   }
   // Upsert the helpfulness vote
-  const upserted =
+  const vote =
     await MyGlobal.prisma.ecommerce_mall_review_helpfulness_votes.upsert({
       where: {
         ecommerce_mall_customer_id_ecommerce_mall_review_id: {
           ecommerce_mall_customer_id: props.customer.id,
-          ecommerce_mall_review_id: review_id,
+          ecommerce_mall_review_id: props.body.review_id,
         },
       },
       create: {
-        id: v4(),
+        id: v4() as string & tags.Format<"uuid">,
         ecommerce_mall_customer_id: props.customer.id,
-        ecommerce_mall_review_id: review_id,
-        helpfulness,
+        ecommerce_mall_review_id: props.body.review_id,
+        helpfulness: props.body.helpfulness,
         created_at: new Date(),
         updated_at: new Date(),
         deleted_at: null,
       },
       update: {
-        helpfulness,
+        helpfulness: props.body.helpfulness,
         updated_at: new Date(),
         deleted_at: null,
       },
+      ...EcommerceMallReviewHelpfulnessVoteTransformer.select(),
     });
-  // Fetch the vote with full relations using the transformer's select
-  const vote =
-    await MyGlobal.prisma.ecommerce_mall_review_helpfulness_votes.findUniqueOrThrow(
-      {
-        where: { id: upserted.id },
-        ...EcommerceMallReviewHelpfulnessVoteTransformer.select(),
-      },
-    );
   return await EcommerceMallReviewHelpfulnessVoteTransformer.transform(vote);
 }

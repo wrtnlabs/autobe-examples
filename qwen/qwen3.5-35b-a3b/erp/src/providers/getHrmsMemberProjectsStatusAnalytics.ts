@@ -15,19 +15,18 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getHrmsMemberProjectsStatusAnalytics(props: {
   member: MemberPayload;
 }): Promise<IHrmsTask> {
-  // Get member's organization
-  const memberOrg = await MyGlobal.prisma.hrms_organization_members.findFirst({
-    where: {
-      hrms_member_id: props.member.id,
-      deleted_at: null,
-    },
-    select: { hrms_organization_id: true },
-  });
-  if (memberOrg === null) {
-    throw new HttpException("Organization not found", 404);
+  const organizationMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        hrms_member_id: props.member.id,
+        deleted_at: null,
+      },
+      select: { hrms_organization_id: true },
+    });
+  if (!organizationMember) {
+    throw new HttpException("No organization found for member", 404);
   }
-  const organizationId = memberOrg.hrms_organization_id;
-  // Get all non-deleted projects for the organization
+  const organizationId = organizationMember.hrms_organization_id;
   const projects = await MyGlobal.prisma.hrms_projects.findMany({
     where: {
       hrms_organization_id: organizationId,
@@ -37,56 +36,32 @@ export async function getHrmsMemberProjectsStatusAnalytics(props: {
       id: true,
       name: true,
       budget_hours: true,
+      _count: {
+        select: {
+          tasks: true,
+        },
+      },
     },
   });
-  // Get task counts per project
-  const projectIds = projects.map((p) => p.id);
-  const taskCounts =
-    projectIds.length > 0
-      ? await MyGlobal.prisma.hrms_tasks.groupBy({
-          by: ["hrms_project_id"],
-          where: {
-            hrms_project_id: { in: projectIds },
-            deleted_at: null,
-          },
-          _count: { id: true },
-        })
-      : [];
-  // Build analytics array sorted by task_count descending
-  const analytics: IHrmsTask.ISummary[] = projects
-    .map((project) => {
-      const taskCount =
-        taskCounts.find((tc) => tc.hrms_project_id === project.id)?._count.id ??
-        0;
-      return {
-        project_id: project.id as string & tags.Format<"uuid">,
-        project_name: project.name,
-        task_count: taskCount as number & tags.Type<"int32">,
-      } satisfies IHrmsTask.ISummary;
-    })
-    .sort((a, b) => b.task_count - a.task_count);
-  // Calculate total budget hours (excluding NULL)
-  const totalBudgetHours = projects.reduce((sum, project) => {
-    return sum + (project.budget_hours ?? 0);
-  }, 0);
-  // Get total logged hours from timelogs for organization projects
-  const loggedHoursResult =
-    projectIds.length > 0
-      ? await MyGlobal.prisma.hrms_timelogs.aggregate({
-          where: {
-            project_id: { in: projectIds },
-            deleted_at: null,
-          },
-          _sum: { duration_minutes: true },
-        })
-      : { _sum: { duration_minutes: 0 } };
-  const totalLoggedHours = loggedHoursResult._sum.duration_minutes
-    ? loggedHoursResult._sum.duration_minutes / 60
-    : null;
+  const analytics = await ArrayUtil.asyncMap(projects, async (project) => {
+    const taskCount = project._count.tasks;
+    const budgetHours = project.budget_hours ?? 0;
+    return {
+      project_id: project.id,
+      project_name: project.name,
+      task_count: taskCount,
+    } satisfies IHrmsTask.ISummary;
+  });
+  const totalProjects = projects.length;
+  const totalBudgetHours = projects.reduce(
+    (sum: number, project) => (project.budget_hours ?? 0) + sum,
+    0,
+  );
+  const totalLoggedHours = 0;
   return {
-    analytics: analytics,
-    total_projects: projects.length as number & tags.Type<"int32">,
-    total_budget_hours: totalBudgetHours === 0 ? null : totalBudgetHours,
-    total_logged_hours: totalLoggedHours,
+    analytics,
+    total_projects: totalProjects,
+    total_budget_hours: totalBudgetHours > 0 ? totalBudgetHours : null,
+    total_logged_hours: totalLoggedHours > 0 ? totalLoggedHours : null,
   } satisfies IHrmsTask;
 }

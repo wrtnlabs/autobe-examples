@@ -11,81 +11,63 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeCommentAtSummaryTransformer } from "../transformers/RedditLikeCommentAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditLikeMemberPostsPostIdCommentsSorted(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   postId: string & tags.Format<"uuid">;
   body: IRedditLikeComment.IRequest;
 }): Promise<IPageIRedditLikeComment.ISummary> {
-  const page = props.body.page;
-  const limit = props.body.limit;
-  const skip = (page - 1) * limit;
+  // Verify post exists
+  await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
+    where: { id: props.postId },
+    select: { id: true },
+  });
+  const { sort, page, limit, search, authorId, parentId, includeDeleted } =
+    props.body;
   // Build where clause
-  const whereInput = {
+  const whereInput: Prisma.reddit_like_commentsWhereInput = {
     post_id: props.postId,
-    ...(props.body.includeDeleted ? {} : { is_deleted: false }),
-    ...(props.body.authorId ? { author_id: props.body.authorId } : {}),
-    ...(props.body.parentId !== undefined
-      ? { parent_id: props.body.parentId }
-      : {}),
-    ...(props.body.search
-      ? {
-          content: {
-            contains: props.body.search,
-            mode: "insensitive" as const,
-          },
-        }
-      : {}),
+    ...(authorId !== null && { author_id: authorId }),
+    ...(parentId !== null ? { parent_id: parentId } : { parent_id: null }),
+    ...(search !== null && {
+      content: { contains: search, mode: "insensitive" },
+    }),
+    ...(includeDeleted !== true && { is_deleted: false }),
   } satisfies Prisma.reddit_like_commentsWhereInput;
-  // Determine orderBy based on sort strategy
-  let orderBy:
-    | Prisma.reddit_like_commentsOrderByWithRelationInput
-    | Prisma.reddit_like_commentsOrderByWithRelationInput[];
-  switch (props.body.sort) {
-    case "BEST":
-      orderBy = { vote_score: "desc" };
-      break;
-    case "NEW":
-      orderBy = { created_at: "desc" };
-      break;
-    case "CONTROVERSIAL":
-      orderBy = { vote_score: "asc" };
-      break;
-    case "TOP":
-      orderBy = { vote_score: "desc" };
-      break;
-    case "OLD":
-      orderBy = { created_at: "asc" };
-      break;
-    case "QA":
-      orderBy = [{ parent_id: "asc" }, { created_at: "asc" }];
-      break;
-    default:
-      orderBy = { created_at: "desc" };
-  }
-  // Query comments with pagination
+  // Build order by based on sort type
+  const orderByInput: Prisma.reddit_like_commentsOrderByWithRelationInput =
+    sort === "BEST"
+      ? { vote_score: "desc" }
+      : sort === "NEW"
+        ? { created_at: "desc" }
+        : sort === "TOP"
+          ? { vote_score: "desc" }
+          : sort === "CONTROVERSIAL"
+            ? { vote_score: "asc" }
+            : sort === "OLD"
+              ? { created_at: "asc" }
+              : { created_at: "desc" };
+  const skip = (page - 1) * limit;
   const comments = await MyGlobal.prisma.reddit_like_comments.findMany({
     where: whereInput,
+    orderBy: orderByInput,
     skip,
     take: limit,
-    orderBy,
     ...RedditLikeCommentAtSummaryTransformer.select(),
   });
-  // Get total count for pagination
   const total = await MyGlobal.prisma.reddit_like_comments.count({
     where: whereInput,
   });
-  // Transform to DTOs
-  const data = await ArrayUtil.asyncMap(
+  const transformed = await ArrayUtil.asyncMap(
     comments,
     RedditLikeCommentAtSummaryTransformer.transform,
   );
   return {
-    data,
+    data: transformed,
     pagination: {
       current: page,
       limit: limit,

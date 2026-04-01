@@ -16,61 +16,64 @@ export async function patchEcommerceMallAdminCancellationRequestsStatistics(prop
   admin: AdminPayload;
   body: IEcommerceMallCancellationRequestStatistic.IRequest;
 }): Promise<IEcommerceMallCancellationRequestStatistic> {
-  const startDate = props.body.start_date
-    ? new Date(props.body.start_date + "T00:00:00.000Z")
-    : undefined;
-  const endDate = props.body.end_date
-    ? new Date(props.body.end_date + "T23:59:59.999Z")
-    : undefined;
-  const whereClause: Prisma.ecommerce_mall_cancellation_requestsWhereInput = {
-    deleted_at: null,
-    ...(startDate && { created_at: { gte: startDate } }),
-    ...(endDate && { created_at: { lte: endDate } }),
-  };
-  const totalCount =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
-      where: whereClause,
-    });
-  const [pendingCount, approvedCount, rejectedCount] = await Promise.all([
-    MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
-      where: { ...whereClause, status: "pending" },
-    }),
-    MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
-      where: { ...whereClause, status: "approved" },
-    }),
-    MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
-      where: { ...whereClause, status: "rejected" },
-    }),
-  ]);
-  const processedCount = approvedCount + rejectedCount;
-  const approvalRate =
-    processedCount > 0 ? approvedCount / processedCount : null;
-  const processedRequests =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findMany({
-      where: {
-        ...whereClause,
-        status: { in: ["approved", "rejected"] },
-      },
-      select: { created_at: true, updated_at: true },
-    });
-  const averageProcessingTime =
-    processedCount > 0
-      ? processedRequests.reduce(
-          (sum, req) =>
-            sum +
-            (req.updated_at.getTime() - req.created_at.getTime()) / 3600000,
-          0,
-        ) / processedCount
-      : null;
+  const start_date = props.body.start_date;
+  const end_date = props.body.end_date;
+  const group_by = props.body.group_by ?? "status";
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const whereClauses: string[] = ["deleted_at IS NULL"];
+  const whereValues: unknown[] = [];
+  if (start_date !== undefined && start_date !== null) {
+    whereClauses.push("created_at >= ${start_date}");
+    whereValues.push(start_date + "T00:00:00Z");
+  }
+  if (end_date !== undefined && end_date !== null) {
+    whereClauses.push("created_at <= ${end_date}");
+    whereValues.push(end_date + "T23:59:59Z");
+  }
+  const whereClause = whereClauses.join(" AND ");
+  const params = Prisma.sql`
+    WHERE ${Prisma.raw(whereClause)}
+  `;
+  const stats = await MyGlobal.prisma.$queryRaw<
+    Array<{
+      total_count: number;
+      pending_count: number;
+      approved_count: number;
+      rejected_count: number;
+      approval_rate: number | null;
+      average_processing_time: number | null;
+    }>
+  >(Prisma.sql`
+    SELECT
+      COUNT(*)::int AS total_count,
+      SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END)::int AS pending_count,
+      SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END)::int AS approved_count,
+      SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END)::int AS rejected_count,
+      CASE
+        WHEN (SUM(CASE WHEN status IN ('approved', 'rejected') THEN 1 ELSE 0 END)) = 0 THEN NULL
+        ELSE (SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END)::float / NULLIF(SUM(CASE WHEN status IN ('approved', 'rejected') THEN 1 ELSE 0 END), 0))
+      END AS approval_rate,
+      AVG(
+        CASE
+          WHEN status IN ('approved', 'rejected') THEN EXTRACT(EPOCH FROM (updated_at - created_at)) / 3600
+          ELSE NULL
+        END
+      ) AS average_processing_time
+    FROM ecommerce_mall_cancellation_requests
+    ${params}
+  `);
+  const row = stats[0];
   return {
-    total_count: totalCount,
+    total_count: row.total_count,
     by_status: {
-      pending_count: pendingCount,
-      approved_count: approvedCount,
-      rejected_count: rejectedCount,
-    },
-    approval_rate: approvalRate,
-    average_processing_time: averageProcessingTime,
+      pending_count: row.pending_count,
+      approved_count: row.approved_count,
+      rejected_count: row.rejected_count,
+    } satisfies IEcommerceMallCancellationRequestStatistic.IByStatus,
+    approval_rate: row.approval_rate,
+    average_processing_time: row.average_processing_time,
     processing_time_unit: "hours",
-  };
+  } satisfies IEcommerceMallCancellationRequestStatistic;
 }

@@ -23,45 +23,37 @@ export async function patchRedditLikeCommunities(props: {
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   const sort = props.body.sort ?? "name";
-  const search = props.body.search;
-  // Build where clause for filtering
-  const whereInput: Prisma.reddit_like_communitiesWhereInput = {
+  const whereInput = {
     deleted_at: null,
-    ...(search && {
+    ...(props.body.search && {
       name: {
-        contains: search,
+        contains: props.body.search,
         mode: "insensitive" as const,
       },
     }),
-  };
-  // Fetch paginated communities
-  const communities = await MyGlobal.prisma.reddit_like_communities.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy:
-      sort === "subscriber_count"
-        ? {
-            subscriptions: {
-              _count: "desc",
-            },
-          }
-        : {
-            name: "asc",
-          },
-    ...RedditLikeCommunityAtSummaryTransformer.select(),
-  });
-  // Get total count for pagination
-  const total = await MyGlobal.prisma.reddit_like_communities.count({
-    where: whereInput,
-  });
-  // Transform results
-  const data = await ArrayUtil.asyncMap(
-    communities,
-    RedditLikeCommunityAtSummaryTransformer.transform,
-  );
+  } satisfies Prisma.reddit_like_communitiesWhereInput;
+  const orderByInput = (
+    sort === "subscriber_count"
+      ? { subscriptions: { _count: "desc" as const } }
+      : { name: "asc" as const }
+  ) satisfies Prisma.reddit_like_communitiesOrderByWithRelationInput;
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.reddit_like_communities.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: orderByInput,
+      ...RedditLikeCommunityAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.reddit_like_communities.count({
+      where: whereInput,
+    }),
+  ]);
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditLikeCommunityAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,

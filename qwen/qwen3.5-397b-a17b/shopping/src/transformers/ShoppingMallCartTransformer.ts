@@ -1,19 +1,19 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IShoppingMallCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCart";
 import { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
-import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCartItemTransformer } from "./ShoppingMallCartItemTransformer";
+import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
 
 export namespace ShoppingMallCartTransformer {
   export type Payload = Prisma.shopping_mall_cartsGetPayload<
@@ -26,6 +26,7 @@ export namespace ShoppingMallCartTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
         items: ShoppingMallCartItemTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_cartsFindManyArgs;
@@ -33,17 +34,16 @@ export namespace ShoppingMallCartTransformer {
   export async function transform(input: Payload): Promise<IShoppingMallCart> {
     return {
       id: input.id,
+      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
+        input.customer,
+      ),
       items: await ArrayUtil.asyncMap(
         input.items,
         ShoppingMallCartItemTransformer.transform,
       ),
-      totalPrice: input.items.reduce(
-        (sum, item) => sum + item.quantity * (item.variant.price ?? 0),
-        0,
-      ),
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

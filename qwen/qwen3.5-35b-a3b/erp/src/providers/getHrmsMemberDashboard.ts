@@ -28,639 +28,337 @@ export async function getHrmsMemberDashboard(props: {
       },
       include: {
         organizationRole: {
-          include: {
-            permissions: true,
-          },
-        },
-        employees: {
-          where: { deleted_at: null },
+          include: { permissions: true },
         },
       },
     });
-  const employee = organizationMember?.employees[0];
-  if (!organizationMember || !employee) {
-    throw new HttpException("Member not found", 404);
+  if (!organizationMember) {
+    throw new HttpException("Member not found in organization", 404);
   }
-  const hasReportPermission =
-    organizationMember.organizationRole.permissions.some(
-      (p: any) => p.permission === "report:view",
-    );
-  const weekStart = calculateWeekStart();
-  const weekEnd = calculateWeekEnd();
-  const today = calculateToday();
-  if (!hasReportPermission) {
-    const hoursToday = await calculateHoursToday(employee.id, today);
-    const hoursThisWeek = await calculateHoursThisWeek(
-      employee.id,
-      weekStart,
-      weekEnd,
-    );
-    const activeTimer = await findActiveTimer(employee.id);
-    const recentTimelogs = await findRecentTimelogs(employee.id, 5);
-    const pendingTimesheets = await countPendingTimesheets(
-      employee.id,
-      weekStart,
-      weekEnd,
-    );
-    const assignedTasks = await findAssignedTasks(employee.id);
-    return {
-      dashboard_type: "personal",
-      generation_timestamp: currentTimestamp(),
-      hours_today: hoursToday,
-      hours_this_week: hoursThisWeek,
-      active_timer: activeTimer,
-      recent_timelogs: recentTimelogs,
-      pending_timesheets_count: pendingTimesheets,
-      assigned_tasks: assignedTasks,
-    } satisfies IHrmsProject;
+  const hasReportView = organizationMember.organizationRole.permissions.some(
+    (p) => p.permission === "report:view",
+  );
+  const employee = await MyGlobal.prisma.hrms_employees.findFirst({
+    where: {
+      organization_member_id: organizationMember.id,
+      deleted_at: null,
+    },
+  });
+  if (!employee) {
+    throw new HttpException("Employee record not found", 404);
   }
-  const activeEmployeeCount = await countActiveEmployees(
-    organizationMember.hrms_organization_id,
-  );
-  const totalHoursThisWeek = await calculateOrganizationHoursThisWeek(
-    organizationMember.hrms_organization_id,
-    weekStart,
-    weekEnd,
-  );
-  const pendingTimesheetsCount = await countOrganizationPendingTimesheets(
-    organizationMember.hrms_organization_id,
-    weekStart,
-    weekEnd,
-  );
-  const budgetAlerts = await findBudgetAlerts(
-    organizationMember.hrms_organization_id,
-  );
-  const topEmployees = await findTopEmployees(
-    organizationMember.hrms_organization_id,
-    weekStart,
-    weekEnd,
-    5,
-  );
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const now = new Date();
+  const kstDate = new Date(now.getTime() + kstOffset);
+  const dayOfWeek = kstDate.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(kstDate);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() + mondayOffset);
+  const sunday = new Date(monday);
+  sunday.setDate(sunday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  const startOfDay = new Date(kstDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  let hoursToday: number | null | undefined;
+  let hoursThisWeek: number | null | undefined;
+  let activeTimer: IHrmsTimer | null | undefined;
+  let recentTimelogs: IHrmsTimelog.ISummary[] | undefined;
+  let pendingTimesheetsCount: number | null | undefined;
+  let assignedTasks: IHrmsTask.ISummary[] | undefined;
+  let totalActiveEmployeeCount: number | null | undefined;
+  let totalHoursThisWeek: number | null | undefined;
+  let organizationPendingTimesheetsCount: number | null | undefined;
+  let budgetAlerts: IHrmsProject.ISummary[] | undefined;
+  let topEmployees: IHrmsTopEmployee.ISummary[] | undefined;
+  if (!hasReportView) {
+    const todayTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+      where: {
+        employee_id: employee.id,
+        date: {
+          gte: startOfDay,
+          lte: new Date(startOfDay.getTime() + 86400000 - 1),
+        },
+        deleted_at: null,
+      },
+    });
+    hoursToday =
+      todayTimelogs.reduce((sum, t) => sum + t.duration_minutes, 0) / 60;
+    const weekTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+      where: {
+        employee_id: employee.id,
+        date: { gte: monday, lte: sunday },
+        deleted_at: null,
+      },
+    });
+    hoursThisWeek =
+      weekTimelogs.reduce((sum, t) => sum + t.duration_minutes, 0) / 60;
+    const timer = await MyGlobal.prisma.hrms_timers.findFirst({
+      where: { hrms_employee_id: employee.id, deleted_at: null },
+      include: {
+        employee: {
+          select: {
+            id: true,
+            display_name: true,
+            position: true,
+            department_id: true,
+            status: true,
+          },
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            color_code: true,
+            hrms_organization_id: true,
+            status: true,
+            budget_hours: true,
+            start_date: true,
+            end_date: true,
+            created_at: true,
+            updated_at: true,
+          },
+          include: { organization: { select: { name: true } } },
+        },
+        task: { select: { id: true } },
+      },
+    });
+    if (timer) {
+      activeTimer = typia.assert<IHrmsTimer>({
+        id: timer.id,
+        employee: typia.assert<IHrmsEmployee.ISummary>({
+          id: timer.employee.id,
+          display_name: timer.employee.display_name,
+          position: timer.employee.position ?? undefined,
+          department_id: timer.employee.department_id ?? "",
+          status: timer.employee.status,
+          total_hours_logged: 0,
+          timelog_count: 0,
+          timesheets_submitted: 0,
+          timesheets_approved: 0,
+          timesheets_pending: 0,
+        }),
+        project: typia.assert<IHrmsProject.ISummary>({
+          id: timer.project.id,
+          name: timer.project.name,
+          description: timer.project.description ?? "",
+          color_code: timer.project.color_code,
+          organization_id: timer.project.hrms_organization_id,
+          organization_name: timer.project.organization.name,
+          status: timer.project.status as IHrmsProject.ISummary["status"],
+          budget_hours: timer.project.budget_hours ?? 0,
+          start_date: timer.project.start_date
+            ? toISOStringSafe(timer.project.start_date)
+            : null,
+          end_date: timer.project.end_date
+            ? toISOStringSafe(timer.project.end_date)
+            : null,
+          total_tasks: 0,
+          pending_tasks: 0,
+          in_progress_tasks: 0,
+          completed_tasks: 0,
+          closed_tasks: 0,
+          planned_hours: timer.project.budget_hours ?? 0,
+          actual_hours: 0,
+          budget_utilization_percentage: null,
+          timelog_count: 0,
+          created_at: toISOStringSafe(timer.project.created_at),
+          updated_at: toISOStringSafe(timer.project.updated_at),
+        }),
+        task: null,
+        start_at: toISOStringSafe(timer.start_at),
+        description: timer.description ?? undefined,
+        created_at: toISOStringSafe(timer.created_at),
+        updated_at: toISOStringSafe(timer.updated_at),
+        deleted_at: timer.deleted_at ? toISOStringSafe(timer.deleted_at) : null,
+      });
+    }
+    const recentTimelogsResult = await MyGlobal.prisma.hrms_timelogs.findMany({
+      where: { employee_id: employee.id, deleted_at: null },
+      orderBy: { created_at: "desc" },
+      take: 5,
+    });
+    recentTimelogs = recentTimelogsResult.map((t) => ({
+      group_id: t.id,
+      group_name: "Personal",
+      total_hours: t.duration_minutes / 60,
+      billable_hours: t.billable ? t.duration_minutes / 60 : 0,
+      non_billable_hours: !t.billable ? t.duration_minutes / 60 : 0,
+    }));
+    const pendingTimesheets = await MyGlobal.prisma.hrms_timesheets.findMany({
+      where: {
+        hrms_employee_id: employee.id,
+        status: "submitted",
+        week_start_date: { gte: monday, lte: sunday },
+      },
+    });
+    pendingTimesheetsCount = pendingTimesheets.length;
+    const assignedTasksResult = await MyGlobal.prisma.hrms_tasks.findMany({
+      where: {
+        hrms_employee_id: employee.id,
+        status: { in: ["open", "in-progress"] },
+        deleted_at: null,
+      },
+      include: { project: { select: { id: true, name: true } } },
+    });
+    assignedTasks = assignedTasksResult.map((t) => ({
+      project_id: t.project.id,
+      project_name: t.project.name,
+      task_count: 0,
+    })) as IHrmsTask.ISummary[];
+  }
+  if (hasReportView) {
+    const activeEmployees = await MyGlobal.prisma.hrms_employees.findMany({
+      where: {
+        organization_member_id: organizationMember.hrms_organization_id,
+        status: "active",
+        deleted_at: null,
+      },
+    });
+    totalActiveEmployeeCount = activeEmployees.length;
+    const allTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+      where: {
+        employee: {
+          organization_member_id: organizationMember.hrms_organization_id,
+          status: "active",
+          deleted_at: null,
+        },
+        date: { gte: monday, lte: sunday },
+        deleted_at: null,
+      },
+    });
+    totalHoursThisWeek =
+      allTimelogs.reduce((sum, t) => sum + t.duration_minutes, 0) / 60;
+    const orgPendingTimesheets = await MyGlobal.prisma.hrms_timesheets.findMany(
+      {
+        where: {
+          employee: {
+            organization_member_id: organizationMember.hrms_organization_id,
+          },
+          status: "submitted",
+          week_start_date: { gte: monday, lte: sunday },
+        },
+      },
+    );
+    organizationPendingTimesheetsCount = orgPendingTimesheets.length;
+    const projects = await MyGlobal.prisma.hrms_projects.findMany({
+      where: {
+        hrms_organization_id: organizationMember.hrms_organization_id,
+        status: "active",
+        budget_hours: { not: null },
+      },
+    });
+    const alerts = await Promise.all(
+      projects.map(async (project) => {
+        const projectTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+          where: { project_id: project.id, deleted_at: null },
+        });
+        const actualHours =
+          projectTimelogs.reduce((sum, t) => sum + t.duration_minutes, 0) / 60;
+        const budgetHours = project.budget_hours ?? 0;
+        const utilization =
+          budgetHours > 0 ? (actualHours / budgetHours) * 100 : 0;
+        if (utilization > 80) {
+          const alert = {
+            id: project.id,
+            name: project.name,
+            description: project.description ?? "",
+            color_code: project.color_code,
+            organization_id: project.hrms_organization_id,
+            organization_name: organizationMember.organizationRole.name,
+            status: project.status as IHrmsProject.ISummary["status"],
+            budget_hours: project.budget_hours ?? 0,
+            start_date: project.start_date
+              ? toISOStringSafe(project.start_date)
+              : null,
+            end_date: project.end_date
+              ? toISOStringSafe(project.end_date)
+              : null,
+            planned_hours: budgetHours,
+            actual_hours: actualHours,
+            budget_utilization_percentage: utilization,
+            total_tasks: 0,
+            pending_tasks: 0,
+            in_progress_tasks: 0,
+            completed_tasks: 0,
+            closed_tasks: 0,
+            timelog_count: projectTimelogs.length,
+            created_at: toISOStringSafe(project.created_at),
+            updated_at: toISOStringSafe(project.updated_at),
+          };
+          return typia.assert<IHrmsProject.ISummary>(alert);
+        }
+        return null;
+      }),
+    );
+    budgetAlerts = alerts.filter((b): b is IHrmsProject.ISummary => b !== null);
+    const employeeHours = await MyGlobal.prisma.hrms_timelogs.groupBy({
+      by: ["employee_id"],
+      where: {
+        employee: {
+          organization_member_id: organizationMember.hrms_organization_id,
+          status: "active",
+          deleted_at: null,
+        },
+        date: { gte: monday, lte: sunday },
+        deleted_at: null,
+      },
+      _sum: { duration_minutes: true },
+      orderBy: { _sum: { duration_minutes: "desc" } },
+      take: 5,
+    });
+    topEmployees = (
+      await Promise.all(
+        employeeHours.map(async (e) => {
+          const emp = await MyGlobal.prisma.hrms_employees.findUnique({
+            where: { id: e.employee_id },
+          });
+          if (!emp) return null;
+          const empTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+            where: {
+              employee_id: e.employee_id,
+              date: { gte: monday, lte: sunday },
+              deleted_at: null,
+            },
+          });
+          const projectIds = [...new Set(empTimelogs.map((t) => t.project_id))];
+          const taskIds = [
+            ...new Set(
+              empTimelogs
+                .map((t) => t.task_id)
+                .filter((t): t is string => t !== null),
+            ),
+          ];
+          const topEmp = {
+            id: emp.id,
+            display_name: emp.display_name,
+            position: emp.position ?? "",
+            department_id: emp.department_id ?? null,
+            total_hours: e._sum.duration_minutes ?? 0,
+            billable_hours: empTimelogs
+              .filter((t) => t.billable)
+              .reduce((sum, t) => sum + t.duration_minutes, 0),
+            project_count: projectIds.length,
+            task_count: taskIds.length,
+          };
+          return typia.assert<IHrmsTopEmployee.ISummary>(topEmp);
+        }),
+      )
+    ).filter((t): t is IHrmsTopEmployee.ISummary => t !== null);
+  }
   return {
-    dashboard_type: "organization",
-    generation_timestamp: currentTimestamp(),
-    active_employee_count: activeEmployeeCount,
-    total_hours_this_week: totalHoursThisWeek,
+    dashboard_type: hasReportView ? "organization" : "personal",
+    generation_timestamp: toISOStringSafe(kstDate),
+    hours_today: hoursToday,
+    hours_this_week: hoursThisWeek,
+    active_timer: activeTimer,
+    recent_timelogs: recentTimelogs,
     pending_timesheets_count: pendingTimesheetsCount,
+    assigned_tasks: assignedTasks,
+    active_employee_count: totalActiveEmployeeCount,
+    total_hours_this_week: totalHoursThisWeek,
     budget_alerts: budgetAlerts,
     top_employees: topEmployees,
   } satisfies IHrmsProject;
-}
-function calculateWeekStart(): string & tags.Format<"date-time"> {
-  const date = new Date();
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-  date.setDate(diff);
-  date.setHours(0, 0, 0, 0);
-  return toISOStringSafe(date);
-}
-function calculateWeekEnd(): string & tags.Format<"date-time"> {
-  const date = new Date();
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? 0 : 7);
-  date.setDate(diff);
-  date.setHours(23, 59, 59, 999);
-  return toISOStringSafe(date);
-}
-function calculateToday(): string & tags.Format<"date-time"> {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  return toISOStringSafe(date);
-}
-function currentTimestamp(): string & tags.Format<"date-time"> {
-  return toISOStringSafe(new Date());
-}
-async function calculateHoursToday(
-  employeeId: string,
-  today: string & tags.Format<"date-time">,
-): Promise<number | null | undefined> {
-  const nextDay = addDays(today, 1);
-  const timelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
-    where: {
-      employee_id: employeeId,
-      date: {
-        gte: today,
-        lt: nextDay,
-      },
-      deleted_at: null,
-    },
-    select: { duration_minutes: true },
-  });
-  const totalMinutes = timelogs.reduce(
-    (
-      sum: number,
-      t: {
-        duration_minutes: number;
-      },
-    ) => sum + t.duration_minutes,
-    0,
-  );
-  if (totalMinutes > 0) {
-    const hours = Math.round((totalMinutes / 60) * 100) / 100;
-    return hours;
-  }
-  return undefined;
-}
-async function calculateHoursThisWeek(
-  employeeId: string,
-  weekStart: string & tags.Format<"date-time">,
-  weekEnd: string & tags.Format<"date-time">,
-): Promise<number | null | undefined> {
-  const timelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
-    where: {
-      employee_id: employeeId,
-      date: {
-        gte: weekStart,
-        lte: weekEnd,
-      },
-      deleted_at: null,
-    },
-    select: { duration_minutes: true },
-  });
-  const totalMinutes = timelogs.reduce(
-    (
-      sum: number,
-      t: {
-        duration_minutes: number;
-      },
-    ) => sum + t.duration_minutes,
-    0,
-  );
-  if (totalMinutes > 0) {
-    const hours = Math.round((totalMinutes / 60) * 100) / 100;
-    return hours;
-  }
-  return undefined;
-}
-function addDays(
-  dateString: string & tags.Format<"date-time">,
-  days: number,
-): string & tags.Format<"date-time"> {
-  const date = new Date(dateString);
-  date.setDate(date.getDate() + days);
-  date.setHours(0, 0, 0, 0);
-  return toISOStringSafe(date);
-}
-async function findActiveTimer(
-  employeeId: string,
-): Promise<IHrmsTimer | null | undefined> {
-  const timer = await MyGlobal.prisma.hrms_timers.findFirst({
-    where: {
-      hrms_employee_id: employeeId,
-      deleted_at: null,
-    },
-    include: {
-      employee: {
-        select: {
-          id: true,
-          display_name: true,
-          department_id: true,
-          position: true,
-          status: true,
-        },
-      },
-      project: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          color_code: true,
-          hrms_organization_id: true,
-          status: true,
-          budget_hours: true,
-          start_date: true,
-          end_date: true,
-          created_at: true,
-          updated_at: true,
-        },
-      },
-      task: {
-        select: {
-          id: true,
-          hrms_project_id: true,
-        },
-      },
-    },
-  });
-  if (!timer) {
-    return undefined;
-  }
-  return {
-    id: timer.id,
-    employee: {
-      id: timer.employee.id,
-      display_name: timer.employee.display_name,
-      department_id:
-        timer.employee.department_id ??
-        ("00000000-0000-0000-0000-000000000000" as string &
-          tags.Format<"uuid">),
-      position: timer.employee.position ?? undefined,
-      total_hours_logged: 0,
-      timelog_count: 0,
-      timesheets_submitted: 0,
-      timesheets_approved: 0,
-      timesheets_pending: 0,
-      status: timer.employee.status,
-    } satisfies IHrmsEmployee.ISummary,
-    project: {
-      id: timer.project.id,
-      name: timer.project.name,
-      description: timer.project.description ?? "",
-      color_code: timer.project.color_code,
-      organization_id: timer.project.hrms_organization_id,
-      organization_name: "",
-      status: "active" as "active" | "archived" | "completed",
-      budget_hours: timer.project.budget_hours,
-      start_date:
-        timer.project.start_date != null
-          ? toISOStringSafe(timer.project.start_date)
-          : null,
-      end_date:
-        timer.project.end_date != null
-          ? toISOStringSafe(timer.project.end_date)
-          : null,
-      planned_hours: timer.project.budget_hours ?? 0,
-      actual_hours: 0,
-      budget_utilization_percentage: null,
-      total_tasks: 0,
-      pending_tasks: 0,
-      in_progress_tasks: 0,
-      completed_tasks: 0,
-      closed_tasks: 0,
-      timelog_count: 0,
-      created_at: toISOStringSafe(timer.project.created_at),
-      updated_at: toISOStringSafe(timer.project.updated_at),
-    } satisfies IHrmsProject.ISummary,
-    task: timer.task
-      ? ({
-          project_id: timer.task.hrms_project_id,
-          project_name: "",
-          task_count: 0,
-        } satisfies IHrmsTask.ISummary)
-      : undefined,
-    start_at: toISOStringSafe(timer.start_at),
-    description: timer.description ?? undefined,
-    created_at: toISOStringSafe(timer.created_at),
-    updated_at: toISOStringSafe(timer.updated_at),
-    deleted_at:
-      timer.deleted_at != null ? toISOStringSafe(timer.deleted_at) : null,
-  };
-}
-async function findRecentTimelogs(
-  employeeId: string,
-  limit: number,
-): Promise<IHrmsTimelog.ISummary[] | undefined> {
-  const timelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
-    where: {
-      employee_id: employeeId,
-      deleted_at: null,
-    },
-    orderBy: { created_at: "desc" },
-    take: limit,
-    include: {
-      project: {
-        select: {
-          id: true,
-          name: true,
-          hrms_organization_id: true,
-        },
-      },
-      task: {
-        select: {
-          id: true,
-          title: true,
-        },
-      },
-    },
-  });
-  return timelogs.map((t) => ({
-    id: t.id,
-    project_id: t.project_id,
-    project_name: t.project.name,
-    task_id: t.task_id ?? undefined,
-    task_title: t.task?.title ?? undefined,
-    duration_minutes: t.duration_minutes,
-    billable: t.billable,
-    description: t.description ?? undefined,
-    date: toISOStringSafe(t.date),
-    created_at: toISOStringSafe(t.created_at),
-    group_id: null as any as string & tags.Format<"uuid">,
-    group_name: "",
-    total_hours: 0,
-    billable_hours: 0,
-    non_billable_hours: 0,
-  }));
-}
-async function countPendingTimesheets(
-  employeeId: string,
-  weekStart: string & tags.Format<"date-time">,
-  weekEnd: string & tags.Format<"date-time">,
-): Promise<(number & tags.Type<"int32">) | null | undefined> {
-  const count = await MyGlobal.prisma.hrms_timesheets.count({
-    where: {
-      hrms_employee_id: employeeId,
-      week_start_date: {
-        gte: weekStart,
-        lte: weekEnd,
-      },
-      status: "submitted",
-      deleted_at: null,
-    },
-  });
-  if (count > 0) {
-    return count as number & tags.Type<"int32">;
-  }
-  return undefined;
-}
-async function findAssignedTasks(
-  employeeId: string,
-): Promise<IHrmsTask.ISummary[] | undefined> {
-  const tasks = await MyGlobal.prisma.hrms_tasks.findMany({
-    where: {
-      hrms_employee_id: employeeId,
-      status: { in: ["open", "in-progress"] },
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      status: true,
-      priority: true,
-      estimated_hours: true,
-      due_date: true,
-      billable: true,
-      hrms_project_id: true,
-      project: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
-  return tasks.map((t) => ({
-    id: t.id,
-    title: t.title,
-    description: t.description ?? undefined,
-    status: "open" as "open" | "in-progress" | "completed" | "closed",
-    priority: "medium" as "low" | "medium" | "high" | "urgent",
-    estimated_hours: t.estimated_hours,
-    due_date: t.due_date != null ? toISOStringSafe(t.due_date) : null,
-    billable: t.billable ?? undefined,
-    project_id: t.hrms_project_id,
-    project_name: t.project?.name ?? "",
-    task_count: 0,
-  }));
-}
-async function countActiveEmployees(
-  organizationId: string,
-): Promise<(number & tags.Type<"int32">) | null | undefined> {
-  const count = await MyGlobal.prisma.hrms_employees.count({
-    where: {
-      organization_member_id: organizationId,
-      status: "active",
-      deleted_at: null,
-    },
-  });
-  if (count > 0) {
-    return count as number & tags.Type<"int32">;
-  }
-  return undefined;
-}
-async function calculateOrganizationHoursThisWeek(
-  organizationId: string,
-  weekStart: string & tags.Format<"date-time">,
-  weekEnd: string & tags.Format<"date-time">,
-): Promise<number | null | undefined> {
-  const employees = await MyGlobal.prisma.hrms_employees.findMany({
-    where: {
-      organization_member_id: organizationId,
-      status: "active",
-      deleted_at: null,
-    },
-    select: { id: true },
-  });
-  const employeeIds = employees.map((e) => e.id);
-  const timelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
-    where: {
-      employee_id: { in: employeeIds },
-      date: {
-        gte: weekStart,
-        lte: weekEnd,
-      },
-      deleted_at: null,
-    },
-    select: { duration_minutes: true },
-  });
-  const totalMinutes = timelogs.reduce(
-    (
-      sum: number,
-      t: {
-        duration_minutes: number;
-      },
-    ) => sum + t.duration_minutes,
-    0,
-  );
-  if (totalMinutes > 0) {
-    const hours = Math.round((totalMinutes / 60) * 100) / 100;
-    return hours;
-  }
-  return undefined;
-}
-async function countOrganizationPendingTimesheets(
-  organizationId: string,
-  weekStart: string & tags.Format<"date-time">,
-  weekEnd: string & tags.Format<"date-time">,
-): Promise<(number & tags.Type<"int32">) | null | undefined> {
-  const employees = await MyGlobal.prisma.hrms_employees.findMany({
-    where: {
-      organization_member_id: organizationId,
-      status: "active",
-      deleted_at: null,
-    },
-    select: { id: true },
-  });
-  const employeeIds = employees.map((e) => e.id);
-  const count = await MyGlobal.prisma.hrms_timesheets.count({
-    where: {
-      hrms_employee_id: { in: employeeIds },
-      week_start_date: {
-        gte: weekStart,
-        lte: weekEnd,
-      },
-      status: "submitted",
-      deleted_at: null,
-    },
-  });
-  if (count > 0) {
-    return count as number & tags.Type<"int32">;
-  }
-  return undefined;
-}
-async function findBudgetAlerts(
-  organizationId: string,
-): Promise<IHrmsProject.ISummary[] | undefined> {
-  const projects = await MyGlobal.prisma.hrms_projects.findMany({
-    where: {
-      hrms_organization_id: organizationId,
-      status: "active",
-      budget_hours: { gt: 0 },
-      deleted_at: null,
-    },
-    include: {
-      timelogs: {
-        where: { deleted_at: null },
-        select: { duration_minutes: true },
-      },
-    },
-  });
-  const alerts: Array<{
-    project: (typeof projects)[0];
-    actual_hours: number;
-    utilization: number;
-  }> = [];
-  for (const project of projects) {
-    const totalMinutes = project.timelogs.reduce(
-      (
-        sum: number,
-        t: {
-          duration_minutes: number;
-        },
-      ) => sum + t.duration_minutes,
-      0,
-    );
-    const actualHours = Math.round((totalMinutes / 60) * 100) / 100;
-    const utilization = (actualHours / (project.budget_hours ?? 1)) * 100;
-    if (utilization > 80) {
-      alerts.push({
-        project,
-        actual_hours: actualHours,
-        utilization: utilization,
-      });
-    }
-  }
-  if (alerts.length === 0) {
-    return undefined;
-  }
-  return alerts.map((a) => ({
-    id: a.project.id,
-    name: a.project.name,
-    description: a.project.description ?? "",
-    color_code: a.project.color_code,
-    organization_id: a.project.hrms_organization_id,
-    organization_name: "",
-    status: "active" as "active" | "archived" | "completed",
-    budget_hours: a.project.budget_hours,
-    start_date:
-      a.project.start_date != null
-        ? toISOStringSafe(a.project.start_date)
-        : null,
-    end_date:
-      a.project.end_date != null ? toISOStringSafe(a.project.end_date) : null,
-    planned_hours: a.project.budget_hours ?? 0,
-    actual_hours: a.actual_hours,
-    budget_utilization_percentage: a.utilization,
-    total_tasks: 0,
-    pending_tasks: 0,
-    in_progress_tasks: 0,
-    completed_tasks: 0,
-    closed_tasks: 0,
-    timelog_count: 0,
-    created_at: toISOStringSafe(a.project.created_at),
-    updated_at: toISOStringSafe(a.project.updated_at),
-  }));
-}
-async function findTopEmployees(
-  organizationId: string,
-  weekStart: string & tags.Format<"date-time">,
-  weekEnd: string & tags.Format<"date-time">,
-  limit: number,
-): Promise<IHrmsTopEmployee.ISummary[] | undefined> {
-  const employees = await MyGlobal.prisma.hrms_employees.findMany({
-    where: {
-      organization_member_id: organizationId,
-      status: "active",
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      display_name: true,
-      position: true,
-      department_id: true,
-    },
-  });
-  const employeeIds = employees.map((e) => e.id);
-  const timelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
-    where: {
-      employee_id: { in: employeeIds },
-      date: {
-        gte: weekStart,
-        lte: weekEnd,
-      },
-      deleted_at: null,
-    },
-    select: {
-      employee_id: true,
-      duration_minutes: true,
-      project_id: true,
-      task_id: true,
-      billable: true,
-    },
-  });
-  const employeeData = new Map<
-    string,
-    {
-      total: number;
-      billable: number;
-      projects: Set<string>;
-      tasks: Set<string>;
-    }
-  >();
-  for (const timelog of timelogs) {
-    const current = employeeData.get(timelog.employee_id) ?? {
-      total: 0,
-      billable: 0,
-      projects: new Set(),
-      tasks: new Set(),
-    };
-    current.total += timelog.duration_minutes;
-    if (timelog.billable) {
-      current.billable += timelog.duration_minutes;
-    }
-    if (timelog.project_id) current.projects.add(timelog.project_id);
-    if (timelog.task_id) current.tasks.add(timelog.task_id);
-    employeeData.set(timelog.employee_id, current);
-  }
-  const rankings = employees
-    .map((employee) => {
-      const data = employeeData.get(employee.id) ?? {
-        total: 0,
-        billable: 0,
-        projects: new Set(),
-        tasks: new Set(),
-      };
-      return {
-        employee,
-        total_hours: data.total,
-        billable_hours: data.billable,
-        project_count: data.projects.size,
-        task_count: data.tasks.size,
-      };
-    })
-    .filter((r) => r.total_hours > 0)
-    .sort((a, b) => b.total_hours - a.total_hours)
-    .slice(0, limit);
-  if (rankings.length === 0) {
-    return undefined;
-  }
-  return rankings.map((r) => ({
-    id: r.employee.id,
-    display_name: r.employee.display_name,
-    position: r.employee.position ?? "",
-    department_id: r.employee.department_id ?? null,
-    total_hours: r.total_hours,
-    billable_hours: r.billable_hours,
-    project_count: r.project_count,
-    task_count: r.task_count,
-  }));
 }

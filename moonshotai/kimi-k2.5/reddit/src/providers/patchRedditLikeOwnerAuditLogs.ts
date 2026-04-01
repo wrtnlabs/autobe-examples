@@ -20,70 +20,67 @@ export async function patchRedditLikeOwnerAuditLogs(props: {
   owner: OwnerPayload;
   body: IRedditLikeOwnerAuditLog.IRequest;
 }): Promise<IPageIRedditLikeOwnerAuditLog.ISummary> {
+  const page =
+    typeof props.body.page === "string" && props.body.page.length > 0
+      ? parseInt(props.body.page, 10)
+      : 1;
   const limit = props.body.limit ?? 100;
-  const page = props.body.page;
+  const skip = (page - 1) * limit;
+  const createdAtCondition: Prisma.DateTimeFilter<"reddit_like_owner_audit_logs"> =
+    {};
+  if (props.body.createdAtFrom !== undefined) {
+    createdAtCondition.gte = new Date(props.body.createdAtFrom);
+  }
+  if (props.body.createdAtTo !== undefined) {
+    createdAtCondition.lte = new Date(props.body.createdAtTo);
+  }
   const whereInput: Prisma.reddit_like_owner_audit_logsWhereInput = {
     ...(props.body.action !== undefined && { action: props.body.action }),
-    ...(props.body.entityType !== undefined &&
-      props.body.entityType !== null && { entity_type: props.body.entityType }),
-    ...(props.body.entityId !== undefined &&
-      props.body.entityId !== null && { entity_id: props.body.entityId }),
-    ...(props.body.createdAtFrom !== undefined && {
-      created_at: { gte: props.body.createdAtFrom },
+    ...(props.body.entityType !== undefined && {
+      entity_type: props.body.entityType,
     }),
-    ...(props.body.createdAtTo !== undefined && {
-      created_at: { lte: props.body.createdAtTo },
+    ...(props.body.entityId !== undefined && {
+      entity_id: props.body.entityId,
     }),
-    ...(props.body.search !== undefined && {
-      OR: [
-        { action: { contains: props.body.search, mode: "insensitive" } },
-        { entity_type: { contains: props.body.search, mode: "insensitive" } },
-        { details: { contains: props.body.search, mode: "insensitive" } },
-      ],
+    ...(Object.keys(createdAtCondition).length > 0 && {
+      created_at: createdAtCondition,
     }),
-    ...(page !== undefined && {
-      id: { lt: page },
-    }),
+    ...(props.body.search !== undefined &&
+      props.body.search.length > 0 && {
+        OR: [
+          {
+            action: {
+              contains: props.body.search,
+              mode: "insensitive" as const,
+            },
+          },
+          {
+            details: {
+              contains: props.body.search,
+              mode: "insensitive" as const,
+            },
+          },
+        ],
+      }),
   };
   const data = await MyGlobal.prisma.reddit_like_owner_audit_logs.findMany({
     where: whereInput,
+    skip,
     take: limit,
-    orderBy: { id: "desc" },
+    orderBy: { created_at: "desc" },
     ...RedditLikeOwnerAuditLogAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.reddit_like_owner_audit_logs.count({
-    where: {
-      ...(props.body.action !== undefined && { action: props.body.action }),
-      ...(props.body.entityType !== undefined &&
-        props.body.entityType !== null && {
-          entity_type: props.body.entityType,
-        }),
-      ...(props.body.entityId !== undefined &&
-        props.body.entityId !== null && { entity_id: props.body.entityId }),
-      ...(props.body.createdAtFrom !== undefined && {
-        created_at: { gte: props.body.createdAtFrom },
-      }),
-      ...(props.body.createdAtTo !== undefined && {
-        created_at: { lte: props.body.createdAtTo },
-      }),
-      ...(props.body.search !== undefined && {
-        OR: [
-          { action: { contains: props.body.search, mode: "insensitive" } },
-          { entity_type: { contains: props.body.search, mode: "insensitive" } },
-          { details: { contains: props.body.search, mode: "insensitive" } },
-        ],
-      }),
-    },
+    where: whereInput,
   });
-  const currentPage = page !== undefined ? 2 : 1;
   return {
     data: await ArrayUtil.asyncMap(
       data,
       RedditLikeOwnerAuditLogAtSummaryTransformer.transform,
     ),
     pagination: {
-      current: currentPage,
-      limit,
+      current: page,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,

@@ -24,69 +24,62 @@ export async function postHrmsMemberTimesheetsTimesheetIdApprove(props: {
 }): Promise<IHrmsTimesheet> {
   const timesheet = await MyGlobal.prisma.hrms_timesheets.findUniqueOrThrow({
     where: { id: props.timesheetId },
-    select: {
-      id: true,
-      hrms_employee_id: true,
-      status: true,
-    },
   });
   if (timesheet.status !== "submitted") {
     throw new HttpException("Timesheet is not in submitted status", 400);
   }
-  const employee = await MyGlobal.prisma.hrms_employees.findFirstOrThrow({
-    where: {
-      id: timesheet.hrms_employee_id,
-      deleted_at: null,
-    },
-    select: {
-      organization_member_id: true,
-    },
+  const member = await MyGlobal.prisma.hrms_members.findUniqueOrThrow({
+    where: { id: props.member.id, deleted_at: null },
   });
-  const organizationMember =
-    await MyGlobal.prisma.hrms_organization_members.findFirstOrThrow({
-      where: {
-        id: employee.organization_member_id,
-        deleted_at: null,
-      },
-      select: {
-        hrms_organization_id: true,
-        hrms_organization_role_id: true,
-      },
-    });
-  const memberOrganizationMember =
+  const employeeOrgMember =
     await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
-        hrms_member_id: props.member.id,
-        hrms_organization_id: organizationMember.hrms_organization_id,
-        deleted_at: null,
+        hrms_member_id: timesheet.hrms_employee_id,
       },
-      select: {
-        hrms_organization_role_id: true,
+      include: {
+        organizationRole: {
+          include: {
+            permissions: true,
+          },
+        },
       },
     });
-  if (!memberOrganizationMember) {
-    throw new HttpException("User is not a member of this organization", 403);
+  if (!employeeOrgMember) {
+    throw new HttpException("Employee organization membership not found", 403);
   }
-  const rolePermissions =
-    await MyGlobal.prisma.hrms_organization_role_permissions.findMany({
+  const approverOrgMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
-        hrms_organization_role_id:
-          memberOrganizationMember.hrms_organization_role_id,
-        permission: "time:approve",
+        hrms_member_id: member.id,
+        hrms_organization_id: employeeOrgMember.hrms_organization_id,
+      },
+      include: {
+        organizationRole: {
+          include: {
+            permissions: true,
+          },
+        },
       },
     });
-  if (rolePermissions.length === 0) {
-    throw new HttpException("User lacks time:approve permission", 403);
+  if (!approverOrgMember) {
+    throw new HttpException("Forbidden", 403);
   }
-  const updatedTimesheet = await MyGlobal.prisma.hrms_timesheets.update({
+  const hasApprovePermission =
+    approverOrgMember.organizationRole.permissions.some(
+      (p: { permission: string }) => p.permission === "time:approve",
+    );
+  if (!hasApprovePermission) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const updated = await MyGlobal.prisma.hrms_timesheets.update({
     where: { id: props.timesheetId },
     data: {
       status: "approved",
-      reviewed_by: props.member.id,
-      reviewed_at: new Date(),
-      updated_at: new Date(),
+      reviewed_by: member.id,
+      reviewed_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
     },
     ...HrmsTimesheetTransformer.select(),
   });
-  return await HrmsTimesheetTransformer.transform(updatedTimesheet);
+  return await HrmsTimesheetTransformer.transform(updated);
 }

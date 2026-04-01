@@ -8,14 +8,15 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getRedditLikeMemberPasswordResetsResetId(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   resetId: string;
 }): Promise<IRedditLikeMemberPasswordResetValidation> {
+  // Query both member and owner password reset tables for the token
   const memberReset =
     await MyGlobal.prisma.reddit_like_member_password_resets.findUnique({
       where: { token: props.resetId },
@@ -35,31 +36,36 @@ export async function getRedditLikeMemberPasswordResetsResetId(props: {
       },
     });
   const reset = memberReset ?? ownerReset;
+  // Token not found in either table
   if (reset === null) {
     return {
       isValid: false,
       expiresAt: null,
       reason: "token_not_found",
-    } satisfies IRedditLikeMemberPasswordResetValidation;
+    };
   }
+  // Token already used
   if (reset.used_at !== null) {
     return {
       isValid: false,
       expiresAt: null,
       reason: "token_already_used",
-    } satisfies IRedditLikeMemberPasswordResetValidation;
+    };
   }
-  const now = new Date();
-  if (reset.expires_at <= now) {
+  // Check if token has expired using ISO string comparison
+  const nowISO = new Date().toISOString();
+  const expiresISO = reset.expires_at.toISOString();
+  if (expiresISO <= nowISO) {
     return {
       isValid: false,
       expiresAt: null,
       reason: "token_expired",
-    } satisfies IRedditLikeMemberPasswordResetValidation;
+    };
   }
+  // Token is valid
   return {
     isValid: true,
-    expiresAt: toISOStringSafe(reset.expires_at),
+    expiresAt: expiresISO,
     reason: null,
-  } satisfies IRedditLikeMemberPasswordResetValidation;
+  };
 }

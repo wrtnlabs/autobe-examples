@@ -18,37 +18,26 @@ export async function patchShoppingMallAdminAdminOrderItems(props: {
   admin: AdminPayload;
   body: IShoppingMallOrderItem.IRequest;
 }): Promise<IPageIShoppingMallOrderItem.ISummary> {
+  if (props.admin.type !== "admin") {
+    throw new HttpException("Forbidden", 403);
+  }
+  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+    where: { id: props.admin.id, deleted_at: null },
+    select: { id: true },
+  });
+  if (admin === null) {
+    throw new HttpException("Forbidden", 403);
+  }
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  if (page < 1) {
-    throw new HttpException("page must be >= 1", 400);
-  }
-  if (limit < 1 || limit > 100) {
-    throw new HttpException("limit must be between 1 and 100", 400);
-  }
-  const sortBy = props.body.sortBy ?? "placed_at";
+  const limit = props.body.limit ?? 20;
+  const sortByKey = props.body.sortBy ?? "placed_at";
   const sortDirection = props.body.sortDirection ?? "desc";
-  const orderBy = (() => {
-    switch (sortBy) {
-      case "placed_at":
-        return { placed_at: sortDirection } as const;
-      case "created_at":
-        return { created_at: sortDirection } as const;
-      case "updated_at":
-        return { updated_at: sortDirection } as const;
-      default:
-        throw new HttpException("Unsupported sortBy", 400);
-    }
-  })();
-  const hasAnyDateFilter =
-    props.body.placedAtFrom !== undefined ||
-    props.body.placedAtTo !== undefined ||
-    props.body.createdAtFrom !== undefined ||
-    props.body.createdAtTo !== undefined ||
-    props.body.updatedAtFrom !== undefined ||
-    props.body.updatedAtTo !== undefined;
-  if (hasAnyDateFilter) {
-    throw new HttpException("Date range filters are not supported", 400);
+  const allowedSortBy = new Set(["placed_at", "created_at", "updated_at"]);
+  if (!allowedSortBy.has(sortByKey)) {
+    throw new HttpException("Invalid sortBy", 400);
+  }
+  if (props.body.lineItemStatus === undefined) {
+    throw new HttpException("lineItemStatus is required", 400);
   }
   const where = {
     deleted_at: null,
@@ -61,93 +50,116 @@ export async function patchShoppingMallAdminAdminOrderItems(props: {
     ...(props.body.sellerSnapshotId !== undefined && {
       seller_snapshot_id: props.body.sellerSnapshotId,
     }),
-    ...(props.body.shipmentId !== undefined &&
-      props.body.shipmentId !== null && {
-        shopping_mall_shipment_id: props.body.shipmentId,
-      }),
-    ...(props.body.shipmentId === null && {
-      shopping_mall_shipment_id: null,
+    ...(props.body.shipmentId !== undefined && {
+      shopping_mall_shipment_id:
+        props.body.shipmentId === null ? null : props.body.shipmentId,
     }),
     ...(props.body.lineItemStatus !== undefined && {
       line_item_status: props.body.lineItemStatus,
     }),
-  };
+    ...(props.body.placedAtFrom !== undefined && {
+      placed_at: { gte: new Date(props.body.placedAtFrom) },
+    }),
+    ...(props.body.placedAtTo !== undefined && {
+      placed_at: {
+        ...(props.body.placedAtFrom !== undefined
+          ? { gte: new Date(props.body.placedAtFrom) }
+          : {}),
+        lte: new Date(props.body.placedAtTo),
+      },
+    }),
+    ...(props.body.createdAtFrom !== undefined && {
+      created_at: { gte: new Date(props.body.createdAtFrom) },
+    }),
+    ...(props.body.createdAtTo !== undefined && {
+      created_at: {
+        ...(props.body.createdAtFrom !== undefined
+          ? { gte: new Date(props.body.createdAtFrom) }
+          : {}),
+        lte: new Date(props.body.createdAtTo),
+      },
+    }),
+    ...(props.body.updatedAtFrom !== undefined && {
+      updated_at: { gte: new Date(props.body.updatedAtFrom) },
+    }),
+    ...(props.body.updatedAtTo !== undefined && {
+      updated_at: {
+        ...(props.body.updatedAtFrom !== undefined
+          ? { gte: new Date(props.body.updatedAtFrom) }
+          : {}),
+        lte: new Date(props.body.updatedAtTo),
+      },
+    }),
+    order: {
+      deleted_at: null,
+    },
+    sellerSnapshot: {
+      deleted_at: null,
+      snapshotParties: {
+        some: {
+          deleted_at: null,
+          can_view: true,
+          party_type: "admin",
+          party_id: props.admin.id,
+        },
+      },
+    },
+  } satisfies Prisma.shopping_mall_order_itemsWhereInput;
+  const orderBy = (() => {
+    const dir = sortDirection;
+    const primary =
+      sortByKey === "placed_at"
+        ? { placed_at: dir }
+        : sortByKey === "created_at"
+          ? { created_at: dir }
+          : { updated_at: dir };
+    return [primary, { id: "desc" }];
+  })() satisfies Array<Prisma.shopping_mall_order_itemsOrderByWithRelationInput>;
   const skip = (page - 1) * limit;
-  const data = await MyGlobal.prisma.shopping_mall_order_items.findMany({
-    where: {
-      deleted_at: null,
-      ...(where as any),
-      order: {
-        deleted_at: null,
+  const [records, total] = await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.shopping_mall_order_items.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
+      select: {
+        id: true,
+        shopping_mall_order_id: true,
+        shopping_mall_product_variant_id: true,
+        seller_snapshot_id: true,
+        shopping_mall_shipment_id: true,
+        seller_price_at_purchase: true,
+        quantity: true,
+        line_item_status: true,
+        placed_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
       },
-      sellerSnapshot: {
-        deleted_at: null,
-        snapshotParties: {
-          some: {
-            deleted_at: null,
-            can_view: true,
-            party_id: props.admin.id,
-          },
-        },
-      },
-    },
-    orderBy: [{ ...orderBy }, { id: "desc" }],
-    skip,
-    take: limit,
-    select: {
-      id: true,
-      shopping_mall_order_id: true,
-      shopping_mall_product_variant_id: true,
-      seller_snapshot_id: true,
-      shopping_mall_shipment_id: true,
-      seller_price_at_purchase: true,
-      quantity: true,
-      line_item_status: true,
-      placed_at: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-    },
-  });
-  const total = await MyGlobal.prisma.shopping_mall_order_items.count({
-    where: {
-      deleted_at: null,
-      ...(where as any),
-      order: {
-        deleted_at: null,
-      },
-      sellerSnapshot: {
-        deleted_at: null,
-        snapshotParties: {
-          some: {
-            deleted_at: null,
-            can_view: true,
-            party_id: props.admin.id,
-          },
-        },
-      },
-    },
-  });
+    }),
+    MyGlobal.prisma.shopping_mall_order_items.count({ where }),
+  ]);
   return {
+    data: records.map((record) => ({
+      id: record.id,
+      shopping_mall_order_id: record.shopping_mall_order_id,
+      shopping_mall_product_variant_id: record.shopping_mall_product_variant_id,
+      seller_snapshot_id: record.seller_snapshot_id,
+      shopping_mall_shipment_id: record.shopping_mall_shipment_id,
+      seller_price_at_purchase: record.seller_price_at_purchase,
+      quantity: record.quantity,
+      line_item_status: record.line_item_status,
+      placed_at: toISOStringSafe(record.placed_at),
+      created_at: toISOStringSafe(record.created_at),
+      updated_at: toISOStringSafe(record.updated_at),
+      deleted_at:
+        record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
+    })),
     pagination: {
       current: page,
       limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     },
-    data: data.map((r) => ({
-      id: r.id,
-      shopping_mall_order_id: r.shopping_mall_order_id,
-      shopping_mall_product_variant_id: r.shopping_mall_product_variant_id,
-      seller_snapshot_id: r.seller_snapshot_id,
-      shopping_mall_shipment_id: r.shopping_mall_shipment_id,
-      seller_price_at_purchase: r.seller_price_at_purchase,
-      quantity: r.quantity,
-      line_item_status: r.line_item_status,
-      placed_at: toISOStringSafe(r.placed_at),
-      created_at: toISOStringSafe(r.created_at),
-      updated_at: toISOStringSafe(r.updated_at),
-      deleted_at: r.deleted_at === null ? null : toISOStringSafe(r.deleted_at),
-    })),
   };
 }

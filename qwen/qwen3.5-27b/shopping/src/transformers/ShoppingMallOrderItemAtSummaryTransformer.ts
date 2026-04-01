@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallOrderItemAtSummaryTransformer {
@@ -15,24 +17,32 @@ export namespace ShoppingMallOrderItemAtSummaryTransformer {
       select: {
         id: true,
         order: {
-          select: {
-            id: true,
-          },
+          select: { id: true },
         } satisfies Prisma.shopping_mall_ordersFindManyArgs,
         status: true,
         quantity: true,
         price: true,
         product_snapshot: true,
         variant_snapshot: true,
-        seller_profile_snapshot: true,
         created_at: true,
+        seller_profile_snapshot: true,
         updated_at: true,
         deleted_at: true,
-        seller: true,
-        shipmentItem: true,
-        reviews: true,
-        cancellationRequests: true,
-        refundRequests: true,
+        seller: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_sellersFindManyArgs,
+        shipmentItem: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_shipment_itemsFindManyArgs,
+        reviews: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_reviewsFindManyArgs,
+        cancellationRequests: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_cancellation_requestsFindManyArgs,
+        refundRequests: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_refund_requestsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_order_itemsFindManyArgs;
   }

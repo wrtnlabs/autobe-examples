@@ -20,6 +20,8 @@ export async function patchShoppingMallCustomers(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  const sortBy = props.body.sortBy ?? "created_at";
+  const sortOrder = props.body.sortOrder ?? "desc";
   const whereInput: Prisma.shopping_mall_customersWhereInput = {};
   if (props.body.status !== undefined) {
     whereInput.status = props.body.status;
@@ -42,15 +44,12 @@ export async function patchShoppingMallCustomers(props: {
     };
   }
   if (props.body.createdAtTo !== undefined) {
-    if (whereInput.created_at !== undefined) {
-      (whereInput.created_at as Prisma.DateTimeFilter).lte = new Date(
-        props.body.createdAtTo,
-      );
-    } else {
-      whereInput.created_at = {
-        lte: new Date(props.body.createdAtTo),
-      };
+    if (whereInput.created_at === undefined) {
+      whereInput.created_at = {};
     }
+    (whereInput.created_at as Prisma.DateTimeFilter).lte = new Date(
+      props.body.createdAtTo,
+    );
   }
   if (props.body.deletedAt !== undefined) {
     if (props.body.deletedAt === null) {
@@ -61,32 +60,32 @@ export async function patchShoppingMallCustomers(props: {
       };
     }
   }
-  const orderByInput: Prisma.shopping_mall_customersOrderByWithRelationInput =
-    props.body.sortBy === "display_name"
-      ? { display_name: props.body.sortOrder ?? "desc" }
-      : props.body.sortBy === "email"
-        ? { email: props.body.sortOrder ?? "desc" }
-        : { created_at: props.body.sortOrder ?? "desc" };
-  const data = await MyGlobal.prisma.shopping_mall_customers.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...ShoppingMallCustomerAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.shopping_mall_customers.count({
-    where: whereInput,
-  });
+  const orderByInput: Prisma.shopping_mall_customersOrderByWithRelationInput = {
+    [sortBy]: sortOrder,
+  };
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.shopping_mall_customers.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: orderByInput,
+      ...ShoppingMallCustomerAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.shopping_mall_customers.count({
+      where: whereInput,
+    }),
+  ]);
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    ShoppingMallCustomerAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallCustomerAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
+    data: transformedData,
   };
 }

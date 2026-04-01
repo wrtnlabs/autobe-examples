@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { ITodoAppMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMember";
+import type { IMultiUserTodoMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IMultiUserTodoMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -11,19 +11,18 @@ import typia, { tags } from "typia";
 export async function authorize_member_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<ITodoAppMember.IJoin>;
+    body?: DeepPartial<IMultiUserTodoMember.IJoin>;
   },
-): Promise<ITodoAppMember.IAuthorized> {
+): Promise<IMultiUserTodoMember.IAuthorized> {
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-    display_name: props.body?.display_name ?? RandomGenerator.name(),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
     ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
-  } satisfies ITodoAppMember.IJoin;
-  return await api.functional.todoApp.auth.member.join(connection, {
+  } satisfies IMultiUserTodoMember.IJoin;
+  return await api.functional.multiUserTodo.auth.member.join(connection, {
     body: joinInput,
   });
 }

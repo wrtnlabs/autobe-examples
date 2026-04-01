@@ -19,7 +19,27 @@ export async function getHrmPlatformMemberOrganizationsOrganizationIdSnapshotsSn
   organizationId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformOrganizationSnapshot> {
-  // Verify member has org:manage permission in this organization
+  // Query snapshot with organization context validation
+  const snapshot =
+    await MyGlobal.prisma.hrm_platform_organization_snapshots.findUniqueOrThrow(
+      {
+        where: {
+          id: props.snapshotId,
+          hrm_platform_organization_id: props.organizationId,
+        },
+        ...HrmPlatformOrganizationSnapshotTransformer.select(),
+      },
+    );
+  // Verify member has org:manage permission through their role
+  // First get the permission ID for "org:manage"
+  const permission = await MyGlobal.prisma.hrm_platform_permissions.findFirst({
+    where: { code: "org:manage", deleted_at: null },
+    select: { id: true },
+  });
+  if (permission === null) {
+    throw new HttpException("Permission not found", 500);
+  }
+  // Find employee record for this member in this organization
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
@@ -31,29 +51,17 @@ export async function getHrmPlatformMemberOrganizationsOrganizationIdSnapshotsSn
   if (employee === null) {
     throw new HttpException("Not a member of this organization", 403);
   }
+  // Check if the employee's role has the org:manage permission
   const hasManagePermission =
     await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
       where: {
         hrm_platform_role_id: employee.hrm_platform_role_id,
-        permission: {
-          code: "org:manage",
-        },
+        hrm_platform_permission_id: permission.id,
+        deleted_at: null,
       },
     });
   if (hasManagePermission === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Query snapshot with organization context validation
-  // findUniqueOrThrow will return 404 if snapshot not found or belongs to different organization
-  const snapshot =
-    await MyGlobal.prisma.hrm_platform_organization_snapshots.findUniqueOrThrow(
-      {
-        where: {
-          id: props.snapshotId,
-          hrm_platform_organization_id: props.organizationId,
-        },
-        ...HrmPlatformOrganizationSnapshotTransformer.select(),
-      },
-    );
   return await HrmPlatformOrganizationSnapshotTransformer.transform(snapshot);
 }

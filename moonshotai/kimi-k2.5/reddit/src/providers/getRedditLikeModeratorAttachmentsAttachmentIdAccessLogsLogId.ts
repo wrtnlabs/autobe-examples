@@ -18,19 +18,20 @@ export async function getRedditLikeModeratorAttachmentsAttachmentIdAccessLogsLog
   attachmentId: string & tags.Format<"uuid">;
   logId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeAttachmentAccessLog> {
-  // Validate attachment exists
+  // Verify attachment exists (404 if not found)
   await MyGlobal.prisma.reddit_like_attachments.findUniqueOrThrow({
     where: { id: props.attachmentId },
+    select: { id: true },
   });
-  // Validate access log exists and belongs to the specified attachment
+  // Retrieve the access log belonging to the specified attachment
+  // Will throw 404 if log doesn't exist or doesn't belong to this attachment
   const log =
     await MyGlobal.prisma.reddit_like_attachment_access_logs.findUniqueOrThrow({
-      where: { id: props.logId },
+      where: {
+        id: props.logId,
+        reddit_like_attachment_id: props.attachmentId,
+      },
       ...RedditLikeAttachmentAccessLogTransformer.select(),
     });
-  // Verify the log entry belongs to the specified attachment
-  if (log.attachment.id !== props.attachmentId) {
-    throw new HttpException("Access log not found for this attachment", 404);
-  }
   return await RedditLikeAttachmentAccessLogTransformer.transform(log);
 }

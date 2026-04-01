@@ -1,11 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IShoppingMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequestSnapshot";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
@@ -18,17 +19,11 @@ export namespace ShoppingMallCancellationRequestSnapshotAtSummaryTransformer {
     return {
       select: {
         id: true,
-        reason: true,
         status: true,
-        requested_at: true,
-        responded_at: true,
+        reason: true,
+        response_reason: true,
         created_at: true,
-        cancellationRequest: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_cancellation_requestsFindManyArgs,
-        respondedBySeller: ShoppingMallSellerAtSummaryTransformer.select(),
+        seller: ShoppingMallSellerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_cancellation_request_snapshotsFindManyArgs;
   }
@@ -37,17 +32,13 @@ export namespace ShoppingMallCancellationRequestSnapshotAtSummaryTransformer {
   ): Promise<IShoppingMallCancellationRequestSnapshot.ISummary> {
     return {
       id: input.id,
-      cancellation_request_id: input.cancellationRequest.id,
-      reason: input.reason,
       status: input.status,
-      requested_at: input.requested_at.toISOString(),
-      responded_at: input.responded_at?.toISOString() ?? null,
+      reason: input.reason,
+      response_reason: input.response_reason,
       created_at: input.created_at.toISOString(),
-      responded_by_seller: input.respondedBySeller
-        ? await ShoppingMallSellerAtSummaryTransformer.transform(
-            input.respondedBySeller,
-          )
-        : null,
+      seller: await ShoppingMallSellerAtSummaryTransformer.transform(
+        input.seller,
+      ),
     };
   }
 }

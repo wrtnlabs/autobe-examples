@@ -1,0 +1,107 @@
+/// Customer-owned shopping cart header that groups cart lines and stores
+/// checkout-preparation state for one customer account. The cart contains
+/// only header-level ownership and lifecycle data; individual selected
+/// variants, quantities, and line calculations are stored in {@link
+/// mall_platform_cart_items}.
+///
+/// This table supports the active cart experience before checkout, including
+/// one-cart-per-customer integrity and lifecycle tracking across updates and
+/// soft deletion.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mall_platform_shopping_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer account's {@link mall_platform_customers.id}.
+  mall_platform_customer_id String
+  
+  /// When the cart record was created.
+  created_at DateTime
+  
+  /// When the cart record was last updated.
+  updated_at DateTime
+  
+  /// When the cart was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer mall_platform_customers @relation(fields: [mall_platform_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  cartItems mall_platform_cart_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([mall_platform_customer_id])
+  @@index([created_at])
+}
+
+/// Stores one selected product variant line inside a customer shopping cart.
+///
+/// Each row represents a single cart entry with its parent cart, chosen
+/// product variant, quantity, and current availability state used during
+/// checkout validation. The table remains normalized by storing only
+/// line-level facts; pricing totals are derived at query time, and the
+/// parent cart plus referenced product variant provide the broader purchase
+/// context.
+///
+/// @namespace Carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mall_platform_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the shopping cart item.
+  id String @id
+  
+  /// Parent shopping cart's {@link mall_platform_shopping_carts.id}.
+  mall_platform_shopping_cart_id String
+  
+  /// Selected product variant's {@link mall_platform_product_variants.id}.
+  mall_platform_product_variant_id String
+  
+  /// Number of units of the selected product variant stored in this cart line.
+  quantity Int
+  
+  /// Current cart-line availability marker used to indicate whether the
+  /// referenced variant is available, out of stock, or otherwise unavailable
+  /// for checkout.
+  availability_state String
+  
+  /// Timestamp when the cart item was created.
+  created_at DateTime
+  
+  /// Timestamp when the cart item was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the cart item was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shoppingCart mall_platform_shopping_carts @relation(fields: [mall_platform_shopping_cart_id], references: [id], onDelete: Cascade)
+  productVariant mall_platform_product_variants @relation(fields: [mall_platform_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([mall_platform_product_variant_id])
+  // spellchecker: ignore-next-line
+  @@unique([mall_platform_shopping_cart_id, mall_platform_product_variant_id], map: "mall_platform_cart_items_mall_platform_shopping_cart_i_10fbc46a")
+  // spellchecker: ignore-next-line
+  @@index([mall_platform_shopping_cart_id, created_at], map: "mall_platform_cart_items_mall_platform_shopping_cart_i_3734aaf9")
+}

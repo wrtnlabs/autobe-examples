@@ -9,8 +9,10 @@ import { IErpHrmTimeTrackingReportOutput } from "@ORGANIZATION/PROJECT-api/lib/s
 import { IErpHrmTimeTrackingTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTask";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingReportDefinitionAtSummaryTransformer } from "./ErpHrmTimeTrackingReportDefinitionAtSummaryTransformer";
 import { ErpHrmTimeTrackingReportOutputTransformer } from "./ErpHrmTimeTrackingReportOutputTransformer";
@@ -45,12 +47,12 @@ export namespace ErpHrmTimeTrackingReportGenerationRunTransformer {
       id: input.id,
       status: input.status,
       parameters_summary: input.parameters_summary,
-      started_at: input.started_at?.toISOString() ?? null,
-      finished_at: input.finished_at?.toISOString() ?? null,
+      started_at: input.started_at ? input.started_at.toISOString() : null,
+      finished_at: input.finished_at ? input.finished_at.toISOString() : null,
       error_message: input.error_message ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
       reportDefinition:
         await ErpHrmTimeTrackingReportDefinitionAtSummaryTransformer.transform(
           input.reportDefinition,

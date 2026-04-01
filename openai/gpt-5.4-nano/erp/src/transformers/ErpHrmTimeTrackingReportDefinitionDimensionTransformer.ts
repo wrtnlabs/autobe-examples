@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingReportDefinitionDimension } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingReportDefinitionDimension";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingReportDefinitionDimensionTransformer {
@@ -22,6 +24,16 @@ export namespace ErpHrmTimeTrackingReportDefinitionDimensionTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        reportDefinition: {
+          select: {
+            id: true,
+          },
+        },
+        reportOutputs: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.erp_hrm_time_tracking_report_definition_dimensionsFindManyArgs;
   }
@@ -34,9 +46,9 @@ export namespace ErpHrmTimeTrackingReportDefinitionDimensionTransformer {
       dimensionKey: input.dimension_key,
       dimensionLabel: input.dimension_label,
       sortOrder: input.sort_order,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

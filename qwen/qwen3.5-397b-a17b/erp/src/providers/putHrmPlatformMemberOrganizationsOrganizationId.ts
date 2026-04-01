@@ -1,5 +1,4 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
 import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -21,22 +20,54 @@ export async function putHrmPlatformMemberOrganizationsOrganizationId(props: {
 }): Promise<IHrmPlatformOrganization> {
   const organization =
     await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-      where: { id: props.organizationId },
-      select: { id: true, owner_id: true },
+      where: {
+        id: props.organizationId,
+        deleted_at: null,
+      },
     });
-  if (organization.owner_id !== props.member.id) {
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+      where: {
+        organization_id: props.organizationId,
+        user_id: props.member.id,
+        deleted_at: null,
+      },
+      select: {
+        role_id: true,
+      },
+    });
+  const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
+    where: {
+      id: employee.role_id,
+      deleted_at: null,
+    },
+    select: {
+      name: true,
+      rolePermissions: {
+        select: {
+          permission: true,
+        },
+      },
+    },
+  });
+  const hasManagePermission =
+    role.name === "Owner" ||
+    role.rolePermissions.some(
+      (p: { permission: string }) => p.permission === "org:manage",
+    );
+  if (!hasManagePermission) {
     throw new HttpException("Forbidden", 403);
   }
   await MyGlobal.prisma.hrm_platform_organizations.update({
-    where: { id: props.organizationId },
+    where: {
+      id: props.organizationId,
+    },
     data: {
       ...(props.body.name !== undefined && { name: props.body.name }),
       ...(props.body.description !== undefined && {
         description: props.body.description,
       }),
-      ...(props.body.logo_url !== undefined && {
-        logo_url: props.body.logo_url,
-      }),
+      ...(props.body.logo !== undefined && { logo: props.body.logo }),
       ...(props.body.currency !== undefined && {
         currency: props.body.currency,
       }),
@@ -51,7 +82,9 @@ export async function putHrmPlatformMemberOrganizationsOrganizationId(props: {
   });
   const updated =
     await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-      where: { id: props.organizationId },
+      where: {
+        id: props.organizationId,
+      },
       ...HrmPlatformOrganizationTransformer.select(),
     });
   return await HrmPlatformOrganizationTransformer.transform(updated);

@@ -22,68 +22,49 @@ export async function putEcommerceMallSellerProductsProductId(props: {
   productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProduct.IUpdate;
 }): Promise<IEcommerceMallProduct> {
-  // 1. Fetch and validate product exists with full data for snapshot
   const product =
     await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
       where: { id: props.productId },
-      select: {
-        id: true,
-        seller_id: true,
-        name: true,
-        description: true,
-        base_price: true,
-        slug: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        category_id: true,
-      },
+      select: { id: true, seller_id: true, deleted_at: true },
     });
-  // 2. Verify ownership
   if (product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // 3. Create snapshot of current product state (required by spec)
-  await MyGlobal.prisma.ecommerce_mall_product_snapshots.create({
+  await MyGlobal.prisma.ecommerce_mall_snapshots.create({
     data: {
       id: v4(),
-      product: { connect: { id: props.productId } },
-      name: product.name,
-      description: product.description ?? null,
-      base_price: Number(product.base_price),
-      slug: product.slug,
-      status: product.status,
-      created_at: product.created_at,
-      updated_at: product.updated_at,
+      entity_id: props.productId,
+      entity_type: "product",
+      snapshot_data: JSON.stringify(product),
+      version: 1,
+      created_at: new Date(),
+      updated_at: new Date(),
     },
   });
-  // 4. Build update data with only provided fields
-  const updateData: {
-    name?: string;
-    description?: string | null;
-    base_price?: number;
-    slug?: string;
-    status?: string;
-    updated_at: Date;
-  } = {
-    updated_at: new Date(),
-    ...(props.body.name !== undefined && { name: props.body.name }),
-    ...(props.body.description !== undefined && {
-      description: props.body.description,
-    }),
-    ...(props.body.basePrice !== undefined && {
-      base_price: props.body.basePrice,
-    }),
-    ...(props.body.slug !== undefined && { slug: props.body.slug }),
-    ...(props.body.status !== undefined && { status: props.body.status }),
-  };
-  // 5. Apply update with full relationships selected
-  const updated = await MyGlobal.prisma.ecommerce_mall_products.update({
+  const data: Prisma.ecommerce_mall_productsUpdateInput = {};
+  if (props.body.name !== undefined) {
+    data.name = props.body.name;
+  }
+  if (props.body.description !== undefined) {
+    data.description = props.body.description ?? null;
+  }
+  if (props.body.basePrice !== undefined) {
+    data.base_price = props.body.basePrice;
+  }
+  if (props.body.slug !== undefined) {
+    data.slug = props.body.slug;
+  }
+  if (props.body.status !== undefined) {
+    data.status = props.body.status;
+  }
+  await MyGlobal.prisma.ecommerce_mall_products.update({
     where: { id: props.productId },
-    data: updateData,
-    ...EcommerceMallProductTransformer.select(),
+    data: data,
   });
-  // 6. Transform and return
+  const updated =
+    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      ...EcommerceMallProductTransformer.select(),
+    });
   return await EcommerceMallProductTransformer.transform(updated);
 }

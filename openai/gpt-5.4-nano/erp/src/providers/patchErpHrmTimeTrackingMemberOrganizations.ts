@@ -16,5 +16,5 @@ export async function patchErpHrmTimeTrackingMemberOrganizations(props: {
   member: MemberPayload;
   body: IErpHrmTimeTrackingOrganization.IUpdate;
 }): Promise<IErpHrmTimeTrackingOrganization> {
-  throw new HttpException("Not implemented", 501);
+  throw new Error("Not implemented");
 }

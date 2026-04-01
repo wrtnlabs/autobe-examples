@@ -15,60 +15,34 @@ export async function deleteHrmPlatformMemberRolesRoleId(props: {
   member: MemberPayload;
   roleId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const memberSession =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
+  const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
+    where: {
+      id: props.roleId,
+      deleted_at: null,
+    },
+  });
+  if (role.is_builtin === true) {
+    throw new HttpException("Built-in roles cannot be deleted", 400);
+  }
+  const employeesWithRole =
+    await MyGlobal.prisma.hrm_platform_employees.findFirst({
       where: {
-        id: props.member.session_id,
-      },
-    });
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        member_id: props.member.id,
+        role_id: props.roleId,
         deleted_at: null,
       },
     });
-  const role = await MyGlobal.prisma.hrm_platform_roles.findFirstOrThrow({
-    where: {
-      id: props.roleId,
-      organization_id: employee.organization_id,
-      deleted_at: null,
-    },
-  });
-  if (role.built_in === true) {
-    throw new HttpException("Built-in roles cannot be deleted", 403);
-  }
-  const employeeCount = await MyGlobal.prisma.hrm_platform_employees.count({
-    where: {
-      role_id: props.roleId,
-      status: "active",
-      deleted_at: null,
-    },
-  });
-  if (employeeCount > 0) {
+  if (employeesWithRole !== null) {
     throw new HttpException(
-      "Employees are assigned to this role. Reassign employees before deletion",
+      "Cannot delete role with assigned employees. Reassign employees first.",
       409,
     );
   }
   await MyGlobal.prisma.hrm_platform_roles.update({
-    where: { id: props.roleId },
+    where: {
+      id: props.roleId,
+    },
     data: {
       deleted_at: new Date(),
-    },
-  });
-  await MyGlobal.prisma.hrm_platform_activity_logs.create({
-    data: {
-      id: v4(),
-      member_id: props.member.id,
-      organization_id: employee.organization_id,
-      action_type: "role.deleted",
-      target_entity_type: "role",
-      target_entity_id: props.roleId,
-      details: `Deleted custom role: ${role.name}`,
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
     },
   });
 }

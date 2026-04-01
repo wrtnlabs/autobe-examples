@@ -22,6 +22,7 @@ export namespace HrmsOrganizationMemberCollector {
       organizationRole: {
         connect: { id: props.body.hrms_organization_role_id },
       },
+      employees: undefined,
     } satisfies Prisma.hrms_organization_membersCreateInput;
   }
 }

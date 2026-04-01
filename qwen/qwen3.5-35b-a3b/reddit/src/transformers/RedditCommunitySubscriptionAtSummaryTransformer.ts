@@ -5,8 +5,10 @@ import { IRedditCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityCommunityAtSummaryTransformer } from "./RedditCommunityCommunityAtSummaryTransformer";
 
@@ -21,7 +23,13 @@ export namespace RedditCommunitySubscriptionAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        member: true,
+        member: {
+          select: {
+            id: true,
+            username: true,
+            created_at: true,
+          },
+        },
         community: RedditCommunityCommunityAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_community_subscriptionsFindManyArgs;
@@ -31,10 +39,10 @@ export namespace RedditCommunitySubscriptionAtSummaryTransformer {
   ): Promise<IRedditCommunitySubscription.ISummary> {
     return {
       id: input.id,
-      created_at: input.created_at.toISOString(),
       community: await RedditCommunityCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-    };
+      created_at: toISOStringSafe(input.created_at),
+    } satisfies IRedditCommunitySubscription.ISummary;
   }
 }

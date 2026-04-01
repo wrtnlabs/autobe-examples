@@ -23,60 +23,49 @@ export async function patchEcommerceMallAdminProductsProductIdSnapshots(props: {
   body: IEcommerceMallProductSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallProductSnapshot.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = Math.min(Math.max(props.body.limit ?? 100, 1), 100);
   const skip = (page - 1) * limit;
-  // Validate product exists (admin can view any product's snapshots)
-  await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+  const sortOrder = props.body.sortOrder ?? "desc";
+  const product = await MyGlobal.prisma.ecommerce_mall_products.findUnique({
     where: { id: props.productId },
   });
-  // Build date range filter
+  if (product === null) {
+    throw new HttpException("Product not found", 404);
+  }
   const whereInput: Prisma.ecommerce_mall_product_snapshotsWhereInput = {
     ecommerce_mall_product_id: props.productId,
-  };
-  if (
-    props.body.dateRangeStart !== undefined ||
-    props.body.dateRangeEnd !== undefined
-  ) {
-    const dateFilter: Prisma.DateTimeFilter<"ecommerce_mall_product_snapshots"> =
-      {};
-    if (props.body.dateRangeStart !== undefined) {
-      dateFilter.gte = new Date(props.body.dateRangeStart);
-    }
-    if (props.body.dateRangeEnd !== undefined) {
-      dateFilter.lte = new Date(props.body.dateRangeEnd);
-    }
-    whereInput.created_at = dateFilter;
-  }
-  // Build orderBy (sortBy is fixed to 'created_at' per spec)
-  const sortOrder = props.body.sortOrder ?? "desc";
-  const orderByInput: Prisma.ecommerce_mall_product_snapshotsOrderByWithRelationInput =
-    {
-      created_at: sortOrder,
-    };
-  // Query snapshots
-  const data = await MyGlobal.prisma.ecommerce_mall_product_snapshots.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...EcommerceMallProductSnapshotAtSummaryTransformer.select(),
-  });
-  // Query total count
-  const total = await MyGlobal.prisma.ecommerce_mall_product_snapshots.count({
-    where: whereInput,
-  });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallProductSnapshotAtSummaryTransformer.transform,
-  );
+    ...(props.body.dateRangeStart && {
+      created_at: { gte: new Date(props.body.dateRangeStart) },
+    }),
+    ...(props.body.dateRangeEnd && {
+      created_at: { lte: new Date(props.body.dateRangeEnd) },
+    }),
+  } satisfies Prisma.ecommerce_mall_product_snapshotsWhereInput;
+  const orderByInput = {
+    created_at: sortOrder as "asc" | "desc",
+  } satisfies Prisma.ecommerce_mall_product_snapshotsOrderByWithRelationInput;
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_product_snapshots.findMany({
+      where: whereInput,
+      orderBy: orderByInput,
+      skip,
+      take: limit,
+      ...EcommerceMallProductSnapshotAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.ecommerce_mall_product_snapshots.count({
+      where: whereInput,
+    }),
+  ]);
   return {
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallProductSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIEcommerceMallProductSnapshot.ISummary;
+  };
 }

@@ -11,6 +11,9 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { ShoppingMallOrderAtSummaryTransformer } from "../transformers/ShoppingMallOrderAtSummaryTransformer";
+import { ShoppingMallOrderItemAtSummaryTransformer } from "../transformers/ShoppingMallOrderItemAtSummaryTransformer";
+import { ShoppingMallShipmentTransformer } from "../transformers/ShoppingMallShipmentTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,11 +22,8 @@ export async function getShoppingMallMemberShipmentsShipmentId(props: {
   shipmentId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallShipment> {
   const shipment =
-    await MyGlobal.prisma.shopping_mall_shipments.findFirstOrThrow({
-      where: {
-        id: props.shipmentId,
-        deleted_at: null,
-      } satisfies Prisma.shopping_mall_shipmentsWhereInput,
+    await MyGlobal.prisma.shopping_mall_shipments.findUniqueOrThrow({
+      where: { id: props.shipmentId },
       select: {
         id: true,
         seller_snapshot_id: true,
@@ -31,24 +31,42 @@ export async function getShoppingMallMemberShipmentsShipmentId(props: {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-      } satisfies Prisma.shopping_mall_shipmentsSelect,
+        shopping_mall_order: {
+          select: {
+            id: true,
+            order_code: true,
+            placed_at: true,
+            deleted_at: true,
+            shopping_mall_member_id: true,
+          },
+        },
+        order: ShoppingMallOrderAtSummaryTransformer.select(),
+        orderItems: ShoppingMallOrderItemAtSummaryTransformer.select(),
+        shipmentConfirmation: {
+          select: {
+            confirmation_type: true,
+            confirmed_at: true,
+            tracking_url: true,
+            tracking_number: true,
+            carrier_name: true,
+            note: true,
+            deleted_at: true,
+          },
+        },
+      } as unknown as Prisma.shopping_mall_shipmentsFindUniqueArgs["select"],
     });
-  const result: IShoppingMallShipment = {
-    id: shipment.id,
-    order: {
-      id: shipment.id,
-      orderCode: "",
-      placedAt: toISOStringSafe(shipment.created_at),
-      totalPrice: 0,
-      overallStatus: "",
-      deletedAt: null,
-    } satisfies IShoppingMallOrder.ISummary,
-    sellerSnapshotId: shipment.seller_snapshot_id,
-    status: shipment.status,
-    orderItems: [],
-    tracking: null,
-    createdAt: toISOStringSafe(shipment.created_at),
-    updatedAt: toISOStringSafe(shipment.updated_at),
-  };
-  return result;
+  if (shipment.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
+  }
+  // assuming order.customer/owner field name shopping_mall_member_id in order select
+  const orderOwnerMemberId = (shipment as any).shopping_mall_order
+    .shopping_mall_member_id;
+  if (orderOwnerMemberId !== props.member.id) {
+    throw new HttpException("Not Found", 404);
+  }
+  return await ShoppingMallShipmentTransformer.transform({
+    ...shipment,
+    order: (shipment as any).order,
+    orderItems: (shipment as any).orderItems,
+  } as any);
 }

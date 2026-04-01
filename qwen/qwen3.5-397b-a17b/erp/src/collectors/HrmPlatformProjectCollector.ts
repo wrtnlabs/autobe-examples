@@ -10,35 +10,27 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace HrmPlatformProjectCollector {
   export async function collect(props: {
     body: IHrmPlatformProject.ICreate;
-    hrmPlatformMembers: IEntity;
-    hrmPlatformMemberSessions: IEntity;
+    hrmPlatformOrganizations: IEntity;
   }) {
     const id: string = v4();
-    // Query member to get organization_id
-    const member =
-      await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-        where: { id: props.hrmPlatformMembers.id },
-      });
     return {
       // Scalar fields
       id,
       name: props.body.name,
       description: props.body.description ?? null,
       color_code: props.body.color_code,
-      status: props.body.status ?? "active",
+      status: props.body.status,
       budget_hours: props.body.budget_hours ?? null,
-      started_at: props.body.started_at
-        ? new Date(props.body.started_at)
+      start_date: props.body.start_date
+        ? new Date(props.body.start_date)
         : null,
-      ended_at: props.body.ended_at ? new Date(props.body.ended_at) : null,
+      end_date: props.body.end_date ? new Date(props.body.end_date) : null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       // BelongsTo relations
-      organization: {
-        connect: { id: member.organization_id },
-      },
-      // HasMany relations (not needed for create)
+      organization: { connect: { id: props.hrmPlatformOrganizations.id } },
+      // HasMany relations - not needed for creation
     } satisfies Prisma.hrm_platform_projectsCreateInput;
   }
 }

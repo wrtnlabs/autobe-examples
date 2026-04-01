@@ -9,7 +9,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { ErpHrmTimeTrackingActivityLogEntryTransformer } from "../transformers/ErpHrmTimeTrackingActivityLogEntryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,57 +17,81 @@ export async function putErpHrmTimeTrackingMemberActivityLogEntriesActivityLogEn
   activityLogEntryId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingActivityLogEntry.IUpdate;
 }): Promise<IErpHrmTimeTrackingActivityLogEntry> {
-  const { activityLogEntryId, member, body } = props;
-  if (
-    body.details !== null &&
-    body.details !== undefined &&
-    body.details.length === 0
-  ) {
-    throw new HttpException("Invalid details", 400);
-  }
-  // Load target row (tenant scoping is applied by requiring the row to be owned by the caller member)
-  const existing =
-    await MyGlobal.prisma.erp_hrm_time_tracking_activity_log_entries.findUnique(
-      {
-        where: { id: activityLogEntryId },
-        select: {
-          id: true,
-          organization_id: true,
-          performed_by_member_id: true,
-          deleted_at: true,
+  const memberId = props.member.id;
+  const tx = await MyGlobal.prisma.$transaction(async (prisma) => {
+    const existing =
+      await prisma.erp_hrm_time_tracking_activity_log_entries.findUniqueOrThrow(
+        {
+          where: { id: props.activityLogEntryId },
+          select: {
+            id: true,
+            organization_id: true,
+            performed_by_member_id: true,
+            action_type: true,
+            target_entity_type: true,
+            target_entity_id: true,
+            summary: true,
+            details: true,
+            occurred_at: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
         },
-      },
-    );
-  if (existing === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (existing.deleted_at !== null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (existing.performed_by_member_id !== member.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Transactional update (organization_id and performed_by_member_id preserved)
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.erp_hrm_time_tracking_activity_log_entries.update({
-      where: { id: activityLogEntryId },
+      );
+    // Authorization: restrict updates to the original performer.
+    // (Organization scoping/role-based checks occur in higher layers.)
+    if (existing.performed_by_member_id !== memberId) {
+      throw new HttpException("Forbidden", 403);
+    }
+    await prisma.erp_hrm_time_tracking_activity_log_entries.update({
+      where: { id: props.activityLogEntryId },
       data: {
-        action_type: body.action_type,
-        target_entity_type: body.target_entity_type,
-        target_entity_id: body.target_entity_id,
-        summary: body.summary,
-        details: body.details,
-        occurred_at: body.occurred_at,
-        updated_at: body.occurred_at,
+        action_type: props.body.action_type,
+        target_entity_type: props.body.target_entity_type,
+        target_entity_id: props.body.target_entity_id,
+        summary: props.body.summary,
+        details: props.body.details,
+        occurred_at: props.body.occurred_at,
       },
     });
+    const updated =
+      await prisma.erp_hrm_time_tracking_activity_log_entries.findUniqueOrThrow(
+        {
+          where: { id: props.activityLogEntryId },
+          select: {
+            id: true,
+            organization_id: true,
+            performed_by_member_id: true,
+            action_type: true,
+            target_entity_type: true,
+            target_entity_id: true,
+            summary: true,
+            details: true,
+            occurred_at: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
+      );
+    return {
+      id: updated.id,
+      organization_id: updated.organization_id,
+      performed_by_member_id: updated.performed_by_member_id,
+      action_type: updated.action_type,
+      target_entity_type: updated.target_entity_type,
+      target_entity_id: updated.target_entity_id,
+      summary: updated.summary,
+      details: updated.details,
+      occurred_at: toISOStringSafe(updated.occurred_at),
+      created_at: toISOStringSafe(updated.created_at),
+      updated_at: toISOStringSafe(updated.updated_at),
+      deleted_at:
+        updated.deleted_at === null
+          ? null
+          : toISOStringSafe(updated.deleted_at),
+    } satisfies IErpHrmTimeTrackingActivityLogEntry;
   });
-  const updated =
-    await MyGlobal.prisma.erp_hrm_time_tracking_activity_log_entries.findUniqueOrThrow(
-      {
-        where: { id: activityLogEntryId },
-        ...ErpHrmTimeTrackingActivityLogEntryTransformer.select(),
-      },
-    );
-  return await ErpHrmTimeTrackingActivityLogEntryTransformer.transform(updated);
+  return tx;
 }

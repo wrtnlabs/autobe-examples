@@ -16,12 +16,6 @@ import { CustomerPayload } from "../decorators/payload/CustomerPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-/**
- * [Original Description]
- * Retrieve a filtered and paginated list of products available in the shopping mall platform.
- *
- * Cannot implement: Schema missing shopping_mall_products, shopping_mall_product_variants, and shopping_mall_product_images tables required by API.
- */
 export async function patchShoppingMallCustomerProducts(props: {
   customer: CustomerPayload;
   body: IShoppingMallProduct.IRequest;

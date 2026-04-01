@@ -11,7 +11,6 @@ export namespace HrmPlatformOrganizationCollector {
   export async function collect(props: {
     body: IHrmPlatformOrganization.ICreate;
     hrmPlatformMembers: IEntity;
-    hrmPlatformMemberSessions: IEntity;
   }) {
     const id: string = v4();
     return {

@@ -20,26 +20,30 @@ export async function patchRedditLikeModeratorReportsReportIdSnapshots(props: {
   reportId: string & tags.Format<"uuid">;
   body: IRedditLikeReportSnapshot.IRequest;
 }): Promise<IPageIRedditLikeReportSnapshot.ISummary> {
-  // Verify report exists and get community info
-  const report = await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
+  // Verify moderator has access to this report's community
+  const report = await MyGlobal.prisma.reddit_like_reports.findFirst({
     where: { id: props.reportId },
-    select: { id: true, community_id: true },
+    select: {
+      id: true,
+      community_id: true,
+    },
   });
-  // Verify moderator has privileges for this community
-  const moderatorRecord =
-    await MyGlobal.prisma.reddit_like_moderators.findFirst({
-      where: {
-        member_id: props.moderator.id,
-        community_id: report.community_id,
-        deleted_at: null,
-      },
-    });
-  if (moderatorRecord === null) {
+  if (report === null) {
+    throw new HttpException("Report not found", 404);
+  }
+  const isModerator = await MyGlobal.prisma.reddit_like_moderators.findFirst({
+    where: {
+      member_id: props.moderator.id,
+      community_id: report.community_id,
+      deleted_at: null,
+    },
+  });
+  if (isModerator === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Pagination parameters
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  // Parse pagination parameters
+  const page = (props.body.page ?? 1) satisfies number as number;
+  const limit = (props.body.limit ?? 20) satisfies number as number;
   const skip = (page - 1) * limit;
   const sortDirection = props.body.sortDirection ?? "desc";
   // Query snapshots with pagination
@@ -56,13 +60,12 @@ export async function patchRedditLikeModeratorReportsReportIdSnapshots(props: {
   const total = await MyGlobal.prisma.reddit_like_report_snapshots.count({
     where: { reddit_like_report_id: props.reportId },
   });
-  // Transform to DTOs
-  const data = await ArrayUtil.asyncMap(
-    snapshots,
-    RedditLikeReportSnapshotAtSummaryTransformer.transform,
-  );
+  // Transform and return
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      snapshots,
+      RedditLikeReportSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,

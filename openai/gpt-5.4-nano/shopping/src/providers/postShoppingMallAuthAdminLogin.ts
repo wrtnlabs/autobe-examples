@@ -16,6 +16,7 @@ export async function postShoppingMallAuthAdminLogin(props: {
   ip: string;
   body: IShoppingMallAdmin.ILogin;
 }): Promise<IShoppingMallAdmin.IAuthorized> {
+  const nowIso = toISOStringSafe(new Date());
   const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
     where: { email: props.body.email },
     select: {
@@ -27,34 +28,41 @@ export async function postShoppingMallAuthAdminLogin(props: {
       password_hash: true,
     },
   });
-  if (!admin) throw new HttpException("Invalid credentials", 401);
-  const isValid = await PasswordUtil.verify(
+  // Avoid leaking whether the account exists
+  if (!admin) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  const ok = await PasswordUtil.verify(
     props.body.password,
     admin.password_hash,
   );
-  if (!isValid) throw new HttpException("Invalid credentials", 401);
-  const nowDate = new Date();
+  if (!ok) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  const now = new Date();
   const accessExpiresDate = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpiresDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const nowIso = toISOStringSafe(nowDate) as string & tags.Format<"date-time">;
-  const accessExpiresIso = toISOStringSafe(accessExpiresDate) as string &
-    tags.Format<"date-time">;
-  const refreshExpiresIso = toISOStringSafe(refreshExpiresDate) as string &
-    tags.Format<"date-time">;
+  const nowUuid = typia.assert<string & tags.Format<"uuid">>(v4());
+  const accessExpiresIso = typia.assert<string & tags.Format<"date-time">>(
+    toISOStringSafe(accessExpiresDate),
+  );
+  const refreshExpiresIso = typia.assert<string & tags.Format<"date-time">>(
+    toISOStringSafe(refreshExpiresDate),
+  );
   const session = await MyGlobal.prisma.shopping_mall_admin_sessions.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: nowUuid,
       shopping_mall_admin_id: admin.id,
       ip: props.ip,
-      href: "" as any,
-      referrer: "" as any,
-      created_at: nowIso,
-      expired_at: accessExpiresIso,
-      updated_at: nowIso,
+      href: "",
+      referrer: "",
+      created_at: now,
+      expired_at: accessExpiresDate,
+      updated_at: now,
       deleted_at: null,
     },
   });
-  const accessToken = jwt.sign(
+  const access = jwt.sign(
     {
       type: "admin",
       id: admin.id,
@@ -64,7 +72,7 @@ export async function postShoppingMallAuthAdminLogin(props: {
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const refreshToken = jwt.sign(
+  const refresh = jwt.sign(
     {
       type: "admin",
       id: admin.id,
@@ -75,22 +83,27 @@ export async function postShoppingMallAuthAdminLogin(props: {
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  const deletedAtIso = admin.deleted_at
-    ? (toISOStringSafe(admin.deleted_at) as string & tags.Format<"date-time">)
-    : null;
+  const token: IAuthorizationToken = {
+    access,
+    refresh,
+    expired_at: accessExpiresIso,
+    refreshable_until: refreshExpiresIso,
+  };
   return {
     id: admin.id,
     email: admin.email,
-    created_at: toISOStringSafe(admin.created_at) as string &
-      tags.Format<"date-time">,
-    updated_at: toISOStringSafe(admin.updated_at) as string &
-      tags.Format<"date-time">,
-    deleted_at: deletedAtIso,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiresIso,
-      refreshable_until: refreshExpiresIso,
-    },
-  } satisfies IShoppingMallAdmin.IAuthorized;
+    created_at: typia.assert<string & tags.Format<"date-time">>(
+      toISOStringSafe(admin.created_at),
+    ),
+    updated_at: typia.assert<string & tags.Format<"date-time">>(
+      toISOStringSafe(admin.updated_at),
+    ),
+    deleted_at:
+      admin.deleted_at === null
+        ? null
+        : typia.assert<string & tags.Format<"date-time">>(
+            toISOStringSafe(admin.deleted_at),
+          ),
+    token,
+  };
 }

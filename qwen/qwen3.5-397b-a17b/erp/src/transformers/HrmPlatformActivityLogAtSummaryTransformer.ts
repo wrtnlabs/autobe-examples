@@ -19,7 +19,11 @@ export namespace HrmPlatformActivityLogAtSummaryTransformer {
         action_type: true,
         target_entity_type: true,
         target_entity_id: true,
+        details: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        organization: true,
         member: HrmPlatformMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_activity_logsFindManyArgs;
@@ -29,13 +33,13 @@ export namespace HrmPlatformActivityLogAtSummaryTransformer {
   ): Promise<IHrmPlatformActivityLog.ISummary> {
     return {
       id: input.id,
-      action_type: input.action_type,
-      target_entity_type: input.target_entity_type,
-      target_entity_id: input.target_entity_id,
+      actionType: input.action_type,
+      targetEntityType: input.target_entity_type,
+      targetEntityId: input.target_entity_id,
+      createdAt: input.created_at.toISOString(),
       member: await HrmPlatformMemberAtSummaryTransformer.transform(
         input.member,
       ),
-      created_at: input.created_at.toISOString(),
     };
   }
 }

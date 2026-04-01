@@ -7,8 +7,10 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 import { EcommerceMallOrderItemAtSummaryTransformer } from "./EcommerceMallOrderItemAtSummaryTransformer";
@@ -31,8 +33,12 @@ export namespace EcommerceMallCancellationRequestTransformer {
         orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
         customer: EcommerceMallCustomerAtSummaryTransformer.select(),
         seller: EcommerceMallSellerAtSummaryTransformer.select(),
-        inventoryRecords: true,
-        snapshots: true,
+        inventoryRecords: {
+          select: { id: true },
+        } satisfies Prisma.ecommerce_mall_inventory_recordsFindManyArgs,
+        snapshots: {
+          select: { id: true },
+        } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_cancellation_requestsFindManyArgs;
   }
@@ -45,7 +51,7 @@ export namespace EcommerceMallCancellationRequestTransformer {
       seller_id: input.seller.id,
       status: input.status,
       reason: input.reason,
-      seller_response: input.seller_response ?? null,
+      seller_response: input.seller_response,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,

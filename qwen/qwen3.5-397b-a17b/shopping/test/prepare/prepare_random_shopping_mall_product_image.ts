@@ -10,8 +10,5 @@ export function prepare_random_shopping_mall_product_image(
 ): IShoppingMallProductImage.ICreate {
   return {
     image_url: input?.image_url ?? typia.random<string & tags.Format<"uri">>(),
-    display_order:
-      input?.display_order ??
-      typia.random<number & tags.Type<"int32"> & tags.Minimum<0>>(),
   };
 }

@@ -9,7 +9,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { GuestPayload } from "../decorators/payload/GuestPayload";
-import { HrmsMemberProfileTransformer } from "../transformers/HrmsMemberProfileTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -25,54 +24,99 @@ export async function putHrmsGuestProfile(props: {
   ) {
     throw new HttpException("At least one field must be provided", 400);
   }
-  // Validate displayName if provided
-  if (props.body.displayName !== undefined) {
-    if (props.body.displayName.trim().length === 0) {
-      throw new HttpException("Display name cannot be empty", 400);
-    }
-    if (props.body.displayName.length > 100) {
-      throw new HttpException("Display name cannot exceed 100 characters", 400);
-    }
-  }
-  // Validate phone if provided - E.164 format
-  if (props.body.phone !== undefined && props.body.phone !== null) {
-    const phonePattern = /^\+[1-9]\d{1,14}$/;
-    if (!phonePattern.test(props.body.phone)) {
-      throw new HttpException("Phone must be in E.164 format", 400);
-    }
-  }
-  // Validate avatarId if provided - must reference existing file belonging to guest
-  if (props.body.avatarId !== undefined && props.body.avatarId !== null) {
-    const file = await MyGlobal.prisma.hrms_files.findUnique({
-      where: { id: props.body.avatarId },
-    });
-    if (file === null) {
-      throw new HttpException("Avatar file not found", 404);
-    }
-    if (file.owner_id !== props.guest.id) {
-      throw new HttpException("Cannot use file not belonging to you", 403);
-    }
-  }
-  // Perform atomic update within transaction
-  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
-    const updateData: Prisma.hrms_membersUpdateInput = {
-      updated_at: new Date(),
-    };
-    if (props.body.displayName !== undefined) {
-      updateData.display_name = props.body.displayName;
-    }
-    if (props.body.phone !== undefined) {
-      updateData.phone_number = props.body.phone;
-    }
-    if (props.body.avatarId !== undefined && props.body.avatarId !== null) {
-      updateData.avatar_uri = props.body.avatarId;
-    }
-    const result = await tx.hrms_members.update({
-      where: { id: props.guest.id },
-      data: updateData,
-      ...HrmsMemberProfileTransformer.select(),
-    });
-    return result;
+  // Verify the guest exists and session is valid
+  const guestRecord = await MyGlobal.prisma.hrms_guests.findFirst({
+    where: {
+      id: props.guest.id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      deleted_at: true,
+    },
   });
-  return HrmsMemberProfileTransformer.transform(updated);
+  if (guestRecord === null) {
+    throw new HttpException("You're not enrolled", 403);
+  }
+  const sessionRecord = await MyGlobal.prisma.hrms_guest_sessions.findFirst({
+    where: {
+      id: props.guest.session_id,
+      hrms_guest_id: props.guest.id,
+      expired_at: { gt: new Date() },
+    },
+  });
+  if (sessionRecord === null) {
+    throw new HttpException("Session expired", 403);
+  }
+  // Resolve avatar_uri if avatarId is provided
+  let avatarUri: string | null = null;
+  if (props.body.avatarId !== undefined) {
+    if (props.body.avatarId === null) {
+      avatarUri = null;
+    } else {
+      const avatarFile = await MyGlobal.prisma.hrms_files.findFirst({
+        where: {
+          id: props.body.avatarId,
+          owner_id: props.guest.id,
+          owner_type: "guest",
+        },
+      });
+      if (avatarFile === null) {
+        throw new HttpException("Avatar file not found", 404);
+      }
+      avatarUri = avatarFile.storage_path;
+    }
+  }
+  // Execute transaction to update profile
+  const updatedRecord = await MyGlobal.prisma.$transaction(async (tx) => {
+    const updated = await tx.hrms_members.update({
+      where: {
+        id: props.guest.id,
+        deleted_at: null,
+      },
+      data: {
+        ...(props.body.displayName !== undefined && {
+          display_name: props.body.displayName,
+        }),
+        ...(props.body.phone !== undefined && {
+          phone_number: props.body.phone,
+        }),
+        ...(props.body.avatarId !== undefined && {
+          avatar_uri: avatarUri,
+        }),
+        updated_at: new Date(),
+      },
+    });
+    return updated;
+  });
+  // Fetch the updated profile with avatar_uri
+  const profileRecord = await MyGlobal.prisma.hrms_members.findUniqueOrThrow({
+    where: {
+      id: updatedRecord.id,
+    },
+    select: {
+      id: true,
+      email: true,
+      display_name: true,
+      avatar_uri: true,
+      phone_number: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
+  });
+  // Transform and return
+  const result: IHrmsMemberProfile = {
+    id: updatedRecord.id,
+    email: profileRecord.email,
+    display_name: profileRecord.display_name,
+    avatar_uri: profileRecord.avatar_uri,
+    phone_number: profileRecord.phone_number,
+    created_at: toISOStringSafe(profileRecord.created_at),
+    updated_at: toISOStringSafe(profileRecord.updated_at),
+    deleted_at: profileRecord.deleted_at
+      ? toISOStringSafe(profileRecord.deleted_at)
+      : null,
+  };
+  return result;
 }

@@ -9,31 +9,28 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { RedditLikeAttachmentThumbnailCollector } from "../collectors/RedditLikeAttachmentThumbnailCollector";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeAttachmentThumbnailTransformer } from "../transformers/RedditLikeAttachmentThumbnailTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditLikeMemberAttachmentsAttachmentIdGenerateThumbnails(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   attachmentId: string & tags.Format<"uuid">;
   body: IRedditLikeAttachmentThumbnail.ICreate;
 }): Promise<IRedditLikeAttachmentThumbnail> {
-  // Validate attachment exists
+  // Verify attachment exists
   await MyGlobal.prisma.reddit_like_attachments.findUniqueOrThrow({
     where: { id: props.attachmentId },
   });
-  // Collect data using the collector
-  const data = await RedditLikeAttachmentThumbnailCollector.collect({
-    body: props.body,
-    redditLikeAttachments: { id: props.attachmentId },
-  });
-  // Create the thumbnail record
-  const created =
+  // Create thumbnail using collector
+  const thumbnail =
     await MyGlobal.prisma.reddit_like_attachment_thumbnails.create({
-      data,
+      data: await RedditLikeAttachmentThumbnailCollector.collect({
+        body: props.body,
+        redditLikeAttachments: { id: props.attachmentId },
+      }),
       ...RedditLikeAttachmentThumbnailTransformer.select(),
     });
-  // Transform and return
-  return await RedditLikeAttachmentThumbnailTransformer.transform(created);
+  return await RedditLikeAttachmentThumbnailTransformer.transform(thumbnail);
 }

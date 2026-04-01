@@ -1,12 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallAdminAtSummaryTransformer } from "./ShoppingMallAdminAtSummaryTransformer";
 
 export namespace ShoppingMallSellerAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_sellersGetPayload<
@@ -17,35 +17,28 @@ export namespace ShoppingMallSellerAtSummaryTransformer {
       select: {
         id: true,
         email: true,
-        shop_name: true,
-        shop_description: true,
-        logo_image_url: true,
-        approval_status: true,
-        suspended: true,
         created_at: true,
-        approvedByAdmin: ShoppingMallAdminAtSummaryTransformer.select(),
+        approvalRequests: {
+          select: {
+            status: true,
+            submitted_at: true,
+          },
+        } satisfies Prisma.shopping_mall_seller_approval_requestsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_sellersFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallSeller.ISummary> {
+    const latestApproval = input.approvalRequests.sort(
+      (a, b) => b.submitted_at.getTime() - a.submitted_at.getTime(),
+    )[0];
     return {
       id: input.id,
       email: input.email,
-      shop_name: input.shop_name,
-      shop_description: input.shop_description ?? null,
-      logo_image_url: input.logo_image_url ?? null,
-      approval_status: typia.assert<"PENDING" | "APPROVED" | "REJECTED">(
-        input.approval_status,
-      ),
-      suspended: input.suspended,
-      created_at: toISOStringSafe(input.created_at),
-      approvedByAdmin: input.approvedByAdmin
-        ? await ShoppingMallAdminAtSummaryTransformer.transform(
-            input.approvedByAdmin,
-          )
-        : null,
+      created_at: input.created_at.toISOString(),
+      approval_status: (latestApproval?.status ??
+        "pending") as IShoppingMallSeller.ISummary["approval_status"],
     };
   }
 }

@@ -9,6 +9,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { EcommerceMallAdminTransformer } from "../transformers/EcommerceMallAdminTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,24 +22,19 @@ export async function postEcommerceMallAuthAdminLogin(props: {
     select: {
       id: true,
       email: true,
-      password_hash: true,
       status: true,
       created_at: true,
       updated_at: true,
       deleted_at: true,
+      password_hash: true,
     },
   });
-  if (!admin) {
-    throw new HttpException("Invalid credentials", 401);
-  }
+  if (!admin) throw new HttpException("Invalid credentials", 401);
   const isValid = await PasswordUtil.verify(
     props.body.password,
     admin.password_hash,
   );
-  if (!isValid) {
-    throw new HttpException("Invalid credentials", 401);
-  }
-  const now = new Date();
+  if (!isValid) throw new HttpException("Invalid credentials", 401);
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.ecommerce_mall_admin_sessions.create({
@@ -46,47 +42,39 @@ export async function postEcommerceMallAuthAdminLogin(props: {
       id: v4(),
       admin_id: admin.id,
       ip: props.ip,
-      href: "",
-      created_at: now.toISOString(),
-      expired_at: accessExpires.toISOString(),
+      href: v4(),
+      created_at: toISOStringSafe(new Date()),
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
   const token: IAuthorizationToken = {
     access: jwt.sign(
       {
-        type: "admin" as const,
-        id: admin.id as string & tags.Format<"uuid">,
-        session_id: session.id as string & tags.Format<"uuid">,
-        created_at: now.toISOString() as string & tags.Format<"date-time">,
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
-        type: "admin" as const,
-        id: admin.id as string & tags.Format<"uuid">,
-        session_id: session.id as string & tags.Format<"uuid">,
-        tokenType: "refresh" as const,
-        created_at: now.toISOString() as string & tags.Format<"date-time">,
+        type: "admin",
+        id: admin.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires.toISOString() as string &
-      tags.Format<"date-time">,
-    refreshable_until: refreshExpires.toISOString() as string &
-      tags.Format<"date-time">,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
+  const adminData = await EcommerceMallAdminTransformer.transform(admin);
   return {
-    id: admin.id as string & tags.Format<"uuid">,
-    email: admin.email,
-    status: admin.status,
-    created_at: admin.created_at.toISOString() as string &
-      tags.Format<"date-time">,
-    updated_at: admin.updated_at.toISOString() as string &
-      tags.Format<"date-time">,
-    deleted_at: admin.deleted_at?.toISOString() ?? null,
+    ...adminData,
     token,
   } satisfies IEcommerceMallAdmin.IAuthorized;
 }

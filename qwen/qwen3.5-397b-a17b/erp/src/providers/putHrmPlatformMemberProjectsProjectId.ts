@@ -19,75 +19,64 @@ export async function putHrmPlatformMemberProjectsProjectId(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmPlatformProject.IUpdate;
 }): Promise<IHrmPlatformProject> {
-  // Query the project ensuring it is not deleted
   const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
     {
-      where: {
-        id: props.projectId,
-        deleted_at: null,
-      },
+      where: { id: props.projectId, deleted_at: null },
+      select: { id: true, organization_id: true },
     },
   );
-  // Check member has project:manage permission via employee role
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        member_id: props.member.id,
+        user_id: props.member.id,
         organization_id: project.organization_id,
         deleted_at: null,
       },
-      include: {
-        role: true,
+      select: { id: true, role_id: true },
+    });
+  const hasPermission =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
+      where: {
+        hrm_platform_role_id: employee.role_id,
+        permission: "project:manage",
+        deleted_at: null,
       },
     });
-  // Built-in roles owner/manager have full access, otherwise check custom role permissions
-  const hasProjectManage =
-    employee.role.name === "owner" ||
-    employee.role.name === "manager" ||
-    (await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-      where: {
-        role_id: employee.role_id,
-        permission: "project:manage",
-      },
-    })) !== null;
-  if (!hasProjectManage) {
+  if (!hasPermission) {
     throw new HttpException("Forbidden", 403);
   }
-  // Build update data with only provided fields, converting string datetime to Date for Prisma
-  const updateData: Prisma.hrm_platform_projectsUpdateInput = {
-    updated_at: new Date(),
-    ...(props.body.name !== undefined && { name: props.body.name }),
-    ...(props.body.description !== undefined && {
-      description: props.body.description,
-    }),
-    ...(props.body.color_code !== undefined && {
-      color_code: props.body.color_code,
-    }),
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.budget_hours !== undefined && {
-      budget_hours: props.body.budget_hours,
-    }),
-    ...(props.body.started_at !== undefined && {
-      started_at: props.body.started_at
-        ? new Date(props.body.started_at)
-        : null,
-    }),
-    ...(props.body.ended_at !== undefined && {
-      ended_at: props.body.ended_at ? new Date(props.body.ended_at) : null,
-    }),
-  };
-  // Perform update
   await MyGlobal.prisma.hrm_platform_projects.update({
     where: { id: props.projectId },
-    data: updateData,
+    data: {
+      ...(props.body.name !== undefined && { name: props.body.name }),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
+      ...(props.body.color_code !== undefined && {
+        color_code: props.body.color_code,
+      }),
+      ...(props.body.status !== undefined && { status: props.body.status }),
+      ...(props.body.budget_hours !== undefined && {
+        budget_hours: props.body.budget_hours,
+      }),
+      ...(props.body.start_date !== undefined && {
+        start_date:
+          props.body.start_date === null
+            ? null
+            : new Date(props.body.start_date),
+      }),
+      ...(props.body.end_date !== undefined && {
+        end_date:
+          props.body.end_date === null ? null : new Date(props.body.end_date),
+      }),
+      updated_at: new Date(),
+    },
   });
-  // Fetch updated project with transformer select
   const updated = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
     {
       where: { id: props.projectId },
       ...HrmPlatformProjectTransformer.select(),
     },
   );
-  // Transform and return
   return await HrmPlatformProjectTransformer.transform(updated);
 }

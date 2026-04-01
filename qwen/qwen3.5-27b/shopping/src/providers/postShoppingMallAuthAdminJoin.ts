@@ -19,55 +19,50 @@ export async function postShoppingMallAuthAdminJoin(props: {
 }): Promise<IShoppingMallAdmin.IAuthorized> {
   // 1. Check for duplicate email
   const existing = await MyGlobal.prisma.shopping_mall_admins.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
+    where: { email: props.body.email },
   });
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Hash password
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  // 3. Create admin record
-  const now = new Date();
+  // 2. Create admin record
+  const now = new Date().toISOString();
   const admin = await MyGlobal.prisma.shopping_mall_admins.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: v4(),
       email: props.body.email,
-      password_hash: passwordHash,
+      password_hash: await PasswordUtil.hash(props.body.password),
       grade: "regular",
       status: "active",
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
     },
     ...ShoppingMallAdminTransformer.select(),
   });
-  // 4. Create session record (temporary tokens first)
+  // 3. Generate JWT tokens first (needed for session hash)
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.shopping_mall_admin_sessions.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: v4(),
       shopping_mall_admin_id: admin.id,
       access_token_hash: "",
       refresh_token_hash: "",
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: now,
+      created_at: new Date(),
       expired_at: refreshExpires,
-      last_activity_at: now,
+      last_activity_at: new Date(),
     },
   });
-  // 5. Generate JWT tokens with session.id
+  // 4. Generate JWT tokens
   const accessToken = jwt.sign(
     {
       type: "admin",
       id: admin.id,
       session_id: session.id,
-      created_at: now.toISOString(),
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -78,12 +73,12 @@ export async function postShoppingMallAuthAdminJoin(props: {
       id: admin.id,
       session_id: session.id,
       tokenType: "refresh",
-      created_at: now.toISOString(),
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 6. Update session with hashed tokens
+  // 5. Update session with token hashes
   await MyGlobal.prisma.shopping_mall_admin_sessions.update({
     where: { id: session.id },
     data: {
@@ -91,16 +86,16 @@ export async function postShoppingMallAuthAdminJoin(props: {
       refresh_token_hash: await PasswordUtil.hash(refreshToken),
     },
   });
+  // 6. Build token response
+  const token = {
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
+  };
   // 7. Return IAuthorized
   return {
     ...(await ShoppingMallAdminTransformer.transform(admin)),
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires.toISOString() as string &
-        tags.Format<"date-time">,
-      refreshable_until: refreshExpires.toISOString() as string &
-        tags.Format<"date-time">,
-    },
-  };
+    token,
+  } satisfies IShoppingMallAdmin.IAuthorized;
 }

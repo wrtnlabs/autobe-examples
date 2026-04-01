@@ -25,40 +25,53 @@ export async function patchShoppingMallAdminRefundRequests(props: {
   const skip = (page - 1) * limit;
   const whereInput = {
     deleted_at: null,
-    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.status !== undefined && {
+      status: props.body.status,
+    }),
     ...(props.body.requestedAtFrom !== undefined && {
-      requested_at: { gte: new Date(props.body.requestedAtFrom) },
+      requested_at: {
+        gte: new Date(props.body.requestedAtFrom),
+      },
     }),
     ...(props.body.requestedAtTo !== undefined && {
-      requested_at: { lte: new Date(props.body.requestedAtTo) },
+      requested_at: {
+        lte: new Date(props.body.requestedAtTo),
+      },
     }),
     ...(props.body.respondedAtFrom !== undefined && {
-      responded_at: { gte: new Date(props.body.respondedAtFrom) },
+      responded_at: {
+        gte: new Date(props.body.respondedAtFrom),
+      },
     }),
     ...(props.body.respondedAtTo !== undefined && {
-      responded_at: { lte: new Date(props.body.respondedAtTo) },
+      responded_at: {
+        lte: new Date(props.body.respondedAtTo),
+      },
     }),
   } satisfies Prisma.shopping_mall_refund_requestsWhereInput;
-  const data = await MyGlobal.prisma.shopping_mall_refund_requests.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: { requested_at: "desc" },
-    ...ShoppingMallRefundRequestAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.shopping_mall_refund_requests.count({
-    where: whereInput,
-  });
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.shopping_mall_refund_requests.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: { requested_at: "desc" },
+      ...ShoppingMallRefundRequestAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.shopping_mall_refund_requests.count({
+      where: whereInput,
+    }),
+  ]);
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    ShoppingMallRefundRequestAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallRefundRequestAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
+    data: transformedData,
   };
 }

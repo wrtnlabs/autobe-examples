@@ -17,134 +17,127 @@ export async function postRedditLikeOwnerAttachmentsBatchCleanup(props: {
   body: IRedditLikeAttachment.ICleanup;
 }): Promise<IRedditLikeAttachment.ICleanupResult> {
   const errors: string[] = [];
-  const dryRun = props.body.dryRun ?? false;
-  // Build where clause for finding attachments to cleanup
-  const whereInput = {
-    deleted_at: {
-      not: null,
-      ...(props.body.deletedBefore !== undefined &&
-      props.body.deletedBefore !== null
-        ? { lt: props.body.deletedBefore }
-        : {}),
-    },
-    ...(props.body.orphanedOnly === true
-      ? {
-          references: {
-            none: {},
-          },
-        }
-      : {}),
-  } satisfies Prisma.reddit_like_attachmentsWhereInput;
-  // Find attachments matching criteria
-  const attachmentsToCleanup =
-    await MyGlobal.prisma.reddit_like_attachments.findMany({
-      where: whereInput,
-      select: {
-        id: true,
-        file_size_bytes: true,
-        storage_path: true,
+  // Build where clause based on cleanup criteria
+  let where: Prisma.reddit_like_attachmentsWhereInput = {
+    deleted_at: { not: null },
+  };
+  // Add deletedBefore filter if provided
+  if (
+    props.body.deletedBefore !== null &&
+    props.body.deletedBefore !== undefined
+  ) {
+    where = {
+      ...where,
+      deleted_at: {
+        not: null,
+        lt: props.body.deletedBefore,
       },
-    });
-  const cleanedCount = attachmentsToCleanup.length;
-  const totalBytesFreed = attachmentsToCleanup.reduce(
-    (sum, a) => sum + a.file_size_bytes,
-    0,
-  );
-  if (dryRun || cleanedCount === 0) {
-    return {
-      cleanedCount,
-      totalBytesFreed,
-      dryRun,
-      errors,
     };
   }
-  // Delete attachments and associated records
-  const attachmentIds = attachmentsToCleanup.map((a) => a.id);
-  try {
-    // Delete thumbnails (cascade from attachment)
-    await MyGlobal.prisma.reddit_like_attachment_thumbnails.deleteMany({
-      where: {
-        reddit_like_attachment_id: { in: attachmentIds },
+  // Add orphaned filter if requested
+  if (props.body.orphanedOnly) {
+    where = {
+      ...where,
+      references: {
+        none: {},
       },
-    });
-  } catch (e) {
-    errors.push(
-      `Failed to delete thumbnails: ${e instanceof Error ? e.message : String(e)}`,
-    );
+    };
   }
-  try {
-    // Delete access logs (cascade from attachment)
-    await MyGlobal.prisma.reddit_like_attachment_access_logs.deleteMany({
-      where: {
-        reddit_like_attachment_id: { in: attachmentIds },
-      },
-    });
-  } catch (e) {
-    errors.push(
-      `Failed to delete access logs: ${e instanceof Error ? e.message : String(e)}`,
-    );
-  }
-  // Find and delete reference subtype records first
-  try {
-    const referenceIds =
-      await MyGlobal.prisma.reddit_like_attachment_references.findMany({
-        where: {
-          attachment_id: { in: attachmentIds },
-        },
-        select: { id: true },
-      });
-    const refIds = referenceIds.map((r) => r.id);
-    if (refIds.length > 0) {
-      // Delete subtype records
-      await MyGlobal.prisma.reddit_like_attachment_reference_of_profiles.deleteMany(
-        {
+  // Find attachments matching criteria
+  const attachments = await MyGlobal.prisma.reddit_like_attachments.findMany({
+    where,
+    select: {
+      id: true,
+      file_size_bytes: true,
+    },
+  });
+  let totalBytesFreed = 0;
+  // Process deletions if not dry run
+  if (!props.body.dryRun) {
+    for (const attachment of attachments) {
+      try {
+        // Delete thumbnails
+        await MyGlobal.prisma.reddit_like_attachment_thumbnails.deleteMany({
           where: {
-            reddit_like_attachment_reference_id: { in: refIds },
+            attachment: {
+              id: attachment.id,
+            },
           },
-        },
-      );
-      await MyGlobal.prisma.reddit_like_attachment_reference_of_communities.deleteMany(
-        {
+        });
+        // Delete access logs
+        await MyGlobal.prisma.reddit_like_attachment_access_logs.deleteMany({
           where: {
-            attachment_reference_id: { in: refIds },
+            attachment: {
+              id: attachment.id,
+            },
           },
-        },
-      );
-      await MyGlobal.prisma.reddit_like_attachment_reference_of_posts.deleteMany(
-        {
+        });
+        // Delete reference subtype records for profiles
+        await MyGlobal.prisma.reddit_like_attachment_reference_of_profiles.deleteMany(
+          {
+            where: {
+              attachmentReference: {
+                attachment: {
+                  id: attachment.id,
+                },
+              },
+            },
+          },
+        );
+        // Delete reference subtype records for communities
+        await MyGlobal.prisma.reddit_like_attachment_reference_of_communities.deleteMany(
+          {
+            where: {
+              attachmentReference: {
+                attachment: {
+                  id: attachment.id,
+                },
+              },
+            },
+          },
+        );
+        // Delete reference subtype records for posts
+        await MyGlobal.prisma.reddit_like_attachment_reference_of_posts.deleteMany(
+          {
+            where: {
+              attachmentReference: {
+                attachment: {
+                  id: attachment.id,
+                },
+              },
+            },
+          },
+        );
+        // Delete attachment references
+        await MyGlobal.prisma.reddit_like_attachment_references.deleteMany({
           where: {
-            attachment_reference_id: { in: refIds },
+            attachment: {
+              id: attachment.id,
+            },
           },
-        },
-      );
-      // Delete main reference records
-      await MyGlobal.prisma.reddit_like_attachment_references.deleteMany({
-        where: {
-          id: { in: refIds },
-        },
-      });
+        });
+        // Delete the attachment
+        await MyGlobal.prisma.reddit_like_attachments.delete({
+          where: { id: attachment.id },
+        });
+        totalBytesFreed += attachment.file_size_bytes;
+      } catch (error) {
+        errors.push(
+          `Failed to delete attachment ${attachment.id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
     }
-  } catch (e) {
-    errors.push(
-      `Failed to delete references: ${e instanceof Error ? e.message : String(e)}`,
-    );
-  }
-  // Finally delete the attachments
-  try {
-    await MyGlobal.prisma.reddit_like_attachments.deleteMany({
-      where: {
-        id: { in: attachmentIds },
-      },
-    });
-  } catch (e) {
-    errors.push(
-      `Failed to delete attachments: ${e instanceof Error ? e.message : String(e)}`,
+  } else {
+    // Dry run: just calculate bytes that would be freed
+    totalBytesFreed = attachments.reduce(
+      (sum, attachment) => sum + attachment.file_size_bytes,
+      0,
     );
   }
   return {
-    cleanedCount,
+    cleanedCount: attachments.length,
     totalBytesFreed,
-    dryRun,
+    dryRun: props.body.dryRun ?? false,
     errors,
   };
 }

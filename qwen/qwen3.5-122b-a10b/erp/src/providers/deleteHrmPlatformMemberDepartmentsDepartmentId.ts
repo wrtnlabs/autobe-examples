@@ -15,65 +15,54 @@ export async function deleteHrmPlatformMemberDepartmentsDepartmentId(props: {
   member: MemberPayload;
   departmentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Get member's current organization context
-  const memberWithOrg = await MyGlobal.prisma.hrm_platform_members.findFirst({
+  // Step 1: Verify department exists
+  const department =
+    await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
+      where: { id: props.departmentId },
+      select: { id: true, hrm_platform_organization_id: true },
+    });
+  // Step 2: Check org:manage permission by querying member's role in organization
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
-      id: props.member.id,
+      hrm_platform_user_id: props.member.id,
+      hrm_platform_organization_id: department.hrm_platform_organization_id,
       deleted_at: null,
     },
-    include: {
-      employees: {
-        where: {
-          deleted_at: null,
-        },
-        select: {
-          hrm_platform_organization_id: true,
-          hrm_platform_role_id: true,
-        },
-        take: 1,
-      },
-    },
+    select: { hrm_platform_role_id: true },
   });
-  if (!memberWithOrg || memberWithOrg.employees.length === 0) {
-    throw new HttpException("No organization context", 403);
+  if (!employee) {
+    throw new HttpException("Forbidden", 403);
   }
-  const organizationId =
-    memberWithOrg.employees[0].hrm_platform_organization_id;
-  const roleId = memberWithOrg.employees[0].hrm_platform_role_id;
-  // Step 2: Check org:manage permission
+  // Check if role has org:manage permission
   const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
-    where: {
-      id: roleId,
-    },
-    include: {
+    where: { id: employee.hrm_platform_role_id },
+    select: {
+      id: true,
       permissions: {
-        where: {
+        select: {
           permission: {
-            name: "org:manage",
+            select: { id: true },
           },
         },
       },
     },
   });
-  if (!role || role.permissions.length === 0) {
+  if (!role) {
     throw new HttpException("Forbidden", 403);
   }
-  // Step 3: Verify department exists and belongs to organization
-  const department =
-    await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
+  const hasOrgManagePermission =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
       where: {
-        id: props.departmentId,
-      },
-      select: {
-        id: true,
-        hrm_platform_organization_id: true,
-        name: true,
+        hrm_platform_role_id: role.id,
+        permission: {
+          id: "org:manage",
+        },
       },
     });
-  if (department.hrm_platform_organization_id !== organizationId) {
-    throw new HttpException("Department not found in your organization", 404);
+  if (!hasOrgManagePermission) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Step 4: Count affected employees
+  // Step 3: Count affected employees
   const affectedEmployeeCount =
     await MyGlobal.prisma.hrm_platform_employees.count({
       where: {
@@ -81,39 +70,35 @@ export async function deleteHrmPlatformMemberDepartmentsDepartmentId(props: {
         deleted_at: null,
       },
     });
-  // Step 5: Update affected employees - set department_id to NULL
-  const now = new Date().toISOString();
+  // Step 4: Update affected employees - set department_id to NULL
   await MyGlobal.prisma.hrm_platform_employees.updateMany({
     where: {
       hrm_platform_department_id: props.departmentId,
-      deleted_at: null,
     },
     data: {
       hrm_platform_department_id: null,
-      updated_at: now as string & tags.Format<"date-time">,
+      updated_at: new Date(),
     },
   });
-  // Step 6: Delete department
+  // Step 5: Delete department (cascade handles children)
   await MyGlobal.prisma.hrm_platform_departments.delete({
-    where: {
-      id: props.departmentId,
-    },
+    where: { id: props.departmentId },
   });
-  // Step 7: Record activity log
-  const activityId = v4() as string & tags.Format<"uuid">;
+  // Step 6: Create activity log entry
+  const activityId = v4();
+  const activityDetails = {
+    affected_employee_count: affectedEmployeeCount,
+  };
   await MyGlobal.prisma.hrm_platform_activity_logs.create({
     data: {
       id: activityId,
-      organization_id: organizationId,
+      organization_id: department.hrm_platform_organization_id,
       user_id: props.member.id,
       action_type: "department:delete",
       target_entity: "department",
       target_id: props.departmentId,
-      details: JSON.stringify({
-        department_name: department.name,
-        affected_employee_count: affectedEmployeeCount,
-      }),
-      created_at: now as string & tags.Format<"date-time">,
+      details: JSON.stringify(activityDetails),
+      created_at: new Date(),
     },
   });
 }

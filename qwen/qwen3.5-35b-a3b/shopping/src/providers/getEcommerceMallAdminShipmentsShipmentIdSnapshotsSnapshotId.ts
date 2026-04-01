@@ -21,10 +21,19 @@ export async function getEcommerceMallAdminShipmentsShipmentIdSnapshotsSnapshotI
   shipmentId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallShipmentSnapshot> {
+  // Verify parent shipment exists and is not deleted (404 if orphaned snapshot)
+  await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
+    where: {
+      id: props.shipmentId,
+      deleted_at: null,
+    },
+  });
+  // Fetch snapshot with shipment relation for transformation
   const snapshot =
     await MyGlobal.prisma.ecommerce_mall_shipment_snapshots.findUniqueOrThrow({
       where: { id: props.snapshotId },
       ...EcommerceMallShipmentSnapshotTransformer.select(),
     });
+  // Transform and return
   return await EcommerceMallShipmentSnapshotTransformer.transform(snapshot);
 }

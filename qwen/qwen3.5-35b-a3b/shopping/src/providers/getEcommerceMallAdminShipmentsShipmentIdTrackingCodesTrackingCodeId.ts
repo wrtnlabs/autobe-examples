@@ -12,7 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { EcommerceMallShipmentTrackingCodeTransformer } from "../transformers/EcommerceMallShipmentTrackingCodeTransformer";
+import { EcommerceMallShipmentAtSummaryTransformer } from "../transformers/EcommerceMallShipmentAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -25,16 +25,31 @@ export async function getEcommerceMallAdminShipmentsShipmentIdTrackingCodesTrack
     await MyGlobal.prisma.ecommerce_mall_shipment_tracking_codes.findUniqueOrThrow(
       {
         where: { id: props.trackingCodeId },
-        ...EcommerceMallShipmentTrackingCodeTransformer.select(),
+        select: {
+          id: true,
+          shipment_id: true,
+          carrier_name: true,
+          tracking_code: true,
+          created_at: true,
+          updated_at: true,
+          shipment: EcommerceMallShipmentAtSummaryTransformer.select(),
+        },
       },
     );
-  if (trackingCode.shipment.id !== props.shipmentId) {
+  if (trackingCode.shipment_id !== props.shipmentId) {
     throw new HttpException(
-      "Tracking code does not belong to the specified shipment",
+      "Tracking code does not belong to specified shipment",
       404,
     );
   }
-  return await EcommerceMallShipmentTrackingCodeTransformer.transform(
-    trackingCode,
-  );
+  return {
+    id: trackingCode.id,
+    shipment: await EcommerceMallShipmentAtSummaryTransformer.transform(
+      trackingCode.shipment,
+    ),
+    carrier_name: trackingCode.carrier_name,
+    tracking_code: trackingCode.tracking_code,
+    created_at: trackingCode.created_at.toISOString(),
+    updated_at: trackingCode.updated_at.toISOString(),
+  };
 }

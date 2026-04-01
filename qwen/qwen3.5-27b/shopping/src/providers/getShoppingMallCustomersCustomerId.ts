@@ -17,7 +17,10 @@ export async function getShoppingMallCustomersCustomerId(props: {
 }): Promise<IShoppingMallCustomer> {
   const customer =
     await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
-      where: { id: props.customerId },
+      where: {
+        id: props.customerId,
+        deleted_at: null,
+      },
       ...ShoppingMallCustomerTransformer.select(),
     });
   return await ShoppingMallCustomerTransformer.transform(customer);

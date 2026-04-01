@@ -10,7 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace HrmsOrganizationRoleCollector {
   export async function collect(props: {
     body: IHrmsOrganizationRole.ICreate;
-    organization: IEntity;
+    hrmsOrganizations: IEntity;
   }) {
     const id: string = v4();
     return {
@@ -19,25 +19,18 @@ export namespace HrmsOrganizationRoleCollector {
       is_builtin: false,
       created_at: new Date(),
       updated_at: new Date(),
-      organization: { connect: { id: props.organization.id } },
-      organizationMembers: undefined,
+      organization: { connect: { id: props.hrmsOrganizations.id } },
       permissions: props.body.permissions?.length
         ? {
-            create: await ArrayUtil.asyncMap(
-              props.body.permissions,
-              async (permissionCode, i) => ({
-                id: v4(),
-                hrms_organization_role_id: id,
-                code: permissionCode,
-                sequence: i,
-                permission: permissionCode,
-                created_at: new Date(),
-                updated_at: new Date(),
-              }),
-            ),
+            create: props.body.permissions.map((permissionCode) => ({
+              id: v4(),
+              hrms_organization_role_id: id,
+              permission: permissionCode,
+              created_at: new Date(),
+              updated_at: new Date(),
+            })),
           }
         : undefined,
-      employees: undefined,
     } satisfies Prisma.hrms_organization_rolesCreateInput;
   }
 }

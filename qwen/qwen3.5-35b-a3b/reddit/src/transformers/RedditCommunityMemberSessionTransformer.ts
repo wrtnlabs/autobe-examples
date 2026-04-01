@@ -4,8 +4,10 @@ import { IRedditCommunityMemberSession } from "@ORGANIZATION/PROJECT-api/lib/str
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
@@ -17,6 +19,8 @@ export namespace RedditCommunityMemberSessionTransformer {
     return {
       select: {
         id: true,
+        access_token: true,
+        refresh_token: true,
         ip: true,
         href: true,
         referrer: true,
@@ -25,6 +29,9 @@ export namespace RedditCommunityMemberSessionTransformer {
         deleted_at: true,
         expired_at: true,
         member: RedditCommunityMemberAtSummaryTransformer.select(),
+        commentDeletions: {
+          select: {},
+        } satisfies Prisma.reddit_community_comment_deletionsFindManyArgs,
       },
     } satisfies Prisma.reddit_community_member_sessionsFindManyArgs;
   }
@@ -39,10 +46,10 @@ export namespace RedditCommunityMemberSessionTransformer {
       ip: input.ip,
       href: input.href,
       referrer: input.referrer,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-      expired_at: input.expired_at.toISOString(),
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      expired_at: toISOStringSafe(input.expired_at),
     };
   }
 }

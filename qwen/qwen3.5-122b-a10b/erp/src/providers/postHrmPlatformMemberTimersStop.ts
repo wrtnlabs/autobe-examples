@@ -23,17 +23,17 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postHrmPlatformMemberTimersStop(props: {
   member: MemberPayload;
 }): Promise<IHrmPlatformTimelog> {
-  // Find the employee record for this member
+  // 1. Find the employee record for this member
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
       deleted_at: null,
     },
   });
-  if (employee === null) {
+  if (!employee) {
     throw new HttpException("Employee record not found", 404);
   }
-  // Find active timer for this employee
+  // 2. Find the active timer for this employee
   const timer = await MyGlobal.prisma.hrm_platform_timers.findFirst({
     where: {
       employee_id: employee.id,
@@ -41,39 +41,42 @@ export async function postHrmPlatformMemberTimersStop(props: {
       deleted_at: null,
     },
   });
-  if (timer === null) {
+  if (!timer) {
     throw new HttpException("No active timer found", 404);
   }
-  // Calculate duration in minutes (rounded to nearest integer)
+  // 3. Calculate duration in minutes (rounded to nearest minute)
   const now = new Date();
   const startedAt = timer.started_at;
   const durationMs = now.getTime() - startedAt.getTime();
-  const durationMinutes = Math.round(durationMs / 60000);
-  // Create timelog
+  const durationMinutes = Math.round(durationMs / (1000 * 60));
+  if (durationMinutes < 1) {
+    throw new HttpException("Timer duration must be at least 1 minute", 400);
+  }
+  // 4. Create timelog record
   const timelog = await MyGlobal.prisma.hrm_platform_timelogs.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: v4(),
       hrm_platform_employee_id: employee.id,
       hrm_platform_project_id: timer.project_id,
       hrm_platform_task_id: timer.task_id,
-      date: toISOStringSafe(now),
+      date: now,
       duration_minutes: durationMinutes,
       description: timer.description,
       billable: true,
-      created_at: toISOStringSafe(now),
-      updated_at: toISOStringSafe(now),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
     },
     ...HrmPlatformTimelogTransformer.select(),
   });
-  // Update timer to mark as stopped
+  // 5. Update timer with stopped_at
   await MyGlobal.prisma.hrm_platform_timers.update({
     where: { id: timer.id },
     data: {
-      stopped_at: toISOStringSafe(now),
-      updated_at: toISOStringSafe(now),
+      stopped_at: now,
+      updated_at: now,
     },
   });
-  // Transform and return
+  // 6. Return the transformed timelog
   return await HrmPlatformTimelogTransformer.transform(timelog);
 }

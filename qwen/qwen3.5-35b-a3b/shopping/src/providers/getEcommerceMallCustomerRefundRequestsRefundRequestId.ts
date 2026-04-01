@@ -26,11 +26,8 @@ export async function getEcommerceMallCustomerRefundRequestsRefundRequestId(prop
       where: { id: props.refundRequestId },
       ...EcommerceMallRefundRequestTransformer.select(),
     });
-  if (refundRequest.orderItem.order.customer.id !== props.customer.id) {
-    throw new HttpException(
-      "You do not have permission to access this refund request",
-      404,
-    );
+  if (refundRequest.customer.id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
   }
   return await EcommerceMallRefundRequestTransformer.transform(refundRequest);
 }

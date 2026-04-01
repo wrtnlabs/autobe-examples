@@ -18,26 +18,20 @@ export async function getShoppingMallAdminAdminPromotionRequestsRequestId(props:
   admin: AdminPayload;
   requestId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallAdminPromotionRequest> {
-  // Verify super admin grade
-  const adminRecord = await MyGlobal.prisma.shopping_mall_admins.findUnique({
-    where: {
-      id: props.admin.id,
-      deleted_at: null,
-    },
-    select: {
-      grade: true,
-    },
-  });
-  if (adminRecord === null || adminRecord.grade !== "super") {
+  // Verify super administrator privileges
+  const adminRecord =
+    await MyGlobal.prisma.shopping_mall_admins.findUniqueOrThrow({
+      where: { id: props.admin.id },
+      select: { id: true, grade: true },
+    });
+  if (adminRecord.grade !== "super") {
     throw new HttpException("Forbidden", 403);
   }
   // Retrieve the promotion request with admin relation
   const request =
     await MyGlobal.prisma.shopping_mall_admin_promotion_requests.findUniqueOrThrow(
       {
-        where: {
-          id: props.requestId,
-        },
+        where: { id: props.requestId },
         ...ShoppingMallAdminPromotionRequestTransformer.select(),
       },
     );

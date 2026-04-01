@@ -20,16 +20,21 @@ export async function patchEcommerceMallSellerShipmentsShipmentIdSnapshots(props
   shipmentId: string & tags.Format<"uuid">;
   body: IEcommerceMallShipmentSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallShipmentSnapshot.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
-  const skip = (page - 1) * limit;
   await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
     where: {
       id: props.shipmentId,
       ecommerce_mall_seller_id: props.seller.id,
       deleted_at: null,
     },
+    select: { id: true },
   });
+  const page: number & tags.Type<"int32"> & tags.Minimum<1> =
+    props.body.page ?? 1;
+  const limit: number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> &
+    tags.Maximum<100> = props.body.limit ?? 20;
+  const skip: number = (page - 1) * limit;
   const whereInput: Prisma.ecommerce_mall_shipment_snapshotsWhereInput = {
     ecommerce_mall_shipment_id: props.shipmentId,
     ...(props.body.status !== undefined && { status: props.body.status }),
@@ -45,19 +50,24 @@ export async function patchEcommerceMallSellerShipmentsShipmentIdSnapshots(props
         mode: "insensitive",
       },
     }),
-    ...(props.body.carrier_name !== undefined &&
-      props.body.carrier_name !== null && {
-        carrier_name: props.body.carrier_name,
-      }),
+    ...(props.body.carrier_name !== undefined && {
+      carrier_name: props.body.carrier_name,
+    }),
   } satisfies Prisma.ecommerce_mall_shipment_snapshotsWhereInput;
+  const orderByInput: Prisma.ecommerce_mall_shipment_snapshotsOrderByWithRelationInput[] =
+    props.body.sort !== undefined
+      ? [
+          {
+            [props.body.sort]: props.body.order === "asc" ? "asc" : "desc",
+          },
+        ]
+      : [{ created_at: "desc" }];
   const data = await MyGlobal.prisma.ecommerce_mall_shipment_snapshots.findMany(
     {
       where: whereInput,
+      orderBy: orderByInput,
       skip,
       take: limit,
-      orderBy: {
-        created_at: props.body.order === "asc" ? "asc" : "desc",
-      },
       ...EcommerceMallShipmentSnapshotAtSummaryTransformer.select(),
     },
   );
@@ -65,15 +75,15 @@ export async function patchEcommerceMallSellerShipmentsShipmentIdSnapshots(props
     where: whereInput,
   });
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallShipmentSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallShipmentSnapshotAtSummaryTransformer.transform,
-    ),
-  } satisfies IPageIEcommerceMallShipmentSnapshot.ISummary;
+  };
 }

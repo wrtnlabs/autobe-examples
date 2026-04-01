@@ -10,31 +10,38 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallSuperAdminConfigCompareEnvironments(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IEcommerceMallPlatformConfigurationComparison.IRequest;
 }): Promise<IPageIEcommerceMallPlatformConfigurationComparison.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
+  const page: number & tags.Type<"int32"> & tags.Minimum<0> =
+    props.body.page ?? 1;
+  const limit: number & tags.Type<"int32"> & tags.Minimum<0> =
+    props.body.limit ?? 100;
+  const skip: number = (page - 1) * limit;
   // Build where clause for configurations
-  const configWhere: Prisma.ecommerce_mall_platform_configurationsWhereInput = {
+  const whereInput: Prisma.ecommerce_mall_platform_configurationsWhereInput = {
     deleted_at: null,
     ...(props.body.isActive !== undefined && {
       is_active: props.body.isActive,
     }),
-    ...(props.body.configurationKeys !== undefined && {
-      configuration_key: { in: props.body.configurationKeys },
-    }),
+    ...(props.body.configurationKeys && props.body.configurationKeys.length > 0
+      ? { configuration_key: { in: props.body.configurationKeys } }
+      : {}),
   } satisfies Prisma.ecommerce_mall_platform_configurationsWhereInput;
-  // Query configurations
+  // Get total count for pagination
+  const total: number & tags.Type<"int32"> & tags.Minimum<0> =
+    await MyGlobal.prisma.ecommerce_mall_platform_configurations.count({
+      where: whereInput,
+    });
+  // Query configurations with pagination
   const configurations =
     await MyGlobal.prisma.ecommerce_mall_platform_configurations.findMany({
-      where: configWhere,
+      where: whereInput,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
@@ -47,39 +54,49 @@ export async function patchEcommerceMallSuperAdminConfigCompareEnvironments(prop
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        scope: true,
-        default_value: true,
-      } satisfies Prisma.ecommerce_mall_platform_configurationsSelect,
+      },
     });
-  // Transform to comparison format
+  // Get all configuration values for these configurations filtered by environment scopes
+  const configurationIds = configurations.map((config) => config.id);
+  const values =
+    await MyGlobal.prisma.ecommerce_mall_platform_configuration_values.findMany(
+      {
+        where: {
+          ecommerce_mall_platform_configuration_id: { in: configurationIds },
+          deleted_at: null,
+          environment_scope: { in: props.body.environmentScopes },
+        },
+        select: {
+          id: true,
+          configuration: true,
+          key: true,
+          value: true,
+          environment_scope: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+        },
+      },
+    );
+  // Group values by configuration to build environmentValues map
+  const environmentValueMap = new Map<
+    string,
+    Record<string, string | number | boolean | null>
+  >();
+  for (const config of configurations) {
+    environmentValueMap.set(config.id, {});
+  }
+  for (const value of values) {
+    const map = environmentValueMap.get(value.configuration.id);
+    if (map) {
+      map[value.environment_scope] = value.value;
+    }
+  }
+  // Transform configurations to response format
   const data = await ArrayUtil.asyncMap(configurations, async (config) => {
-    // Initialize environment values with all requested scopes set to null
     const environmentValues: {
       [key: string]: string | number | boolean | null;
-    } = {};
-    for (const envScope of props.body.environmentScopes) {
-      environmentValues[envScope] = null;
-    }
-    // Populate values from database - use default_value for the scope
-    const configType = config.configuration_type;
-    let parsedValue: string | number | boolean | null = null;
-    if (config.default_value !== null) {
-      parsedValue = config.default_value;
-      if (configType === "integer") {
-        parsedValue = parseInt(config.default_value, 10);
-      } else if (configType === "boolean") {
-        parsedValue =
-          config.default_value === "true" || config.default_value === "1";
-      } else if (configType === "json") {
-        try {
-          parsedValue = JSON.parse(config.default_value);
-        } catch {
-          parsedValue = null;
-        }
-      }
-    }
-    // Only set the matching scope value if available
-    environmentValues[config.scope] = parsedValue;
+    } = environmentValueMap.get(config.id) ?? {};
     return {
       id: config.id,
       key: config.configuration_key,
@@ -89,22 +106,16 @@ export async function patchEcommerceMallSuperAdminConfigCompareEnvironments(prop
       environmentValues,
       created_at: toISOStringSafe(config.created_at),
       updated_at: toISOStringSafe(config.updated_at),
-      deleted_at:
-        config.deleted_at !== null ? toISOStringSafe(config.deleted_at) : null,
+      deleted_at: config.deleted_at ? toISOStringSafe(config.deleted_at) : null,
     } satisfies IEcommerceMallPlatformConfigurationComparison.ISummary;
   });
-  // Get total count
-  const total =
-    await MyGlobal.prisma.ecommerce_mall_platform_configurations.count({
-      where: configWhere,
-    });
   return {
-    data,
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data,
   } satisfies IPageIEcommerceMallPlatformConfigurationComparison.ISummary;
 }

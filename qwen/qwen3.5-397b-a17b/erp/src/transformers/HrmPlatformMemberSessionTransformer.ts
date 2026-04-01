@@ -16,11 +16,12 @@ export namespace HrmPlatformMemberSessionTransformer {
     return {
       select: {
         id: true,
-        access_token: true,
-        refresh_token: true,
         ip: true,
         href: true,
         referrer: true,
+        access_token_hash: true,
+        refresh_token_hash: true,
+        device_info: true,
         created_at: true,
         expired_at: true,
         member: HrmPlatformMemberAtSummaryTransformer.select(),
@@ -32,16 +33,17 @@ export namespace HrmPlatformMemberSessionTransformer {
   ): Promise<IHrmPlatformMemberSession> {
     return {
       id: input.id,
-      access_token: input.access_token,
-      refresh_token: input.refresh_token,
-      ip: input.ip,
-      href: input.href,
-      referrer: input.referrer,
-      created_at: input.created_at.toISOString(),
-      expired_at: input.expired_at.toISOString(),
       member: await HrmPlatformMemberAtSummaryTransformer.transform(
         input.member,
       ),
+      ip: input.ip,
+      href: input.href,
+      referrer: input.referrer,
+      access_token_hash: input.access_token_hash,
+      refresh_token_hash: input.refresh_token_hash,
+      device_info: input.device_info,
+      created_at: input.created_at.toISOString(),
+      expired_at: input.expired_at.toISOString(),
     };
   }
 }

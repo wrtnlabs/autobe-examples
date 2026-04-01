@@ -26,13 +26,7 @@ export async function getShoppingMallCustomerCartItemsCartItemIdSnapshotsSnapsho
       },
       ...ShoppingMallCartSnapshotTransformer.select(),
     });
-  // Verify ownership - snapshot must belong to customer's cart item
-  const cartItem =
-    await MyGlobal.prisma.shopping_mall_cart_items.findUniqueOrThrow({
-      where: { id: props.cartItemId },
-      select: { shopping_mall_customer_id: true },
-    });
-  if (cartItem.shopping_mall_customer_id !== props.customer.id) {
+  if (snapshot.customer.id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await ShoppingMallCartSnapshotTransformer.transform(snapshot);

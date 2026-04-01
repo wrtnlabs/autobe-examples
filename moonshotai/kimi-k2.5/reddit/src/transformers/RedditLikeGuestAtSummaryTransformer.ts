@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditLikeGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeGuest";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace RedditLikeGuestAtSummaryTransformer {
@@ -18,11 +20,9 @@ export namespace RedditLikeGuestAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        _count: {
-          select: {
-            sessions: true,
-          },
-        },
+        sessions: {
+          select: {},
+        } satisfies Prisma.reddit_like_guest_sessionsFindManyArgs,
       },
     } satisfies Prisma.reddit_like_guestsFindManyArgs;
   }
@@ -35,7 +35,7 @@ export namespace RedditLikeGuestAtSummaryTransformer {
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-      session_count: input._count.sessions,
+      session_count: input.sessions.length,
     };
   }
 }

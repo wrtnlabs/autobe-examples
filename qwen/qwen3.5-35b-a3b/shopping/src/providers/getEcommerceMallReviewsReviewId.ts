@@ -22,7 +22,10 @@ export async function getEcommerceMallReviewsReviewId(props: {
 }): Promise<IEcommerceMallReview> {
   const review = await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow(
     {
-      where: { id: props.reviewId },
+      where: {
+        id: props.reviewId,
+        deleted_at: null,
+      },
       ...EcommerceMallReviewTransformer.select(),
     },
   );

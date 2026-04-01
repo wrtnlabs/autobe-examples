@@ -18,48 +18,42 @@ export async function getHrmsMemberUploadRequestsUploadRequestIdValidationStatus
   uploadRequestId: string & tags.Format<"uuid">;
 }): Promise<IUploadRequestValidationStatusResponse> {
   // Query the upload request record
-  const upload = await MyGlobal.prisma.hrms_file_uploads.findUniqueOrThrow({
-    where: { id: props.uploadRequestId },
-    select: {
-      id: true,
-      organization_id: true,
-      member_id: true,
-      validation_status: true,
-      upload_state: true,
-      error_message: true,
-      file_id: true,
-      permanent_storage_path: true,
-      created_at: true,
-      updated_at: true,
-      file: true,
+  const uploadRequest =
+    await MyGlobal.prisma.hrms_file_uploads.findUniqueOrThrow({
+      where: { id: props.uploadRequestId },
+      ...UploadRequestValidationStatusResponseTransformer.select(),
+    });
+  // Check authorization: member can view their own upload requests
+  if (uploadRequest.member.id === props.member.id) {
+    return await UploadRequestValidationStatusResponseTransformer.transform(
+      uploadRequest,
+    );
+  }
+  // Check if user has employee:manage permission for the organization
+  const memberRole = await MyGlobal.prisma.hrms_organization_members.findFirst({
+    where: {
+      member: { id: props.member.id },
+      organization: { id: uploadRequest.organization.id },
+      deleted_at: null,
+    },
+    include: {
+      organizationRole: true,
     },
   });
-  // Authorization check: member must own the upload or have manager/owner role in organization
-  if (upload.member_id !== props.member.id) {
-    // Check if member has manager or owner role in the organization
-    const organizationMembership =
-      await MyGlobal.prisma.hrms_organization_members.findFirst({
-        where: {
-          hrms_member_id: props.member.id,
-          hrms_organization_id: upload.organization_id,
-        },
-      });
-    if (organizationMembership === null) {
-      throw new HttpException("Forbidden", 403);
-    }
-    // Get the role details using the foreign key
-    const role = await MyGlobal.prisma.hrms_organization_roles.findUnique({
-      where: { id: organizationMembership.hrms_organization_role_id },
-    });
-    // Check if role is Manager or Owner
-    const roleIsManagerOrOwner =
-      role?.name === "Manager" || role?.name === "Owner";
-    if (!roleIsManagerOrOwner) {
-      throw new HttpException("Forbidden", 403);
-    }
+  if (memberRole === null) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Transform and return the response
+  const hasPermission =
+    await MyGlobal.prisma.hrms_organization_role_permissions.findFirst({
+      where: {
+        hrms_organization_role_id: memberRole.hrms_organization_role_id,
+        permission: "employee:manage" as const,
+      },
+    });
+  if (hasPermission === null) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await UploadRequestValidationStatusResponseTransformer.transform(
-    upload,
+    uploadRequest,
   );
 }

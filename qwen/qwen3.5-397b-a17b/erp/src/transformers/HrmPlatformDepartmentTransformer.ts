@@ -23,7 +23,7 @@ export namespace HrmPlatformDepartmentTransformer {
         updated_at: true,
         deleted_at: true,
         organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
-        parent: HrmPlatformDepartmentAtSummaryTransformer.select(),
+        parentDepartment: HrmPlatformDepartmentAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_departmentsFindManyArgs;
   }
@@ -32,16 +32,16 @@ export namespace HrmPlatformDepartmentTransformer {
   ): Promise<IHrmPlatformDepartment> {
     return {
       id: input.id,
-      name: input.name,
-      description: input.description ?? undefined,
-      parent: input.parent
-        ? await HrmPlatformDepartmentAtSummaryTransformer.transform(
-            input.parent,
-          )
-        : undefined,
       organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(
         input.organization,
       ),
+      parentDepartment: input.parentDepartment
+        ? await HrmPlatformDepartmentAtSummaryTransformer.transform(
+            input.parentDepartment,
+          )
+        : null,
+      name: input.name,
+      description: input.description,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,

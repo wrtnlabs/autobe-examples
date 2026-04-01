@@ -27,7 +27,6 @@ export async function patchShoppingMallCustomerWishlistSnapshots(props: {
   const whereInput = {
     wishlistItem: {
       shopping_mall_customer_id: props.customer.id,
-      deleted_at: null,
     },
     ...(props.body.shopping_mall_wishlist_item_id !== undefined && {
       shopping_mall_wishlist_item_id: props.body.shopping_mall_wishlist_item_id,
@@ -44,14 +43,17 @@ export async function patchShoppingMallCustomerWishlistSnapshots(props: {
     }),
   } satisfies Prisma.shopping_mall_wishlist_item_snapshotsWhereInput;
   const orderByInput =
-    sortBy === "id" ? { id: sortOrder } : { created_at: sortOrder };
+    sortBy === "id"
+      ? { id: sortOrder as "asc" | "desc" }
+      : { created_at: sortOrder as "asc" | "desc" };
   const data =
     await MyGlobal.prisma.shopping_mall_wishlist_item_snapshots.findMany({
       where: whereInput,
       skip,
       take: limit,
       orderBy: orderByInput,
-      ...ShoppingMallWishlistItemSnapshotAtSummaryTransformer.select(),
+      select:
+        ShoppingMallWishlistItemSnapshotAtSummaryTransformer.select().select,
     });
   const total =
     await MyGlobal.prisma.shopping_mall_wishlist_item_snapshots.count({
@@ -67,6 +69,6 @@ export async function patchShoppingMallCustomerWishlistSnapshots(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
-  };
+    } satisfies IPage.IPagination,
+  } satisfies IPageIShoppingMallWishlistItemSnapshot.ISummary;
 }

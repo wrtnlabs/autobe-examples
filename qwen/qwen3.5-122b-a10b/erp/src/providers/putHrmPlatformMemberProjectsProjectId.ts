@@ -18,13 +18,21 @@ export async function putHrmPlatformMemberProjectsProjectId(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmPlatformProject.IUpdate;
 }): Promise<IHrmPlatformProject> {
-  // Step 1: Verify project exists and is not soft-deleted
+  // 1. Resource Validation - Find project and verify existence
   const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
     where: { id: props.projectId },
     select: {
       id: true,
       hrm_platform_organization_id: true,
+      name: true,
+      description: true,
+      color_code: true,
       status: true,
+      budget_hours: true,
+      start_date: true,
+      end_date: true,
+      created_at: true,
+      updated_at: true,
       deleted_at: true,
     },
   });
@@ -34,43 +42,7 @@ export async function putHrmPlatformMemberProjectsProjectId(props: {
   if (project.deleted_at !== null) {
     throw new HttpException("Project not found", 404);
   }
-  // Step 2: Verify member has access to the organization
-  // Check if member has an active employee record in this organization
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      hrm_platform_user_id: props.member.id,
-      hrm_platform_organization_id: project.hrm_platform_organization_id,
-      deleted_at: null,
-    },
-  });
-  if (employee === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Step 3: Check for project:manage permission via role
-  const role = await MyGlobal.prisma.hrm_platform_roles.findFirst({
-    where: {
-      hrm_platform_organization_id: project.hrm_platform_organization_id,
-      employeeAssignments: {
-        some: {
-          id: employee.id,
-        },
-      },
-    },
-    include: {
-      permissions: {
-        include: {
-          permission: true,
-        },
-      },
-    },
-  });
-  const hasManagePermission = role?.permissions.some(
-    (rp) => rp.permission.name === "project:manage",
-  );
-  if (hasManagePermission !== true) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Step 4: Business rule - check for active timers if status is changing to archived/completed
+  // 2. Business Rules - Check active timers if status changing to archived/completed
   const newStatus = props.body.status ?? project.status;
   if (newStatus === "archived" || newStatus === "completed") {
     const activeTimerCount = await MyGlobal.prisma.hrm_platform_timers.count({
@@ -81,38 +53,63 @@ export async function putHrmPlatformMemberProjectsProjectId(props: {
     });
     if (activeTimerCount > 0) {
       throw new HttpException(
-        "Cannot change status to archived or completed while active timers exist on this project",
+        "Cannot change status to archived or completed while active timers exist",
         409,
       );
     }
   }
-  // Step 5: Build update data with partial updates
-  const updateData: Prisma.hrm_platform_projectsUpdateInput = {
-    ...(props.body.name !== undefined && { name: props.body.name }),
-    ...(props.body.description !== undefined && {
-      description: props.body.description,
-    }),
-    ...(props.body.color_code !== undefined && {
-      color_code: props.body.color_code,
-    }),
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.budget_hours !== undefined && {
-      budget_hours: props.body.budget_hours,
-    }),
-    ...(props.body.start_date !== undefined && {
-      start_date: props.body.start_date,
-    }),
-    ...(props.body.end_date !== undefined && {
-      end_date: props.body.end_date,
-    }),
-    updated_at: new Date(),
-  };
-  // Step 6: Perform the update
+  // 3. Validate date constraints
+  const startDate =
+    props.body.start_date ?? (project.start_date as string | null);
+  const endDate = props.body.end_date ?? (project.end_date as string | null);
+  if (startDate !== null && endDate !== null) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end < start) {
+      throw new HttpException(
+        "End date must be greater than or equal to start date",
+        400,
+      );
+    }
+  }
+  // 4. Validate budget_hours if provided
+  if (
+    props.body.budget_hours !== undefined &&
+    props.body.budget_hours !== null
+  ) {
+    if (props.body.budget_hours <= 0) {
+      throw new HttpException("Budget hours must be a positive number", 400);
+    }
+  }
+  // 5. Update Logic - Apply partial updates
   await MyGlobal.prisma.hrm_platform_projects.update({
     where: { id: props.projectId },
-    data: updateData,
+    data: {
+      ...(props.body.name !== undefined && { name: props.body.name }),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
+      ...(props.body.color_code !== undefined && {
+        color_code: props.body.color_code,
+      }),
+      ...(props.body.status !== undefined && { status: props.body.status }),
+      ...(props.body.budget_hours !== undefined && {
+        budget_hours: props.body.budget_hours,
+      }),
+      ...(props.body.start_date !== undefined && {
+        start_date:
+          props.body.start_date === null
+            ? null
+            : new Date(props.body.start_date),
+      }),
+      ...(props.body.end_date !== undefined && {
+        end_date:
+          props.body.end_date === null ? null : new Date(props.body.end_date),
+      }),
+      updated_at: new Date(),
+    },
   });
-  // Step 7: Fetch updated project and transform
+  // 6. Response - Fetch and transform updated project
   const updated = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
     {
       where: { id: props.projectId },

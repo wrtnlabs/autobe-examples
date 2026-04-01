@@ -1,10 +1,10 @@
 export * as profile from "./profile/index";
+export * as sessions from "./sessions/index";
 export * as organizations from "./organizations/index";
-export * as employees from "./employees/index";
 export * as departments from "./departments/index";
-export * as employee_department_histories from "./employee_department_histories/index";
+export * as employees from "./employees/index";
 export * as roles from "./roles/index";
-export * as contracts from "./contracts/index";
+export * as invitations from "./invitations/index";
 export * as projects from "./projects/index";
 export * as timelogs from "./timelogs/index";
 export * as timesheets from "./timesheets/index";

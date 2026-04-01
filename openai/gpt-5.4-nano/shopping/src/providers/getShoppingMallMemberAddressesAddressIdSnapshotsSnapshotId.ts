@@ -18,16 +18,35 @@ export async function getShoppingMallMemberAddressesAddressIdSnapshotsSnapshotId
   addressId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallAddressSnapshot> {
-  const snapshot =
-    await MyGlobal.prisma.shopping_mall_address_snapshots.findFirstOrThrow({
+  const parentAddress = await MyGlobal.prisma.shopping_mall_addresses.findFirst(
+    {
+      where: {
+        id: props.addressId,
+      },
+      select: {
+        id: true,
+        shopping_mall_customer_id: true,
+        deleted_at: true,
+      },
+    },
+  );
+  if (
+    parentAddress === null ||
+    parentAddress.deleted_at !== null ||
+    parentAddress.shopping_mall_customer_id !== props.member.id
+  ) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const snapshotRow =
+    await MyGlobal.prisma.shopping_mall_address_snapshots.findFirst({
       where: {
         id: props.snapshotId,
         shopping_mall_address_id: props.addressId,
-        address: {
-          shopping_mall_customer_id: props.member.id,
-        },
       },
       ...ShoppingMallAddressSnapshotTransformer.select(),
     });
-  return await ShoppingMallAddressSnapshotTransformer.transform(snapshot);
+  if (snapshotRow === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  return await ShoppingMallAddressSnapshotTransformer.transform(snapshotRow);
 }

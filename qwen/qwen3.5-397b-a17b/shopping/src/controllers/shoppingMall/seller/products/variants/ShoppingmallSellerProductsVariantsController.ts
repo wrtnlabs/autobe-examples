@@ -2,31 +2,33 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IPageIShoppingMallProductVariant } from "../../../../../api/structures/IPageIShoppingMallProductVariant";
 import { IShoppingMallProductVariant } from "../../../../../api/structures/IShoppingMallProductVariant";
 import { SellerAuth } from "../../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../../decorators/payload/SellerPayload";
 import { deleteShoppingMallSellerProductsProductIdVariantsVariantId } from "../../../../../providers/deleteShoppingMallSellerProductsProductIdVariantsVariantId";
+import { getShoppingMallSellerProductsProductIdVariantsVariantId } from "../../../../../providers/getShoppingMallSellerProductsProductIdVariantsVariantId";
+import { patchShoppingMallSellerProductsProductIdVariants } from "../../../../../providers/patchShoppingMallSellerProductsProductIdVariants";
 import { postShoppingMallSellerProductsProductIdVariants } from "../../../../../providers/postShoppingMallSellerProductsProductIdVariants";
+import { putShoppingMallSellerProductsProductIdVariantsVariantId } from "../../../../../providers/putShoppingMallSellerProductsProductIdVariantsVariantId";
 
 @Controller("/shoppingMall/seller/products/:productId/variants")
 export class ShoppingmallSellerProductsVariantsController {
   /**
-   * Create a new product variant for a specific product listing.
+   * Create a new product variant (SKU) for an existing product.
    *
-   * This operation allows sellers to add variant configurations to their products, enabling customers to purchase different options such as color, size, or material combinations. Each variant must have a globally unique SKU code that identifies it across the platform.
+   * This operation allows sellers to add variants to their products. Each variant represents a specific combination of option values (such as Color=Red, Size=Large) with a unique SKU code. Variants can have an optional price override that supersedes the parent product's base price.
    *
-   * The variant includes option values stored as key-value pairs (e.g., color=Red, size=Large), an optional price override that supersedes the product's base price, and a stock quantity tracking available inventory. When no variant price is specified, the product's base price applies.
+   * The variant is created with an initial stock quantity of zero. Sellers must subsequently add inventory through the inventory management endpoints. A product must have at least one variant to be purchasable by customers.
    *
-   * Sellers can only create variants for products they own. The system validates SKU code uniqueness across all variants in the platform. Upon creation, the variant is immediately available for customer purchase and can be added to shopping carts.
-   *
-   * A product must have at least one variant to be purchasable. Products without variants remain visible in search results but are marked as unavailable to customers.
+   * The SKU code must be globally unique across all variants in the system. Option values must belong to option definitions of the parent product.
    *
    * @param connection
-   * @param productId Target product's ID (UUID format). The variant will be created under this product.
-   * @param body Variant creation information including SKU code, option values, optional price override, and initial stock quantity
+   * @param productId Product ID (UUID format) - the parent product to add the variant to
+   * @param body Variant creation data including SKU code, optional price override, and option value IDs
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Create a new product variant under the specified product. Validate that the requesting user is a seller and owns the parent product. Check that sku_code is unique across the entire platform. Create the variant record with provided sku_code, optional price override, and initial stock_quantity (defaults to 0 if not provided). Create child shopping_mall_product_variant_options records for each option key-value pair in the request, ensuring no duplicate keys within the same variant. Return the complete variant object including generated id, created_at, and updated_at timestamps. The variant is immediately available for customer purchasing once created.
+   * @x-autobe-specification Validate that the authenticated user is the seller who owns the product. Verify product exists and is not deleted. Validate SKU code is globally unique (check shopping_mall_product_variants.sku_code uniqueness constraint). Validate all provided option value IDs belong to option definitions of this product. Create the variant record with shopping_mall_product_id, sku_code, price_override (nullable), and timestamps. Create junction records in shopping_mall_product_variant_options linking the variant to each selected option value. Return the created variant with its option values joined. Handle uniqueness violation on SKU code with 409 Conflict. Handle invalid option value ownership with 400 Bad Request.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -51,40 +53,166 @@ export class ShoppingmallSellerProductsVariantsController {
   }
 
   /**
-   * Soft delete a product variant from the catalog.
+   * Retrieve a filtered and paginated list of product variants for a specific product.
    *
-   * This endpoint allows sellers to mark their own product variants as deleted when they are no longer available or needed. The operation performs comprehensive validation to ensure data integrity and prevent disruption to existing orders. Before deletion, the system verifies that the variant has no pending order items in PAID or SHIPPED status, no pending cancellation requests, and no pending refund requests.
+   * This operation provides sellers with the ability to browse and search through variants of their product. Supports filtering by SKU code, price range, and creation date. Results are paginated with configurable page sizes and sorting options.
    *
-   * Only the seller who owns the parent product can delete its variants. This ownership check prevents unauthorized modifications to another seller's product catalog. The variant is soft deleted by setting the deleted flag to true and recording the deletion timestamp, which hides the variant from search results and product listings while preserving the record for historical order references.
-   *
-   * When a variant is deleted, all associated inventory records are automatically cascade deleted since they are no longer meaningful without the variant. The product itself remains in the catalog, but if this was the last variant, the product becomes unavailable for purchase while remaining visible in search results.
-   *
-   * The soft delete approach ensures that existing order items referencing this variant maintain their historical accuracy. Order history continues to display the variant information through snapshot tables (shopping_mall_product_variant_snapshots) even after the variant is deleted. This preserves the integrity of past purchase records.
-   *
-   * To restore a deleted variant, sellers must contact platform administrators as the API does not provide an undelete operation. Alternatively, sellers can create a new variant with updated information.
+   * Variants are returned with their current configuration including SKU code, price override, and option combinations. Only the product owner (seller) can access variants for their products.
    *
    * @param connection
-   * @param productId Parent product's unique identifier (UUID format). Used to verify seller ownership and scope the variant deletion.
-   * @param variantId Target variant's unique identifier (UUID format). Must belong to the specified product.
+   * @param productId Product ID (UUID format)
+   * @param body Search criteria and pagination parameters for filtering variants
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement variant deletion with comprehensive validation and soft delete:
+   * @x-autobe-specification Query shopping_mall_product_variants table filtered by shopping_mall_product_id. Apply search filters from request body: sku_code partial match, price_override range, created_at range. Join with shopping_mall_product_variant_options and shopping_mall_product_option_values to include option combinations in response. Apply pagination with cursor or offset-based approach. Sort by specified field (created_at, sku_code, price_override) in specified direction. Verify product ownership - seller can only access their own product's variants. Return 404 if product not found or user lacks permission. Return empty array if no variants match criteria.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallProductVariant.IRequest,
+  ): Promise<IPageIShoppingMallProductVariant.ISummary> {
+    try {
+      return await patchShoppingMallSellerProductsProductIdVariants({
+        seller,
+        productId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve detailed information about a specific product variant.
    *
-   * 1. **Ownership Verification**: Query shopping_mall_products table to verify the productId exists and the authenticated seller's ID matches shopping_seller_id. Return 403 Forbidden if seller doesn't own the product.
+   * This operation returns complete variant details including SKU code, price override, and selected option values. The variant is accessed through its parent product to ensure proper ownership validation.
    *
-   * 2. **Variant Existence Check**: Query shopping_mall_product_variants table to verify variantId exists and belongs to the specified productId. Return 404 Not Found if variant doesn't exist.
+   * Returns the full variant entity with all associated option values representing the specific configuration (e.g., Color=Red, Size=Large). Includes timestamps for creation and last modification.
    *
-   * 3. **Pending Order Items Validation**: Query shopping_mall_order_items table where shopping_mall_product_variant_id equals variantId and status is 'PAID' or 'SHIPPED'. If any records exist, reject with 409 Conflict error indicating pending orders.
+   * @param connection
+   * @param productId Parent product ID (UUID format)
+   * @param variantId Product variant ID (UUID format)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Query shopping_mall_product_variants table by variant ID.
+   * Validate that the variant belongs to the specified product by checking shopping_mall_product_id matches productId parameter.
+   * Join with shopping_mall_product_variant_options to retrieve selected option values.
+   * Join with shopping_mall_product_option_values to get option value names.
+   * Return 404 if variant not found or doesn't belong to the specified product.
+   * Exclude soft-deleted variants (deleted_at is not null).
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":variantId")
+  public async at(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedParam("variantId")
+    variantId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallProductVariant> {
+    try {
+      return await getShoppingMallSellerProductsProductIdVariantsVariantId({
+        seller,
+        productId,
+        variantId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing product variant's configuration including SKU code, price override, and option value combinations.
    *
-   * 4. **Pending Cancellation Requests Validation**: Join shopping_mall_cancellation_requests with shopping_mall_order_items where order_item's shopping_mall_product_variant_id equals variantId and cancellation request status is 'PENDING'. If any exist, reject with 409 Conflict.
+   * This operation allows sellers to modify their product variants. The variant must belong to a product owned by the requesting seller. Updating a variant creates an immutable snapshot preserving the previous state for audit and dispute resolution purposes.
    *
-   * 5. **Pending Refund Requests Validation**: Join shopping_mall_refund_requests with shopping_mall_order_items where order_item's shopping_mall_product_variant_id equals variantId and refund request status is 'PENDING'. If any exist, reject with 409 Conflict.
+   * The SKU code must be unique across all variants in the system. Option values define the variant's specific configuration such as color, size, or material combinations. Price override is optional - when null, the parent product's base price applies.
    *
-   * 6. **Soft Delete Execution**: Update shopping_mall_product_variants setting deleted=true and deleted_at=current timestamp. Do not physically delete the record.
+   * The system validates that the variant exists, is not soft-deleted, the seller owns the parent product, and the new SKU code is not already in use. Pending order items do not block variant updates (unlike deletions per section 322), but the updated information applies to future orders only.
    *
-   * 7. **Cascade Delete Inventory**: The database CASCADE constraint on shopping_mall_inventory_records will automatically delete all inventory records for this variant. No manual deletion needed.
+   * @param connection
+   * @param productId Parent product ID (UUID format, used for ownership verification)
+   * @param variantId Variant ID to update (UUID format)
+   * @param body Variant update data including SKU code, optional price override, and option value IDs
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Verify the requesting seller owns the product by checking shopping_mall_products.seller_id matches authenticated seller.
    *
-   * 8. **Response**: Return 204 No Content on success. Return appropriate error codes: 403 Forbidden (ownership), 404 Not Found (variant doesn't exist), 409 Conflict (pending orders/requests).
+   * Validate variant exists in shopping_mall_product_variants with matching id and shopping_mall_product_id.
+   *
+   * Check SKU code uniqueness: query shopping_mall_product_variants.sku_code to ensure no duplicate (excluding current variant).
+   *
+   * Begin database transaction:
+   * 1. Update shopping_mall_product_variants record with new sku_code, price_override, and updated_at timestamp.
+   * 2. Delete existing shopping_mall_product_variant_options records for this variant.
+   * 3. Insert new shopping_mall_product_variant_options records linking variant to provided option_value_ids.
+   * 4. Create snapshot record in shopping_mall_product_variant_snapshots capturing all fields before update.
+   * 5. Commit transaction.
+   *
+   * Return updated variant entity with joined option values.
+   *
+   * Error handling:
+   * - 404: Product or variant not found
+   * - 403: Seller does not own the product
+   * - 409: SKU code already exists
+   * - 400: Invalid option value IDs or empty option values array
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":variantId")
+  public async update(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedParam("variantId")
+    variantId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallProductVariant.IUpdate,
+  ): Promise<IShoppingMallProductVariant> {
+    try {
+      return await putShoppingMallSellerProductsProductIdVariantsVariantId({
+        seller,
+        productId,
+        variantId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently remove a product variant from the catalog.
+   *
+   * This operation deletes a specific variant (SKU) from a product. The variant must have no pending order items in paid or shipped status, no pending cancellation requests, and no pending refund requests. Additionally, the product must have at least one other variant remaining after deletion to remain purchasable.
+   *
+   * When a variant is deleted, all inventory records for that variant are also removed. The variant no longer appears in product listings or search results. This operation is performed by the seller who owns the product.
+   *
+   * @param connection
+   * @param productId Product ID (UUID format, global scope)
+   * @param variantId Variant ID (UUID format, scoped to product)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Validate that the requesting user is the seller who owns the product. Verify the variant exists and belongs to the specified product.
+   *
+   * Check deletion preconditions:
+   * 1. Query order_items table for any items referencing this variant with status 'paid' or 'shipped' - reject if found
+   * 2. Query cancellation_requests table for any pending requests for this variant - reject if found
+   * 3. Query refund_requests table for any pending requests for this variant - reject if found
+   * 4. Count remaining variants for this product - reject if this is the last variant (product would have zero variants)
+   *
+   * If all validations pass, set deleted_at timestamp on the variant record. Cascade delete all inventory_records for this variant. Return 204 No Content on success.
+   *
+   * Handle edge cases: concurrent deletion attempts should use optimistic locking. If product itself is deleted, variants are cascade deleted automatically.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":variantId")

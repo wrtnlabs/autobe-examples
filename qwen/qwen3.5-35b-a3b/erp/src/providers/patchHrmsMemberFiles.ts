@@ -21,126 +21,103 @@ export async function patchHrmsMemberFiles(props: {
   member: MemberPayload;
   body: IHrmsFile.IRequest;
 }): Promise<IPageIHrmsFile.ISummary> {
-  // Get authenticated member's organization membership
-  const memberMembership =
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  if (page < 1) {
+    throw new HttpException("Page must be at least 1", 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw new HttpException("Limit must be between 1 and 100", 400);
+  }
+  const skip = (page - 1) * limit;
+  const member = await MyGlobal.prisma.hrms_members.findUniqueOrThrow({
+    where: {
+      id: props.member.id,
+      deleted_at: null,
+    },
+  });
+  const organizationMember =
     await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
         hrms_member_id: props.member.id,
         deleted_at: null,
       },
-      select: {
-        hrms_organization_id: true,
-      },
     });
-  if (memberMembership === null) {
-    throw new HttpException("You're not enrolled", 403);
+  if (organizationMember === null) {
+    throw new HttpException("No organization membership found", 403);
   }
-  const organizationId = memberMembership.hrms_organization_id;
-  // Validate pagination parameters
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const safeLimit = Math.min(Math.max(limit, 1), 100);
-  const safePage = Math.max(page, 1);
-  const skip = (safePage - 1) * safeLimit;
-  // Build filter conditions
+  const organizationId = organizationMember.hrms_organization_id;
+  const allowedSortFields = [
+    "filename",
+    "file_size",
+    "created_at",
+    "updated_at",
+    "validation_status",
+    "file_category",
+  ];
+  const sortBy = props.body.sortBy ?? "created_at";
+  if (!allowedSortFields.includes(sortBy)) {
+    throw new HttpException("Invalid sort field", 400);
+  }
+  const sortOrder = props.body.sortOrder ?? "desc";
+  const orderByInput = {
+    [sortBy]: sortOrder,
+  } satisfies Prisma.hrms_filesOrderByWithRelationInput;
   const whereInput: Prisma.hrms_filesWhereInput = {
     organization_id: organizationId,
     deleted_at: null,
+    ...(props.body.category !== undefined && {
+      file_category: props.body.category,
+    }),
+    ...(props.body.validationStatus !== undefined && {
+      validation_status: props.body.validationStatus,
+    }),
+    ...(props.body.ownerType !== null &&
+      props.body.ownerType !== undefined && {
+        owner_type: props.body.ownerType,
+      }),
+    ...(props.body.ownerId !== null &&
+      props.body.ownerId !== undefined && {
+        owner_id: props.body.ownerId,
+      }),
+    ...(props.body.filename !== undefined && {
+      filename: {
+        contains: props.body.filename,
+        mode: "insensitive",
+      },
+    }),
   };
-  if (props.body.category !== undefined) {
-    whereInput.file_category = props.body.category;
-  }
-  if (props.body.validationStatus !== undefined) {
-    whereInput.validation_status = props.body.validationStatus;
-  }
-  if (props.body.ownerId !== null) {
-    whereInput.owner_id = props.body.ownerId;
-  }
-  if (props.body.ownerType !== null) {
-    whereInput.owner_type = props.body.ownerType;
-  }
-  if (props.body.filename !== undefined) {
-    whereInput.filename = {
-      contains: props.body.filename,
-      mode: "insensitive" as const,
-    };
-  }
-  if (props.body.startDate !== undefined) {
-    whereInput.created_at = {
-      gte: new Date(props.body.startDate),
-    };
-  }
-  if (props.body.endDate !== undefined) {
-    const existingFilter = whereInput.created_at;
-    if (typeof existingFilter === "string" || existingFilter instanceof Date) {
-      whereInput.created_at = {
-        gte: existingFilter,
-        lte: new Date(props.body.endDate),
-      };
-    } else if (typeof existingFilter === "object" && existingFilter !== null) {
-      whereInput.created_at = {
-        ...existingFilter,
-        lte: new Date(props.body.endDate),
-      };
-    } else {
-      whereInput.created_at = {
-        lte: new Date(props.body.endDate),
-      };
+  if (props.body.startDate !== undefined || props.body.endDate !== undefined) {
+    whereInput.created_at = {};
+    if (props.body.startDate !== undefined) {
+      whereInput.created_at.gte = new Date(props.body.startDate);
+    }
+    if (props.body.endDate !== undefined) {
+      whereInput.created_at.lte = new Date(props.body.endDate);
     }
   }
-  // Validate date range
-  if (props.body.startDate !== undefined && props.body.endDate !== undefined) {
-    const start = props.body.startDate;
-    const end = props.body.endDate;
-    if (start > end) {
-      throw new HttpException("start_date must be <= end_date", 400);
-    }
-  }
-  // Build order by
-  const orderByInput: Prisma.hrms_filesOrderByWithRelationInput =
-    ((): Prisma.hrms_filesOrderByWithRelationInput => {
-      switch (props.body.sortBy) {
-        case "filename":
-          return { filename: props.body.sortOrder ?? "asc" };
-        case "file_size":
-          return { file_size: props.body.sortOrder ?? "asc" };
-        case "created_at":
-          return { created_at: props.body.sortOrder ?? "desc" };
-        case "updated_at":
-          return { updated_at: props.body.sortOrder ?? "desc" };
-        case "validation_status":
-          return { validation_status: props.body.sortOrder ?? "asc" };
-        case "file_category":
-          return { file_category: props.body.sortOrder ?? "asc" };
-        default:
-          return { created_at: "desc" };
-      }
-    })() satisfies Prisma.hrms_filesOrderByWithRelationInput;
-  // Query files
-  const [files, total] = await Promise.all([
+  const [data, total] = await Promise.all([
     MyGlobal.prisma.hrms_files.findMany({
       where: whereInput,
-      skip,
-      take: safeLimit,
       orderBy: orderByInput,
+      skip,
+      take: limit,
       ...HrmsFileAtSummaryTransformer.select(),
     }),
-    MyGlobal.prisma.hrms_files.count({ where: whereInput }),
+    MyGlobal.prisma.hrms_files.count({
+      where: whereInput,
+    }),
   ]);
-  // Transform files
-  const transformedFiles = await ArrayUtil.asyncMap(
-    files,
-    HrmsFileAtSummaryTransformer.transform,
-  );
-  // Build pagination
-  const pages = total === 0 ? 0 : Math.ceil(total / safeLimit);
   return {
-    data: transformedFiles,
     pagination: {
-      current: safePage,
-      limit: safeLimit,
+      current: page,
+      limit: limit,
       records: total,
-      pages: pages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmsFileAtSummaryTransformer.transform,
+    ),
   } satisfies IPageIHrmsFile.ISummary;
 }

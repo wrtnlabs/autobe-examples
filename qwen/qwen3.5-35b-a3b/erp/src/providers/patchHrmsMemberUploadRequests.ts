@@ -12,7 +12,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { HrmsFileUploadAtSummaryTransformer } from "../transformers/HrmsFileUploadAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,100 +22,85 @@ export async function patchHrmsMemberUploadRequests(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Validate status if provided
-  const validStatuses = ["pending", "validated", "stored", "failed"] as const;
-  const whereStatus: "pending" | "validated" | "stored" | "failed" | undefined =
-    props.body.status
-      ? validStatuses.includes(props.body.status)
-        ? props.body.status
-        : undefined
-      : undefined;
-  // Build where clause
-  const where: Prisma.hrms_file_uploadsWhereInput = {
+  const sortBy = props.body.sortBy ?? "created_at";
+  const sortOrder = props.body.sortOrder ?? "desc";
+  // Build where filter
+  const whereInput: Prisma.hrms_file_uploadsWhereInput = {
     deleted_at: null,
-  };
-  // Filter by status
-  if (whereStatus) {
-    where.upload_state = whereStatus;
+    ...(props.body.status !== undefined && {
+      upload_state: props.body.status,
+    }),
+    ...(props.body.organizationId !== undefined && {
+      organization_id: props.body.organizationId,
+    }),
+    ...(props.body.employeeId !== undefined && {
+      member_id: props.body.employeeId,
+    }),
+    ...(props.body.fileType !== undefined && {
+      file_type: props.body.fileType,
+    }),
+    ...(props.body.dateRange && {
+      created_at: {
+        ...(props.body.dateRange.startDate !== undefined && {
+          gte: new Date(props.body.dateRange.startDate + "T00:00:00.000Z"),
+        }),
+        ...(props.body.dateRange.endDate !== undefined && {
+          lte: new Date(props.body.dateRange.endDate + "T23:59:59.999Z"),
+        }),
+      },
+    }),
+  } satisfies Prisma.hrms_file_uploadsWhereInput;
+  // Build orderBy
+  const orderByInput: Prisma.hrms_file_uploadsOrderByWithRelationInput[] = [];
+  if (sortBy === "created_at") {
+    orderByInput.push({ created_at: sortOrder as "asc" | "desc" });
+  } else if (sortBy === "status") {
+    orderByInput.push({ upload_state: sortOrder as "asc" | "desc" });
+  } else if (sortBy === "file_name") {
+    orderByInput.push({ original_filename: sortOrder as "asc" | "desc" });
+  } else if (sortBy === "upload_state") {
+    orderByInput.push({ upload_state: sortOrder as "asc" | "desc" });
   }
-  // Filter by organizationId (admin-only for cross-org)
-  if (props.body.organizationId) {
-    where.organization_id = props.body.organizationId;
-  }
-  // Filter by employeeId (defaults to current member if not specified)
-  if (props.body.employeeId) {
-    where.member_id = props.body.employeeId;
-  } else {
-    // Regular employees default to their own uploads
-    where.member_id = props.member.id;
-  }
-  // Filter by dateRange using string date comparisons
-  if (props.body.dateRange) {
-    const { startDate, endDate } = props.body.dateRange;
-    if (startDate && endDate) {
-      where.created_at = {
-        gte: toISOStringSafe(new Date(startDate + "T00:00:00Z")),
-        lte: toISOStringSafe(new Date(endDate + "T23:59:59Z")),
-      };
-    } else if (startDate) {
-      where.created_at = {
-        gte: toISOStringSafe(new Date(startDate + "T00:00:00Z")),
-      };
-    } else if (endDate) {
-      where.created_at = {
-        lte: toISOStringSafe(new Date(endDate + "T23:59:59Z")),
-      };
-    }
-  }
-  // Filter by fileType with case-insensitive contains
-  if (props.body.fileType) {
-    where.file_type = {
-      contains: props.body.fileType,
-      mode: "insensitive",
-    };
-  }
-  // Build orderBy with satisfies for type safety
-  const orderBy: Prisma.hrms_file_uploadsOrderByWithRelationInput[] = [
-    props.body.sortBy === "created_at"
-      ? { created_at: (props.body.sortOrder ?? "desc") as "asc" | "desc" }
-      : props.body.sortBy === "status"
-        ? { upload_state: (props.body.sortOrder ?? "desc") as "asc" | "desc" }
-        : props.body.sortBy === "file_name"
-          ? {
-              original_filename: (props.body.sortOrder ?? "desc") as
-                | "asc"
-                | "desc",
-            }
-          : props.body.sortBy === "upload_state"
-            ? {
-                upload_state: (props.body.sortOrder ?? "desc") as
-                  | "asc"
-                  | "desc",
-              }
-            : { created_at: "desc" as const },
-  ];
-  // Query data and total count sequentially
+  // Query
   const data = await MyGlobal.prisma.hrms_file_uploads.findMany({
-    where,
+    where: whereInput,
+    orderBy: orderByInput,
     skip,
     take: limit,
-    orderBy,
-    ...HrmsFileUploadAtSummaryTransformer.select(),
+    select: {
+      id: true,
+      original_filename: true,
+      file_type: true,
+      file_size: true,
+      validation_status: true,
+      upload_state: true,
+      created_at: true,
+      file_id: true,
+      permanent_storage_path: true,
+      error_message: true,
+    },
   });
   const total = await MyGlobal.prisma.hrms_file_uploads.count({
-    where,
+    where: whereInput,
   });
-  // Transform and return paginated result
   return {
+    data: data.map((item) => ({
+      id: item.id,
+      originalFilename: item.original_filename,
+      fileType: item.file_type,
+      fileSize: item.file_size,
+      validationStatus: item.validation_status,
+      uploadState: item.upload_state,
+      createdAt: item.created_at.toISOString(),
+      fileId: item.file_id,
+      permanentStoragePath: item.permanent_storage_path,
+      errorMessage: item.error_message,
+    })),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmsFileUploadAtSummaryTransformer.transform,
-    ),
   };
 }

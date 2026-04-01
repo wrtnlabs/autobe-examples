@@ -24,12 +24,19 @@ export async function getShoppingMallCustomerReviewsReviewIdSnapshotsSnapshotId(
         id: props.snapshotId,
         shopping_mall_review_id: props.reviewId,
       },
-      ...ShoppingMallReviewSnapshotTransformer.select(),
+      select: {
+        id: true,
+        snapshot_data: true,
+        created_at: true,
+        review: {
+          select: {
+            id: true,
+            shopping_customer_id: true,
+          },
+        } satisfies Prisma.shopping_mall_reviewsFindManyArgs,
+      },
     });
-  const snapshotData = JSON.parse(snapshot.snapshot_data) as {
-    shopping_customer_id: string;
-  };
-  if (snapshotData.shopping_customer_id !== props.customer.id) {
+  if (snapshot.review.shopping_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await ShoppingMallReviewSnapshotTransformer.transform(snapshot);

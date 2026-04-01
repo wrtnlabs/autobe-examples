@@ -4,8 +4,10 @@ import { IHrmsMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsMembe
 import { IHrmsOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsMemberAtSummaryTransformer } from "./HrmsMemberAtSummaryTransformer";
 import { HrmsOrganizationAtSummaryTransformer } from "./HrmsOrganizationAtSummaryTransformer";
@@ -16,8 +18,6 @@ export namespace HrmsFileTransformer {
     return {
       select: {
         id: true,
-        organization: HrmsOrganizationAtSummaryTransformer.select(),
-        owner: HrmsMemberAtSummaryTransformer.select(),
         filename: true,
         storage_path: true,
         mime_type: true,
@@ -28,7 +28,8 @@ export namespace HrmsFileTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        uploadHistory: true,
+        organization: HrmsOrganizationAtSummaryTransformer.select(),
+        owner: HrmsMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrms_filesFindManyArgs;
   }
@@ -46,7 +47,7 @@ export namespace HrmsFileTransformer {
       validation_status: input.validation_status,
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: toISOStringSafe(input.deleted_at ?? new Date()),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       organization: await HrmsOrganizationAtSummaryTransformer.transform(
         input.organization,
       ),

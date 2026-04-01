@@ -2,8 +2,10 @@ import { IEcommerceMallInventorySnapshot } from "@ORGANIZATION/PROJECT-api/lib/s
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallInventorySnapshotTransformer {
@@ -14,13 +16,17 @@ export namespace EcommerceMallInventorySnapshotTransformer {
     return {
       select: {
         id: true,
-        inventoryRecord: { select: { id: true } },
         variant_id: true,
         quantity: true,
         reserved_quantity: true,
         reason: true,
         notes: true,
         created_at: true,
+        inventoryRecord: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_inventory_recordsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_inventory_snapshotsFindManyArgs;
   }
@@ -31,8 +37,8 @@ export namespace EcommerceMallInventorySnapshotTransformer {
       id: input.id,
       inventory_record_id: input.inventoryRecord.id,
       variant_id: input.variant_id,
-      quantity: Number(input.quantity),
-      reserved_quantity: Number(input.reserved_quantity),
+      quantity: input.quantity,
+      reserved_quantity: input.reserved_quantity,
       reason: input.reason ?? undefined,
       notes: input.notes ?? undefined,
       created_at: input.created_at.toISOString(),

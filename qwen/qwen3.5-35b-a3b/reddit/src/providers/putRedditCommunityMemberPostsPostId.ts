@@ -12,6 +12,8 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { RedditCommunityCommunityAtSummaryTransformer } from "../transformers/RedditCommunityCommunityAtSummaryTransformer";
+import { RedditCommunityMemberAtSummaryTransformer } from "../transformers/RedditCommunityMemberAtSummaryTransformer";
 import { RedditCommunityPostTransformer } from "../transformers/RedditCommunityPostTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -22,74 +24,131 @@ export async function putRedditCommunityMemberPostsPostId(props: {
   body: IRedditCommunityPost.IUpdate;
 }): Promise<IRedditCommunityPost> {
   const post = await MyGlobal.prisma.reddit_community_posts.findUniqueOrThrow({
-    where: { id: props.postId, deleted_at: null },
-    select: { id: true, author_id: true, post_type: true },
+    where: {
+      id: props.postId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      title: true,
+      post_type: true,
+      author_id: true,
+      vote_score: true,
+      comment_count: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
   });
   if (post.author_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
+  const titleUpdate =
+    props.body.title !== undefined ? { title: props.body.title } : {};
   await MyGlobal.prisma.reddit_community_posts.update({
     where: { id: props.postId },
     data: {
-      title: props.body.title,
-      updated_at: new Date(),
+      ...titleUpdate,
+      updated_at: toISOStringSafe(new Date()),
     },
   });
-  if (post.post_type === "text" && props.body.text_post_body !== undefined) {
-    await MyGlobal.prisma.reddit_community_post_texts.update({
-      where: { reddit_community_post_id: props.postId },
-      data: { body: props.body.text_post_body, updated_at: new Date() },
-    });
-  }
-  if (post.post_type === "link" && props.body.link_post_url !== undefined) {
-    const url: string & tags.Format<"uri"> = props.body.link_post_url;
-    const domain_name: string = (() => {
-      try {
-        const urlObj = new URL(url);
-        return urlObj.hostname;
-      } catch {
-        return "";
+  switch (post.post_type) {
+    case "text":
+      if (props.body.text_post_body !== undefined) {
+        await MyGlobal.prisma.reddit_community_post_texts.upsert({
+          where: { id: props.postId },
+          update: { body: props.body.text_post_body },
+          create: {
+            id: props.postId,
+            body: props.body.text_post_body,
+            created_at: toISOStringSafe(new Date()),
+            updated_at: toISOStringSafe(new Date()),
+            post: { connect: { id: props.postId } },
+          },
+        });
       }
-    })();
-    await MyGlobal.prisma.reddit_community_post_links.update({
-      where: { reddit_community_post_id: props.postId },
-      data: {
-        url: url,
-        domain_name: domain_name,
-        updated_at: new Date(),
-      },
-    });
+      break;
+    case "link":
+      if (props.body.link_post_url !== undefined) {
+        const domainName = extractDomainName(props.body.link_post_url);
+        await MyGlobal.prisma.reddit_community_post_links.upsert({
+          where: { id: props.postId },
+          update: {
+            url: props.body.link_post_url,
+            domain_name: domainName,
+          },
+          create: {
+            id: props.postId,
+            url: props.body.link_post_url,
+            domain_name: domainName,
+            created_at: toISOStringSafe(new Date()),
+            updated_at: toISOStringSafe(new Date()),
+            post: { connect: { id: props.postId } },
+          },
+        });
+      }
+      break;
+    case "image":
+      if (props.body.image_id !== undefined) {
+        await MyGlobal.prisma.reddit_community_file_of_posts.upsert({
+          where: { id: props.postId },
+          update: { file: { connect: { id: props.body.image_id } } },
+          create: {
+            id: props.postId,
+            file: { connect: { id: props.body.image_id } },
+            created_at: toISOStringSafe(new Date()),
+            updated_at: toISOStringSafe(new Date()),
+            post: { connect: { id: props.postId } },
+          },
+        });
+      }
+      break;
   }
-  if (
-    post.post_type === "image" &&
-    props.body.image_id !== undefined &&
-    props.body.image_id !== null
-  ) {
-    await MyGlobal.prisma.reddit_community_file_of_posts.upsert({
-      where: {
-        reddit_community_file_id: props.body.image_id,
-        reddit_community_post_id: props.postId,
-      },
-      create: {
-        id: v4(),
-        reddit_community_file_id: props.body.image_id,
-        reddit_community_post_id: props.postId,
-        created_at: new Date(),
-        updated_at: new Date(),
-        deleted_at: null,
-      },
-      update: {
-        reddit_community_file_id: props.body.image_id,
-        updated_at: new Date(),
-        deleted_at: null,
-      },
-    });
-  }
-  const result = await MyGlobal.prisma.reddit_community_posts.findUniqueOrThrow(
-    {
+  const updated =
+    await MyGlobal.prisma.reddit_community_posts.findUniqueOrThrow({
       where: { id: props.postId },
-      ...RedditCommunityPostTransformer.select(),
-    },
-  );
-  return await RedditCommunityPostTransformer.transform(result);
+      select: {
+        id: true,
+        title: true,
+        post_type: true,
+        vote_score: true,
+        comment_count: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        author: RedditCommunityMemberAtSummaryTransformer.select(),
+        community: RedditCommunityCommunityAtSummaryTransformer.select(),
+        text: {
+          select: {
+            id: true,
+            body: true,
+          },
+        } satisfies Prisma.reddit_community_post_textsFindManyArgs,
+        link: {
+          select: {
+            id: true,
+            url: true,
+            domain_name: true,
+          },
+        } satisfies Prisma.reddit_community_post_linksFindManyArgs,
+        images: {
+          select: {
+            file: {
+              select: {
+                file_path: true,
+              },
+            } satisfies Prisma.reddit_community_filesFindManyArgs,
+          },
+        } satisfies Prisma.reddit_community_file_of_postsFindManyArgs,
+      },
+    });
+  return await RedditCommunityPostTransformer.transform(updated);
+}
+function extractDomainName(uri: string & tags.Format<"uri">): string {
+  try {
+    const url = new URL(uri);
+    return url.hostname;
+  } catch {
+    return "";
+  }
 }

@@ -22,12 +22,12 @@ export async function patchShoppingMallAdminReviewsReviewIdSnapshots(props: {
 }): Promise<IPageIShoppingMallReviewSnapshot.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
   const sortBy = props.body.sortBy ?? "created_at";
   const sortOrder = props.body.sortOrder ?? "desc";
+  const skip = (page - 1) * limit;
   const orderByInput = (
     sortBy === "created_at"
-      ? ({ created_at: sortOrder } as const)
+      ? { created_at: sortOrder as "asc" | "desc" }
       : { created_at: "desc" as const }
   ) satisfies Prisma.shopping_mall_review_snapshotsOrderByWithRelationInput;
   const data = await MyGlobal.prisma.shopping_mall_review_snapshots.findMany({
@@ -45,15 +45,15 @@ export async function patchShoppingMallAdminReviewsReviewIdSnapshots(props: {
     },
   });
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallReviewSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallReviewSnapshotAtSummaryTransformer.transform,
-    ),
   };
 }

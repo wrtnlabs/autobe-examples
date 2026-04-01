@@ -16,44 +16,75 @@ export async function patchErpHrmTimeTrackingMemberTimesheetVersioningLocks(prop
   member: MemberPayload;
   body: IErpHrmTimeTrackingTimesheetVersioningLock.IUpdate;
 }): Promise<IErpHrmTimeTrackingTimesheetVersioningLock> {
-  // Minimal safe implementation to satisfy compiler return type.
-  // We intentionally reuse the update payload as the base return payload.
-  // Any Date->string conversion must go through toISOStringSafe.
-  const body = props.body;
-  // If the update payload contains any date-like fields, convert them.
-  // (We do this defensively with optional access so it won't affect unrelated fields.)
-  const converted = {
-    ...(body as unknown as Record<string, unknown>),
-    ...(typeof (body as any)?.created_at !== "undefined"
-      ? { created_at: toISOStringSafe((body as any).created_at) }
-      : {}),
-    ...(typeof (body as any)?.updated_at !== "undefined"
-      ? { updated_at: toISOStringSafe((body as any).updated_at) }
-      : {}),
-    ...(typeof (body as any)?.deleted_at !== "undefined"
-      ? {
-          deleted_at:
-            (body as any).deleted_at === null
-              ? null
-              : toISOStringSafe((body as any).deleted_at),
-        }
-      : {}),
-    ...(typeof (body as any)?.expires_at !== "undefined"
-      ? {
-          expires_at:
-            (body as any).expires_at === null
-              ? null
-              : toISOStringSafe((body as any).expires_at),
-        }
-      : {}),
-    ...(typeof (body as any)?.expired_at !== "undefined"
-      ? {
-          expired_at:
-            (body as any).expired_at === null
-              ? null
-              : toISOStringSafe((body as any).expired_at),
-        }
-      : {}),
-  };
-  return converted as unknown as IErpHrmTimeTrackingTimesheetVersioningLock;
+  return MyGlobal.prisma.$transaction(async (tx) => {
+    const existing =
+      await tx.erp_hrm_time_tracking_timesheet_versioning_locks.findFirstOrThrow(
+        {
+          where: {
+            locked_by_user_id: props.member.id,
+            deleted_at: null,
+          },
+          select: {
+            id: true,
+            timesheet_id: true,
+            locked_by_user_id: true,
+            lock_reason: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
+      );
+    if (existing.locked_by_user_id !== props.member.id) {
+      throw new HttpException("Forbidden: lock ownership mismatch", 403);
+    }
+    const data: {
+      lock_reason?: typeof existing.lock_reason;
+      deleted_at?: Date | null;
+      updated_at: Date;
+    } = {
+      updated_at: new Date(),
+      ...(props.body.lock_reason !== undefined
+        ? { lock_reason: props.body.lock_reason }
+        : {}),
+      ...(props.body.deleted_at !== undefined
+        ? {
+            deleted_at:
+              props.body.deleted_at === null
+                ? null
+                : new Date(props.body.deleted_at),
+          }
+        : {}),
+    };
+    await tx.erp_hrm_time_tracking_timesheet_versioning_locks.update({
+      where: { id: existing.id },
+      data,
+    });
+    const reloaded =
+      await tx.erp_hrm_time_tracking_timesheet_versioning_locks.findUniqueOrThrow(
+        {
+          where: { id: existing.id },
+          select: {
+            id: true,
+            timesheet_id: true,
+            locked_by_user_id: true,
+            lock_reason: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
+      );
+    return {
+      id: reloaded.id,
+      timesheet_id: reloaded.timesheet_id,
+      locked_by_user_id: reloaded.locked_by_user_id,
+      lock_reason: reloaded.lock_reason,
+      created_at: reloaded.created_at.toISOString(),
+      updated_at: reloaded.updated_at.toISOString(),
+      deleted_at: reloaded.deleted_at
+        ? reloaded.deleted_at.toISOString()
+        : null,
+    };
+  });
 }

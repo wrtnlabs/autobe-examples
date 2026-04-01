@@ -1,0 +1,157 @@
+/// Stores one checkout result per customer, including the overall order
+/// identity, status, totals, and preserved shipping destination for the
+/// purchase.
+///
+/// This table represents the order header created after successful checkout.
+/// It preserves the customer-owned purchase record and the shipping
+/// destination that was selected at purchase time so historical orders
+/// remain readable even if the customer later edits or deletes addresses.
+/// Item-level purchase details, shipments, and snapshots are maintained in
+/// their own component tables.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mall_platform_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link mall_platform_customers.id}.
+  customer_id String
+  
+  /// Human-readable order number shown to the customer and support staff.
+  order_number String
+  
+  /// Derived overall order status for history and browsing, such as paid,
+  /// shipped, delivered, cancelled, refunded, or partially completed.
+  status String
+  
+  /// Total order amount at the time of checkout, including all purchased items.
+  total_amount Float
+  
+  /// Preserved shipping recipient name captured at checkout.
+  recipient_name String
+  
+  /// Preserved shipping recipient phone number captured at checkout.
+  recipient_phone String
+  
+  /// Preserved street address used for shipment destination.
+  street_address String
+  
+  /// Preserved city used for shipment destination.
+  city String
+  
+  /// Preserved state or province used for shipment destination.
+  state_province String
+  
+  /// Preserved postal code used for shipment destination.
+  postal_code String
+  
+  /// Preserved country used for shipment destination.
+  country String
+  
+  /// Timestamp when the order was created.
+  created_at DateTime
+  
+  /// Timestamp when the order was last updated.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp for retained historical order visibility, when
+  /// applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer mall_platform_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems mall_platform_order_items[]
+  shipments mall_platform_shipments[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_number])
+  @@index([customer_id, created_at])
+  @@index([customer_id, status, created_at])
+}
+
+/// Stores each purchased product variant line within an order, including
+/// quantity, item status, and the preserved relational references needed to
+/// reconstruct the purchase context.
+///
+/// Each row belongs to exactly one order and exactly one product variant,
+/// and records the seller responsible for the item. The live table keeps the
+/// operational order-item state, while immutable historical snapshots are
+/// maintained in the dedicated snapshot table handled by the snapshots
+/// component.
+///
+/// @namespace Orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mall_platform_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order's {@link mall_platform_orders.id}.
+  mall_platform_order_id String
+  
+  /// Purchased variant's {@link mall_platform_product_variants.id}.
+  mall_platform_product_variant_id String
+  
+  /// Responsible seller's {@link mall_platform_sellers.id}.
+  mall_platform_seller_id String
+  
+  /// Number of units purchased for this order item.
+  quantity Int
+  
+  /// Current fulfillment status of the order item, such as paid, shipped,
+  /// delivered, cancelled, or refunded.
+  status String
+  
+  /// Timestamp when this order item row was created.
+  created_at DateTime
+  
+  /// Timestamp when this order item row was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this order item row was soft deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order mall_platform_orders @relation(fields: [mall_platform_order_id], references: [id], onDelete: Cascade)
+  productVariant mall_platform_product_variants @relation(fields: [mall_platform_product_variant_id], references: [id], onDelete: Cascade)
+  seller mall_platform_sellers @relation(fields: [mall_platform_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shipmentItem mall_platform_shipment_items?
+  cancellationRequests mall_platform_cancellation_requests[]
+  refundRequests mall_platform_refund_requests[]
+  review mall_platform_reviews?
+  snapshots mall_platform_order_item_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([mall_platform_order_id, mall_platform_product_variant_id], map: "mall_platform_order_items_mall_platform_order_id_mall__82039c99")
+  @@index([mall_platform_order_id, status])
+  @@index([mall_platform_seller_id, status])
+  // spellchecker: ignore-next-line
+  @@index([mall_platform_product_variant_id, status], map: "mall_platform_order_items_mall_platform_product_varian_afe460af")
+}

@@ -13,6 +13,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { HrmsMemberSessionAtSummaryTransformer } from "../transformers/HrmsMemberSessionAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,84 +22,69 @@ export async function patchHrmsMemberSessions(props: {
   body: IHrmsMemberSession.IRequest;
 }): Promise<IPageIHrmsMemberSession.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = Math.min(props.body.limit ?? 100, 100);
   const skip = (page - 1) * limit;
-  // Build WHERE clause
-  const where: Prisma.hrms_member_sessionsWhereInput = {
+  const whereInput: Prisma.hrms_member_sessionsWhereInput = {
     hrms_member_id: props.member.id,
-    ...(props.body.currentOrganizationId && {
-      current_organization_id: props.body.currentOrganizationId,
-    }),
-    ...(props.body.createdFrom && {
-      created_at: { gte: new Date(props.body.createdFrom) },
-    }),
-    ...(props.body.createdTo && {
-      created_at: { lte: new Date(props.body.createdTo) },
-    }),
-    ...(props.body.expiredFrom && {
-      expired_at: { gte: new Date(props.body.expiredFrom) },
-    }),
-    ...(props.body.expiredTo && {
-      expired_at: { lte: new Date(props.body.expiredTo) },
-    }),
-    ...(props.body.search && {
-      OR: [
-        { ip: { contains: props.body.search, mode: "insensitive" } },
-        { user_agent: { contains: props.body.search, mode: "insensitive" } },
-      ],
-    }),
-  };
-  // Build ORDER BY clause with defaults
-  const orderDirection = props.body.order === "asc" ? "asc" : "desc";
-  const orderBy: Prisma.hrms_member_sessionsOrderByWithRelationInput =
-    props.body.sort === "expired_at"
-      ? { expired_at: orderDirection }
-      : props.body.sort === "ip"
-        ? { ip: orderDirection }
-        : props.body.sort === "user_agent"
-          ? { user_agent: orderDirection }
-          : { created_at: orderDirection };
-  // Query data - removed currentOrganization nested select
+    current_organization_id: props.body.currentOrganizationId,
+    created_at: {
+      ...(props.body.createdFrom !== undefined
+        ? { gte: new Date(props.body.createdFrom) }
+        : {}),
+      ...(props.body.createdTo !== undefined
+        ? { lte: new Date(props.body.createdTo) }
+        : {}),
+    },
+    expired_at: {
+      ...(props.body.expiredFrom !== undefined
+        ? { gte: new Date(props.body.expiredFrom) }
+        : {}),
+      ...(props.body.expiredTo !== undefined
+        ? { lte: new Date(props.body.expiredTo) }
+        : {}),
+    },
+    ...(props.body.search !== undefined
+      ? {
+          OR: [
+            { ip: { contains: props.body.search } },
+            { user_agent: { contains: props.body.search } },
+          ],
+        }
+      : {}),
+  } satisfies Prisma.hrms_member_sessionsWhereInput;
+  const orderByInput: Prisma.hrms_member_sessionsOrderByWithRelationInput =
+    (props.body.sort === "created_at"
+      ? { created_at: props.body.order ?? "desc" }
+      : undefined) ??
+      (props.body.sort === "expired_at"
+        ? { expired_at: props.body.order ?? "desc" }
+        : undefined) ??
+      (props.body.sort === "ip"
+        ? { ip: props.body.order ?? "asc" }
+        : undefined) ??
+      (props.body.sort === "user_agent"
+        ? { user_agent: props.body.order ?? "asc" }
+        : undefined) ?? { created_at: "desc" };
   const data = await MyGlobal.prisma.hrms_member_sessions.findMany({
-    where,
+    where: whereInput,
     skip,
     take: limit,
-    orderBy,
-    select: {
-      id: true,
-      hrms_member_id: true,
-      current_organization_id: true,
-      ip: true,
-      href: true,
-      referrer: true,
-      user_agent: true,
-      created_at: true,
-      expired_at: true,
-    },
+    orderBy: orderByInput,
+    ...HrmsMemberSessionAtSummaryTransformer.select(),
   });
-  // Count total records
-  const total = await MyGlobal.prisma.hrms_member_sessions.count({ where });
-  // Transform to DTO
-  const transformedData = await ArrayUtil.asyncMap(data, async (session) => ({
-    id: session.id,
-    hrms_member_id: session.hrms_member_id,
-    current_organization_id: session.current_organization_id,
-    currentOrganization: null,
-    ip: session.ip,
-    href: session.href,
-    referrer: session.referrer,
-    user_agent: session.user_agent,
-    created_at: toISOStringSafe(session.created_at),
-    expired_at: toISOStringSafe(session.expired_at),
-  }));
-  const pages = total === 0 ? 0 : Math.ceil(total / limit);
+  const total = await MyGlobal.prisma.hrms_member_sessions.count({
+    where: whereInput,
+  });
   return {
     pagination: {
       current: page,
       limit,
       records: total,
-      pages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformedData,
-  } satisfies IPageIHrmsMemberSession.ISummary;
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmsMemberSessionAtSummaryTransformer.transform,
+    ),
+  };
 }

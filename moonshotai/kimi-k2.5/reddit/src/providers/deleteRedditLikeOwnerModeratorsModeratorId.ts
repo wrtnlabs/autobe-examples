@@ -15,25 +15,38 @@ export async function deleteRedditLikeOwnerModeratorsModeratorId(props: {
   owner: OwnerPayload;
   moderatorId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const moderator =
-    await MyGlobal.prisma.reddit_like_moderators.findUniqueOrThrow({
-      where: { id: props.moderatorId },
-      select: {
-        id: true,
-        deleted_at: true,
-        community: {
-          select: {
-            owner_id: true,
-          },
-        } satisfies Prisma.reddit_like_communitiesFindManyArgs,
+  // Find the moderator and their community
+  const moderator = await MyGlobal.prisma.reddit_like_moderators.findFirst({
+    where: {
+      id: props.moderatorId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      member_id: true,
+      community_id: true,
+      can_add_moderators: true,
+      created_at: true,
+      updated_at: true,
+      community: {
+        select: {
+          id: true,
+          owner_id: true,
+        },
       },
-    });
-  if (moderator.deleted_at !== null) {
+    },
+  });
+  if (moderator === null) {
     throw new HttpException("Moderator not found", 404);
   }
+  // Verify the requesting owner owns this community
   if (moderator.community.owner_id !== props.owner.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException(
+      "Forbidden - only community owner can remove moderators",
+      403,
+    );
   }
+  // Soft delete the moderator
   await MyGlobal.prisma.reddit_like_moderators.update({
     where: { id: props.moderatorId },
     data: {

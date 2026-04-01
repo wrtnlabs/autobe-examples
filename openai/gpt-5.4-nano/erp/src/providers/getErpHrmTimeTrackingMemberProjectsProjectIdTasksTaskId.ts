@@ -20,21 +20,6 @@ export async function getErpHrmTimeTrackingMemberProjectsProjectIdTasksTaskId(pr
   projectId: string & tags.Format<"uuid">;
   taskId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingTask> {
-  const project =
-    await MyGlobal.prisma.erp_hrm_time_tracking_projects.findFirst({
-      where: {
-        id: props.projectId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        erp_hrm_time_tracking_organization_id: true,
-        deleted_at: true,
-      },
-    });
-  if (project === null) {
-    throw new HttpException("Not Found", 404);
-  }
   const membership =
     await MyGlobal.prisma.erp_hrm_time_tracking_project_memberships.findFirst({
       where: {
@@ -42,23 +27,36 @@ export async function getErpHrmTimeTrackingMemberProjectsProjectIdTasksTaskId(pr
         employee_id: props.member.id,
         deleted_at: null,
       },
-      select: {
-        id: true,
-      },
+      select: { id: true },
     });
   if (membership === null) {
     throw new HttpException("Not Found", 404);
   }
-  const task = await MyGlobal.prisma.erp_hrm_time_tracking_tasks.findFirst({
-    where: {
-      id: props.taskId,
-      erp_hrm_time_tracking_project_id: props.projectId,
-      deleted_at: null,
-    },
-    ...ErpHrmTimeTrackingTaskTransformer.select(),
-  });
-  if (task === null) {
+  const session =
+    await MyGlobal.prisma.erp_hrm_time_tracking_member_sessions.findFirst({
+      where: {
+        id: props.member.session_id,
+      },
+      select: { id: true },
+    });
+  if (session === null) {
     throw new HttpException("Not Found", 404);
   }
+  await MyGlobal.prisma.erp_hrm_time_tracking_projects.findFirstOrThrow({
+    where: {
+      id: props.projectId,
+      deleted_at: null,
+    },
+    select: { id: true },
+  });
+  const task =
+    await MyGlobal.prisma.erp_hrm_time_tracking_tasks.findFirstOrThrow({
+      where: {
+        id: props.taskId,
+        erp_hrm_time_tracking_project_id: props.projectId,
+        deleted_at: null,
+      },
+      ...ErpHrmTimeTrackingTaskTransformer.select(),
+    });
   return await ErpHrmTimeTrackingTaskTransformer.transform(task);
 }

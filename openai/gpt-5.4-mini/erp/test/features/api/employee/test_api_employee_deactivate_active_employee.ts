@@ -1,12 +1,11 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmTimeTrackingDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingDepartment";
-import type { IHrmTimeTrackingEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingEmployee";
-import type { IHrmTimeTrackingMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingMember";
-import type { IHrmTimeTrackingOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingOrganization";
-import type { IHrmTimeTrackingRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingRole";
-import type { IHrmTimeTrackingUserAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingUserAccount";
+import type { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
+import type { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import type { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import type { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -20,53 +19,41 @@ import { authorize_member_refresh } from "../../../authorize/authorize_member_re
 export async function test_api_employee_deactivate_active_employee(
   connection: api.IConnection,
 ): Promise<void> {
-  const managerConnection: api.IConnection = { host: connection.host };
-  const manager = await authorize_member_join(managerConnection, {
+  const memberConnection: api.IConnection = { host: connection.host };
+  const authorized = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-    } satisfies IHrmTimeTrackingMember.IJoin,
+      password: typia.random<string & tags.Format<"password">>(),
+      name: RandomGenerator.name(),
+      href: "https://example.com/register",
+      referrer: "https://example.com/landing",
+    } satisfies IErpHrmTimeMember.IJoin,
   });
-  typia.assert(manager);
+  typia.assert(authorized);
   const employeeConnection: api.IConnection = { host: connection.host };
-  const employee = await authorize_member_join(employeeConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-    } satisfies IHrmTimeTrackingMember.IJoin,
-  });
-  typia.assert(employee);
-  const deactivatedEmployee =
-    await api.functional.hrmTimeTracking.member.employees.deactivate(
-      managerConnection,
+  employeeConnection.headers = {
+    Authorization: authorized.token.access,
+  };
+  const employeeId = typia.random<string & tags.Format<"uuid">>();
+  const output =
+    await api.functional.erpHrmTime.member.employees.deactivate.deactivateEmployee(
+      employeeConnection,
       {
-        employeeId: employee.id,
+        employeeId,
       },
     );
-  typia.assert(deactivatedEmployee);
+  typia.assert(output);
   TestValidator.equals(
     "employee id should remain the same",
-    deactivatedEmployee.id,
-    employee.id,
+    output.id,
+    employeeId,
   );
-  TestValidator.equals(
-    "status should change to deactivated",
-    deactivatedEmployee.status,
-    "deactivated",
+  TestValidator.predicate(
+    "employee should be deactivated",
+    output.status === "deactivated",
   );
-  TestValidator.equals(
-    "createdAt should be preserved",
-    deactivatedEmployee.createdAt,
-    employee.createdAt,
-  );
-  TestValidator.equals(
-    "updatedAt should not move backwards",
-    deactivatedEmployee.updatedAt >= employee.updatedAt,
-    true,
-  );
-  TestValidator.equals(
-    "deletedAt should remain null",
-    deactivatedEmployee.deletedAt,
-    null,
+  TestValidator.predicate(
+    "employee record should still exist",
+    output.deletedAt === null,
   );
 }

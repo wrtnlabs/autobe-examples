@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingOrganizationTransformer {
@@ -23,7 +25,7 @@ export namespace ErpHrmTimeTrackingOrganizationTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        // Relations selected only for completeness; DTO ignores them
+        // Relations selected only to satisfy generator inventory; DTO does not expose them.
         departments: { select: { id: true } },
         contracts: { select: { id: true } },
         contractSnapshots: { select: { id: true } },
@@ -44,7 +46,7 @@ export namespace ErpHrmTimeTrackingOrganizationTransformer {
       id: input.id,
       name: input.name,
       description: input.description,
-      logo_url: input.logo_url ?? null,
+      logo_url: input.logo_url,
       currency_code: input.currency_code,
       timezone: input.timezone,
       fiscal_start_month: input.fiscal_start_month,

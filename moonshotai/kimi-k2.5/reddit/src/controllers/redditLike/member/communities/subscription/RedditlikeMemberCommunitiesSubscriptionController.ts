@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IRedditLikeCommunitySubscription } from "../../../../../api/structures/IRedditLikeCommunitySubscription";
-import { AdminAuth } from "../../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { getRedditLikeMemberCommunitiesCommunityIdSubscription } from "../../../../../providers/getRedditLikeMemberCommunitiesCommunityIdSubscription";
 
 @Controller("/redditLike/member/communities/:communityId/subscription")
@@ -43,8 +43,8 @@ export class RedditlikeMemberCommunitiesSubscriptionController {
    */
   @TypedRoute.Get()
   public async at(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("communityId")
     communityId: string & tags.Format<"uuid">,
   ): Promise<IRedditLikeCommunitySubscription> {

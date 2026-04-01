@@ -3,8 +3,10 @@ import { IRedditLikeComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRe
 import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeMemberAtSummaryTransformer } from "./RedditLikeMemberAtSummaryTransformer";
 
@@ -22,7 +24,29 @@ export namespace RedditLikeCommentAtThreadTransformer {
         is_deleted: true,
         created_at: true,
         author: RedditLikeMemberAtSummaryTransformer.select(),
-        replies: RedditLikeCommentAtThreadTransformer.select(),
+        replies: {
+          select: {
+            id: true,
+            content: true,
+            vote_score: true,
+            is_edited: true,
+            is_deleted: true,
+            created_at: true,
+            author: RedditLikeMemberAtSummaryTransformer.select(),
+            replies: {
+              select: {
+                id: true,
+                content: true,
+                vote_score: true,
+                is_edited: true,
+                is_deleted: true,
+                created_at: true,
+                author: RedditLikeMemberAtSummaryTransformer.select(),
+                replies: true,
+              },
+            } satisfies Prisma.reddit_like_commentsFindManyArgs,
+          },
+        } satisfies Prisma.reddit_like_commentsFindManyArgs,
       },
     } satisfies Prisma.reddit_like_commentsFindManyArgs;
   }
@@ -39,9 +63,10 @@ export namespace RedditLikeCommentAtThreadTransformer {
       author: await RedditLikeMemberAtSummaryTransformer.transform(
         input.author,
       ),
-      replies: await ArrayUtil.asyncMap(
-        input.replies,
-        RedditLikeCommentAtThreadTransformer.transform,
+      replies: await ArrayUtil.asyncMap(input.replies, (reply) =>
+        RedditLikeCommentAtThreadTransformer.transform(
+          reply as unknown as Payload,
+        ),
       ),
     };
   }

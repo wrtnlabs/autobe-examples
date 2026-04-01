@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingActivityLogEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingActivityLogEntry";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingActivityLogEntryAtSummaryTransformer {
@@ -23,6 +25,18 @@ export namespace ErpHrmTimeTrackingActivityLogEntryAtSummaryTransformer {
         summary: true,
         details: true,
         occurred_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        snapshots: {
+          select: { id: true },
+        },
+        organization: {
+          select: { id: true },
+        },
+        performedByMember: {
+          select: { id: true },
+        },
       },
     } satisfies Prisma.erp_hrm_time_tracking_activity_log_entriesFindManyArgs;
   }

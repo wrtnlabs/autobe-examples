@@ -27,91 +27,97 @@ export async function putShoppingMallAdminOrdersOrderIdItemsItemId(props: {
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: {
         id: props.itemId,
-        shopping_mall_order_id: props.orderId,
         deleted_at: null,
       },
       select: {
         id: true,
+        shopping_mall_order_id: true,
         status: true,
       },
     });
-  const newStatus = props.body.status;
-  if (newStatus === undefined) {
-    throw new HttpException("Status is required", 400);
+  if (orderItem.shopping_mall_order_id !== props.orderId) {
+    throw new HttpException("Order item not found in specified order", 404);
   }
-  const validStatuses: string[] = [
-    "paid",
-    "shipped",
-    "delivered",
-    "cancelled",
-    "refunded",
-  ];
-  if (!validStatuses.includes(newStatus)) {
-    throw new HttpException("Invalid status value", 400);
+  if (props.body.status !== undefined) {
+    const currentStatus = orderItem.status;
+    const newStatus = props.body.status;
+    const validTransitions: Record<string, string[]> = {
+      paid: ["shipped", "cancelled"],
+      shipped: ["delivered"],
+      delivered: ["refunded"],
+      cancelled: [],
+      refunded: [],
+    };
+    if (!validTransitions[currentStatus]?.includes(newStatus)) {
+      throw new HttpException(
+        `Invalid status transition from ${currentStatus} to ${newStatus}`,
+        400,
+      );
+    }
+    await MyGlobal.prisma.shopping_mall_order_items.update({
+      where: {
+        id: props.itemId,
+      },
+      data: {
+        status: newStatus,
+        updated_at: new Date(),
+      },
+    });
+    const allOrderItems =
+      await MyGlobal.prisma.shopping_mall_order_items.findMany({
+        where: {
+          shopping_mall_order_id: props.orderId,
+          deleted_at: null,
+        },
+        select: {
+          status: true,
+        },
+      });
+    const statuses = allOrderItems.map((item) => item.status);
+    const hasCancelled = statuses.some((s) => s === "cancelled");
+    const hasRefunded = statuses.some((s) => s === "refunded");
+    const hasDelivered = statuses.some((s) => s === "delivered");
+    const hasShipped = statuses.some((s) => s === "shipped");
+    const hasPaid = statuses.some((s) => s === "paid");
+    let newOrderStatus: string;
+    if (hasCancelled || hasRefunded) {
+      if (statuses.every((s) => s === "cancelled" || s === "refunded")) {
+        newOrderStatus = "cancelled";
+      } else {
+        newOrderStatus = "partially_completed";
+      }
+    } else if (hasDelivered) {
+      if (statuses.every((s) => s === "delivered")) {
+        newOrderStatus = "delivered";
+      } else {
+        newOrderStatus = "partially_completed";
+      }
+    } else if (hasShipped) {
+      if (statuses.every((s) => s === "shipped")) {
+        newOrderStatus = "shipped";
+      } else {
+        newOrderStatus = "partially_completed";
+      }
+    } else if (hasPaid) {
+      newOrderStatus = "paid";
+    } else {
+      newOrderStatus = "paid";
+    }
+    await MyGlobal.prisma.shopping_mall_orders.update({
+      where: {
+        id: props.orderId,
+      },
+      data: {
+        status: newOrderStatus,
+      },
+    });
   }
-  const currentStatus = orderItem.status;
-  const validTransitions: Record<string, string[]> = {
-    paid: ["shipped", "cancelled"],
-    shipped: ["delivered"],
-    delivered: ["refunded"],
-    cancelled: [],
-    refunded: [],
-  };
-  if (!validTransitions[currentStatus].includes(newStatus)) {
-    throw new HttpException("Invalid status transition", 400);
-  }
-  await MyGlobal.prisma.shopping_mall_order_items.update({
-    where: {
-      id: props.itemId,
-    },
-    data: {
-      status: newStatus,
-      updated_at: new Date(),
-    },
-  });
-  const updatedOrderItem =
+  const updated =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: {
         id: props.itemId,
       },
       ...ShoppingMallOrderItemTransformer.select(),
     });
-  const orderItems = await MyGlobal.prisma.shopping_mall_order_items.findMany({
-    where: {
-      shopping_mall_order_id: props.orderId,
-      deleted_at: null,
-    },
-    select: {
-      status: true,
-    },
-  });
-  const statuses = orderItems.map((item) => item.status);
-  const allDelivered = statuses.every((s) => s === "delivered");
-  const allCancelled = statuses.every((s) => s === "cancelled");
-  const allRefunded = statuses.every((s) => s === "refunded");
-  const hasCancelled = statuses.some((s) => s === "cancelled");
-  const hasRefunded = statuses.some((s) => s === "refunded");
-  const allShipped = statuses.every((s) => s === "shipped");
-  const allPaid = statuses.every((s) => s === "paid");
-  let newOrderStatus: string = "partially_completed";
-  if (allDelivered) {
-    newOrderStatus = "delivered";
-  } else if (allCancelled) {
-    newOrderStatus = "cancelled";
-  } else if (allRefunded) {
-    newOrderStatus = "refunded";
-  } else if (allShipped) {
-    newOrderStatus = "shipped";
-  } else if (allPaid) {
-    newOrderStatus = "paid";
-  }
-  await MyGlobal.prisma.shopping_mall_orders.update({
-    where: {
-      id: props.orderId,
-    },
-    data: {
-      status: newOrderStatus,
-    },
-  });
-  return await ShoppingMallOrderItemTransformer.transform(updatedOrderItem);
+  return await ShoppingMallOrderItemTransformer.transform(updated);
 }

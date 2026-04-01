@@ -11,7 +11,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { EcommerceMallAddressAtSummaryTransformer } from "../transformers/EcommerceMallAddressAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,50 +18,75 @@ export async function patchEcommerceMallCustomerAddresses(props: {
   customer: CustomerPayload;
   body: IEcommerceMallAddress.IRequest;
 }): Promise<IPageIEcommerceMallAddress.ISummary> {
-  const pageParam = props.body.page ?? "1";
-  const limit = props.body.limit ?? 20;
-  const search = props.body.search;
-  const city = props.body.city;
-  const state = props.body.state;
-  const sort = props.body.sort ?? "created_at";
-  const order = props.body.order ?? "desc";
-  const page = parseInt(pageParam);
+  const page = Number(props.body.page ?? 1) satisfies number &
+    tags.Type<"int32"> &
+    tags.Minimum<0>;
+  const limit = Number(props.body.limit ?? 20) satisfies number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> &
+    tags.Maximum<100>;
   const skip = (page - 1) * limit;
+  const sortOrder = props.body.order === "asc" ? "asc" : "desc";
+  const sortField = props.body.sort ?? "created_at";
   const whereInput: Prisma.ecommerce_mall_addressesWhereInput = {
     ecommerce_mall_customer_id: props.customer.id,
     deleted_at: null,
-    ...(search && {
-      recipient_name: { contains: search, mode: "insensitive" },
-    }),
-    ...(city && { city: { startsWith: city } }),
-    ...(state && { state: { startsWith: state } }),
-  };
-  const orderByInput = (
-    sort === "recipient_name" || sort === "city" || sort === "created_at"
-      ? { [sort]: order === "asc" ? "asc" : "desc" }
-      : { created_at: order === "asc" ? "asc" : "desc" }
-  ) satisfies Prisma.ecommerce_mall_addressesOrderByWithRelationInput;
+    ...(props.body.search !== undefined
+      ? {
+          recipient_name: {
+            contains: props.body.search,
+            mode: "insensitive",
+          },
+        }
+      : {}),
+    ...(props.body.city !== undefined
+      ? {
+          city: {
+            startsWith: props.body.city,
+          },
+        }
+      : {}),
+    ...(props.body.state !== undefined
+      ? {
+          state: {
+            startsWith: props.body.state,
+          },
+        }
+      : {}),
+  } satisfies Prisma.ecommerce_mall_addressesWhereInput;
+  const orderByInput: Prisma.ecommerce_mall_addressesOrderByWithRelationInput[] =
+    [
+      { [sortField]: sortOrder },
+    ] satisfies Prisma.ecommerce_mall_addressesOrderByWithRelationInput[];
   const data = await MyGlobal.prisma.ecommerce_mall_addresses.findMany({
     where: whereInput,
-    orderBy: orderByInput,
     skip,
     take: limit,
-    ...EcommerceMallAddressAtSummaryTransformer.select(),
+    orderBy: orderByInput,
   });
   const total = await MyGlobal.prisma.ecommerce_mall_addresses.count({
     where: whereInput,
   });
-  const pages = Math.max(1, Math.ceil(total / limit));
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallAddressAtSummaryTransformer.transform,
-    ),
+    data: data.map((item) => ({
+      id: item.id,
+      ecommerce_mall_customer_id: item.ecommerce_mall_customer_id,
+      recipient_name: item.recipient_name,
+      recipient_phone: item.recipient_phone,
+      street: item.street,
+      state: item.state,
+      city: item.city,
+      is_default: item.is_default,
+      created_at: toISOStringSafe(item.created_at),
+      updated_at: toISOStringSafe(item.updated_at),
+      deleted_at:
+        item.deleted_at != null ? toISOStringSafe(item.deleted_at) : null,
+    })),
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: pages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

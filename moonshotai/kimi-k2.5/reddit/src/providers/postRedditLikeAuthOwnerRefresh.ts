@@ -15,17 +15,20 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postRedditLikeAuthOwnerRefresh(props: {
   body: IRedditLikeOwner.IRefresh;
 }): Promise<IRedditLikeOwner.IAuthorized> {
-  interface ITokenPayload {
+  // 1. Verify refresh token
+  let decoded: {
     id: string;
     session_id: string;
-    type: string;
-  }
-  // 1. Verify refresh token
-  let decoded: ITokenPayload;
+    type: "owner";
+  };
   try {
     decoded = jwt.verify(props.body.refresh, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as ITokenPayload;
+    }) as {
+      id: string;
+      session_id: string;
+      type: "owner";
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
@@ -43,12 +46,15 @@ export async function postRedditLikeAuthOwnerRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate owner is active and not deleted
+  // 4. Validate owner exists and is active
   const owner = await MyGlobal.prisma.reddit_like_owners.findUniqueOrThrow({
     where: { id: decoded.id },
   });
-  if (!owner.is_active || owner.deleted_at !== null) {
-    throw new HttpException("Account is inactive or deleted", 403);
+  if (owner.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+  if (!owner.is_active) {
+    throw new HttpException("Account is inactive", 403);
   }
   // 5. Generate new tokens with SAME session_id
   const now = new Date();
@@ -81,7 +87,7 @@ export async function postRedditLikeAuthOwnerRefresh(props: {
     data: { expired_at: refreshExpires },
   });
   // 7. Return owner profile with new tokens
-  const authorized: IRedditLikeOwner.IAuthorized = {
+  return {
     id: owner.id,
     email: owner.email,
     username: owner.username,
@@ -89,7 +95,8 @@ export async function postRedditLikeAuthOwnerRefresh(props: {
     is_active: owner.is_active,
     created_at: toISOStringSafe(owner.created_at),
     updated_at: toISOStringSafe(owner.updated_at),
-    deleted_at: null, // owner.deleted_at is guaranteed to be null here due to earlier check
+    deleted_at:
+      owner.deleted_at !== null ? toISOStringSafe(owner.deleted_at) : null,
     token: {
       access: accessToken,
       refresh: refreshToken,
@@ -97,5 +104,4 @@ export async function postRedditLikeAuthOwnerRefresh(props: {
       refreshable_until: toISOStringSafe(refreshExpires),
     },
   };
-  return authorized;
 }

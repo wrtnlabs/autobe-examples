@@ -21,65 +21,69 @@ export async function patchRedditLikeOwnerPostsPostIdCommentsSorted(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditLikeComment.IRequest;
 }): Promise<IPageIRedditLikeComment.ISummary> {
-  // Verify post exists
-  await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
-    where: { id: props.postId },
-  });
-  const page = props.body.page;
-  const limit = props.body.limit;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause with proper type safety
-  const where = {
+  const whereInput = {
     post_id: props.postId,
-    ...(props.body.search && {
-      content: { contains: props.body.search, mode: "insensitive" as const },
-    }),
-    ...(props.body.authorId && {
-      author_id: props.body.authorId,
-    }),
-    ...(props.body.parentId !== undefined && {
-      parent_id: props.body.parentId,
-    }),
-    ...(props.body.includeDeleted === false && {
-      is_deleted: false,
-    }),
+    ...(props.body.parentId !== null
+      ? { parent_id: props.body.parentId }
+      : { parent_id: null }),
+    ...(props.body.authorId !== null && { author_id: props.body.authorId }),
+    ...(!props.body.includeDeleted && { is_deleted: false }),
+    ...(props.body.search !== null &&
+      props.body.search.length > 0 && {
+        content: { contains: props.body.search, mode: "insensitive" },
+      }),
   } satisfies Prisma.reddit_like_commentsWhereInput;
-  // Build orderBy based on sort strategy
-  const orderBy: Prisma.reddit_like_commentsOrderByWithRelationInput[] =
-    (() => {
-      switch (props.body.sort) {
-        case "BEST":
-          return [{ vote_score: "desc" }, { created_at: "desc" }];
-        case "NEW":
-          return [{ created_at: "desc" }];
-        case "CONTROVERSIAL":
-          return [{ vote_score: "asc" }, { created_at: "desc" }];
-        case "TOP":
-          return [{ vote_score: "desc" }];
-        case "OLD":
-          return [{ created_at: "asc" }];
-        case "QA":
-          return [{ parent_id: "asc" }, { created_at: "asc" }];
-        default:
-          return [{ created_at: "desc" }];
-      }
-    })();
-  // Execute queries sequentially for proper typing
-  const comments = await MyGlobal.prisma.reddit_like_comments.findMany({
-    where,
+  const orderByInput:
+    | Prisma.reddit_like_commentsOrderByWithRelationInput
+    | Prisma.reddit_like_commentsOrderByWithRelationInput[] =
+    props.body.sort === "BEST"
+      ? [
+          { vote_score: "desc" as Prisma.SortOrder },
+          { created_at: "desc" as Prisma.SortOrder },
+        ]
+      : props.body.sort === "TOP"
+        ? { vote_score: "desc" as Prisma.SortOrder }
+        : props.body.sort === "NEW"
+          ? { created_at: "desc" as Prisma.SortOrder }
+          : props.body.sort === "OLD"
+            ? { created_at: "asc" as Prisma.SortOrder }
+            : props.body.sort === "CONTROVERSIAL"
+              ? [
+                  { vote_score: "asc" as Prisma.SortOrder },
+                  { created_at: "desc" as Prisma.SortOrder },
+                ]
+              : props.body.sort === "QA"
+                ? [
+                    {
+                      parent_id: {
+                        sort: "asc" as Prisma.SortOrder,
+                        nulls: "first" as Prisma.NullsOrder,
+                      },
+                    },
+                    { created_at: "asc" as Prisma.SortOrder },
+                  ]
+                : { created_at: "desc" as Prisma.SortOrder };
+  const rawData = await MyGlobal.prisma.reddit_like_comments.findMany({
+    where: whereInput,
     skip,
     take: limit,
-    orderBy,
+    orderBy: orderByInput,
     ...RedditLikeCommentAtSummaryTransformer.select(),
   });
-  const total = await MyGlobal.prisma.reddit_like_comments.count({ where });
-  // Transform results
-  const data = await ArrayUtil.asyncMap(
-    comments,
-    RedditLikeCommentAtSummaryTransformer.transform,
-  );
+  const data = rawData as Parameters<
+    typeof RedditLikeCommentAtSummaryTransformer.transform
+  >[0][];
+  const total = await MyGlobal.prisma.reddit_like_comments.count({
+    where: whereInput,
+  });
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditLikeCommentAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,

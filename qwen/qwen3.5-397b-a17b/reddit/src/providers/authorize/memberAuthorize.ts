@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { MemberPayload } from "../../decorators/payload/MemberPayload";
@@ -12,7 +12,7 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const member = await MyGlobal.prisma.reddit_clone_members.findFirst({
+  const member = await MyGlobal.prisma.reddit_community_members.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,

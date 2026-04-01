@@ -16,29 +16,26 @@ export async function postShoppingMallAdminCustomersBulkBan(props: {
   admin: AdminPayload;
   body: IShoppingMallCustomerBulkBan.ICreate;
 }): Promise<IShoppingMallCustomerBulkBan.IResult> {
+  const customerIds = props.body.customerIds;
+  const reason = props.body.reason;
   const results: IShoppingMallCustomerBulkBan.IResultItem[] = [];
   let successCount = 0;
   let failureCount = 0;
   let skippedCount = 0;
-  for (const customerId of props.body.customerIds) {
+  for (const customerId of customerIds) {
     try {
       const customer = await MyGlobal.prisma.shopping_mall_customers.findUnique(
         {
-          where: {
-            id: customerId,
-          },
-          select: {
-            id: true,
-            status: true,
-          },
+          where: { id: customerId },
+          select: { id: true, status: true },
         },
       );
       if (customer === null) {
         results.push({
           customerId: customerId,
           status: "failed",
-          errorMessage: "customer not found",
-        } satisfies IShoppingMallCustomerBulkBan.IResultItem);
+          errorMessage: "Customer not found",
+        });
         failureCount++;
         continue;
       }
@@ -47,14 +44,12 @@ export async function postShoppingMallAdminCustomersBulkBan(props: {
           customerId: customerId,
           status: "skipped",
           errorMessage: null,
-        } satisfies IShoppingMallCustomerBulkBan.IResultItem);
+        });
         skippedCount++;
         continue;
       }
       await MyGlobal.prisma.shopping_mall_customers.update({
-        where: {
-          id: customerId,
-        },
+        where: { id: customerId },
         data: {
           status: "banned",
           updated_at: new Date(),
@@ -64,14 +59,15 @@ export async function postShoppingMallAdminCustomersBulkBan(props: {
         customerId: customerId,
         status: "success",
         errorMessage: null,
-      } satisfies IShoppingMallCustomerBulkBan.IResultItem);
+      });
       successCount++;
     } catch (error) {
       results.push({
         customerId: customerId,
         status: "failed",
-        errorMessage: error instanceof Error ? error.message : "unknown error",
-      } satisfies IShoppingMallCustomerBulkBan.IResultItem);
+        errorMessage:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      });
       failureCount++;
     }
   }
@@ -80,5 +76,5 @@ export async function postShoppingMallAdminCustomersBulkBan(props: {
     failureCount: failureCount,
     skippedCount: skippedCount,
     results: results,
-  } satisfies IShoppingMallCustomerBulkBan.IResult;
+  };
 }

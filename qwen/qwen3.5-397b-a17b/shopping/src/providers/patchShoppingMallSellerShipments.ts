@@ -1,7 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallShipment";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -21,47 +21,41 @@ export async function patchShoppingMallSellerShipments(props: {
   body: IShoppingMallShipment.IRequest;
 }): Promise<IPageIShoppingMallShipment.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
+  const shippedAtConditions: Prisma.DateTimeFilter = {};
+  if (props.body.shipped_at_from !== undefined) {
+    shippedAtConditions.gte = new Date(props.body.shipped_at_from);
+  }
+  if (props.body.shipped_at_to !== undefined) {
+    shippedAtConditions.lte = new Date(props.body.shipped_at_to);
+  }
   const whereInput: Prisma.shopping_mall_shipmentsWhereInput = {
+    seller_id: props.seller.id,
     deleted_at: null,
-    items: {
-      some: {
-        orderItem: {
-          shopping_mall_seller_id: props.seller.id,
-          deleted_at: null,
-        },
-      },
-    },
-    ...(props.body.order_id && {
-      shopping_mall_order_id: props.body.order_id,
+    ...(props.body.tracking_carrier !== undefined && {
+      tracking_carrier: props.body.tracking_carrier,
     }),
-    ...(props.body.status === "shipped" && {
-      shipped_at: { not: null },
-      delivered_at: null,
+    ...(props.body.tracking_number !== undefined && {
+      tracking_number: { contains: props.body.tracking_number },
     }),
-    ...(props.body.status === "delivered" && {
-      delivered_at: { not: null },
+    ...(Object.keys(shippedAtConditions).length > 0 && {
+      shipped_at: shippedAtConditions,
     }),
-    ...(props.body.date_from && {
-      created_at: { gte: new Date(props.body.date_from) },
-    }),
-    ...(props.body.date_to && {
-      created_at: { lte: new Date(props.body.date_to) },
+    ...(props.body.confirmed !== undefined && {
+      confirmed_at: props.body.confirmed ? { not: null } : null,
     }),
   } satisfies Prisma.shopping_mall_shipmentsWhereInput;
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.shopping_mall_shipments.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" },
-      ...ShoppingMallShipmentAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.shopping_mall_shipments.count({
-      where: whereInput,
-    }),
-  ]);
+  const data = await MyGlobal.prisma.shopping_mall_shipments.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: { shipped_at: "desc" },
+    ...ShoppingMallShipmentAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.shopping_mall_shipments.count({
+    where: whereInput,
+  });
   return {
     data: await ArrayUtil.asyncMap(
       data,

@@ -34,13 +34,14 @@ export async function getEcommerceMallSellerInventoryRecordsInventoryRecordIdSna
   const productVariant =
     await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
       where: { id: inventoryRecord.ecommerce_mall_product_variant_id },
-      select: {
-        product: {
-          select: { seller_id: true },
-        },
-      },
+      select: { product_id: true },
     });
-  if (productVariant.product.seller_id !== props.seller.id) {
+  const product =
+    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+      where: { id: productVariant.product_id },
+      select: { seller_id: true },
+    });
+  if (product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await EcommerceMallInventorySnapshotTransformer.transform(snapshot);

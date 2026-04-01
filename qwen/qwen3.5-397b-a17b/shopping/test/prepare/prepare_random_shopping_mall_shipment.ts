@@ -9,16 +9,6 @@ export function prepare_random_shopping_mall_shipment(
   input?: DeepPartial<IShoppingMallShipment.ICreate>,
 ): IShoppingMallShipment.ICreate {
   return {
-    order_item_ids: input?.order_item_ids
-      ? input.order_item_ids.map(
-          (id) => id ?? typia.random<string & tags.Format<"uuid">>(),
-        )
-      : ArrayUtil.repeat(
-          typia.random<
-            number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<3>
-          >(),
-          () => typia.random<string & tags.Format<"uuid">>(),
-        ),
     tracking_carrier:
       input?.tracking_carrier ??
       RandomGenerator.pick([
@@ -27,8 +17,19 @@ export function prepare_random_shopping_mall_shipment(
         "DHL",
         "USPS",
         "Amazon Logistics",
+        "OnTrac",
+        "LaserShip",
       ] as const),
-    tracking_number:
-      input?.tracking_number ?? RandomGenerator.alphaNumeric(12).toUpperCase(),
+    tracking_number: input?.tracking_number ?? RandomGenerator.alphaNumeric(12),
+    order_item_ids: input?.order_item_ids
+      ? input.order_item_ids.map(
+          (id) => id ?? typia.random<string & tags.Format<"uuid">>(),
+        )
+      : ArrayUtil.repeat(
+          typia.random<
+            number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<5>
+          >(),
+          () => typia.random<string & tags.Format<"uuid">>(),
+        ),
   };
 }

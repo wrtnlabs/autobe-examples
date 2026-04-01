@@ -10,36 +10,39 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { RedditLikeAttachmentCollector } from "../collectors/RedditLikeAttachmentCollector";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeAttachmentTransformer } from "../transformers/RedditLikeAttachmentTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditLikeMemberAttachments(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   body: IRedditLikeAttachment.ICreate;
 }): Promise<IRedditLikeAttachment> {
-  // Infrastructure layer processing - in production, this would be handled by file service
-  // For this implementation, we simulate the infrastructure result
-  // The fileUri would be processed to generate storage path, mime type, size, and checksum
-  const infrastructureResult: RedditLikeAttachmentCollector.IInfrastructureResult =
-    {
-      storagePath: `/uploads/${v4()}/${props.body.originalFilename}`,
-      mimeType: "application/octet-stream", // Would be detected from actual file
-      fileSizeBytes: 0, // Would be calculated from actual file
-      checksumSha256: "", // Would be calculated from actual file content
-    };
-  // Collect data using the collector
-  const data = await RedditLikeAttachmentCollector.collect({
-    body: props.body,
-    redditLikeMembers: { id: props.member.id },
-    infrastructure: infrastructureResult,
-  });
-  // Create the attachment record
-  const created = await MyGlobal.prisma.reddit_like_attachments.create({
-    data,
+  // Generate mock file metadata since infrastructure service is not available
+  // In production, this would be handled by MyGlobal.infrastructure.file.process()
+  const fileExtension = props.body.fileUri.split(".").pop() || "bin";
+  const mimeTypeMap: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    pdf: "application/pdf",
+  };
+  const fileData: RedditLikeAttachmentCollector.IFileProcessedData = {
+    storagePath: `/storage/attachments/${v4()}.${fileExtension}`,
+    mimeType:
+      mimeTypeMap[fileExtension.toLowerCase()] || "application/octet-stream",
+    fileSizeBytes: 0,
+    checksumSha256: "pending-infrastructure-processing",
+  };
+  const attachment = await MyGlobal.prisma.reddit_like_attachments.create({
+    data: await RedditLikeAttachmentCollector.collect({
+      body: props.body,
+      redditLikeMembers: { id: props.member.id },
+      fileData,
+    }),
     ...RedditLikeAttachmentTransformer.select(),
   });
-  // Transform and return
-  return await RedditLikeAttachmentTransformer.transform(created);
+  return await RedditLikeAttachmentTransformer.transform(attachment);
 }

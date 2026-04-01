@@ -1,12 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
-import { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -27,16 +22,13 @@ export async function getShoppingMallSellerOrderItemsOrderItemId(props: {
 }): Promise<IShoppingMallOrderItem> {
   const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
-      where: {
-        id: props.orderItemId,
-        deleted_at: null,
-      },
-      select: {
-        shopping_mall_seller_id: true,
-        ...ShoppingMallOrderItemTransformer.select().select,
-      },
+      where: { id: props.orderItemId },
+      ...ShoppingMallOrderItemTransformer.select(),
     });
-  if (orderItem.shopping_mall_seller_id !== props.seller.id) {
+  if (orderItem.deleted_at !== null) {
+    throw new HttpException("Order item not found", 404);
+  }
+  if (orderItem.seller.id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await ShoppingMallOrderItemTransformer.transform(orderItem);

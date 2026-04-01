@@ -7,8 +7,10 @@ import { IRedditLikePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IReddi
 import { IRedditLikeReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeReport";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeCommentAtSummaryTransformer } from "./RedditLikeCommentAtSummaryTransformer";
 import { RedditLikeCommunityAtSummaryTransformer } from "./RedditLikeCommunityAtSummaryTransformer";
@@ -19,6 +21,38 @@ export namespace RedditLikeReportAtSummaryTransformer {
   export type Payload = Prisma.reddit_like_reportsGetPayload<
     ReturnType<typeof select>
   >;
+  export async function transform(
+    input: Payload,
+  ): Promise<IRedditLikeReport.ISummary> {
+    // Polymorphic reportedContent handling
+    let reportedContent: IRedditLikePost.ISummary | IRedditLikeComment.ISummary;
+    if (input.reportOfPost) {
+      reportedContent = await RedditLikePostAtSummaryTransformer.transform(
+        input.reportOfPost.post,
+      );
+    } else if (input.commentReport) {
+      reportedContent = await RedditLikeCommentAtSummaryTransformer.transform(
+        input.commentReport.comment,
+      );
+    } else {
+      throw new Error(
+        "Report has no associated content (neither post nor comment)",
+      );
+    }
+    return {
+      id: input.id,
+      reason: input.reason,
+      status: input.status as "pending" | "approved" | "dismissed",
+      createdAt: input.created_at.toISOString(),
+      reporter: await RedditLikeMemberAtSummaryTransformer.transform(
+        input.reporter,
+      ),
+      community: await RedditLikeCommunityAtSummaryTransformer.transform(
+        input.community,
+      ),
+      reportedContent,
+    };
+  }
   export function select() {
     return {
       select: {
@@ -46,28 +80,5 @@ export namespace RedditLikeReportAtSummaryTransformer {
         } satisfies Prisma.reddit_like_report_snapshotsFindManyArgs,
       },
     } satisfies Prisma.reddit_like_reportsFindManyArgs;
-  }
-  export async function transform(
-    input: Payload,
-  ): Promise<IRedditLikeReport.ISummary> {
-    return {
-      id: input.id,
-      reason: input.reason,
-      status: input.status as "pending" | "approved" | "dismissed",
-      createdAt: input.created_at.toISOString(),
-      reporter: await RedditLikeMemberAtSummaryTransformer.transform(
-        input.reporter,
-      ),
-      community: await RedditLikeCommunityAtSummaryTransformer.transform(
-        input.community,
-      ),
-      reportedContent: input.reportOfPost
-        ? await RedditLikePostAtSummaryTransformer.transform(
-            input.reportOfPost.post,
-          )
-        : await RedditLikeCommentAtSummaryTransformer.transform(
-            input.commentReport!.comment,
-          ),
-    };
   }
 }

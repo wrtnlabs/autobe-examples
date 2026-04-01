@@ -22,48 +22,63 @@ export async function patchHrmsMemberOrganizationsOrganizationIdRoles(props: {
   organizationId: string & tags.Format<"uuid">;
   body: IHrmsOrganizationRole.IRequest;
 }): Promise<IPageIHrmsOrganizationRole.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
+  // Validate organization exists and is not deleted
+  const organization =
+    await MyGlobal.prisma.hrms_organizations.findUniqueOrThrow({
+      where: { id: props.organizationId, deleted_at: null },
+    });
+  // Build where clause with filters
   const whereInput: Prisma.hrms_organization_rolesWhereInput = {
     organization_id: props.organizationId,
-    ...(props.body.search !== undefined && {
-      name: { contains: props.body.search },
-    }),
-    ...(props.body.is_builtin !== null &&
-      props.body.is_builtin !== undefined && {
-        is_builtin: props.body.is_builtin,
-      }),
-  } satisfies Prisma.hrms_organization_rolesWhereInput;
-  const orderByInput = (
+    ...(props.body.search !== undefined
+      ? {
+          name: {
+            contains: props.body.search,
+            mode: "insensitive" as const,
+          },
+        }
+      : {}),
+    ...(props.body.is_builtin !== undefined && props.body.is_builtin !== null
+      ? { is_builtin: props.body.is_builtin }
+      : {}),
+  };
+  // Build order by
+  const orderByInput: Prisma.hrms_organization_rolesOrderByWithRelationInput =
     props.body.sort === "name" || props.body.sort === undefined
       ? { name: "asc" as const }
       : props.body.sort === "-name"
         ? { name: "desc" as const }
         : props.body.sort === "created_at"
           ? { created_at: "asc" as const }
-          : { created_at: "desc" as const }
-  ) satisfies Prisma.hrms_organization_rolesOrderByWithRelationInput;
+          : { created_at: "desc" as const };
+  // Calculate pagination
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // Query roles with member count
   const data = await MyGlobal.prisma.hrms_organization_roles.findMany({
     where: whereInput,
+    orderBy: orderByInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
     ...HrmsOrganizationRoleAtSummaryTransformer.select(),
   });
+  // Calculate total count
   const total = await MyGlobal.prisma.hrms_organization_roles.count({
     where: whereInput,
   });
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    HrmsOrganizationRoleAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmsOrganizationRoleAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+    data: transformedData,
+  } satisfies IPageIHrmsOrganizationRole.ISummary;
 }

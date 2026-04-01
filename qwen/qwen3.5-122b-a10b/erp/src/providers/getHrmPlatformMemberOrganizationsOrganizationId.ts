@@ -17,6 +17,18 @@ export async function getHrmPlatformMemberOrganizationsOrganizationId(props: {
   member: MemberPayload;
   organizationId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformOrganization> {
+  // Verify member has access to this organization via employee record
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      hrm_platform_user_id: props.member.id,
+      hrm_platform_organization_id: props.organizationId,
+      deleted_at: null,
+    },
+  });
+  if (employee === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Verify organization exists and is active (not soft-deleted)
   const organization =
     await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
       where: {

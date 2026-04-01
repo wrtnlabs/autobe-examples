@@ -1,0 +1,140 @@
+/// Current refund requests submitted for a specific delivered order item,
+/// including the request reason, current review status, and reviewer outcome
+/// metadata.
+///
+/// Each record represents one refund workflow for one purchased order item.
+/// The live table stores the current operational state only; immutable
+/// before-and-after change history is preserved in the separate refund
+/// request snapshot table. This table supports customer submission, seller
+/// or administrator review, and dispute-oriented lookup by the owning
+/// parties.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mall_platform_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the refund request record.
+  id String @id
+  
+  /// Target order item's {@link mall_platform_order_items.id}.
+  mall_platform_order_item_id String
+  
+  /// Requesting customer's {@link mall_platform_customers.id}.
+  mall_platform_customer_id String
+  
+  /// Responsible seller's {@link mall_platform_sellers.id} for review and
+  /// resolution.
+  mall_platform_seller_id String
+  
+  /// Administrator reviewer’s {@link mall_platform_administrators.id} when an
+  /// admin handles or overrides the request.
+  mall_platform_administrator_id String?
+  
+  /// Customer-provided explanation for requesting the refund.
+  reason String
+  
+  /// Current request state, such as pending, approved, rejected, or cancelled.
+  status String
+  
+  /// Timestamp when the current review decision was made, if reviewed.
+  reviewed_at DateTime?
+  
+  /// Reviewer explanation or decision note shown to the customer when the
+  /// request is approved or rejected.
+  review_note String?
+  
+  /// Timestamp when the refund request was created.
+  created_at DateTime
+  
+  /// Timestamp when the refund request was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for administrative cleanup while preserving
+  /// historical references.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem mall_platform_order_items @relation(fields: [mall_platform_order_item_id], references: [id], onDelete: Cascade)
+  customer mall_platform_customers @relation(fields: [mall_platform_customer_id], references: [id], onDelete: Cascade)
+  seller mall_platform_sellers @relation(fields: [mall_platform_seller_id], references: [id], onDelete: Cascade)
+  administrator mall_platform_administrators? @relation(fields: [mall_platform_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots mall_platform_refund_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([mall_platform_administrator_id], map: "mall_platform_refund_requests_mall_platform_administra_ec571deb")
+  @@unique([mall_platform_order_item_id])
+  // spellchecker: ignore-next-line
+  @@index([mall_platform_customer_id, created_at], map: "mall_platform_refund_requests_mall_platform_customer_i_e66e85bd")
+  // spellchecker: ignore-next-line
+  @@index([mall_platform_seller_id, status, created_at], map: "mall_platform_refund_requests_mall_platform_seller_id__64ada800")
+  // spellchecker: ignore-next-line
+  @@index([mall_platform_order_item_id, status], map: "mall_platform_refund_requests_mall_platform_order_item_3df878d9")
+  @@index([status, created_at])
+}
+
+/// Immutable snapshot records for refund request changes. Each row preserves
+/// the refund request state at a specific moment so approvals, rejections,
+/// and other lifecycle updates can be reviewed later for audit and dispute
+/// resolution.
+///
+/// This table belongs to {@link mall_platform_refund_requests} and stores
+/// historical state only. It is append-only and should not be updated or
+/// deleted after creation.
+///
+/// @namespace Refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mall_platform_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the refund request snapshot record.
+  id String @id
+  
+  /// Parent refund request's {@link mall_platform_refund_requests.id}.
+  mall_platform_refund_request_id String
+  
+  /// Human-readable reason describing why this snapshot was created, such as
+  /// approval, rejection, or state correction.
+  snapshot_reason String
+  
+  /// Refund request status before the recorded change.
+  status_before String
+  
+  /// Refund request status after the recorded change.
+  status_after String
+  
+  /// Role of the reviewer or actor responsible for the state change at the
+  /// time of the snapshot.
+  reviewer_role String?
+  
+  /// Optional note or decision comment captured at the time of the snapshot.
+  reviewer_note String?
+  
+  /// Timestamp when this immutable snapshot record was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  refundRequest mall_platform_refund_requests @relation(fields: [mall_platform_refund_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([mall_platform_refund_request_id, created_at], map: "mall_platform_refund_request_snapshots_mall_platform_r_f3d9983e")
+}

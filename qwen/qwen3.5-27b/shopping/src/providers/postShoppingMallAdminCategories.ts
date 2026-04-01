@@ -18,54 +18,51 @@ export async function postShoppingMallAdminCategories(props: {
   admin: AdminPayload;
   body: IShoppingMallCategory.ICreate;
 }): Promise<IShoppingMallCategory> {
-  // Validate parent_id if provided
+  // Validate parent_id if provided - check existence, not deleted, and one-level nesting
   if (props.body.parent_id !== undefined && props.body.parent_id !== null) {
-    // Check if parent exists and is not deleted
-    const parent = await MyGlobal.prisma.shopping_mall_categories.findUnique({
-      where: {
-        id: props.body.parent_id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        parent_id: true,
-      },
-    });
-    if (parent === null) {
-      throw new HttpException(
-        "Parent category does not exist or is deleted",
-        400,
-      );
+    const parentCategory =
+      await MyGlobal.prisma.shopping_mall_categories.findUnique({
+        where: {
+          id: props.body.parent_id,
+          deleted_at: null,
+        },
+        select: {
+          id: true,
+          parent_id: true,
+        },
+      });
+    if (parentCategory === null) {
+      throw new HttpException("Parent category not found", 400);
     }
-    // Enforce one-level nesting: parent must be top-level (parent_id is null)
-    if (parent.parent_id !== null) {
+    // Enforce one-level nesting: parent must be a top-level category (parent_id is null)
+    if (parentCategory.parent_id !== null) {
       throw new HttpException(
-        "Parent category must be a top-level category",
+        "Cannot create subcategory of a subcategory - only one level of nesting is allowed",
         400,
       );
     }
   }
-  // Check unique constraint: no existing category with same parent_id and name
-  const existing = await MyGlobal.prisma.shopping_mall_categories.findFirst({
-    where: {
-      parent_id: props.body.parent_id ?? null,
-      name: props.body.name,
-      deleted_at: null,
-    },
-  });
-  if (existing !== null) {
+  // Check unique constraint: same name not allowed under same parent
+  const existingCategory =
+    await MyGlobal.prisma.shopping_mall_categories.findFirst({
+      where: {
+        parent_id: props.body.parent_id ?? null,
+        name: props.body.name,
+        deleted_at: null,
+      },
+    });
+  if (existingCategory !== null) {
     throw new HttpException(
-      "Category with this name already exists under this parent",
+      "Category with this name already exists under the same parent",
       409,
     );
   }
-  // Create the category using collector
+  // Create the category using the collector
   const created = await MyGlobal.prisma.shopping_mall_categories.create({
     data: await ShoppingMallCategoryCollector.collect({
       body: props.body,
     }),
     ...ShoppingMallCategoryTransformer.select(),
   });
-  // Transform and return the created category
   return await ShoppingMallCategoryTransformer.transform(created);
 }

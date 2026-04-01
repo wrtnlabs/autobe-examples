@@ -1,6 +1,5 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -18,31 +17,18 @@ export async function postShoppingMallAuthSellerLogin(props: {
   body: IShoppingMallSeller.ILogin;
 }): Promise<IShoppingMallSeller.IAuthorized> {
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
+    where: { email: props.body.email },
     select: {
       id: true,
-      email: true,
-      shop_name: true,
-      shop_description: true,
-      logo_image_url: true,
-      approval_status: true,
-      rejection_reason: true,
-      suspended: true,
-      approved_by_admin_id: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
       password_hash: true,
+      deleted_at: true,
     },
   });
   if (!seller) {
     throw new HttpException("Invalid credentials", 401);
   }
-  if (seller.suspended) {
-    throw new HttpException("Account is suspended", 403);
+  if (seller.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 401);
   }
   const isValid = await PasswordUtil.verify(
     props.body.password,
@@ -56,7 +42,7 @@ export async function postShoppingMallAuthSellerLogin(props: {
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
       id: v4(),
-      shopping_mall_seller_id: seller.id,
+      seller_id: seller.id,
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
@@ -86,51 +72,11 @@ export async function postShoppingMallAuthSellerLogin(props: {
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
   };
-  const approvedByAdmin: IShoppingMallAdmin.ISummary | null =
-    seller.approved_by_admin_id
-      ? await (async () => {
-          const admin = await MyGlobal.prisma.shopping_mall_admins.findUnique({
-            where: { id: seller.approved_by_admin_id ?? undefined },
-            select: {
-              id: true,
-              email: true,
-              grade: true,
-              created_at: true,
-              updated_at: true,
-              deleted_at: true,
-            },
-          });
-          if (!admin) return null;
-          return {
-            id: admin.id,
-            email: admin.email,
-            grade: admin.grade,
-            created_at: toISOStringSafe(admin.created_at),
-            updated_at: toISOStringSafe(admin.updated_at),
-            deleted_at: admin.deleted_at
-              ? toISOStringSafe(admin.deleted_at)
-              : null,
-          } satisfies IShoppingMallAdmin.ISummary;
-        })()
-      : null;
   return {
     id: seller.id,
-    email: seller.email,
-    shop_name: seller.shop_name,
-    shop_description: seller.shop_description ?? null,
-    logo_image_url: seller.logo_image_url ?? null,
-    approval_status: typia.assert<"PENDING" | "APPROVED" | "REJECTED">(
-      seller.approval_status,
-    ),
-    rejection_reason: seller.rejection_reason ?? null,
-    suspended: seller.suspended,
-    approvedByAdmin,
-    created_at: toISOStringSafe(seller.created_at),
-    updated_at: toISOStringSafe(seller.updated_at),
-    deleted_at: seller.deleted_at ? toISOStringSafe(seller.deleted_at) : null,
     token,
   } satisfies IShoppingMallSeller.IAuthorized;
 }

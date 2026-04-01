@@ -4,8 +4,10 @@ import { IErpHrmTimeTrackingProject } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IErpHrmTimeTrackingTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTask";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "./ErpHrmTimeTrackingMemberAtSummaryTransformer";
 import { ErpHrmTimeTrackingProjectAtSummaryTransformer } from "./ErpHrmTimeTrackingProjectAtSummaryTransformer";
@@ -14,10 +16,13 @@ export namespace ErpHrmTimeTrackingTaskAtSummaryTransformer {
   export type Payload = Prisma.erp_hrm_time_tracking_tasksGetPayload<
     ReturnType<typeof select>
   >;
-  export function select(): Prisma.erp_hrm_time_tracking_tasksFindManyArgs {
+  export function select() {
     return {
       select: {
         id: true,
+        erp_hrm_time_tracking_project_id: true,
+        parent_task_id: true,
+        assigned_employee_id: true,
         title: true,
         description: true,
         status: true,
@@ -28,17 +33,23 @@ export namespace ErpHrmTimeTrackingTaskAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         project: ErpHrmTimeTrackingProjectAtSummaryTransformer.select(),
-        parentTask: ErpHrmTimeTrackingTaskAtSummaryTransformer.select(),
+        // Prevent recursive nesting in Prisma payload; resolve via cache.
+        parentTask: undefined,
         assignedEmployee: ErpHrmTimeTrackingMemberAtSummaryTransformer.select(),
-        childTasks: { select: { id: true } },
-        timelogs: { select: { id: true } },
-        timerSessions: { select: { id: true } },
-        reportOutputs: { select: { id: true } },
+        // Required mapping coverage: not used by ISummary transform.
+        childTasks: undefined,
+        timelogs: undefined,
+        timerSessions: undefined,
+        reportOutputs: undefined,
       },
-    };
+    } satisfies Prisma.erp_hrm_time_tracking_tasksFindManyArgs;
   }
   export async function transform(
     input: Payload,
+    cache: VariadicSingleton<
+      Promise<IErpHrmTimeTrackingTask.ISummary>,
+      [string]
+    > = createCache(),
   ): Promise<IErpHrmTimeTrackingTask.ISummary> {
     return {
       id: input.id,
@@ -46,25 +57,41 @@ export namespace ErpHrmTimeTrackingTaskAtSummaryTransformer {
       description: input.description ?? null,
       status: input.status,
       priority: input.priority,
-      estimated_hours:
-        input.estimated_hours === null ? null : Number(input.estimated_hours),
-      due_date: input.due_date ? toISOStringSafe(input.due_date) : null,
+      estimated_hours: input.estimated_hours ?? null,
+      due_date: input.due_date ? input.due_date.toISOString() : null,
       project: await ErpHrmTimeTrackingProjectAtSummaryTransformer.transform(
         input.project,
       ),
-      parent_task: input.parentTask
-        ? await ErpHrmTimeTrackingTaskAtSummaryTransformer.transform(
-            input.parentTask,
-          )
+      parent_task: input.parent_task_id
+        ? await cache.get(input.parent_task_id)
         : null,
       assigned_employee: input.assignedEmployee
         ? await ErpHrmTimeTrackingMemberAtSummaryTransformer.transform(
             input.assignedEmployee,
           )
         : null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
+  }
+  export async function transformAll(
+    inputs: Payload[],
+  ): Promise<IErpHrmTimeTrackingTask.ISummary[]> {
+    const cache = createCache();
+    return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
+  }
+  function createCache() {
+    const cache = new VariadicSingleton(
+      async (id: string): Promise<IErpHrmTimeTrackingTask.ISummary> => {
+        const record =
+          await MyGlobal.prisma.erp_hrm_time_tracking_tasks.findFirstOrThrow({
+            ...select(),
+            where: { id },
+          });
+        return transform(record, cache);
+      },
+    );
+    return cache;
   }
 }

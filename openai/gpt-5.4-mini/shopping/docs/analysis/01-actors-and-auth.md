@@ -1,4 +1,4 @@
-**shoppingMall — Actor definitions, permission matrix, authentication, session, account lifecycle**
+**mallPlatform — Actor definitions, permission matrix, authentication, session, account lifecycle**
 
 Actor definitions, permission matrix, authentication, session, account lifecycle
 
@@ -8,108 +8,223 @@ Define all user actor types with their identity, permissions, and access boundar
 
 ## customer Actor
 
-A customer is a registered shopper identity used to access the platform. This actor represents the end user who is allowed to participate in shopping-related features after account registration and login. Customers can access customer-facing areas of the platform, including browsing and purchasing-related experiences that require a signed-in account. Their permissions are limited to their own account and their own activity, not to merchant administration or platform moderation. Customers can manage personal profile information and shipping details within their own account space. They can also interact with their own orders, wishlist, cart, and reviews as a shopper. Customers do not have authority to manage seller accounts, approve registrations, or administer platform settings. They also cannot act on behalf of other customers or sellers. Their access is restricted to normal shopper responsibilities and account-controlled actions. When a customer account is no longer active, the customer actor no longer has platform access under that identity.
+A customer is a registered end user who accesses the shopping mall as a buyer. This actor must sign in before using any platform features, because guest access is not available. Customers are limited to buyer-facing experiences and cannot manage products, categories, seller approvals, or administrator functions. Their access is centered on their own account, personal profile, addresses, wishlist, cart, orders, reviews, and related purchase history. Customers may view seller information and product information that is exposed to shoppers, but they do not manage seller content. They also participate in post-purchase activities such as delivery confirmation, cancellation requests, and refund requests for their own order items. Customer actions are constrained to their own account and their own purchases, so they cannot act on another user's private data or records. When a customer account is deleted, the account holder loses access to the buyer experience while preserved order and review records remain available for business and legal continuity. Any attempt to use seller or administrator capabilities should be treated as outside the customer role. If the customer is banned, the role remains defined but access to sign-in is blocked.
 
-### Registered Shopper Identity
+### Customer Actor
 
-A customer is a registered shopper identity used to access the platform.
-A customer exists as a signed-in shopper rather than an anonymous visitor, because registration is required before any platform features are available.
-A customer identity represents the person’s shopper presence on the platform and is tied to that person’s own account space.
-A customer identity is used only for shopper-facing access and does not represent administrative authority.
-A customer identity remains limited to the customer’s own activity scope and does not extend to other users’ accounts or seller operations.
-
-### Customer Role and Access Boundary
-
-The customer role is the normal shopper role on the platform.
-THE platform SHALL allow a customer to access customer-facing areas after the customer is signed in.
-THE platform SHALL limit a customer’s access to own account access and other customer activity that belongs to that customer.
-WHEN a customer is acting within the customer role, THE platform SHALL treat the customer as a shopper with non-administrative access.
-THE platform SHALL prevent a customer from using customer access to manage seller accounts, approve registrations, or administer platform settings.
-THE platform SHALL prevent a customer from acting on behalf of another customer or seller.
-WHILE a customer account is active, THE platform SHALL allow access only within the customer’s personal account scope.
-WHEN a customer account is no longer active, THE platform SHALL end that customer’s platform access under that identity.
-
-### Customer Permissions
-
-THE platform SHALL allow a customer to access features that belong to the customer’s own account.
-THE platform SHALL allow a customer to manage personal account information within the customer’s own account scope.
-THE platform SHALL allow a customer to use customer-facing areas of the platform that are available to signed-in shoppers.
-THE platform SHALL allow a customer to interact with the customer’s own shopping activity.
-THE platform SHALL allow a customer to view and manage the customer’s own profile, shipping addresses, wishlist, cart, orders, and reviews as part of shopper-facing access.
-THE platform SHALL restrict those permissions to the customer’s own records and activity.
-THE platform SHALL not treat these permissions as administrative privileges.
-THE platform SHALL not allow a customer to perform moderation or governance actions.
-
-### Customer Access Restrictions
-
-THE platform SHALL restrict customer access to the customer’s own account and related shopper activity.
-WHEN a request concerns another user’s account or another seller’s data, THE platform SHALL deny customer access.
-WHEN a request concerns a merchant administration task, THE platform SHALL deny customer access.
-WHEN a request concerns platform governance, THE platform SHALL deny customer access.
-THE platform SHALL ensure that customer access remains shopper-facing rather than administrative.
-THE platform SHALL ensure that customer activity scope does not extend beyond the customer’s own records and actions.
-
-## seller Actor
-
-A seller is a merchant identity used to access seller-facing functions on the platform. This actor represents the business user responsible for managing a shop presence and participating in commerce as a product provider. Sellers can access the areas reserved for merchant activity after account registration and login. Their permissions are limited to their own seller identity and shop-related responsibilities. Sellers are separate from customers because they operate as merchants rather than shoppers only. They do not have authority to manage customer accounts or platform-wide administrative settings. Seller access is also limited by approval status, so an account may exist before it is allowed to sell. The seller actor may remain visible to the platform while awaiting approval or after rejection, but that status affects what the seller can do. Sellers cannot exercise administrator privileges unless they separately hold that role. Their access boundary is centered on their own shop and their own merchant account.
-
-### Seller Actor
-
-A seller is a merchant identity used to access seller-facing functions on the platform. The seller role represents the business user who operates a shop and participates in commerce as a product provider rather than as a shopper.
-
-Sellers have merchant-facing access to the areas reserved for shop activity after account registration and login. Their access is limited to their own shop owner access, meaning they can act only within the scope of their own seller identity and shop-related responsibilities.
-
-A seller account may exist before it is approved to sell. An approved seller account may use seller-facing functions that depend on approval. A pending seller status means the account exists but is still waiting for approval. A rejected seller status means the account was reviewed and not approved to sell.
-
-Seller permissions apply only to the seller's own shop scope. Sellers can manage their own merchant presence and shop-related activities, but they do not have non-administrative authority over customer accounts or platform-wide administrative settings. They cannot act as administrators unless they separately hold an administrator role.
-
-Sellers remain separate from customers because they operate as merchants rather than shoppers only. Their access boundary is centered on their own merchant identity, their own shop, and the permissions associated with that role.
+A customer is a registered end user who uses the platform as a buyer. Guest access is not available, so a person must be registered and signed in before using any platform feature. The customer role is limited to buyer-facing permissions and does not include product management, category management, seller approval, or administrator functions. The customer’s access is centered on their own account, their own profile, their own shipping addresses, their own shopping cart, their own wishlist, their own orders, and their own reviews. Customers may view seller and product information that is exposed to shoppers, but they do not manage seller content. Customers may participate in post-purchase actions for their own order items, including delivery confirmation, cancellation requests, and refund requests. If a customer account is deleted, the customer loses access to the buyer experience while preserved order and review records remain available for business and legal continuity. If a customer is banned, sign-in is blocked and the customer cannot access the platform as a buyer.
 
 ```mermaid
 flowchart LR
-    A["Seller account"] -->|"Registration and login"| B["Merchant-facing access"]
-    B -->|"Awaiting approval"| C["Pending seller status"]
-    B -->|"Approved to sell"| D["Approved seller account"]
-    B -->|"Not approved"| E["Rejected seller status"]
-    D -->|"Own shop scope"| F["Seller permissions"]
-    F -->|"No administrative authority"| G["Non-administrative merchant access"]
+    A["Registered end user"] -->|"Signs in"| B["Customer role"]
+    B -->|"Buyer-facing permissions"| C["Own account access"]
+    B -->|"Buyer-facing permissions"| D["Own purchase history"]
+    B -->|"Buyer-facing permissions"| E["Shopping cart access"]
+    B -->|"Buyer-facing permissions"| F["Wishlist access"]
+    B -->|"Buyer-facing permissions"| G["Order and review participation"]
+    B -->|"Does not include"| H["Seller content management"]
+    B -->|"Does not include"| I["Administrator functions"]
+    J["Banned customer"] -->|"Sign-in blocked"| K["No platform access"]
 ```
+
+### Buyer Role
+
+The buyer role describes the customer’s permitted use of the platform. A buyer can use only shopper-oriented functions that relate to browsing exposed seller and product information, managing personal account information, maintaining a shopping cart and wishlist, and acting on purchases made by that same customer. The buyer role does not extend to managing products, categories, seller registrations, approval workflows, or administrative oversight. Any action outside the buyer role is outside customer authority.
+
+### Own Account and Purchase Scope
+
+A customer may access only their own account information and their own purchase history. The customer may access and manage their own profile information and their own shipping addresses. The customer may view their own orders and their own reviews. A customer cannot access another customer’s private account data, purchase history, cart, wishlist, or reviews. Any attempt to view or act on another user’s private records is outside the customer role and must be denied.
+
+### Buyer-Facing Permissions
+
+A customer can use buyer-facing platform features that support shopping and post-purchase activity. These permissions include maintaining a shopping cart, maintaining a wishlist, viewing order history, and participating in delivery confirmation, cancellation requests, and refund requests for their own order items. These permissions apply only to the customer’s own purchases and do not grant access to seller operations or administrator operations.
+
+### Prohibited Access
+
+A customer cannot manage seller content. This includes products, categories, seller profiles, seller approvals, and any other seller-controlled content. A customer cannot access administrator functions, including approval workflows, moderation actions, or platform governance actions. If a customer attempts to use seller or administrator capabilities, the request is outside the customer role and must be rejected.
+
+### Banned Customer Sign-In Blocked
+
+When a customer is banned, the customer cannot sign in to the platform. A banned customer remains a customer account in the system, but buyer access is blocked until the ban is removed. While banned, the customer cannot use any platform feature that requires sign-in.
+
+## seller Actor
+
+A seller is a registered business user who operates a shop on the platform. This actor must sign in before using seller-facing features, and approval from administrators is required before the seller can actively sell. Sellers are allowed to manage their own shop presence and the items they offer, but they do not have authority over customer accounts or platform-wide governance. Their role includes access to shop-facing and fulfillment-related work, such as responding to purchase activity tied to their own items. Sellers can see information that helps them manage their business, including their approval state and any rejection reason when applicable. They may also participate in dispute-related activity for their own items, including cancellation and refund responses. Seller access is limited to the seller’s own shop and own selling activity, so one seller cannot manage another seller’s shop or records. A seller account can be deleted only when the platform’s seller-side account rules are satisfied, which preserves order history and snapshots for continuity. If a seller is suspended or banned, the role still exists conceptually, but active selling access is restricted according to platform policy. Seller capabilities never include administrator approval powers unless the user is separately granted administrator status.
+
+### Seller Actor Identity and Role
+
+A seller is a registered business user who operates a shop on the platform.
+A seller represents a shop owner role and uses the platform to manage that shop’s selling activity.
+A seller must sign in before using seller-facing features.
+A seller is allowed to manage their own shop and the items they offer.
+A seller can participate in fulfillment-related activity for their own items.
+A seller does not have authority over customer accounts.
+A seller does not have platform-wide governance authority.
+A seller cannot act as an administrator unless the user is separately granted administrator status.
+
+### Seller Approval and Registration Status
+
+A seller account requires administrator approval before the seller can actively sell.
+A seller can view their approval status.
+The approval status can be pending, approved, or rejected.
+If a seller is rejected, the seller can view the rejection reason.
+If a seller is rejected, the seller can submit a new registration request.
+
+### Seller Access to Own Shop and Selling Activity
+
+A seller’s access is limited to the seller’s own shop and own selling activity.
+A seller can manage information and content that belong to their own shop.
+A seller can view information that helps them manage their own business, including approval status and rejection reason when applicable.
+A seller can participate in dispute-related activity for their own items, including responding to cancellation and refund requests.
+A seller cannot manage another seller’s shop.
+A seller cannot access another seller’s selling records through seller-facing privileges.
+
+### Seller Account Deletion Rules
+
+A seller can delete their account only when the platform’s seller-side account deletion rules are satisfied.
+A seller can delete their account only if they have no pending orders in paid or shipped status.
+A seller can delete their account only if they have no pending cancellation requests.
+A seller can delete their account only if they have no pending refund requests.
+When a seller deletes their account, their order history and snapshots are preserved for continuity.
+When a seller deletes their account, their shop name in past orders is preserved.
+When a seller deletes their account, their products are deleted from listings.
+
+### Suspended and Banned Seller Access
+
+If a seller is suspended, their active selling access is restricted according to platform policy.
+If a seller is suspended, they cannot create new products.
+If a seller is suspended, they cannot edit existing products.
+If a seller is suspended, they can still process existing orders, including shipping items and responding to cancellation or refund requests.
+If a seller is banned, seller login access is blocked.
+If a seller is banned, the seller cannot use seller-facing access until the ban is lifted.
 
 ## administrator Actor
 
-An administrator is a platform governance identity used to oversee users and maintain platform order. This actor represents staff-level authority rather than a customer or merchant identity. Administrators can access management areas that are not available to ordinary customers or sellers. Their permissions are broader than standard user roles because they are responsible for approval, moderation, and platform oversight. The administrator actor is still bounded by grade, so not every administrator has the same level of authority. Regular administrators and super administrators are different access levels within the same actor family. Super administrators have the highest authority and can manage other administrators within the rules of the platform. Administrators are distinct from shoppers and merchants because their access is focused on supervision instead of buying or selling. They can review platform activity and enforce account-level control where permitted. Their access boundary is the administrative domain, not normal storefront participation.
+An administrator is a privileged platform user responsible for governance, moderation, and oversight. This actor is separate from customers and sellers and is granted broader access for platform operations rather than shopping or storefront use. Administrators can review approval requests, manage seller and user account status, oversee categories and products, and handle order-related intervention when policy or disputes require it. The platform distinguishes between regular administrators and super administrators, with super administrators carrying additional privilege over administrator grade changes. Regular administrators have elevated operational access, but super administrators hold the highest authority within the platform’s account hierarchy. Administrator access is intended for platform control and dispute resolution, not for ordinary customer purchasing or seller storefront management. They may view snapshots and preserved records relevant to oversight so that disputes can be resolved from historical states. The role boundaries prevent administrators from being treated as ordinary buyers or merchants, even though a single person may hold more than one account role if separately granted. Super administrators cannot demote themselves, which preserves control over the highest privilege level. Any action outside the administrator role should remain unavailable unless it is explicitly supported by that actor’s permissions.
 
 ### Administrator Actor
 
-Administrators are the platform governance identity responsible for overseeing the marketplace and maintaining platform order. This actor represents staff-level authority rather than a customer or seller identity.
+An administrator is a privileged platform actor responsible for platform governance, moderation, and oversight rather than ordinary shopping or storefront activity. This actor is separate from customers and sellers and is used for platform control, dispute resolution, and account supervision.
 
-Administrators have platform management access for governance tasks that are not available to ordinary customers or sellers. Their access includes moderation authority, approval authority, and oversight authority within the platform management area.
+Administrators may review approval requests, manage seller and user account status, oversee categories and products, and intervene in order-related matters when platform policy or disputes require it. They may also view snapshots and preserved records relevant to their oversight duties so disputes can be resolved using historical states.
 
-Administrators are bounded by the administrative domain. They do not act as shoppers or merchants, and their access is limited to governance functions rather than storefront participation.
+An administrator is not treated as an ordinary buyer or merchant simply because the same person may also hold another account role in the platform. Access boundaries remain role-based, and administrator permissions apply only when acting in the administrator role.
 
-Administrators are distinct from other user actors because their role is to supervise, review, and control platform activity where permitted.
+```mermaid
+flowchart LR
+    A["administrator"] -->|"governance"| B["platform oversight"]
+    A -->|"moderation"| C["account and content review"]
+    A -->|"dispute resolution"| D["snapshot viewing"]
+```
 
-### Administrator Role and Permissions
+### Privilege Hierarchy
 
-Administrators can perform management actions that support platform governance. Their permissions include reviewing pending requests, making approval decisions, and overseeing platform activity within their authority.
+The platform distinguishes between regular administrators and super administrators. Regular administrators have elevated operational access for platform management, while super administrators hold the highest privilege level in the administrator hierarchy.
 
-Administrators can manage sellers, categories, users, products, and orders only where the platform assigns that responsibility to administrators.
+Super administrators have all regular administrator capabilities and additional authority over administrator grade changes. The hierarchy exists so that the platform always retains a highest authority level for governance decisions.
 
-Administrators can review platform records and moderation cases to support dispute handling and enforcement decisions.
+A regular administrator cannot grant the super administrator role unless that authority is explicitly part of the super administrator level. The privilege hierarchy is strictly ordered so that super administrators remain above regular administrators in authority.
 
-Administrators can access information needed to carry out oversight and approval work, but they do not gain broader merchant or customer privileges through the administrator role.
+```mermaid
+flowchart LR
+    A["regular administrator"] -->|"higher authority"| B["super administrator"]
+    B -->|"highest privilege level"| C["platform governance"]
+```
 
-### Administrator Grades
+### Self-Demotion Restriction
 
-Administrators have two grades: regular administrator and super administrator.
+Super administrators cannot demote themselves. This restriction preserves control over the highest privilege level and prevents the platform from losing its highest authority through self-action.
 
-A regular administrator has standard administrator authority for the permissions assigned to administrators.
+If a super administrator remains the only holder of the highest privilege level, the system must still enforce the same restriction. The self-demotion restriction applies only to the acting super administrator and does not prevent other authorized super administrators from changing another administrator’s grade.
 
-A super administrator has the highest administrator grade and can manage other administrators within the rules of the platform.
+```mermaid
+flowchart LR
+    A["super administrator"] -->|"attempt self-demotion"| B["not allowed"]
+    A -->|"demote another administrator"| C["allowed when authorized"]
+```
 
-Super administrator authority is broader than regular administrator authority, but it remains within the administrative domain.
+### Seller Approval Review
 
-Super administrators can promote regular administrators to super administrator and can demote other super administrators to regular administrator, except that a super administrator cannot demote themselves.
+Administrators can review seller approval requests. This includes viewing pending seller registrations and deciding whether a seller account may proceed to selling activity.
+
+When a seller registration is rejected, the rejection reason must be provided so the seller can understand why the request was not approved. Rejected sellers may submit a new registration request later.
+
+Seller approval review is an administrator oversight function and is separate from seller profile management or product management.
+
+```mermaid
+sequenceDiagram
+    participant A as administrator
+    participant S as seller account
+    A->>S: Review seller approval request
+    A->>S: Approve or reject request
+    S-->>A: View approval status or rejection reason
+```
+
+### User Account Management
+
+Administrators can manage customer and seller account status. This includes viewing user accounts and applying account status controls such as banning and unbanning when platform policy requires it.
+
+When a customer account is banned, the customer cannot log in. When a seller account is banned, the seller cannot log in, but existing orders remain in place.
+
+User account management is an oversight permission and does not replace the account owner’s own account lifecycle actions.
+
+```mermaid
+flowchart LR
+    A["administrator"] -->|"ban"| B["account disabled for login"]
+    A -->|"unban"| C["account restored"]
+```
+
+### Category Management Authority
+
+Administrators have authority to create, edit, and delete categories and subcategories. Category management is reserved to administrators and is not available to customers or sellers.
+
+When a category is deleted, products in that category become uncategorized. Category management authority applies to the category structure used to organize products across the platform.
+
+```mermaid
+flowchart LR
+    A["administrator"] -->|"create/edit/delete"| B["category"]
+    B -->|"deleted"| C["products become uncategorized"]
+```
+
+### Product Oversight Access
+
+Administrators can view all products on the platform and may inspect product snapshots for any product. Product oversight access exists so administrators can review historical product states during disputes or policy review.
+
+Administrators can also delete any product when policy enforcement requires it. This is broader than seller ownership, because administrative oversight applies across the platform rather than only to the administrator’s own products.
+
+```mermaid
+flowchart LR
+    A["administrator"] -->|"view"| B["all products"]
+    A -->|"view"| C["product snapshots"]
+    A -->|"delete"| D["any product"]
+```
+
+### Order Intervention Authority
+
+Administrators can view all orders on the platform and intervene in order items when policy enforcement or dispute resolution requires it. This includes forcing cancellation or refund outcomes for individual items or entire orders.
+
+Order intervention authority is an oversight permission used to resolve exceptional cases. When an administrator intervenes, the platform must preserve the order’s historical record and apply the appropriate stock restoration behavior associated with the intervention outcome.
+
+```mermaid
+sequenceDiagram
+    participant A as administrator
+    participant O as order
+    A->>O: Review order
+    A->>O: Force-cancel or force-refund item or order
+    O-->>A: Record updated for oversight
+```
+
+### Snapshot Viewing for Disputes
+
+Administrators may view snapshots and preserved records relevant to disputes. Snapshot viewing supports review of prior states without changing those records.
+
+Snapshots are part of the administrator’s oversight access, and they remain available for dispute resolution after the underlying editable data has changed. The administrator can use these historical records to understand what changed and when it changed.
+
+```mermaid
+flowchart LR
+    A["administrator"] -->|"view"| B["immutable snapshots"]
+    B -->|"support"| C["dispute resolution"]
+```
 
 # Authentication Flows
 
@@ -121,60 +236,41 @@ Define user registration and login flows including validation and error handling
 
 ### Registration
 
-Customers and sellers can register only as identified account types supported by the platform.
-Registration requires an email address and a password.
-A customer registration creates a customer account.
-A seller registration creates a seller account.
-The platform does not allow guest use of any features, so registration is required before a person can use the platform.
-Seller registration is not enough to begin selling; the seller account remains subject to administrator approval before selling is allowed.
-If a seller registration is rejected, the seller can submit a new registration request.
-If an account already exists for the same email address, the registration is rejected.
+Customers and sellers must register before they can use the platform.
 
-```mermaid
-sequenceDiagram
-    participant U as "User"
-    participant S as "System"
-    U->>S: "Submit registration details"
-    S->>S: "Validate account type and registration information"
-    S-->>U: "Create account or return a registration rejection"
-```
+Customer registration requires an email address and password.
+Seller registration requires an email address and password.
+Registration creates a new account for the selected actor type.
+
+A seller registration does not make the seller eligible to sell immediately; seller approval is handled separately (defined in the seller actor section).
+
+Registration is not available to unregistered visitors because the platform does not allow guest browsing.
 
 ### Login
 
-Customers can log in with their registered email address and password.
-Sellers can log in with their registered email address and password.
-Administrators can log in with their assigned account identity.
-A login attempt succeeds only when the submitted credentials match an existing account that is allowed to access the platform.
-A customer or seller whose account is banned cannot log in.
-A seller whose account is pending approval, approved, or rejected remains governed by the seller account status described elsewhere in the document, and login access follows that account status.
-If the credentials do not match, the login is rejected.
-If the account does not exist, the login is rejected.
+Customers can log in with their email address and password.
+Sellers can log in with their email address and password.
+Login is available only to registered accounts.
 
-```mermaid
-sequenceDiagram
-    participant U as "User"
-    participant S as "System"
-    U->>S: "Submit login credentials"
-    S->>S: "Check account identity and access eligibility"
-    S-->>U: "Grant access or reject the login"
-```
+If the provided credentials do not match an existing account, access is denied.
+If the account is not allowed to access the platform, access is denied.
+
+A successful login allows the user to access the features available to their actor type, subject to the permissions defined in the actor sections.
 
 ### Authentication
 
-Authentication is the platform check that confirms a person is using a valid account before any feature can be used.
-The platform requires successful authentication before customers, sellers, or administrators can access features.
-Authentication is based on the account credentials associated with the account type.
-If authentication fails, the requested feature is not available.
-If an account is suspended or banned, authentication does not grant access.
-Authentication distinguishes the active account type so the platform can apply the correct permissions for customers, sellers, and administrators.
+Authentication verifies that a user is a registered customer, seller, or administrator before allowing access to platform features.
+
+THE mallPlatform SHALL require authentication before any feature can be used.
+WHEN a user provides valid account credentials, THE mallPlatform SHALL recognize the user as the matching account type.
+IF credentials are invalid, THEN THE mallPlatform SHALL deny access.
+IF an account is not permitted to access the platform, THEN THE mallPlatform SHALL deny access.
 
 ```mermaid
 flowchart LR
-    A["Account credentials"] --> B["Authentication check"]
-    B --> C["Customer access"]
-    B --> D["Seller access"]
-    B --> E["Administrator access"]
-    B --> F["Access rejected"]
+    A["Registration"] --> B["Login"]
+    B --> C["Authenticated access"]
+    B --> D["Access denied"]
 ```
 
 ## Session and Logout
@@ -183,26 +279,67 @@ Define session behavior and logout from a user perspective.
 
 ### Session
 
-A signed-in customer, seller, or administrator remains authenticated through a session that allows continued use of the platform without signing in again for each action.
-A session belongs to the account that created it and is limited to the permissions of that account type.
-If the signed-in account is banned, the session no longer allows access to the platform.
-If the signed-in account is suspended or otherwise loses access according to its account status, the session no longer allows access to the affected features.
+A customer, seller, or administrator remains signed in while their session is active.
+The platform shall keep the signed-in state available for authenticated use of the platform until the user ends the session.
+The platform shall treat session state as part of the authenticated account lifecycle for all registered actors.
+The platform shall allow a signed-in user to continue using the platform without repeating registration or login during the same active session.
+The platform shall end the session when the user logs out.
+The platform shall ensure that the current session reflects the correct actor identity and role.
+The platform shall not allow an unsigned-out user to remain in an authenticated session.
+
+Mermaid:
+```mermaid
+sequenceDiagram
+    participant U as "User"
+    participant S as "Platform"
+    U->>S: "Use authenticated features"
+    S-->>U: "Session remains active"
+    U->>S: "Log out"
+    S-->>U: "Session ended"
+```
 
 ### Logout
 
-A signed-in customer, seller, or administrator can end the current session by logging out.
-When a user logs out, the current session is ended immediately.
-After logout, the user must sign in again before using any authenticated features.
-Logout affects only the current session and does not change the account itself.
-Logout does not delete profile information, orders, products, reviews, or any other stored business data.
+A signed-in customer, seller, or administrator can end their own session at any time.
+When a user logs out, the platform shall end the current session immediately.
+When a user logs out, the platform shall stop treating the user as signed in.
+When a user logs out, the platform shall require the user to sign in again before using authenticated features.
+When a user logs out, the platform shall not change the user’s account data.
+A logout action shall apply only to the current signed-in account.
+The platform shall not allow logout to affect another user’s session.
+
+Mermaid:
+```mermaid
+flowchart LR
+    A["Signed-in session"] -->|"Logout"| B["Session ended"]
+    B -->|"Sign in again"| C["Signed-in session"]
+```
 
 ### Account Security
 
-A user can access authenticated features only while signed in with a valid session.
-A user cannot use another actor type's features through the current session.
-When an account is banned, that account cannot log in and cannot continue using existing authenticated access.
-When a seller account is suspended, the seller cannot create new products or edit existing products through that account until access is restored.
-When a user deletes their account, any active session for that account stops allowing access to authenticated features.
+A customer or seller account shall be protected by email and password sign-in, as defined in the registration and login section.
+The platform shall allow a customer or seller to change their password.
+The platform shall allow a customer or seller to delete their own account.
+The platform shall require administrator approval for seller accounts before they can sell.
+The platform shall show seller approval status to the seller.
+The platform shall show a rejection reason to a seller whose registration was rejected.
+The platform shall allow a rejected seller to submit a new registration request.
+The platform shall prevent banned customers from logging in.
+The platform shall prevent banned sellers from logging in.
+The platform shall allow a signed-in administrator to perform administrator-grade account oversight within their permissions.
+The platform shall preserve order history, order items, and snapshots where the user requirements state that they must be preserved after account deletion.
+The platform shall remove the user’s profile information when the customer deletes their account.
+The platform shall remove a seller’s products from listings when the seller deletes their account.
+
+Mermaid:
+```mermaid
+flowchart LR
+    A["Account active"] -->|"Change password"| B["Account active"]
+    A -->|"Delete account"| C["Account removed"]
+    D["Seller pending approval"] -->|"Approve"| E["Seller approved"]
+    D -->|"Reject"| F["Seller rejected"]
+    F -->|"New registration request"| D
+```
 
 # Account Lifecycle
 
@@ -212,46 +349,46 @@ Account creation, deletion, and password management.
 
 Define how users create accounts, delete accounts, and change passwords.
 
-### Account Deletion
+### Account Creation
 
-Customers can delete their accounts.
-When a customer deletes an account, the system deletes the customer's profile information.
-When a customer deletes an account, the system preserves the customer's orders and order history for seller records and legal purposes.
-When a customer deletes an account, the system preserves the customer's reviews and shows them as written by a deleted user.
-Sellers can delete their accounts only when they have no pending orders in paid or shipped status.
-Sellers can delete their accounts only when they have no pending cancellation requests and no pending refund requests.
-When a seller deletes an account, the system deletes the seller's products from listings.
-When a seller deletes an account, the system preserves order history and snapshots.
-When a seller deletes an account, the system preserves the seller shop name in past orders.
-The account deletion outcome depends on the account type, and the preservation rules for customer data and seller data must be applied exactly as stated.
-
-```mermaid
-flowchart LR
-    A["Account deletion request"] --> B["Identify account type"]
-    B --> C["Customer account"]
-    B --> D["Seller account"]
-    C --> E["Delete profile information"]
-    C --> F["Preserve orders, order history, and reviews"]
-    D --> G["Check pending orders and request status"]
-    G --> H["Delete seller account"]
-    H --> I["Delete products from listings"]
-    H --> J["Preserve order history, snapshots, and shop name in past orders"]
-```
-
-### Password Change
-
-Customers can change their passwords.
-Sellers can change their passwords.
-Password change is available only to the account owner.
-A password change updates the account's login credentials while keeping the account itself active.
-The password change capability applies to both customer accounts and seller accounts, and no additional account data is changed by this action.
+Customers shall create an account before using any platform features. Customer account creation shall require email and password. Sellers shall create an account before using any platform features. Seller account creation shall require email and password. A created customer account shall be associated with a customer profile. A created seller account shall be associated with a seller profile and an approval status. Sellers shall not be able to sell until their account has been approved by an administrator. Rejected sellers shall be able to submit a new registration request.
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant S as System
+    U->>S: Submit account registration
+    S->>S: Create account and initial account state
+    S-->>U: Account created
+```
+
+
+### Account Deletion
+
+Customers shall be able to delete their own account. When a customer deletes their account, the system shall delete their profile information. When a customer deletes their account, the system shall preserve their orders and order history for seller records and legal purposes. When a customer deletes their account, the system shall preserve their reviews and show them as deleted user.
+
+Sellers shall be able to delete their own account only when they have no pending orders in paid or shipped status and no pending cancellation or refund requests. When a seller deletes their account, the system shall delete their products from listings. When a seller deletes their account, the system shall preserve order history and snapshots. When a seller deletes their account, the system shall preserve their shop name in past orders.
+
+```mermaid
+flowchart LR
+    A["Customer account"] -->|"Delete account"| B["Profile information deleted"]
+    A -->|"Delete account"| C["Orders and order history preserved"]
+    A -->|"Delete account"| D["Reviews shown as deleted user"]
+    E["Seller account"] -->|"Delete account when eligible"| F["Products removed from listings"]
+    E -->|"Delete account when eligible"| G["Order history and snapshots preserved"]
+    E -->|"Delete account when eligible"| H["Shop name preserved in past orders"]
+```
+
+
+### Password Change
+
+Customers shall be able to change their password. Sellers shall be able to change their password. Password change shall be available only to the account owner. A successful password change shall update the account’s login credentials for future sign-in attempts. If the password change request is invalid, the system shall reject it.
+
+```mermaid
+sequenceDiagram
+    participant U as Account owner
+    participant S as System
     U->>S: Request password change
-    S->>S: Verify account ownership
-    S->>S: Update password
-    S-->>U: Password change completed
+    S->>S: Validate and update password
+    S-->>U: Password changed or rejected
 ```

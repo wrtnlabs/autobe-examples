@@ -8,16 +8,17 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeMemberTransformer } from "../transformers/RedditLikeMemberTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putRedditLikeMemberProfile(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   body: IRedditLikeMember.IUpdate;
 }): Promise<IRedditLikeMember> {
-  const updated = await MyGlobal.prisma.reddit_like_members.update({
+  // Update the member record
+  await MyGlobal.prisma.reddit_like_members.update({
     where: { id: props.member.id },
     data: {
       ...(props.body.username !== undefined && {
@@ -25,7 +26,12 @@ export async function putRedditLikeMemberProfile(props: {
       }),
       updated_at: new Date(),
     },
+  });
+  // Fetch the updated record with full selection
+  const updated = await MyGlobal.prisma.reddit_like_members.findUniqueOrThrow({
+    where: { id: props.member.id },
     ...RedditLikeMemberTransformer.select(),
   });
+  // Transform and return
   return await RedditLikeMemberTransformer.transform(updated);
 }

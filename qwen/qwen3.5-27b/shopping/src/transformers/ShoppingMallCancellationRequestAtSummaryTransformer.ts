@@ -5,8 +5,10 @@ import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
 import { ShoppingMallOrderItemAtSummaryTransformer } from "./ShoppingMallOrderItemAtSummaryTransformer";
@@ -25,9 +27,13 @@ export namespace ShoppingMallCancellationRequestAtSummaryTransformer {
         rejection_reason: true,
         requested_at: true,
         responded_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
         customer: ShoppingMallCustomerAtSummaryTransformer.select(),
         orderItem: ShoppingMallOrderItemAtSummaryTransformer.select(),
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
+        snapshots: true,
       },
     } satisfies Prisma.shopping_mall_cancellation_requestsFindManyArgs;
   }

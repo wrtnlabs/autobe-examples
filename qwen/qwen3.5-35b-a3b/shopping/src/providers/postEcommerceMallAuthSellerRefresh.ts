@@ -15,29 +15,39 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postEcommerceMallAuthSellerRefresh(props: {
   body: IEcommerceMallSeller.IRefresh;
 }): Promise<IEcommerceMallSeller.IAuthorized> {
-  // 1. Verify refresh token
-  const decoded: {
+  let decoded: {
+    id: string;
+    session_id: string;
     type: "seller";
-    id: string & tags.Format<"uuid">;
-    session_id: string & tags.Format<"uuid">;
-  } = jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
-    issuer: "autobe",
-  }) as unknown as typeof decoded;
-  // 2. Validate type
+  };
+  try {
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        issuer: "autobe",
+      },
+    ) as {
+      id: string;
+      session_id: string;
+      type: "seller";
+    };
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
+  }
   if (decoded.type !== "seller") {
     throw new HttpException("Invalid token type", 401);
   }
-  // 3. Validate session exists
   const session =
     await MyGlobal.prisma.ecommerce_mall_seller_sessions.findFirst({
       where: {
         id: decoded.session_id,
+        seller_id: decoded.id,
       },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate seller exists and not deleted
   const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findUniqueOrThrow(
     {
       where: { id: decoded.id },
@@ -46,57 +56,48 @@ export async function postEcommerceMallAuthSellerRefresh(props: {
   if (seller.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 5. Generate new tokens (SAME session_id)
-  const now = toISOStringSafe(new Date()) as string & tags.Format<"date-time">;
-  const accessExpires = toISOStringSafe(
+  const accessExpiresString = toISOStringSafe(
     new Date(Date.now() + 60 * 60 * 1000),
-  ) as string & tags.Format<"date-time">;
-  const refreshExpires = toISOStringSafe(
+  );
+  const refreshExpiresString = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  ) as string & tags.Format<"date-time">;
-  const access = jwt.sign(
-    {
-      type: "seller",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
   );
-  const refresh = jwt.sign(
-    {
-      type: "seller",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // 6. Update session expiration
+  const nowString = toISOStringSafe(new Date());
+  const token: IAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: nowString,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: nowString,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpiresString,
+    refreshable_until: refreshExpiresString,
+  };
   await MyGlobal.prisma.ecommerce_mall_seller_sessions.update({
     where: { id: decoded.session_id },
-    data: {
-      expired_at: new Date(accessExpires),
-    },
+    data: { expired_at: refreshExpiresString },
   });
-  // 7. Return new token pair
   return {
     id: seller.id,
     email: seller.email,
-    created_at: toISOStringSafe(seller.created_at) as string &
-      tags.Format<"date-time">,
-    updated_at: toISOStringSafe(seller.updated_at) as string &
-      tags.Format<"date-time">,
-    deleted_at:
-      seller.deleted_at !== null ? toISOStringSafe(seller.deleted_at) : null,
-    token: {
-      access,
-      refresh,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
-    },
-  };
+    created_at: toISOStringSafe(seller.created_at),
+    updated_at: toISOStringSafe(seller.updated_at),
+    deleted_at: seller.deleted_at ? toISOStringSafe(seller.deleted_at) : null,
+    token,
+  } as IEcommerceMallSeller.IAuthorized;
 }

@@ -11,7 +11,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { EcommerceMallShipmentCollector } from "../collectors/EcommerceMallShipmentCollector";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
 import { EcommerceMallShipmentTransformer } from "../transformers/EcommerceMallShipmentTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -21,45 +20,70 @@ export async function postEcommerceMallSellerShipments(props: {
   seller: SellerPayload;
   body: IEcommerceMallShipment.ICreate;
 }): Promise<IEcommerceMallShipment> {
-  const { seller, body } = props;
   // Validate carrier_name is provided
-  if (body.carrier_name === null || body.carrier_name === undefined) {
-    throw new HttpException("Carrier name is required", 400);
+  if (
+    props.body.carrier_name === null ||
+    props.body.carrier_name === undefined
+  ) {
+    throw new HttpException("carrier_name is required", 400);
   }
-  // Validate all order items exist and are not soft-deleted
+  // Validate order_item_ids has at least one item
+  if (props.body.order_item_ids.length < 1) {
+    throw new HttpException("At least one order item is required", 400);
+  }
+  // Query all order items and verify they belong to the seller
   const orderItems = await MyGlobal.prisma.ecommerce_mall_order_items.findMany({
     where: {
-      id: { in: body.order_item_ids },
-      deleted_at: null,
+      id: {
+        in: props.body.order_item_ids,
+      },
+    },
+    select: {
+      id: true,
+      ecommerce_mall_order_id: true,
+      seller_snapshot_id: true,
     },
   });
-  if (orderItems.length !== body.order_item_ids.length) {
-    throw new HttpException("Some order items not found", 404);
+  // Verify all requested items were found
+  if (orderItems.length !== props.body.order_item_ids.length) {
+    throw new HttpException("One or more order items not found", 404);
   }
-  // Verify all items belong to authenticated seller
-  for (const item of orderItems) {
-    if (item.seller_snapshot_id !== seller.id) {
-      throw new HttpException("Order item does not belong to seller", 400);
+  // Verify all order items belong to the authenticated seller
+  for (const orderItem of orderItems) {
+    if (orderItem.seller_snapshot_id !== props.seller.id) {
+      throw new HttpException(
+        "Order item does not belong to the authenticated seller",
+        400,
+      );
     }
   }
-  // Create shipment record using collector
-  const firstOrderItem = orderItems[0];
-  const createdShipment = await MyGlobal.prisma.ecommerce_mall_shipments.create(
-    {
-      data: await EcommerceMallShipmentCollector.collect({
-        body,
-        ecommerceMallSellers: { id: seller.id },
-        ecommerceMallOrderItems: { id: firstOrderItem.id },
-      }),
-      ...EcommerceMallShipmentTransformer.select(),
+  // Create shipment record
+  const created = await MyGlobal.prisma.ecommerce_mall_shipments.create({
+    data: {
+      id: v4(),
+      carrier_name: props.body.carrier_name,
+      carrier_phone: props.body.carrier_phone ?? null,
+      carrier_website: props.body.carrier_website ?? null,
+      status: "pending",
+      shipped_at: null,
+      delivered_at: null,
+      estimated_delivery_at: null,
+      delivery_address: props.body.delivery_address ?? null,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      order: {
+        connect: { id: orderItems[0].ecommerce_mall_order_id },
+      },
+      seller: {
+        connect: { id: props.seller.id },
+      },
+      orderItems: {
+        connect: props.body.order_item_ids.map((itemId) => ({ id: itemId })),
+      },
     },
-  );
-  // Note: Status update removed - order_items table has no status field in DB schema
-  // Fetch and transform result
-  const result =
-    await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
-      where: { id: createdShipment.id },
-      ...EcommerceMallShipmentTransformer.select(),
-    });
-  return await EcommerceMallShipmentTransformer.transform(result);
+    ...EcommerceMallShipmentTransformer.select(),
+  });
+  // Transform and return the created shipment
+  return await EcommerceMallShipmentTransformer.transform(created);
 }

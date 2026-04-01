@@ -21,46 +21,38 @@ export async function postRedditLikeOwnerModerators(props: {
   owner: OwnerPayload;
   body: IRedditLikeModerator.ICreate;
 }): Promise<IRedditLikeModerator> {
-  // Verify community exists and get owner
-  const community = await MyGlobal.prisma.reddit_like_communities.findUnique({
-    where: { id: props.body.communityId },
-    select: { owner_id: true },
-  });
-  if (community === null) {
-    throw new HttpException("Community not found", 404);
-  }
-  // Authorization: must be owner OR moderator with can_add_moderators
-  const isOwner = community.owner_id === props.owner.id;
-  if (!isOwner) {
-    const requesterModerator =
-      await MyGlobal.prisma.reddit_like_moderators.findFirst({
-        where: {
-          member_id: props.owner.id,
-          community_id: props.body.communityId,
-          can_add_moderators: true,
-          deleted_at: null,
-        },
-      });
-    if (requesterModerator === null) {
-      throw new HttpException("Forbidden", 403);
-    }
-  }
-  // Check for existing active moderator (database has unique constraint, but explicit check for clarity)
-  const existingModerator =
-    await MyGlobal.prisma.reddit_like_moderators.findFirst({
-      where: {
-        member_id: props.body.memberId,
-        community_id: props.body.communityId,
-        deleted_at: null,
-      },
+  // Verify community exists and check ownership
+  const community =
+    await MyGlobal.prisma.reddit_like_communities.findUniqueOrThrow({
+      where: { id: props.body.communityId },
+      select: { id: true, owner_id: true },
     });
-  if (existingModerator !== null) {
+  if (community.owner_id !== props.owner.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Prevent adding owner as moderator
+  if (props.body.memberId === community.owner_id) {
+    throw new HttpException("Owner cannot be added as moderator", 400);
+  }
+  // Verify target member exists
+  await MyGlobal.prisma.reddit_like_members.findUniqueOrThrow({
+    where: { id: props.body.memberId },
+  });
+  // Check for existing moderator role
+  const existing = await MyGlobal.prisma.reddit_like_moderators.findFirst({
+    where: {
+      member_id: props.body.memberId,
+      community_id: props.body.communityId,
+      deleted_at: null,
+    },
+  });
+  if (existing !== null) {
     throw new HttpException(
       "Member is already a moderator in this community",
       409,
     );
   }
-  // Create moderator using collector and return via transformer
+  // Create using collector and transform result
   const created = await MyGlobal.prisma.reddit_like_moderators.create({
     data: await RedditLikeModeratorCollector.collect({ body: props.body }),
     ...RedditLikeModeratorTransformer.select(),

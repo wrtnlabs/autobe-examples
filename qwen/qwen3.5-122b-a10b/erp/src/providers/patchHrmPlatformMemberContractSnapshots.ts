@@ -16,7 +16,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { HrmPlatformContractSnapshotAtSummaryTransformer } from "../transformers/HrmPlatformContractSnapshotAtSummaryTransformer";
+import { HrmPlatformContractSnapshotTransformer } from "../transformers/HrmPlatformContractSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -24,153 +24,105 @@ export async function patchHrmPlatformMemberContractSnapshots(props: {
   member: MemberPayload;
   body: IHrmPlatformContractSnapshot.IRequest;
 }): Promise<IPageIHrmPlatformContractSnapshot.ISummary> {
-  // Verify member exists and is active
-  const member = await MyGlobal.prisma.hrm_platform_members.findFirst({
-    where: {
-      id: props.member.id,
-      deleted_at: null,
-    },
-  });
-  if (member === null) {
-    throw new HttpException("Member not found", 404);
-  }
-  // Get member's employee record to determine organization context
+  // Get the member's organization context through employee relationship
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
       deleted_at: null,
     },
     select: {
-      id: true,
       hrm_platform_organization_id: true,
-      role: {
-        select: {
-          id: true,
-          code: true,
-          permissions: {
-            select: {
-              id: true,
-            },
-          },
-        },
+    },
+  });
+  if (!employee) {
+    throw new HttpException("Member not found in any organization", 403);
+  }
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  const whereInput: Prisma.hrm_platform_contract_snapshotsWhereInput = {
+    contract: {
+      employee: {
+        hrm_platform_organization_id: employee.hrm_platform_organization_id,
+        deleted_at: null,
       },
     },
-  } satisfies Prisma.hrm_platform_employeesFindFirstArgs);
-  if (employee === null) {
-    throw new HttpException("Member is not enrolled in any organization", 403);
-  }
-  const organizationId = employee.hrm_platform_organization_id;
-  const hasOrgManage = employee.role.permissions.some(
-    (p) => p.id === "org:manage",
-  );
-  const hasEmployeeView = employee.role.permissions.some(
-    (p) => p.id === "employee:view",
-  );
-  if (!hasOrgManage && !hasEmployeeView) {
-    throw new HttpException("Forbidden: insufficient permissions", 403);
-  }
-  // Build contract filter conditions separately
-  const contractFilters: Prisma.hrm_platform_contract_snapshotsWhereInput["contract"] =
-    {};
-  // Base organization filter
-  contractFilters.employee = {
-    hrm_platform_organization_id: organizationId,
-    deleted_at: null,
-  };
-  // Apply filters from body
-  if (props.body.contract_id !== undefined) {
-    contractFilters.id = props.body.contract_id;
-  }
-  if (props.body.employee_id !== undefined) {
-    if (!hasOrgManage && !hasEmployeeView) {
-      throw new HttpException("Forbidden", 403);
-    }
-    contractFilters.employee = {
-      id: props.body.employee_id,
-      deleted_at: null,
-    };
-  }
-  // Build start_date filter without spread syntax
-  if (
-    props.body.start_date_from !== undefined ||
-    props.body.start_date_to !== undefined
-  ) {
-    contractFilters.start_date = {};
-    if (props.body.start_date_from !== undefined) {
-      contractFilters.start_date.gte = new Date(props.body.start_date_from);
-    }
-    if (props.body.start_date_to !== undefined) {
-      contractFilters.start_date.lte = new Date(props.body.start_date_to);
-    }
-  }
-  if (props.body.end_date_from !== undefined) {
-    contractFilters.OR = [
-      {
-        end_date: {
-          gte: new Date(props.body.end_date_from),
+    ...(props.body.contract_id && {
+      hrm_platform_contract_id: props.body.contract_id,
+    }),
+    ...(props.body.employee_id && {
+      contract: {
+        hrm_platform_employee_id: props.body.employee_id,
+      },
+    }),
+    ...(props.body.start_date_from && {
+      start_date: {
+        gte: new Date(props.body.start_date_from),
+      },
+    }),
+    ...(props.body.start_date_to && {
+      start_date: {
+        lte: new Date(props.body.start_date_to),
+      },
+    }),
+    ...(props.body.end_date_from && {
+      OR: [
+        {
+          end_date: {
+            gte: new Date(props.body.end_date_from),
+          },
         },
+        {
+          end_date: null,
+        },
+      ],
+    }),
+    ...(props.body.end_date_to && {
+      end_date: {
+        lte: new Date(props.body.end_date_to),
+        not: null,
       },
-      {
-        end_date: null,
+    }),
+    ...(props.body.pay_period && {
+      pay_period: props.body.pay_period,
+    }),
+    ...(props.body.notes !== undefined &&
+      props.body.notes !== null && {
+        notes: {
+          contains: props.body.notes,
+        },
+      }),
+    ...(props.body.created_at_from && {
+      created_at: {
+        gte: new Date(props.body.created_at_from),
       },
-    ];
-  }
-  if (props.body.end_date_to !== undefined) {
-    contractFilters.end_date = {
-      lte: new Date(props.body.end_date_to),
-    };
-  }
-  // Build whereInput with all filters
-  const whereInput: Prisma.hrm_platform_contract_snapshotsWhereInput = {
-    contract: contractFilters,
+    }),
+    ...(props.body.created_at_to && {
+      created_at: {
+        lte: new Date(props.body.created_at_to),
+      },
+    }),
   };
-  if (props.body.pay_period !== undefined) {
-    whereInput.pay_period = props.body.pay_period;
-  }
-  if (props.body.notes !== undefined && props.body.notes !== null) {
-    whereInput.notes = {
-      contains: props.body.notes,
-    };
-  }
-  if (props.body.created_at_from !== undefined) {
-    whereInput.created_at = {
-      gte: new Date(props.body.created_at_from),
-    };
-  }
-  if (props.body.created_at_to !== undefined) {
-    whereInput.created_at = {
-      lte: new Date(props.body.created_at_to),
-    };
-  }
-  // Pagination
-  const limit = props.body.limit ?? 20;
-  const page = props.body.page ?? 1;
-  const skip = (page - 1) * limit;
-  // Fetch data
-  const snapshots =
-    await MyGlobal.prisma.hrm_platform_contract_snapshots.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" },
-      ...HrmPlatformContractSnapshotAtSummaryTransformer.select(),
-    } satisfies Prisma.hrm_platform_contract_snapshotsFindManyArgs);
-  // Count total
+  const data = await MyGlobal.prisma.hrm_platform_contract_snapshots.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: { created_at: "desc" },
+    ...HrmPlatformContractSnapshotTransformer.select(),
+  });
   const total = await MyGlobal.prisma.hrm_platform_contract_snapshots.count({
     where: whereInput,
   });
-  // Transform results
-  const data = await ArrayUtil.asyncMap(
-    snapshots,
-    HrmPlatformContractSnapshotAtSummaryTransformer.transform,
-  );
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmPlatformContractSnapshotTransformer.transform,
+    ),
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIHrmPlatformContractSnapshot.ISummary;
+  };
 }

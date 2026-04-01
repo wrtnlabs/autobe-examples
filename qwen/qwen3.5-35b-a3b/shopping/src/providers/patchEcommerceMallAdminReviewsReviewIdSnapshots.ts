@@ -24,66 +24,52 @@ export async function patchEcommerceMallAdminReviewsReviewIdSnapshots(props: {
   reviewId: string & tags.Format<"uuid">;
   body: IEcommerceMallReviewSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallReviewSnapshot.ISummary> {
-  // Parse pagination with defaults
-  const page = props.body.page ? Math.max(1, parseInt(props.body.page, 10)) : 1;
-  const limit = Math.min(
-    100,
-    Math.max(1, props.body.limit ?? props.body.pageSize ?? 20),
-  );
-  const skip = (page - 1) * limit;
-  // Build where clause with reviewId filter
+  const page = parseInt(props.body.page ?? "1", 10) || 1;
+  const limit =
+    parseInt(
+      (
+        props.body.pageSize ??
+        props.body.limit?.toString() ??
+        "20"
+      )?.toString() ?? "20",
+      10,
+    ) || 20;
+  const skip = (page - 1) * Math.min(limit, 100);
   const whereInput: Prisma.ecommerce_mall_review_snapshotsWhereInput = {
     ecommerce_mall_review_id: props.reviewId,
-  };
-  // Apply snapshot_type filter
-  if (props.body.snapshotType) {
-    whereInput.snapshot_type = props.body.snapshotType;
-  }
-  // Apply date range filters (AND logic)
-  const created_at_filter: Prisma.ecommerce_mall_review_snapshotsWhereInput["created_at"] =
-    {};
-  if (props.body.createdAtGte) {
-    created_at_filter.gte = props.body.createdAtGte;
-  }
-  if (props.body.createdAtLte) {
-    created_at_filter.lte = props.body.createdAtLte;
-  }
-  if (Object.keys(created_at_filter).length > 0) {
-    whereInput.created_at = created_at_filter;
-  }
-  // Determine ordering
-  const ordering = props.body.ordering ?? "desc";
-  const orderByInput: Prisma.ecommerce_mall_review_snapshotsOrderByWithRelationInput =
-    {
-      created_at: ordering,
-    };
-  // Execute pagination with findMany and count
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.ecommerce_mall_review_snapshots.findMany({
-      where: whereInput,
-      orderBy: orderByInput,
-      skip,
-      take: limit,
-      ...EcommerceMallReviewSnapshotAtSummaryTransformer.select(),
+    ...(props.body.snapshotType !== undefined && {
+      snapshot_type: props.body.snapshotType,
     }),
-    MyGlobal.prisma.ecommerce_mall_review_snapshots.count({
-      where: whereInput,
+    ...(props.body.createdAtGte !== undefined && {
+      created_at: { gte: new Date(props.body.createdAtGte) },
     }),
-  ]);
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallReviewSnapshotAtSummaryTransformer.transform,
-  );
-  // Calculate pagination metadata
-  const totalPages = Math.max(0, Math.ceil(total / limit));
+    ...(props.body.createdAtLte !== undefined && {
+      created_at: { lte: new Date(props.body.createdAtLte) },
+    }),
+  } satisfies Prisma.ecommerce_mall_review_snapshotsWhereInput;
+  const data = await MyGlobal.prisma.ecommerce_mall_review_snapshots.findMany({
+    where: whereInput,
+    skip,
+    take: Math.min(limit, 100),
+    orderBy:
+      props.body.ordering === "asc"
+        ? { created_at: "asc" }
+        : { created_at: "desc" },
+    ...EcommerceMallReviewSnapshotAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.ecommerce_mall_review_snapshots.count({
+    where: whereInput,
+  });
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit: Math.min(limit, 100),
       records: total,
-      pages: totalPages,
+      pages: Math.ceil(total / Math.min(limit, 100)),
     } satisfies IPage.IPagination,
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallReviewSnapshotAtSummaryTransformer.transform,
+    ),
   } satisfies IPageIEcommerceMallReviewSnapshot.ISummary;
 }

@@ -17,14 +17,14 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const member = await (MyGlobal.prisma as any).members?.findFirst({
+  const member = await MyGlobal.prisma.erp_hrm_time_tracking_members.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
     },
   });
 
-  if (member === null || member === undefined) {
+  if (member === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

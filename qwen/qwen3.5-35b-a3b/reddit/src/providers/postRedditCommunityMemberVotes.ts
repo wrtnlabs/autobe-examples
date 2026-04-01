@@ -13,7 +13,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditCommunityVoteCollector } from "../collectors/RedditCommunityVoteCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditCommunityVoteTransformer } from "../transformers/RedditCommunityVoteTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -23,125 +22,105 @@ export async function postRedditCommunityMemberVotes(props: {
   member: MemberPayload;
   body: IRedditCommunityVote.ICreate;
 }): Promise<IRedditCommunityVote> {
-  // Validate that exactly one of target_post_id or target_comment_id is provided
-  const hasTargetPost =
-    props.body.target_post_id !== null &&
-    props.body.target_post_id !== undefined;
-  const hasTargetComment =
-    props.body.target_comment_id !== null &&
-    props.body.target_comment_id !== undefined;
-  if (hasTargetPost === hasTargetComment) {
-    throw new HttpException(
-      "Exactly one of target_post_id or target_comment_id must be provided",
-      400,
-    );
+  // Validate exactly one target is provided
+  if (
+    props.body.target_post_id === undefined &&
+    props.body.target_comment_id === undefined
+  ) {
+    throw new HttpException("Exactly one target must be specified", 400);
   }
-  // Validate target exists and route to correct type check
-  let targetAuthorId: string | null = null;
-  let targetPostId: string | null = null;
-  let targetCommentId: string | null = null;
-  if (hasTargetPost) {
-    targetPostId = props.body.target_post_id!;
-    // Validate post exists
-    const post = await MyGlobal.prisma.reddit_community_posts.findUnique({
-      where: { id: targetPostId },
-      select: { id: true, author_id: true },
-    });
-    if (!post) {
-      throw new HttpException("Post not found", 404);
-    }
-    targetAuthorId = post.author_id;
-  } else {
-    targetCommentId = props.body.target_comment_id!;
-    // Validate comment exists
-    const comment = await MyGlobal.prisma.reddit_community_comments.findUnique({
-      where: { id: targetCommentId },
-      select: { id: true, reddit_community_members_id: true },
-    });
-    if (!comment) {
-      throw new HttpException("Comment not found", 404);
-    }
-    targetAuthorId = comment.reddit_community_members_id;
-  }
-  // Check for duplicate vote (member already voted on this target)
-  let existingVote: IEntity | null = null;
-  if (hasTargetPost) {
-    existingVote = await MyGlobal.prisma.reddit_community_votes.findUnique({
-      where: {
-        member_id_target_post_id: {
-          member_id: props.member.id,
-          target_post_id: targetPostId!,
-        },
-      },
-    });
-  } else {
-    existingVote = await MyGlobal.prisma.reddit_community_votes.findUnique({
-      where: {
-        member_id_target_comment_id: {
-          member_id: props.member.id,
-          target_comment_id: targetCommentId!,
-        },
-      },
-    });
-  }
-  if (existingVote) {
-    throw new HttpException(
-      "Duplicate vote - you can only have one vote per target",
-      409,
-    );
+  if (
+    props.body.target_post_id !== undefined &&
+    props.body.target_comment_id !== undefined
+  ) {
+    throw new HttpException("Only one target can be specified", 400);
   }
   // Create vote record
-  const created = await MyGlobal.prisma.reddit_community_votes.create({
-    data: await RedditCommunityVoteCollector.collect({
-      body: props.body,
-      redditCommunityMembers: { id: props.member.id } as IEntity,
-    }),
+  const vote = await MyGlobal.prisma.reddit_community_votes.create({
+    data: {
+      id: v4(),
+      member: { connect: { id: props.member.id } },
+      vote_type: props.body.vote_type,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      ...(props.body.target_post_id && {
+        targetPost: { connect: { id: props.body.target_post_id! } },
+      }),
+      ...(props.body.target_comment_id && {
+        targetComment: { connect: { id: props.body.target_comment_id! } },
+      }),
+    },
   });
-  // Route to appropriate subtype table
-  if (hasTargetPost) {
-    await MyGlobal.prisma.reddit_community_vote_of_posts.create({
-      data: {
-        id: created.id,
-        vote_id: created.id,
-        post_id: targetPostId!,
-        created_at: created.created_at,
-        updated_at: created.updated_at,
+  // Update karma and create subtype record
+  const voteDirection = props.body.vote_type === "upvote" ? 1 : -1;
+  if (props.body.target_post_id !== undefined) {
+    const post = await MyGlobal.prisma.reddit_community_posts.findUniqueOrThrow(
+      {
+        where: { id: props.body.target_post_id! },
+        select: { author_id: true },
+      },
+    );
+    await MyGlobal.prisma.reddit_community_user_karmas.upsert({
+      where: { reddit_community_member_id: post.author_id },
+      create: {
+        id: v4(),
+        reddit_community_member_id: post.author_id,
+        current_score: voteDirection,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      update: {
+        current_score: { increment: voteDirection },
+        updated_at: new Date(),
       },
     });
-  } else {
+    await MyGlobal.prisma.reddit_community_vote_of_posts.create({
+      data: {
+        id: v4(),
+        vote_id: vote.id,
+        post_id: props.body.target_post_id!,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+  } else if (props.body.target_comment_id !== undefined) {
+    const comment =
+      await MyGlobal.prisma.reddit_community_comments.findUniqueOrThrow({
+        where: { id: props.body.target_comment_id! },
+        select: { reddit_community_members_id: true },
+      });
+    await MyGlobal.prisma.reddit_community_user_karmas.upsert({
+      where: {
+        reddit_community_member_id: comment.reddit_community_members_id,
+      },
+      create: {
+        id: v4(),
+        reddit_community_member_id: comment.reddit_community_members_id,
+        current_score: voteDirection,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      update: {
+        current_score: { increment: voteDirection },
+        updated_at: new Date(),
+      },
+    });
     await MyGlobal.prisma.reddit_community_vote_of_comments.create({
       data: {
-        id: created.id,
-        vote_id: created.id,
-        comment_id: targetCommentId!,
-        created_at: created.created_at,
-        updated_at: created.updated_at,
+        id: v4(),
+        vote_id: vote.id,
+        comment_id: props.body.target_comment_id!,
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     });
   }
-  // Adjust karma for target's author
-  const karmaAdjustment = props.body.vote_type === "upvote" ? 1 : -1;
-  const now = new Date();
-  await MyGlobal.prisma.reddit_community_user_karmas.upsert({
-    where: { reddit_community_member_id: targetAuthorId! },
-    update: {
-      current_score: {
-        increment: karmaAdjustment,
-      },
-    },
-    create: {
-      id: v4(),
-      reddit_community_member_id: targetAuthorId!,
-      current_score: karmaAdjustment,
-      created_at: now,
-      updated_at: now,
-    },
-  });
-  // Query the created vote with full details
-  const vote = await MyGlobal.prisma.reddit_community_votes.findUniqueOrThrow({
-    where: { id: created.id },
-    ...RedditCommunityVoteTransformer.select(),
-  });
-  // Transform and return
-  return await RedditCommunityVoteTransformer.transform(vote);
+  // Query full vote with relations using transformer's select
+  const fullVote =
+    await MyGlobal.prisma.reddit_community_votes.findUniqueOrThrow({
+      where: { id: vote.id },
+      ...RedditCommunityVoteTransformer.select(),
+    });
+  return await RedditCommunityVoteTransformer.transform(fullVote);
 }

@@ -15,27 +15,19 @@ export async function deleteShoppingMallCustomerCartItemsCartItemId(props: {
   customer: CustomerPayload;
   cartItemId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the cart item and verify it exists and is not already deleted
   const cartItem =
     await MyGlobal.prisma.shopping_mall_cart_items.findUniqueOrThrow({
-      where: {
-        id: props.cartItemId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        shopping_mall_customer_id: true,
-      },
+      where: { id: props.cartItemId },
+      select: { id: true, shopping_mall_customer_id: true, deleted_at: true },
     });
-  // Verify ownership - customer must own this cart item
+  if (cartItem.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
+  }
   if (cartItem.shopping_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Perform soft deletion by setting deleted_at to current timestamp
   await MyGlobal.prisma.shopping_mall_cart_items.update({
     where: { id: props.cartItemId },
-    data: {
-      deleted_at: new Date(),
-    },
+    data: { deleted_at: new Date() },
   });
 }

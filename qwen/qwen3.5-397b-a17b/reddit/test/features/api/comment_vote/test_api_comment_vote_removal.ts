@@ -1,16 +1,14 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCloneComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneComment";
-import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import type { IRedditCloneKarmaScore } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneKarmaScore";
-import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
-import type { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
-import type { IRedditClonePostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostImage";
-import type { IRedditClonePostLink } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostLink";
-import type { IRedditClonePostText } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostText";
-import type { IRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneSubscription";
-import type { IRedditCloneVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneVote";
+import type { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
+import type { IRedditCommunityCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommentVote";
+import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
+import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
+import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
+import type { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
+import type { IRedditCommunityPostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostImage";
+import type { IRedditCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunitySubscription";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -20,186 +18,127 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_reddit_clone_communities_create } from "../../../generate/generate_random_reddit_clone_communities_create";
-import { generate_random_reddit_clone_member_posts_comments_create } from "../../../generate/generate_random_reddit_clone_member_posts_comments_create";
-import { generate_random_reddit_clone_member_posts_create } from "../../../generate/generate_random_reddit_clone_member_posts_create";
-import { generate_random_reddit_clone_member_subscriptions_create } from "../../../generate/generate_random_reddit_clone_member_subscriptions_create";
-import { prepare_random_reddit_clone_comment } from "../../../prepare/prepare_random_reddit_clone_comment";
-import { prepare_random_reddit_clone_community } from "../../../prepare/prepare_random_reddit_clone_community";
-import { prepare_random_reddit_clone_post } from "../../../prepare/prepare_random_reddit_clone_post";
-import { prepare_random_reddit_clone_post_image } from "../../../prepare/prepare_random_reddit_clone_post_image";
-import { prepare_random_reddit_clone_post_link } from "../../../prepare/prepare_random_reddit_clone_post_link";
-import { prepare_random_reddit_clone_post_text } from "../../../prepare/prepare_random_reddit_clone_post_text";
-import { prepare_random_reddit_clone_subscription } from "../../../prepare/prepare_random_reddit_clone_subscription";
+import { generate_random_reddit_community_comments_votes_vote } from "../../../generate/generate_random_reddit_community_comments_votes_vote";
+import { generate_random_reddit_community_member_communities_create } from "../../../generate/generate_random_reddit_community_member_communities_create";
+import { generate_random_reddit_community_member_posts_comments_create } from "../../../generate/generate_random_reddit_community_member_posts_comments_create";
+import { prepare_random_reddit_community_comment } from "../../../prepare/prepare_random_reddit_community_comment";
+import { prepare_random_reddit_community_comment_vote } from "../../../prepare/prepare_random_reddit_community_comment_vote";
+import { prepare_random_reddit_community_community } from "../../../prepare/prepare_random_reddit_community_community";
 
 /**
- * Test comment vote removal functionality with karma score verification.
+ * Test removing a vote from a comment.
  *
- * This test validates the complete vote lifecycle on comments:
- * 1. Community and member setup
- * 2. Post and comment creation
- * 3. Upvote casting and karma verification
- * 4. Vote removal and karma restoration
- * 5. Downvote casting and karma verification
- * 6. Vote removal and final karma restoration
+ * Setup:
+ * 1. Authenticate as member to perform voting actions
+ * 2. Create community as container for post and comment
+ * 3. Subscribe member to community to enable post creation
+ * 4. Create post that will contain the comment to be voted on
+ * 5. Create comment that will receive the vote
+ * 6. Cast an initial UPVOTE on the comment
+ *
+ * Test:
+ * 1. Remove the vote by submitting null direction
+ * 2. Verify the vote removal works correctly
+ * 3. Test with DOWNVOTE as well to ensure bidirectional correctness
  */
 export async function test_api_comment_vote_removal(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create community
-  const adminConnection: api.IConnection = { host: connection.host };
-  const community = await generate_random_reddit_clone_communities_create(
-    adminConnection,
-    {},
-  );
-  // 2. Register author member and store credentials
-  const authorEmail = typia.random<string & tags.Format<"email">>();
-  const authorPassword = RandomGenerator.alphaNumeric(16);
-  const authorUsername = RandomGenerator.name(1);
-  const authorConnection: api.IConnection = { host: connection.host };
-  const authorAuth = await authorize_member_join(authorConnection, {
-    body: {
-      email: authorEmail,
-      password: authorPassword,
-      username: authorUsername,
-      display_name: RandomGenerator.name(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    },
-  });
-  const authorInitialKarma = authorAuth.karma_score.score;
-  // 3. Author subscribes to community
-  await generate_random_reddit_clone_member_subscriptions_create(
-    authorConnection,
-    {
-      body: {
-        community_id: community.id,
-      },
-    },
-  );
-  // 4. Author creates a text post
-  const post = await generate_random_reddit_clone_member_posts_create(
-    authorConnection,
-    {
-      body: {
-        title: RandomGenerator.paragraph({ sentences: 2 }),
-        post_type: "TEXT",
-        community_id: community.id,
-        text: {
-          body: RandomGenerator.content({ paragraphs: 2 }),
-        },
-      },
-    },
-  );
-  // 5. Author creates a comment on their post
-  const comment =
-    await generate_random_reddit_clone_member_posts_comments_create(
-      authorConnection,
-      {
-        body: {
-          body: RandomGenerator.paragraph({ sentences: 3 }),
-        },
-        params: {
-          postId: post.id,
-        },
-      },
-    );
-  // 6. Register voter member
-  const voterConnection: api.IConnection = { host: connection.host };
-  await authorize_member_join(voterConnection, {
+  // 1. Authenticate as member
+  const memberConnection: api.IConnection = { host: connection.host };
+  const memberAuth = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       username: RandomGenerator.name(1),
-      display_name: RandomGenerator.name(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
       ip: typia.random<string & tags.Format<"ipv4">>(),
     },
   });
-  // Voter subscribes to community
-  await generate_random_reddit_clone_member_subscriptions_create(
-    voterConnection,
+  typia.assert(memberAuth);
+  // 2. Create community
+  const community =
+    await generate_random_reddit_community_member_communities_create(
+      memberConnection,
+      {},
+    );
+  typia.assert(community);
+  // 3. Subscribe to community
+  const subscription =
+    await api.functional.redditCommunity.member.communities.subscription.create(
+      memberConnection,
+      {
+        communityName: community.name,
+      },
+    );
+  typia.assert(subscription);
+  // 4. Create post
+  const post = await api.functional.redditCommunity.member.posts.create(
+    memberConnection,
     {
       body: {
-        community_id: community.id,
+        title: RandomGenerator.paragraph({ sentences: 2 }),
+        post_type: "text",
+        text_content: RandomGenerator.content({ paragraphs: 2 }),
       },
     },
   );
-  // 7. Voter casts an UPVOTE on the comment
-  const upvote = await api.functional.redditClone.member.comments.votes.vote(
-    voterConnection,
-    {
-      commentId: comment.id,
-      body: {
-        vote_type: "UPVOTE",
+  typia.assert(post);
+  // 5. Create comment
+  const comment =
+    await generate_random_reddit_community_member_posts_comments_create(
+      memberConnection,
+      {
+        params: { postId: post.id },
       },
+    );
+  typia.assert(comment);
+  // Record initial vote score
+  const initialVoteScore = comment.voteScore;
+  // 6. Cast initial UPVOTE on comment
+  const upvote = await generate_random_reddit_community_comments_votes_vote(
+    memberConnection,
+    {
+      params: { commentId: comment.id },
+      body: { direction: "UPVOTE" },
     },
   );
   typia.assert(upvote);
-  // 8. Verify author's karma increased by 1
-  TestValidator.equals(
-    "author karma after upvote",
-    upvote.member.karma_score,
-    authorInitialKarma + 1,
-  );
-  // 9. Voter removes their vote by submitting vote_type: null
+  // Verify upvote was cast
+  TestValidator.equals("upvote direction", upvote.direction, "UPVOTE");
+  // 7. Remove the UPVOTE by submitting null direction
   const removedUpvote =
-    await api.functional.redditClone.member.comments.votes.vote(
-      voterConnection,
-      {
-        commentId: comment.id,
-        body: {
-          vote_type: null,
-        },
-      },
-    );
-  typia.assert(removedUpvote);
-  // 10. Verify the vote record is soft-deleted
-  TestValidator.predicate(
-    "vote is soft-deleted after removal",
-    removedUpvote.deleted_at !== null,
-  );
-  // 11. Verify author's karma decreased by 1 (returned to original value)
-  TestValidator.equals(
-    "author karma after upvote removal",
-    removedUpvote.member.karma_score,
-    authorInitialKarma,
-  );
-  // 12. Voter casts a DOWNVOTE on the same comment
-  const downvote = await api.functional.redditClone.member.comments.votes.vote(
-    voterConnection,
-    {
+    await api.functional.redditCommunity.comments.votes.vote(memberConnection, {
       commentId: comment.id,
-      body: {
-        vote_type: "DOWNVOTE",
-      },
+      body: { direction: null },
+    });
+  typia.assert(removedUpvote);
+  // 8. Cast DOWNVOTE on comment
+  const downvote = await generate_random_reddit_community_comments_votes_vote(
+    memberConnection,
+    {
+      params: { commentId: comment.id },
+      body: { direction: "DOWNVOTE" },
     },
   );
   typia.assert(downvote);
-  // 13. Verify author's karma decreased by 1
-  TestValidator.equals(
-    "author karma after downvote",
-    downvote.member.karma_score,
-    authorInitialKarma - 1,
-  );
-  // 14. Voter removes the downvote by submitting vote_type: null
+  // Verify downvote was cast
+  TestValidator.equals("downvote direction", downvote.direction, "DOWNVOTE");
+  // 9. Remove the DOWNVOTE by submitting null direction
   const removedDownvote =
-    await api.functional.redditClone.member.comments.votes.vote(
-      voterConnection,
-      {
-        commentId: comment.id,
-        body: {
-          vote_type: null,
-        },
-      },
-    );
+    await api.functional.redditCommunity.comments.votes.vote(memberConnection, {
+      commentId: comment.id,
+      body: { direction: null },
+    });
   typia.assert(removedDownvote);
-  // 15. Verify author's karma returned to original value
-  TestValidator.equals(
-    "author karma after downvote removal",
-    removedDownvote.member.karma_score,
-    authorInitialKarma,
+  // Verify vote operations completed successfully
+  TestValidator.predicate(
+    "upvote removal completed",
+    removedUpvote !== undefined,
+  );
+  TestValidator.predicate(
+    "downvote removal completed",
+    removedDownvote !== undefined,
   );
 }

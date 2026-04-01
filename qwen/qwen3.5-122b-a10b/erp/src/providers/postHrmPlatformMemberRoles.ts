@@ -19,42 +19,48 @@ export async function postHrmPlatformMemberRoles(props: {
   member: MemberPayload;
   body: IHrmPlatformRole.ICreate;
 }): Promise<IHrmPlatformRole> {
-  // Step 1: Get member's organization context from employee record
+  // Validate built-in role names
+  const builtInRoleNames: string[] = ["Owner", "Manager", "Employee"];
+  if (builtInRoleNames.includes(props.body.name)) {
+    throw new HttpException("Cannot create role with built-in role name", 400);
+  }
+  // Get member's current organization from employee records
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
       deleted_at: null,
     },
     select: {
-      id: true,
       hrm_platform_organization_id: true,
-      role: {
-        select: {
-          permissions: {
-            where: { deleted_at: null },
-            select: {
-              permission: {
-                select: { code: true },
-              },
-            },
-          },
+      hrm_platform_role_id: true,
+    },
+  });
+  if (!employee) {
+    throw new HttpException("Member not enrolled in any organization", 403);
+  }
+  const organizationId: string = employee.hrm_platform_organization_id;
+  // Validate user has org:manage permission
+  const userRole = await MyGlobal.prisma.hrm_platform_roles.findUnique({
+    where: { id: employee.hrm_platform_role_id },
+    include: {
+      permissions: {
+        include: {
+          permission: true,
         },
       },
     },
   });
-  if (!employee) {
-    throw new HttpException("Member has no organization membership", 403);
+  if (!userRole) {
+    throw new HttpException("Role not found", 403);
   }
-  const organizationId = employee.hrm_platform_organization_id as string &
-    tags.Format<"uuid">;
-  // Step 2: Validate org:manage permission
-  const hasOrgManage = employee.role?.permissions.some(
-    (rp) => rp.permission.code === "org:manage",
+  const hasOrgManagePermission: boolean = userRole.permissions.some(
+    (rp) =>
+      rp.permission.code === "org:manage" && rp.permission.deleted_at === null,
   );
-  if (!hasOrgManage) {
+  if (!hasOrgManagePermission) {
     throw new HttpException("Forbidden: requires org:manage permission", 403);
   }
-  // Step 3: Validate role name uniqueness within organization
+  // Validate role name uniqueness within organization
   const existingRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
     where: {
       hrm_platform_organization_id: organizationId,
@@ -68,41 +74,43 @@ export async function postHrmPlatformMemberRoles(props: {
       400,
     );
   }
-  // Step 4: Validate built-in role names are not used
-  const builtInNames = ["Owner", "Manager", "Employee"];
-  if (builtInNames.includes(props.body.name)) {
+  // Validate all permission IDs exist and are not soft-deleted
+  const permissionIds: string[] = props.body.permission_ids.map(
+    (p: IHrmPlatformPermission) => p.id,
+  );
+  const validPermissions =
+    await MyGlobal.prisma.hrm_platform_permissions.findMany({
+      where: {
+        id: { in: permissionIds },
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+  if (validPermissions.length !== permissionIds.length) {
     throw new HttpException(
-      "Cannot create role with a built-in role name",
+      "One or more permission IDs are invalid or soft-deleted",
       400,
     );
   }
-  // Step 5: Validate all permission IDs exist and are active
-  if (props.body.permission_ids.length > 0) {
-    const permissionIds = props.body.permission_ids.map((p) => p.id);
-    const validPermissions =
-      await MyGlobal.prisma.hrm_platform_permissions.findMany({
-        where: {
-          id: { in: permissionIds },
-          deleted_at: null,
-        },
-        select: { id: true },
-      });
-    if (validPermissions.length !== permissionIds.length) {
-      throw new HttpException(
-        "One or more permission IDs are invalid or have been deleted",
-        400,
-      );
-    }
-  }
-  // Step 6: Create role using collector
-  const organization: IEntity = { id: organizationId };
+  // Create role using collector
+  const roleData = await HrmPlatformRoleCollector.collect({
+    body: props.body,
+    hrmPlatformOrganizations: {
+      id: organizationId,
+    } as unknown as {
+      id: string & tags.Format<"uuid">;
+    },
+    hrmPlatformMemberSessions: {
+      id: props.member.session_id,
+    } as unknown as {
+      id: string & tags.Format<"uuid">;
+    },
+  });
   const created = await MyGlobal.prisma.hrm_platform_roles.create({
-    data: await HrmPlatformRoleCollector.collect({
-      body: props.body,
-      hrmPlatformOrganizations: organization,
-    }),
+    data: roleData,
     ...HrmPlatformRoleTransformer.select(),
   });
-  // Step 7: Transform and return
   return await HrmPlatformRoleTransformer.transform(created);
 }

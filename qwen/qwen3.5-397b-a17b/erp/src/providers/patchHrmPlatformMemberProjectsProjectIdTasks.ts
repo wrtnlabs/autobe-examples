@@ -1,6 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
+import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
+import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
@@ -14,6 +17,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { HrmPlatformTaskAtSummaryTransformer } from "../transformers/HrmPlatformTaskAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -22,283 +26,59 @@ export async function patchHrmPlatformMemberProjectsProjectIdTasks(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmPlatformTask.IRequest;
 }): Promise<IPageIHrmPlatformTask.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
-  const skip = (page - 1) * limit;
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+  await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow({
     where: {
-      member_id: props.member.id,
+      id: props.projectId,
       deleted_at: null,
     },
   });
-  if (!employee) {
-    throw new HttpException("Employee not found", 404);
-  }
-  const membership =
-    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
-      where: {
-        hrm_platform_employee_id: employee.id,
-        hrm_platform_project_id: props.projectId,
-        deleted_at: null,
-      },
-    });
-  if (!membership) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const whereInput = {
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 100, 100);
+  const skip = (page - 1) * limit;
+  const whereInput: Prisma.hrm_platform_tasksWhereInput = {
     hrm_platform_project_id: props.projectId,
     deleted_at: null,
-    ...(props.body.status &&
-      props.body.status.length > 0 && {
-        status: { in: props.body.status },
+    ...(props.body.search &&
+      props.body.search.trim() && {
+        OR: [
+          { title: { contains: props.body.search, mode: "insensitive" } },
+          { description: { contains: props.body.search, mode: "insensitive" } },
+        ],
       }),
-    ...(props.body.priority &&
-      props.body.priority.length > 0 && {
-        priority: { in: props.body.priority },
-      }),
-    ...(props.body.hrm_platform_employee_id && {
+    ...(props.body.status && { status: props.body.status }),
+    ...(props.body.priority && { priority: props.body.priority }),
+    ...(props.body.hrm_platform_employee_id !== undefined && {
       hrm_platform_employee_id: props.body.hrm_platform_employee_id,
     }),
   } satisfies Prisma.hrm_platform_tasksWhereInput;
-  const orderByInput = parseSort(
-    props.body.sort,
-  ) satisfies Prisma.hrm_platform_tasksOrderByWithRelationInput;
+  const orderByInput: Prisma.hrm_platform_tasksOrderByWithRelationInput =
+    props.body.sort === "due_date"
+      ? { due_date: props.body.direction === "asc" ? "asc" : "desc" }
+      : props.body.sort === "priority"
+        ? { priority: props.body.direction === "asc" ? "asc" : "desc" }
+        : props.body.sort === "title"
+          ? { title: props.body.direction === "asc" ? "asc" : "desc" }
+          : { created_at: props.body.direction === "asc" ? "asc" : "desc" };
   const data = await MyGlobal.prisma.hrm_platform_tasks.findMany({
     where: whereInput,
     skip,
     take: limit,
     orderBy: orderByInput,
-    select: {
-      id: true,
-      title: true,
-      status: true,
-      priority: true,
-      estimated_hours: true,
-      due_date: true,
-      created_at: true,
-      assignee: {
-        select: {
-          id: true,
-          display_name: true,
-          position: true,
-          employment_type: true,
-          status: true,
-          department: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              parent: {
-                select: {
-                  id: true,
-                  name: true,
-                  description: true,
-                },
-              },
-            },
-          },
-          role: {
-            select: {
-              id: true,
-              name: true,
-              built_in: true,
-              created_at: true,
-            },
-          },
-        },
-      },
-      parent: {
-        select: {
-          id: true,
-          title: true,
-          status: true,
-          priority: true,
-          estimated_hours: true,
-          due_date: true,
-          created_at: true,
-          assignee: {
-            select: {
-              id: true,
-              display_name: true,
-              position: true,
-              employment_type: true,
-              status: true,
-              department: {
-                select: {
-                  id: true,
-                  name: true,
-                  description: true,
-                  parent: {
-                    select: {
-                      id: true,
-                      name: true,
-                      description: true,
-                    },
-                  },
-                },
-              },
-              role: {
-                select: {
-                  id: true,
-                  name: true,
-                  built_in: true,
-                  created_at: true,
-                },
-              },
-            },
-          },
-          parent: {
-            select: {
-              id: true,
-              title: true,
-              status: true,
-              priority: true,
-              estimated_hours: true,
-              due_date: true,
-              created_at: true,
-            },
-          },
-        },
-      },
-    },
+    ...HrmPlatformTaskAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.hrm_platform_tasks.count({
     where: whereInput,
   });
   return {
-    data: data.map((task) => {
-      const result: IHrmPlatformTask.ISummary = {
-        id: task.id,
-        title: task.title,
-        status: task.status,
-        priority: task.priority,
-        estimated_hours: task.estimated_hours,
-        due_date: task.due_date ? toISOStringSafe(task.due_date) : null,
-        created_at: toISOStringSafe(task.created_at),
-        assignee: task.assignee
-          ? {
-              id: task.assignee.id,
-              display_name: task.assignee.display_name,
-              position: task.assignee.position,
-              employment_type: task.assignee.employment_type,
-              status: task.assignee.status,
-              department: task.assignee.department
-                ? {
-                    id: task.assignee.department.id,
-                    name: task.assignee.department.name,
-                    description: task.assignee.department.description,
-                    parent: task.assignee.department.parent
-                      ? {
-                          id: task.assignee.department.parent.id,
-                          name: task.assignee.department.parent.name,
-                          description:
-                            task.assignee.department.parent.description,
-                          parent: null,
-                        }
-                      : null,
-                  }
-                : null,
-              role: {
-                id: task.assignee.role.id,
-                name: task.assignee.role.name,
-                built_in: task.assignee.role.built_in,
-                created_at: toISOStringSafe(task.assignee.role.created_at),
-              },
-            }
-          : null,
-        parent: task.parent
-          ? {
-              id: task.parent.id,
-              title: task.parent.title,
-              status: task.parent.status,
-              priority: task.parent.priority,
-              estimated_hours: task.parent.estimated_hours,
-              due_date: task.parent.due_date
-                ? toISOStringSafe(task.parent.due_date)
-                : null,
-              created_at: toISOStringSafe(task.parent.created_at),
-              assignee: task.parent.assignee
-                ? {
-                    id: task.parent.assignee.id,
-                    display_name: task.parent.assignee.display_name,
-                    position: task.parent.assignee.position,
-                    employment_type: task.parent.assignee.employment_type,
-                    status: task.parent.assignee.status,
-                    department: task.parent.assignee.department
-                      ? {
-                          id: task.parent.assignee.department.id,
-                          name: task.parent.assignee.department.name,
-                          description:
-                            task.parent.assignee.department.description,
-                          parent: task.parent.assignee.department.parent
-                            ? {
-                                id: task.parent.assignee.department.parent.id,
-                                name: task.parent.assignee.department.parent
-                                  .name,
-                                description:
-                                  task.parent.assignee.department.parent
-                                    .description,
-                                parent: null,
-                              }
-                            : null,
-                        }
-                      : null,
-                    role: {
-                      id: task.parent.assignee.role.id,
-                      name: task.parent.assignee.role.name,
-                      built_in: task.parent.assignee.role.built_in,
-                      created_at: toISOStringSafe(
-                        task.parent.assignee.role.created_at,
-                      ),
-                    },
-                  }
-                : null,
-              parent: task.parent.parent
-                ? {
-                    id: task.parent.parent.id,
-                    title: task.parent.parent.title,
-                    status: task.parent.parent.status,
-                    priority: task.parent.parent.priority,
-                    estimated_hours: task.parent.parent.estimated_hours,
-                    due_date: task.parent.parent.due_date
-                      ? toISOStringSafe(task.parent.parent.due_date)
-                      : null,
-                    created_at: toISOStringSafe(task.parent.parent.created_at),
-                    assignee: null,
-                    parent: null,
-                  }
-                : null,
-            }
-          : null,
-      };
-      return result;
-    }),
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmPlatformTaskAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
   };
-}
-function parseSort(
-  sort?: string,
-): Prisma.hrm_platform_tasksOrderByWithRelationInput {
-  if (!sort) {
-    return {};
-  }
-  const parts = sort.split(",");
-  const orderBy: Prisma.hrm_platform_tasksOrderByWithRelationInput = {};
-  for (const part of parts) {
-    const [field, direction] = part.trim().split(":");
-    const order = direction === "desc" ? "desc" : "asc";
-    if (field === "due_date") {
-      orderBy.due_date = order;
-    } else if (field === "priority") {
-      orderBy.priority = order;
-    } else if (field === "created_at") {
-      orderBy.created_at = order;
-    }
-  }
-  return orderBy;
 }

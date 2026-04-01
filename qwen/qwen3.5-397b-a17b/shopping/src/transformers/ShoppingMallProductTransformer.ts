@@ -1,19 +1,22 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
-import { IShoppingMallProductReviewStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductReviewStatistic";
+import { IShoppingMallProductOptionDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionDefinition";
+import { IShoppingMallProductOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionValue";
+import { IShoppingMallProductRating } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductRating";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCategoryAtSummaryTransformer } from "./ShoppingMallCategoryAtSummaryTransformer";
 import { ShoppingMallProductImageTransformer } from "./ShoppingMallProductImageTransformer";
+import { ShoppingMallProductOptionDefinitionTransformer } from "./ShoppingMallProductOptionDefinitionTransformer";
 import { ShoppingMallProductVariantTransformer } from "./ShoppingMallProductVariantTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
@@ -35,6 +38,8 @@ export namespace ShoppingMallProductTransformer {
         category: ShoppingMallCategoryAtSummaryTransformer.select(),
         images: ShoppingMallProductImageTransformer.select(),
         variants: ShoppingMallProductVariantTransformer.select(),
+        optionDefinitions:
+          ShoppingMallProductOptionDefinitionTransformer.select(),
         reviews: {
           select: {
             rating: true,
@@ -49,7 +54,7 @@ export namespace ShoppingMallProductTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? undefined,
+      description: input.description,
       base_price: input.base_price,
       seller: await ShoppingMallSellerAtSummaryTransformer.transform(
         input.seller,
@@ -65,20 +70,17 @@ export namespace ShoppingMallProductTransformer {
         input.variants,
         ShoppingMallProductVariantTransformer.transform,
       ),
-      reviewStatistic: {
+      optionDefinitions: await ArrayUtil.asyncMap(
+        input.optionDefinitions,
+        ShoppingMallProductOptionDefinitionTransformer.transform,
+      ),
+      rating: {
         averageRating:
           input.reviews.length > 0
             ? input.reviews.reduce((sum, r) => sum + r.rating, 0) /
               input.reviews.length
             : null,
-        totalReviewCount: input.reviews.length,
-        ratingDistribution: {
-          "1": input.reviews.filter((r) => r.rating === 1).length,
-          "2": input.reviews.filter((r) => r.rating === 2).length,
-          "3": input.reviews.filter((r) => r.rating === 3).length,
-          "4": input.reviews.filter((r) => r.rating === 4).length,
-          "5": input.reviews.filter((r) => r.rating === 5).length,
-        },
+        totalReviews: input.reviews.length,
       },
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),

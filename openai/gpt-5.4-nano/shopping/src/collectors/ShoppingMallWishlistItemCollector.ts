@@ -10,17 +10,15 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallWishlistItemCollector {
   export async function collect(props: {
     body: IShoppingMallWishlistItem.ICreate;
-    wishlist: IEntity;
+    shoppingMallWishlists: IEntity;
   }) {
-    const id: string = v4();
-    const now: Date = new Date();
     return {
-      id,
-      created_at: now,
-      updated_at: now,
+      id: v4(),
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
       wishlist: {
-        connect: { id: props.wishlist.id },
+        connect: { id: props.shoppingMallWishlists.id },
       },
       product: {
         connect: { id: props.body.shopping_mall_product_id },

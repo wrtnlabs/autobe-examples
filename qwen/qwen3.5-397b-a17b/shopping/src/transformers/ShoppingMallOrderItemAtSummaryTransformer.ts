@@ -1,19 +1,16 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
-import { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallOrderAtSummaryTransformer } from "./ShoppingMallOrderAtSummaryTransformer";
-import { ShoppingMallProductSnapshotAtSummaryTransformer } from "./ShoppingMallProductSnapshotAtSummaryTransformer";
-import { ShoppingMallProductVariantSnapshotAtSummaryTransformer } from "./ShoppingMallProductVariantSnapshotAtSummaryTransformer";
+import { ShoppingMallProductVariantAtSummaryTransformer } from "./ShoppingMallProductVariantAtSummaryTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallOrderItemAtSummaryTransformer {
@@ -25,14 +22,20 @@ export namespace ShoppingMallOrderItemAtSummaryTransformer {
       select: {
         id: true,
         quantity: true,
-        unit_price: true,
+        price: true,
         status: true,
         created_at: true,
-        order: ShoppingMallOrderAtSummaryTransformer.select(),
-        productSnapshot:
-          ShoppingMallProductSnapshotAtSummaryTransformer.select(),
-        productVariantSnapshot:
-          ShoppingMallProductVariantSnapshotAtSummaryTransformer.select(),
+        product: {
+          select: {
+            base_price: true,
+            variants: {
+              select: {
+                price_override: true,
+              },
+            } satisfies Prisma.shopping_mall_product_variantsFindManyArgs,
+          },
+        } satisfies Prisma.shopping_mall_productsFindManyArgs,
+        productVariant: ShoppingMallProductVariantAtSummaryTransformer.select(),
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_order_itemsFindManyArgs;
@@ -40,26 +43,26 @@ export namespace ShoppingMallOrderItemAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallOrderItem.ISummary> {
+    const variantPrices = input.product.variants.map((v) =>
+      v.price_override !== null ? v.price_override : input.product.base_price,
+    );
     return {
       id: input.id,
       quantity: input.quantity,
-      unit_price: input.unit_price,
-      status: typia.assert<
-        "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED"
-      >(input.status),
-      created_at: toISOStringSafe(input.created_at),
-      order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
-      productSnapshot:
-        await ShoppingMallProductSnapshotAtSummaryTransformer.transform(
-          input.productSnapshot,
-        ),
-      productVariantSnapshot:
-        await ShoppingMallProductVariantSnapshotAtSummaryTransformer.transform(
-          input.productVariantSnapshot,
+      price: input.price,
+      status: input.status,
+      product: {
+        min: Math.min(...variantPrices),
+        max: Math.max(...variantPrices),
+      } satisfies IShoppingMallProduct.ISummary,
+      productVariant:
+        await ShoppingMallProductVariantAtSummaryTransformer.transform(
+          input.productVariant,
         ),
       seller: await ShoppingMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

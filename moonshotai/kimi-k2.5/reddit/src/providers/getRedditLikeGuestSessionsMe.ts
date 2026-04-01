@@ -26,39 +26,38 @@ export async function getRedditLikeGuestSessionsMe(props: {
       where: { id: props.guest.session_id },
       select: {
         id: true,
+        reddit_like_guest_id: true,
         ip: true,
         href: true,
         referrer: true,
         created_at: true,
         expired_at: true,
-        guest: {
-          select: {
-            id: true,
-            device_fingerprint: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-            _count: {
-              select: {
-                sessions: true,
-              },
-            },
-          },
-        } satisfies Prisma.reddit_like_guestsFindManyArgs,
       },
     });
-  const guestSummary: IRedditLikeGuest.ISummary = {
-    id: session.guest.id,
-    device_fingerprint: session.guest.device_fingerprint,
-    created_at: session.guest.created_at.toISOString(),
-    updated_at: session.guest.updated_at.toISOString(),
-    deleted_at: session.guest.deleted_at?.toISOString() ?? null,
-    session_count: session.guest._count.sessions,
-  };
+  const guest = await MyGlobal.prisma.reddit_like_guests.findUniqueOrThrow({
+    where: { id: props.guest.id },
+    select: {
+      id: true,
+      device_fingerprint: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
+  });
+  const sessionCount = await MyGlobal.prisma.reddit_like_guest_sessions.count({
+    where: { reddit_like_guest_id: props.guest.id },
+  });
   return {
     id: session.id,
     actorType: "guest",
-    actor: guestSummary,
+    actor: {
+      id: guest.id,
+      device_fingerprint: guest.device_fingerprint,
+      created_at: guest.created_at.toISOString(),
+      updated_at: guest.updated_at.toISOString(),
+      deleted_at: guest.deleted_at?.toISOString() ?? null,
+      session_count: sessionCount,
+    } satisfies IRedditLikeGuest.ISummary,
     ip: session.ip,
     href: session.href,
     referrer: session.referrer,

@@ -1,12 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
-import { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -26,31 +21,20 @@ export async function getShoppingMallCustomerOrdersOrderIdItemsItemId(props: {
   orderId: string & tags.Format<"uuid">;
   itemId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallOrderItem> {
-  const orderItem =
-    await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
-      where: {
-        id: props.itemId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        shopping_mall_order_id: true,
-      },
-    });
-  if (orderItem.shopping_mall_order_id !== props.orderId) {
-    throw new HttpException(
-      "Order item does not belong to the specified order",
-      404,
-    );
-  }
-  await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
+  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
     where: {
       id: props.orderId,
-      customer_id: props.customer.id,
       deleted_at: null,
     },
+    select: {
+      id: true,
+      customer_id: true,
+    },
   });
-  const orderItemWithRelations =
+  if (order.customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: {
         id: props.itemId,
@@ -58,7 +42,8 @@ export async function getShoppingMallCustomerOrdersOrderIdItemsItemId(props: {
       },
       ...ShoppingMallOrderItemTransformer.select(),
     });
-  return await ShoppingMallOrderItemTransformer.transform(
-    orderItemWithRelations,
-  );
+  if (orderItem.order.id !== props.orderId) {
+    throw new HttpException("Order item not found", 404);
+  }
+  return await ShoppingMallOrderItemTransformer.transform(orderItem);
 }

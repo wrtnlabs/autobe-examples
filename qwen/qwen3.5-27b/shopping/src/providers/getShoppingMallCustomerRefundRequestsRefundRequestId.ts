@@ -23,10 +23,20 @@ export async function getShoppingMallCustomerRefundRequestsRefundRequestId(props
     await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
       where: {
         id: props.refundRequestId,
-        shopping_mall_customer_id: props.customer.id,
         deleted_at: null,
       },
+      select: {
+        id: true,
+        shopping_mall_customer_id: true,
+      },
+    });
+  if (refundRequest.shopping_mall_customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const record =
+    await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
+      where: { id: props.refundRequestId },
       ...ShoppingMallRefundRequestTransformer.select(),
     });
-  return await ShoppingMallRefundRequestTransformer.transform(refundRequest);
+  return await ShoppingMallRefundRequestTransformer.transform(record);
 }

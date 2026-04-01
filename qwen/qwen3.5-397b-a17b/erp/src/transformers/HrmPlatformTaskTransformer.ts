@@ -1,6 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
+import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
@@ -32,7 +34,23 @@ export namespace HrmPlatformTaskTransformer {
         deleted_at: true,
         project: HrmPlatformProjectAtSummaryTransformer.select(),
         assignee: HrmPlatformEmployeeAtSummaryTransformer.select(),
-        parent: HrmPlatformTaskAtSummaryTransformer.select(),
+        parentTask: HrmPlatformTaskAtSummaryTransformer.select(),
+        subtasks: HrmPlatformTaskAtSummaryTransformer.select(),
+        histories: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_task_historiesFindManyArgs,
+        timelogs: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_timelogsFindManyArgs,
+        timers: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_timersFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_tasksFindManyArgs;
   }
@@ -41,28 +59,31 @@ export namespace HrmPlatformTaskTransformer {
       id: input.id,
       title: input.title,
       description: input.description ?? null,
-      status: typia.assert<"completed" | "open" | "in-progress" | "closed">(
-        input.status,
-      ),
-      priority: typia.assert<"low" | "medium" | "high" | "urgent">(
-        input.priority,
-      ),
+      status: input.status,
+      priority: input.priority,
       estimated_hours: input.estimated_hours ?? null,
-      due_date: input.due_date ? toISOStringSafe(input.due_date) : null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      due_date: input.due_date?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      project: await HrmPlatformProjectAtSummaryTransformer.transform(
+        input.project,
+      ),
       assignee: input.assignee
         ? await HrmPlatformEmployeeAtSummaryTransformer.transform(
             input.assignee,
           )
         : null,
-      parent: input.parent
-        ? await HrmPlatformTaskAtSummaryTransformer.transform(input.parent)
+      parentTask: input.parentTask
+        ? await HrmPlatformTaskAtSummaryTransformer.transform(input.parentTask)
         : null,
-      project: await HrmPlatformProjectAtSummaryTransformer.transform(
-        input.project,
+      subtasks: await ArrayUtil.asyncMap(
+        input.subtasks,
+        HrmPlatformTaskAtSummaryTransformer.transform,
       ),
+      histories_count: input.histories.length,
+      timelogs_count: input.timelogs.length,
+      timers_count: input.timers.length,
     };
   }
 }

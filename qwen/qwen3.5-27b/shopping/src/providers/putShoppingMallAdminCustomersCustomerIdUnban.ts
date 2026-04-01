@@ -20,8 +20,11 @@ export async function putShoppingMallAdminCustomersCustomerIdUnban(props: {
   const customer =
     await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
       where: { id: props.customerId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, deleted_at: true },
     });
+  if (customer.deleted_at !== null) {
+    throw new HttpException("Customer account not found", 404);
+  }
   if (customer.status !== "banned") {
     throw new HttpException("Customer is not banned", 409);
   }

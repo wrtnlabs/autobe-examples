@@ -1,12 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
-import { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
+import { IShoppingMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentItem";
+import { IShoppingMallShipmentLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentLog";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -25,36 +24,38 @@ export async function putShoppingMallSellerShipmentsShipmentId(props: {
   shipmentId: string & tags.Format<"uuid">;
   body: IShoppingMallShipment.IUpdate;
 }): Promise<IShoppingMallShipment> {
-  // Query shipment and validate it exists and is not deleted
   const shipment =
     await MyGlobal.prisma.shopping_mall_shipments.findUniqueOrThrow({
-      where: {
-        id: props.shipmentId,
-        deleted_at: null,
-      },
+      where: { id: props.shipmentId },
       select: {
         id: true,
-        shopping_mall_order_id: true,
+        seller_id: true,
+        confirmed_at: true,
       },
     });
-  // Validate seller ownership through shipment_items -> order_items relationship
-  const shipmentItems =
-    await MyGlobal.prisma.shopping_mall_shipment_items.findMany({
-      where: {
-        shipment_id: props.shipmentId,
-        orderItem: {
-          shopping_mall_seller_id: props.seller.id,
-        },
-      },
-    });
-  if (shipmentItems.length === 0) {
+  if (shipment.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Update tracking information
+  if (shipment.confirmed_at !== null) {
+    throw new HttpException(
+      "Shipment already confirmed, tracking information is immutable",
+      403,
+    );
+  }
+  if (props.body.trackingNumber !== undefined) {
+    const existing = await MyGlobal.prisma.shopping_mall_shipments.findFirst({
+      where: {
+        tracking_number: props.body.trackingNumber,
+        id: { not: props.shipmentId },
+        deleted_at: null,
+      },
+    });
+    if (existing !== null) {
+      throw new HttpException("Tracking number already exists", 409);
+    }
+  }
   await MyGlobal.prisma.shopping_mall_shipments.update({
-    where: {
-      id: props.shipmentId,
-    },
+    where: { id: props.shipmentId },
     data: {
       ...(props.body.trackingCarrier !== undefined && {
         tracking_carrier: props.body.trackingCarrier,
@@ -65,12 +66,9 @@ export async function putShoppingMallSellerShipmentsShipmentId(props: {
       updated_at: new Date(),
     },
   });
-  // Fetch updated shipment with all fields needed for transformer
   const updated =
     await MyGlobal.prisma.shopping_mall_shipments.findUniqueOrThrow({
-      where: {
-        id: props.shipmentId,
-      },
+      where: { id: props.shipmentId },
       ...ShoppingMallShipmentTransformer.select(),
     });
   return await ShoppingMallShipmentTransformer.transform(updated);

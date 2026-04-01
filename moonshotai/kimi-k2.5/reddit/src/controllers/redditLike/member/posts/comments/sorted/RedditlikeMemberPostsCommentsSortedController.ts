@@ -4,8 +4,8 @@ import typia, { tags } from "typia";
 
 import { IPageIRedditLikeComment } from "../../../../../../api/structures/IPageIRedditLikeComment";
 import { IRedditLikeComment } from "../../../../../../api/structures/IRedditLikeComment";
-import { AdminAuth } from "../../../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../../decorators/payload/MemberPayload";
 import { patchRedditLikeMemberPostsPostIdCommentsSorted } from "../../../../../../providers/patchRedditLikeMemberPostsPostIdCommentsSorted";
 
 @Controller("/redditLike/member/posts/:postId/comments/sorted")
@@ -29,8 +29,8 @@ export class RedditlikeMemberPostsCommentsSortedController {
    */
   @TypedRoute.Patch()
   public async index(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
     @TypedBody()

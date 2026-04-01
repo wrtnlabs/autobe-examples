@@ -1,0 +1,115 @@
+/// User comments on posts with optional parent_comment_id for nested replies.
+///
+/// Comments support unlimited nesting depth through self-referential
+/// parent_comment_id. Each comment belongs to a post and has an author. Soft
+/// delete supported via deleted_at for content recovery. Vote scores are
+/// computed at query time from reddit_community_comment_votes table.
+///
+/// @namespace comment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Comment author. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Target post. {@link reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// Parent comment for nested replies. {@link reddit_community_comments.id}.
+  parent_comment_id String?
+  
+  /// Comment text content.
+  content String
+  
+  /// Comment creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for content recovery.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  parentComment reddit_community_comments? @relation("recursive", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  replies reddit_community_comments[] @relation("recursive")
+  reports reddit_community_comment_reports[]
+  votes reddit_community_comment_votes[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_comment_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_comments_reddit_community_post_id_cre_7ea47a9e")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_comments_reddit_community_member_id_c_8bfb2de5")
+}
+
+/// Moderation reports on comments with reporter, reason, and status for
+/// moderator review workflow. Links to {@link reddit_community_comments.id}
+/// for the reported content and {@link reddit_community_members.id} for the
+/// reporting user. Moderators use this table to review, approve (deletes
+/// content), or dismiss reports as part of community moderation.
+///
+/// @namespace comment
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target's {@link reddit_community_comments.id}.
+  reddit_community_comment_id String
+  
+  /// Target's {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// User-provided explanation for why the comment is being reported.
+  reason String
+  
+  /// Report workflow status: PENDING for new reports, APPROVED when moderator
+  /// accepts and deletes content, DISMISSED when moderator rejects.
+  status String
+  
+  /// Timestamp when the report was created.
+  created_at DateTime
+  
+  /// Timestamp when the report was last modified.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment reddit_community_comments @relation(fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
+  reporterMember reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_comment_id, status], map: "reddit_community_comment_reports_reddit_community_comm_32b41c38")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_comment_reports_reddit_community_memb_80fe050b")
+}

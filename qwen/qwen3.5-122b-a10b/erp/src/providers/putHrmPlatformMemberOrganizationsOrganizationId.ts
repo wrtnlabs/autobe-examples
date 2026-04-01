@@ -18,13 +18,12 @@ export async function putHrmPlatformMemberOrganizationsOrganizationId(props: {
   organizationId: string & tags.Format<"uuid">;
   body: IHrmPlatformOrganization.IUpdate;
 }): Promise<IHrmPlatformOrganization> {
-  // 1. Find organization and verify it exists and is not soft-deleted
-  const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-      where: { id: props.organizationId, deleted_at: null },
-      select: { id: true },
-    });
-  // 2. Verify member has org:manage permission for this organization
+  // Step 1: Validate organization exists and is not soft-deleted
+  await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
+    where: { id: props.organizationId },
+    select: { deleted_at: true },
+  });
+  // Step 2: Verify member has org:manage permission
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
@@ -35,24 +34,21 @@ export async function putHrmPlatformMemberOrganizationsOrganizationId(props: {
       hrm_platform_role_id: true,
     },
   });
-  if (!employee) {
-    throw new HttpException("You are not a member of this organization", 403);
-  }
-  const hasPermission =
-    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-      where: {
-        hrm_platform_role_id: employee.hrm_platform_role_id,
-        permission: {
-          code: "org:manage",
-          deleted_at: null,
-        },
-        deleted_at: null,
-      },
-    });
-  if (!hasPermission) {
+  if (employee === null || employee.hrm_platform_role_id === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // 3. Validate name uniqueness if provided
+  const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
+    where: { id: employee.hrm_platform_role_id },
+    select: {
+      permissions: {
+        select: { id: true },
+      } satisfies Prisma.hrm_platform_role_permissionsFindManyArgs,
+    },
+  });
+  if (!role || !role.permissions.some((p) => p.id === "org:manage")) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Step 3: Validate name uniqueness if provided
   if (props.body.name !== undefined) {
     const duplicate =
       await MyGlobal.prisma.hrm_platform_organizations.findFirst({
@@ -61,39 +57,35 @@ export async function putHrmPlatformMemberOrganizationsOrganizationId(props: {
           id: { not: props.organizationId },
           deleted_at: null,
         },
-        select: { id: true },
       });
-    if (duplicate) {
-      throw new HttpException("Organization name must be unique", 400);
+    if (duplicate !== null) {
+      throw new HttpException("Organization name already exists", 400);
     }
   }
-  // 4. Validate fiscal_start_month if provided
-  if (
-    props.body.fiscal_start_month !== undefined &&
-    (props.body.fiscal_start_month < 1 || props.body.fiscal_start_month > 12)
-  ) {
-    throw new HttpException("fiscal_start_month must be between 1 and 12", 400);
-  }
-  // 5. Build update data with only non-undefined fields
-  const updateData: Prisma.hrm_platform_organizationsUpdateInput = {
-    ...(props.body.name !== undefined && { name: props.body.name }),
-    ...(props.body.description !== undefined && {
-      description: props.body.description,
-    }),
-    ...(props.body.logo_url !== undefined && { logo_url: props.body.logo_url }),
-    ...(props.body.currency !== undefined && { currency: props.body.currency }),
-    ...(props.body.timezone !== undefined && { timezone: props.body.timezone }),
-    ...(props.body.fiscal_start_month !== undefined && {
-      fiscal_start_month: props.body.fiscal_start_month,
-    }),
-    updated_at: new Date(),
-  };
-  // 6. Execute update
+  // Step 4: Apply updates with conditional field application
   await MyGlobal.prisma.hrm_platform_organizations.update({
     where: { id: props.organizationId },
-    data: updateData,
+    data: {
+      ...(props.body.name !== undefined && { name: props.body.name }),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
+      ...(props.body.logo_url !== undefined && {
+        logo_url: props.body.logo_url,
+      }),
+      ...(props.body.currency !== undefined && {
+        currency: props.body.currency,
+      }),
+      ...(props.body.timezone !== undefined && {
+        timezone: props.body.timezone,
+      }),
+      ...(props.body.fiscal_start_month !== undefined && {
+        fiscal_start_month: props.body.fiscal_start_month,
+      }),
+      updated_at: new Date(),
+    },
   });
-  // 7. Fetch and transform updated organization
+  // Step 5: Retrieve and transform updated organization
   const updated =
     await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
       where: { id: props.organizationId },

@@ -20,8 +20,10 @@ export namespace HrmsProjectCollector {
       color_code: props.body.color_code,
       status: "active",
       budget_hours: props.body.budget_hours ?? null,
-      start_date: props.body.start_date ?? null,
-      end_date: props.body.end_date ?? null,
+      start_date: props.body.start_date
+        ? new Date(props.body.start_date)
+        : null,
+      end_date: props.body.end_date ? new Date(props.body.end_date) : null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

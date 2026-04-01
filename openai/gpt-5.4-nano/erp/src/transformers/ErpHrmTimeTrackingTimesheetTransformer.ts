@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTimesheet";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingTimesheetTransformer {
@@ -25,6 +27,18 @@ export namespace ErpHrmTimeTrackingTimesheetTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        organization: {
+          select: { id: true },
+        },
+        employee: {
+          select: { id: true },
+        },
+        timelogs: {
+          select: { id: true },
+        },
+        versioningLocks: {
+          select: { id: true },
+        },
       },
     } satisfies Prisma.erp_hrm_time_tracking_timesheetsFindManyArgs;
   }

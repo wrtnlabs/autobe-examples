@@ -24,125 +24,45 @@ export async function putRedditCommunityMemberVotesVoteId(props: {
   body: IRedditCommunityVote.IUpdate;
 }): Promise<IRedditCommunityVote> {
   const now = new Date();
+  // Step 1: Query vote by ID - select FK for ownership check + transformer for nested relations
   const vote = await MyGlobal.prisma.reddit_community_votes.findUniqueOrThrow({
     where: { id: props.voteId },
     select: {
-      id: true,
       member_id: true,
-      vote_type: true,
-      deleted_at: true,
-      target_post_id: true,
-      target_comment_id: true,
-      updated_at: true,
+      ...RedditCommunityVoteTransformer.select().select,
     },
   });
+  // Step 2: Verify ownership - authenticated member must own the vote
   if (vote.member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  if (vote.deleted_at !== null) {
-    throw new HttpException("Vote already deleted", 400);
-  }
-  const oldVoteType = vote.vote_type;
-  const newVoteType = props.body.vote_type;
-  const updateData: Prisma.reddit_community_votesUpdateInput = {
+  // Step 3: Determine vote state transition
+  const newVoteType: "upvote" | "downvote" | null =
+    props.body.vote_type ?? null;
+  const existingVoteType = vote.vote_type as "upvote" | "downvote";
+  // Step 4: Prepare update data
+  let updateData: Prisma.reddit_community_votesUpdateInput = {
     updated_at: now,
   };
   if (newVoteType === null) {
-    updateData.deleted_at = now;
-  } else {
-    updateData.vote_type = newVoteType;
+    // Soft delete (remove vote)
+    updateData = {
+      ...updateData,
+      deleted_at: now,
+    };
+  } else if (newVoteType !== existingVoteType) {
+    // Change vote direction (upvote ↔ downvote)
+    updateData = {
+      ...updateData,
+      vote_type: newVoteType,
+    };
   }
-  await MyGlobal.prisma.reddit_community_votes.update({
+  // Step 5: Update vote record and re-query with full relations
+  const updatedVote = await MyGlobal.prisma.reddit_community_votes.update({
     where: { id: props.voteId },
     data: updateData,
+    ...RedditCommunityVoteTransformer.select(),
   });
-  const adjustment = calculateAdjustment(oldVoteType, newVoteType);
-  if (adjustment !== 0) {
-    if (vote.target_post_id) {
-      const updatedPost =
-        await MyGlobal.prisma.reddit_community_posts.findUnique({
-          where: { id: vote.target_post_id },
-          select: { author_id: true },
-        });
-      if (updatedPost && updatedPost.author_id !== props.member.id) {
-        await adjustKarma(updatedPost.author_id, adjustment, v4(), now);
-      }
-    } else if (vote.target_comment_id) {
-      const updatedComment =
-        await MyGlobal.prisma.reddit_community_comments.findUnique({
-          where: { id: vote.target_comment_id },
-          select: { reddit_community_members_id: true },
-        });
-      if (
-        updatedComment &&
-        updatedComment.reddit_community_members_id !== props.member.id
-      ) {
-        await adjustKarma(
-          updatedComment.reddit_community_members_id,
-          adjustment,
-          v4(),
-          now,
-        );
-      }
-    }
-  }
-  const updated =
-    await MyGlobal.prisma.reddit_community_votes.findUniqueOrThrow({
-      where: { id: props.voteId },
-      include: {
-        member: true,
-        targetPost: true,
-        targetComment: true,
-        karmaSnapshots: true,
-        postTarget: true,
-        commentVote: true,
-      },
-    });
-  return await RedditCommunityVoteTransformer.transform(updated);
-}
-function calculateAdjustment(
-  oldType: string,
-  newType: "upvote" | "downvote" | null | undefined,
-): number {
-  if (newType === null) {
-    return oldType === "upvote" ? 1 : -1;
-  }
-  if (oldType === "upvote" && newType === "downvote") {
-    return -2;
-  }
-  if (oldType === "downvote" && newType === "upvote") {
-    return 2;
-  }
-  return 0;
-}
-async function adjustKarma(
-  memberId: string,
-  adjustment: number,
-  voteId: string,
-  now: Date,
-): Promise<void> {
-  const karmaRecord =
-    await MyGlobal.prisma.reddit_community_user_karmas.findUnique({
-      where: { reddit_community_member_id: memberId },
-    });
-  if (!karmaRecord) {
-    return;
-  }
-  const newScore = karmaRecord.current_score + adjustment;
-  await MyGlobal.prisma.reddit_community_user_karmas.update({
-    where: { reddit_community_member_id: memberId },
-    data: { current_score: Number(newScore), updated_at: now },
-  });
-  await MyGlobal.prisma.reddit_community_karma_snapshots.create({
-    data: {
-      id: v4(),
-      reddit_community_user_id: memberId,
-      reddit_community_vote_id: voteId,
-      karma_delta: adjustment,
-      karma_after_change: Number(newScore),
-      created_at: now,
-      updated_at: now,
-      deleted_at: null,
-    },
-  });
+  // Step 6: Transform and return updated vote
+  return await RedditCommunityVoteTransformer.transform(updatedVote);
 }

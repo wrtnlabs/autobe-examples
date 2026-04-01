@@ -1,5 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -19,52 +22,35 @@ export async function putShoppingMallCustomerReviewsReviewId(props: {
   reviewId: string & tags.Format<"uuid">;
   body: IShoppingMallReview.IUpdate;
 }): Promise<IShoppingMallReview> {
-  // Find review and verify ownership
   const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
     where: { id: props.reviewId },
     select: {
       id: true,
-      shopping_customer_id: true,
-      deleted: true,
+      customer_id: true,
       rating: true,
       content: true,
     },
   });
-  // Verify customer owns this review
-  if (review.shopping_customer_id !== props.customer.id) {
+  if (review.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Verify review is not soft deleted
-  if (review.deleted) {
-    throw new HttpException("Review has been deleted", 400);
-  }
-  // Execute snapshot creation and update atomically
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Create snapshot with current state BEFORE update
-    await tx.shopping_mall_review_snapshots.create({
-      data: {
-        id: v4(),
-        shopping_mall_review_id: review.id,
-        snapshot_by_user_id: props.customer.id,
-        snapshot_at: new Date(),
-        created_at: new Date(),
-        rating: review.rating,
-        content: review.content,
-      },
-    });
-    // Update the review with new values
-    await tx.shopping_mall_reviews.update({
-      where: { id: props.reviewId },
-      data: {
-        ...(props.body.rating !== undefined && { rating: props.body.rating }),
-        ...(props.body.content !== undefined && {
-          content: props.body.content,
-        }),
-        updated_at: new Date(),
-      },
-    });
+  await MyGlobal.prisma.shopping_mall_review_snapshots.create({
+    data: {
+      id: v4(),
+      shopping_mall_review_id: props.reviewId,
+      rating: review.rating,
+      content: review.content,
+      created_at: new Date(),
+    },
   });
-  // Fetch updated review with transformer selection
+  await MyGlobal.prisma.shopping_mall_reviews.update({
+    where: { id: props.reviewId },
+    data: {
+      ...(props.body.rating !== undefined && { rating: props.body.rating }),
+      ...(props.body.content !== undefined && { content: props.body.content }),
+      updated_at: new Date(),
+    },
+  });
   const updated = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow(
     {
       where: { id: props.reviewId },

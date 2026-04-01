@@ -20,25 +20,23 @@ export async function getHrmsMemberOrganizationsOrganizationIdRolesRoleId(props:
   organizationId: string & tags.Format<"uuid">;
   roleId: string & tags.Format<"uuid">;
 }): Promise<IHrmsOrganizationRole> {
-  // Verify member belongs to the requested organization
-  const memberOrg = await MyGlobal.prisma.hrms_organization_members.findFirst({
+  const membership = await MyGlobal.prisma.hrms_organization_members.findFirst({
     where: {
-      hrms_member_id: props.member.id,
-      hrms_organization_id: props.organizationId,
+      organization: { id: props.organizationId },
+      member: { id: props.member.id },
+      deleted_at: null,
     },
-    select: { id: true },
   });
-  if (memberOrg === null) {
-    throw new HttpException("You do not belong to this organization", 403);
+  if (membership === null) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Query the role with organization and permissions
-  const role = await MyGlobal.prisma.hrms_organization_roles.findUniqueOrThrow({
-    where: {
-      id: props.roleId,
-      organization_id: props.organizationId,
-    },
-    ...HrmsOrganizationRoleTransformer.select(),
-  });
-  // Transform and return
-  return await HrmsOrganizationRoleTransformer.transform(role);
+  const result =
+    await MyGlobal.prisma.hrms_organization_roles.findUniqueOrThrow({
+      where: {
+        id: props.roleId,
+        organization: { id: props.organizationId },
+      },
+      ...HrmsOrganizationRoleTransformer.select(),
+    });
+  return HrmsOrganizationRoleTransformer.transform(result);
 }

@@ -13,7 +13,7 @@ import { prepare_random_hrm_platform_project } from "../prepare/prepare_random_h
 export async function generate_random_hrm_platform_member_projects_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IHrmPlatformProject.ICreate>;
+    body?: DeepPartial<IHrmPlatformProject.ICreate> | undefined;
   },
 ): Promise<IHrmPlatformProject> {
   const prepared: IHrmPlatformProject.ICreate =

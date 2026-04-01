@@ -23,64 +23,77 @@ export async function patchShoppingMallAdminAnalyticsOrders(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause for order filtering
+  // Build where clause for orders
   const whereInput: Prisma.shopping_mall_ordersWhereInput = {
     deleted_at: null,
-    ...(props.body.startDate && {
-      created_at: {
-        gte: new Date(props.body.startDate),
-      },
-    }),
-    ...(props.body.endDate && {
-      created_at: {
-        lte: new Date(props.body.endDate),
-      },
-    }),
-    ...(props.body.status && {
-      status: props.body.status,
-    }),
-    ...(props.body.customerId && {
-      shopping_mall_customer_id: props.body.customerId,
-    }),
-    ...(props.body.minPrice !== undefined && {
-      total_price: {
-        gte: props.body.minPrice,
-      },
-    }),
-    ...(props.body.maxPrice !== undefined && {
-      total_price: {
-        lte: props.body.maxPrice,
-      },
-    }),
-  } satisfies Prisma.shopping_mall_ordersWhereInput;
-  // Add seller filter through order items if sellerId is provided
-  if (props.body.sellerId) {
+  };
+  // Apply date range filters
+  if (props.body.startDate !== undefined) {
+    whereInput.created_at = {
+      gte: new Date(props.body.startDate),
+    };
+  }
+  if (props.body.endDate !== undefined) {
+    if (whereInput.created_at && typeof whereInput.created_at === "object") {
+      (whereInput.created_at as any).lte = new Date(props.body.endDate);
+    } else {
+      whereInput.created_at = { lte: new Date(props.body.endDate) };
+    }
+  }
+  // Apply status filter
+  if (props.body.status !== undefined) {
+    whereInput.status = props.body.status;
+  }
+  // Apply customer filter
+  if (props.body.customerId !== undefined) {
+    whereInput.shopping_mall_customer_id = props.body.customerId;
+  }
+  // Apply price filters
+  if (props.body.minPrice !== undefined) {
+    whereInput.total_price = { gte: props.body.minPrice };
+  }
+  if (props.body.maxPrice !== undefined) {
+    if (whereInput.total_price && typeof whereInput.total_price === "object") {
+      (whereInput.total_price as any).lte = props.body.maxPrice;
+    } else {
+      whereInput.total_price = { lte: props.body.maxPrice };
+    }
+  }
+  // Apply seller filter through order items
+  if (props.body.sellerId !== undefined) {
     whereInput.orderItems = {
       some: {
         shopping_mall_seller_id: props.body.sellerId,
-        deleted_at: null,
       },
     };
   }
   // Build orderBy clause
-  const orderByInput: Prisma.shopping_mall_ordersOrderByWithRelationInput =
-    (() => {
-      switch (props.body.sort) {
-        case "created_at_asc":
-          return { created_at: "asc" as const };
-        case "total_price":
-          return { total_price: "asc" as const };
-        case "total_price_desc":
-          return { total_price: "desc" as const };
-        case "status":
-          return { status: "asc" as const };
-        case "status_desc":
-          return { status: "desc" as const };
-        default:
-          return { created_at: "desc" as const };
-      }
-    })() satisfies Prisma.shopping_mall_ordersOrderByWithRelationInput;
-  // Query orders with aggregations
+  const orderByInput: Prisma.shopping_mall_ordersOrderByWithRelationInput = {
+    created_at: "desc",
+  };
+  if (props.body.sort !== undefined) {
+    switch (props.body.sort) {
+      case "created_at":
+        orderByInput.created_at = "desc";
+        break;
+      case "created_at_asc":
+        orderByInput.created_at = "asc";
+        break;
+      case "total_price":
+        orderByInput.total_price = "asc";
+        break;
+      case "total_price_desc":
+        orderByInput.total_price = "desc";
+        break;
+      case "status":
+        orderByInput.status = "asc";
+        break;
+      case "status_desc":
+        orderByInput.status = "desc";
+        break;
+    }
+  }
+  // Query orders with customer relation
   const orders = await MyGlobal.prisma.shopping_mall_orders.findMany({
     where: whereInput,
     skip,
@@ -91,81 +104,85 @@ export async function patchShoppingMallAdminAnalyticsOrders(props: {
       total_price: true,
       status: true,
       created_at: true,
+      shopping_mall_customer_id: true,
       customer: ShoppingMallCustomerAtSummaryTransformer.select(),
       orderItems: {
-        where: {
-          deleted_at: null,
-        },
         select: {
           id: true,
-          cancellationRequests: {
-            where: {
-              status: "approved",
-              deleted_at: null,
-            },
-            select: {
-              id: true,
-            },
-          },
-          refundRequests: {
-            where: {
-              status: "approved",
-              deleted_at: null,
-            },
-            select: {
-              id: true,
-            },
-          },
-          shipmentItem: {
-            select: {
-              shipment: {
-                select: {
-                  delivered_at: true,
-                },
-              },
-            },
-          },
         },
-      } satisfies Prisma.shopping_mall_order_itemsFindManyArgs,
+      },
     },
   });
-  // Get total count for pagination
+  // Get total count
   const total = await MyGlobal.prisma.shopping_mall_orders.count({
     where: whereInput,
   });
-  // Transform orders to analytics summary format
+  // Transform orders with aggregate calculations
   const data = await ArrayUtil.asyncMap(orders, async (order) => {
-    const orderItems = order.orderItems;
-    const orderItemsCount = orderItems.length;
-    const cancellationCount = orderItems.reduce(
-      (acc, item) => acc + item.cancellationRequests.length,
-      0,
-    );
-    const refundCount = orderItems.reduce(
-      (acc, item) => acc + item.refundRequests.length,
-      0,
-    );
-    const shipmentCount = orderItems.filter(
-      (item) => item.shipmentItem !== null,
-    ).length;
-    // Find the max delivered_at from all shipments
-    const deliveredAt = orderItems
-      .map((item) => item.shipmentItem?.shipment?.delivered_at)
-      .filter((d): d is Date => d !== null && d !== undefined)
-      .sort((a, b) => b.getTime() - a.getTime())[0];
+    // Get order items count
+    const orderItemsCount = order.orderItems.length;
+    // Get cancellation count
+    const cancellationCount =
+      await MyGlobal.prisma.shopping_mall_cancellation_requests.count({
+        where: {
+          shopping_mall_order_item_id: {
+            in: order.orderItems.map((oi) => oi.id),
+          },
+          status: "approved",
+          deleted_at: null,
+        },
+      });
+    // Get refund count
+    const refundCount =
+      await MyGlobal.prisma.shopping_mall_refund_requests.count({
+        where: {
+          shopping_mall_order_item_id: {
+            in: order.orderItems.map((oi) => oi.id),
+          },
+          status: "approved",
+          deleted_at: null,
+        },
+      });
+    // Get shipment IDs for this order's items
+    const shipmentItems =
+      await MyGlobal.prisma.shopping_mall_shipment_items.findMany({
+        where: {
+          shopping_mall_order_item_id: {
+            in: order.orderItems.map((oi) => oi.id),
+          },
+        },
+        select: { shopping_mall_shipment_id: true },
+      });
+    const shipmentIds = shipmentItems.map((si) => si.shopping_mall_shipment_id);
+    // Get shipment count and max delivered_at
+    let shipmentCount = 0;
+    let maxDeliveredAt: Date | null = null;
+    if (shipmentIds.length > 0) {
+      const shipmentStats =
+        await MyGlobal.prisma.shopping_mall_shipments.aggregate({
+          _count: true,
+          _max: { delivered_at: true },
+          where: {
+            id: { in: shipmentIds },
+            deleted_at: null,
+          },
+        });
+      shipmentCount = shipmentStats._count;
+      maxDeliveredAt = shipmentStats._max.delivered_at;
+    }
     return {
-      id: order.id,
+      id: order.id as string & tags.Format<"uuid">,
       total_price: order.total_price,
       status: order.status,
-      created_at: order.created_at.toISOString(),
+      created_at: toISOStringSafe(order.created_at),
       customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
         order.customer,
       ),
-      order_items_count: orderItemsCount,
-      cancellation_count: cancellationCount,
-      refund_count: refundCount,
-      shipment_count: shipmentCount,
-      delivered_at: deliveredAt?.toISOString() ?? null,
+      order_items_count: orderItemsCount as number & tags.Type<"int32">,
+      cancellation_count: cancellationCount as number & tags.Type<"int32">,
+      refund_count: refundCount as number & tags.Type<"int32">,
+      shipment_count: shipmentCount as number & tags.Type<"int32">,
+      delivered_at: maxDeliveredAt ? toISOStringSafe(maxDeliveredAt) : null,
     };
   });
   return {
@@ -174,7 +191,7 @@ export async function patchShoppingMallAdminAnalyticsOrders(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
     data,
   };
 }

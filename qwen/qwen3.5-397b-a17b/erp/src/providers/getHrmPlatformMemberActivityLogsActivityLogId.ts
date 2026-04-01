@@ -19,32 +19,23 @@ export async function getHrmPlatformMemberActivityLogsActivityLogId(props: {
   member: MemberPayload;
   activityLogId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformActivityLog> {
-  const session =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findUniqueOrThrow({
-      where: { id: props.member.session_id },
-      select: {
-        member: {
-          select: {
-            employees: {
-              where: { deleted_at: null },
-              select: { organization_id: true },
-            },
-          },
-        },
-      },
-    });
-  const organizationId = session.member.employees[0]?.organization_id;
-  if (!organizationId) {
-    throw new HttpException("Forbidden", 403);
-  }
   const activityLog =
     await MyGlobal.prisma.hrm_platform_activity_logs.findUniqueOrThrow({
       where: {
         id: props.activityLogId,
-        organization_id: organizationId,
         deleted_at: null,
       },
       ...HrmPlatformActivityLogTransformer.select(),
     });
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      user_id: props.member.id,
+      organization_id: activityLog.organization.id,
+      deleted_at: null,
+    },
+  });
+  if (!employee) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await HrmPlatformActivityLogTransformer.transform(activityLog);
 }

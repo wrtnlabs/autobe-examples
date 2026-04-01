@@ -14,14 +14,20 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallMemberSessionsCurrentLogout(props: {
   member: MemberPayload;
 }): Promise<void> {
-  const deleted =
-    await MyGlobal.prisma.shopping_mall_member_sessions.deleteMany({
+  const sessionId = props.member.session_id;
+  const memberId = props.member.id;
+  const existing =
+    await MyGlobal.prisma.shopping_mall_member_sessions.findFirst({
       where: {
-        id: props.member.session_id,
-        shopping_mall_member_id: props.member.id,
+        id: sessionId,
+        shopping_mall_member_id: memberId,
       },
+      select: { id: true },
     });
-  if (deleted.count === 0) {
-    throw new HttpException("Unauthorized", 401);
+  if (existing === null) {
+    throw new HttpException("Unauthorized", 403);
   }
+  await MyGlobal.prisma.shopping_mall_member_sessions.delete({
+    where: { id: sessionId },
+  });
 }

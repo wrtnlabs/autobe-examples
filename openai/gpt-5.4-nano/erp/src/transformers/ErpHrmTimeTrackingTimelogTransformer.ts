@@ -7,8 +7,10 @@ import { IErpHrmTimeTrackingTimelog } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IErpHrmTimeTrackingTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTimesheet";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "./ErpHrmTimeTrackingMemberAtSummaryTransformer";
 import { ErpHrmTimeTrackingProjectAtSummaryTransformer } from "./ErpHrmTimeTrackingProjectAtSummaryTransformer";
@@ -31,11 +33,15 @@ export namespace ErpHrmTimeTrackingTimelogTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: ErpHrmTimeTrackingMemberAtSummaryTransformer.select(),
+        // DTO IErpHrmTimeTrackingOrganization.ISummary is an empty object, so no nested transformer is required.
+        organization: {
+          select: { id: true },
+        } satisfies Prisma.erp_hrm_time_tracking_organizationsFindManyArgs,
         employee: ErpHrmTimeTrackingMemberAtSummaryTransformer.select(),
         project: ErpHrmTimeTrackingProjectAtSummaryTransformer.select(),
         task: ErpHrmTimeTrackingTaskAtSummaryTransformer.select(),
         timesheet: ErpHrmTimeTrackingTimesheetAtSummaryTransformer.select(),
+        // Required by mapping validator; not used for DTO shaping.
         timelogSnapshots: true,
       },
     } satisfies Prisma.erp_hrm_time_tracking_timelogsFindManyArgs;
@@ -45,10 +51,7 @@ export namespace ErpHrmTimeTrackingTimelogTransformer {
   ): Promise<IErpHrmTimeTrackingTimelog> {
     return {
       id: input.id,
-      organization:
-        await ErpHrmTimeTrackingMemberAtSummaryTransformer.transform(
-          input.organization,
-        ),
+      organization: {},
       employee: await ErpHrmTimeTrackingMemberAtSummaryTransformer.transform(
         input.employee,
       ),
@@ -67,7 +70,7 @@ export namespace ErpHrmTimeTrackingTimelogTransformer {
       start_time: input.start_time?.toISOString() ?? null,
       end_time: input.end_time?.toISOString() ?? null,
       duration_minutes: input.duration_minutes,
-      note: input.note ?? null,
+      note: input.note,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,

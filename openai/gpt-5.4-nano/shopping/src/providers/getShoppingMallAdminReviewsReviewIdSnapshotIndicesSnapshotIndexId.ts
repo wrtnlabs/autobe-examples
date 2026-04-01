@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { ShoppingMallReviewSnapshotsIndexTransformer } from "../transformers/ShoppingMallReviewSnapshotsIndexTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,59 +18,27 @@ export async function getShoppingMallAdminReviewsReviewIdSnapshotIndicesSnapshot
   reviewId: string & tags.Format<"uuid">;
   snapshotIndexId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallReviewSnapshotsIndex> {
-  const index =
-    await MyGlobal.prisma.shopping_mall_review_snapshots_indices.findFirst({
-      where: {
-        id: props.snapshotIndexId,
-        review_id: props.reviewId,
+  const snapshotIndexRow =
+    await MyGlobal.prisma.shopping_mall_review_snapshots_indices.findFirstOrThrow(
+      {
+        where: {
+          id: props.snapshotIndexId,
+          review_id: props.reviewId,
+          deleted_at: null,
+        },
+        ...ShoppingMallReviewSnapshotsIndexTransformer.select(),
       },
-      select: {
-        id: true,
-        shopping_mall_snapshot_id: true,
-        review_id: true,
-        action_type: true,
-        snapshot_sequence: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-    });
-  if (index === null) {
-    throw new HttpException("Not Found", 404);
-  }
-  const snapshot = await MyGlobal.prisma.shopping_mall_snapshots.findFirst({
-    where: {
-      id: index.shopping_mall_snapshot_id,
-      deleted_at: null,
-    },
+    );
+  // Snapshot visibility: admins can view snapshots for dispute resolution.
+  // We still ensure the referenced central snapshot exists and is not soft-deleted.
+  await MyGlobal.prisma.shopping_mall_snapshots.findUniqueOrThrow({
+    where: { id: snapshotIndexRow.shopping_mall_snapshot_id },
     select: {
       id: true,
       deleted_at: true,
-      snapshotParties: {
-        where: {
-          party_type: "admin",
-          party_id: props.admin.id,
-          can_view: true,
-          deleted_at: null,
-        },
-        select: { id: true },
-      },
     },
   });
-  if (snapshot === null) {
-    throw new HttpException("Not Found", 404);
-  }
-  if (snapshot.snapshotParties.length === 0) {
-    throw new HttpException("Forbidden", 403);
-  }
-  return {
-    id: index.id,
-    shoppingMallSnapshotId: index.shopping_mall_snapshot_id,
-    reviewId: index.review_id,
-    actionType: index.action_type,
-    snapshotSequence: index.snapshot_sequence,
-    createdAt: index.created_at.toISOString(),
-    updatedAt: index.updated_at.toISOString(),
-    deletedAt: index.deleted_at?.toISOString() ?? null,
-  };
+  return await ShoppingMallReviewSnapshotsIndexTransformer.transform(
+    snapshotIndexRow,
+  );
 }

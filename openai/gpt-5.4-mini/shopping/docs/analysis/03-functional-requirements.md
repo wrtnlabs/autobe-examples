@@ -1,4 +1,4 @@
-**shoppingMall — What operations users can perform, use cases, business workflows**
+**mallPlatform — What operations users can perform, use cases, business workflows**
 
 What operations users can perform, use cases, business workflows
 
@@ -6,4001 +6,2823 @@ What operations users can perform, use cases, business workflows
 
 What the system must do for each business concept.
 
-## Customer Operations
+## CustomerAccount Operations
 
-Customers must register with email and password before using any shopping features. After registration, customers can log in, change their password, and delete their account. A customer profile is part of the account experience and must support viewing and updating the display name and phone number. Customers can manage their saved shipping addresses and choose one as the default for checkout. When a customer deletes an account, the profile information is removed, but orders, order history, and reviews remain available in their preserved form. Reviews left by a deleted customer continue to exist and are shown as coming from a deleted user. Customers are also expected to be able to view their account-related lists, such as saved addresses and order history. If an account is deleted, the customer can no longer use the platform with that identity.
+Customers must register before they can use any platform features, so account creation is the first required step in the customer journey. Registration uses email and password, and login also uses the same credentials. After registration, customers can access their account to manage their profile, addresses, cart, wishlist, orders, and reviews. Customers can change their password when they want to secure their account again. Customers can delete their account, but this only removes the customer profile information. Deleting the account must not remove order history or seller records, because those records must remain available for business and legal purposes. Reviews created by the customer must remain visible after account deletion, but the author should appear as a deleted user. The system should prevent any non-registered visitor from using shopping or purchase features because guest browsing is not allowed. If a seller account is deleted, that does not affect customer account behavior, since these are separate business roles.
 
 ### Customer Registration and Login
 
-Customers must register with an email address and password before they can use any shopping features.
-Customers must be able to log in with their email address and password after registration.
-If a customer deletes their account, that identity can no longer be used to access the platform.
+Customers must register before they can use any platform features.
+Customers sign up using an email address and password.
+Customers log in using the same email address and password.
+Only registered customer accounts can access shopping and purchase features.
+Non-registered visitors are not allowed to browse or use customer features on the platform.
+If a customer has not registered, the system must treat them as unable to access customer operations.
 
-### Customer Password Management
+```mermaid
+sequenceDiagram
+    participant U as "Visitor"
+    participant S as "System"
+    U->>S: "Attempt to use customer feature"
+    S-->>U: "Access denied until registration"
+    U->>S: "Submit registration details"
+    S-->>U: "Account created"
+    U->>S: "Log in with email and password"
+    S-->>U: "Access granted"
+```
 
-Customers must be able to change their password after they have signed in.
-The system must treat the new password as the customer’s active password after the change is completed.
+### Password Change
+
+Customers can change their password after logging in.
+The password change operation applies only to the customer’s own account.
+A successful password change updates the customer’s login credentials for future access.
+If the request is not made by the account owner, the change must not be applied.
 
 ### Customer Account Deletion
 
-Customers must be able to delete their account.
-When a customer deletes their account, the customer profile information is removed.
-When a customer deletes their account, the customer’s orders and order history are preserved.
-When a customer deletes their account, the customer’s reviews are preserved and shown as coming from a deleted user.
-After account deletion, the customer can no longer use that account to shop or manage customer data.
-
-### Customer Profile Updates
-
-Customers must be able to view and update their profile information.
-The customer profile includes the display name and phone number defined in the profile model.
-Profile updates must apply only to the customer’s own account.
-
-### Shipping Address Management
-
-Customers must be able to add multiple shipping addresses to their account.
-Customers must be able to view, edit, and delete their saved shipping addresses.
-Customers must be able to choose one saved shipping address as the default shipping address.
-Customers must be able to change which saved address is used as the default shipping address.
-
-### Order History and Preserved Review Attribution
-
-Customers must be able to view a list of their orders.
-Customers must be able to view the full details of each order in their history.
-If a customer account has been deleted, its preserved orders must remain available in order records.
-If a review was written by a customer whose account has been deleted, the review must still be displayed as authored by a deleted user.
-
-## Seller Operations
-
-Sellers must register with email and password and log in before they can manage their shop. A seller account is not immediately active for selling because administrator approval is required. Sellers can check whether their approval is pending, approved, or rejected, and they can review the rejection reason when applicable. If rejected, a seller can submit a new registration request rather than starting over manually. Approved sellers can change their password and manage their own products and shop presence. Sellers can delete their account only when they have no pending order items and no pending cancellation or refund requests. When a seller deletes the account, their products are removed from listings, but order history and snapshots are preserved, and the shop name remains visible in past orders. Sellers can also view their shop-level information and their approval-related status as part of account operations.
-
-### Seller Registration
-
-Sellers can create an account using an email address and a password.
-The system records the seller registration request as pending approval before the seller can sell products.
-A seller registration request remains associated with the seller account until an administrator makes a decision.
-If a seller registration request is rejected, the seller can submit a new registration request.
-A rejected seller can use the new registration request instead of creating a separate account.
-
-```mermaid
-sequenceDiagram
-    participant S as "Seller"
-    participant M as "System"
-    participant A as "Administrator"
-    S->>M: "Submit registration with email and password"
-    M-->>S: "Registration request pending approval"
-    A->>M: "Review seller registration request"
-    M-->>S: "Approval status updated"
-    S->>M: "Submit new registration request after rejection"
-    M-->>S: "New request accepted for review"
-```
-
-### Seller Login and Password Management
-
-Approved sellers can log in using their email address and password.
-Approved sellers can change their password after signing in.
-If a seller account is not approved, the seller cannot use seller functions that require an approved account.
-If a seller account is rejected, the seller can still use the account entry point to review the rejection outcome and submit a new registration request.
+Customers can delete their own account.
+When a customer deletes their account, the system removes the customer profile information.
+When a customer deletes their account, the system preserves the customer’s order history.
+When a customer deletes their account, the system preserves the customer’s orders for seller records and legal purposes.
+When a customer deletes their account, the system preserves the customer’s reviews, but those reviews are shown as written by a deleted user.
+Deleting a customer account does not remove the customer’s past purchasing records.
+Deleting a customer account does not remove seller-side records associated with those orders.
 
 ```mermaid
 flowchart LR
-    A["Seller account"] --> B["Login with email and password"]
-    B --> C["Approved"]
-    B --> D["Pending approval"]
-    B --> E["Rejected"]
-    C --> F["Change password"]
-    E --> G["View rejection reason"]
-    E --> H["Submit new registration request"]
+    A["Active customer account"] -->|"Delete account"| B["Customer profile removed"]
+    B --> C["Order history preserved"]
+    B --> D["Reviews remain visible as deleted user"]
 ```
 
-### Approval Status Review
+### Registered User Access Only
 
-Sellers can review their approval status at any time.
-The approval status is shown as pending, approved, or rejected.
-When the approval status is rejected, the seller can view the rejection reason.
-The rejection reason is shown together with the rejected approval status so the seller can understand why the registration was not accepted.
+Customer operations are available only to registered users.
+The system must not allow guest browsing.
+The system must not allow non-registered visitors to use any customer account features.
+Any request to use customer account features without a registered account must be rejected.
+A deleted customer account no longer has access to customer operations.
 
-```mermaid
-flowchart LR
-    A["Pending"] --> B["Approved"]
-    A --> C["Rejected"]
-    C --> D["View rejection reason"]
-```
+## CustomerProfile Operations
 
-### Seller Account Deletion
+Each customer account has a profile that stores the display name and phone number used across the shopping experience. Customers can view their profile details after logging in and update the display name or phone number when those details change. The profile supports identification in seller communication and order-related interactions, so the information should stay current. Changes to profile information must be treated as editable customer data and recorded through the platform's snapshot principle. The profile itself does not create separate purchase behavior, but it supports the customer's identity throughout the platform. If a customer deletes the account, the profile information is deleted as part of that account removal. Customers should not be able to manage profile details without being signed in. The system should keep profile operations separate from shipping addresses, because those are managed independently.
 
-A seller can delete the seller account only when there are no pending order items with paid or shipped status and no pending cancellation or refund requests.
-When a seller deletes the account, the seller's products are removed from listings.
-When a seller deletes the account, the seller's order history is preserved for seller records and legal purposes.
-When a seller deletes the account, the seller's shop name remains preserved in past orders.
-A deleted seller account no longer remains available for normal seller operations.
+### Customer Profile Details
 
-```mermaid
-flowchart LR
-    A["Seller requests account deletion"] --> B["Check pending paid or shipped order items"]
-    B --> C["Check pending cancellation or refund requests"]
-    C --> D["Delete seller account"]
-    D --> E["Remove products from listings"]
-    D --> F["Preserve order history"]
-    D --> G["Preserve shop name in past orders"]
-```
+Each customer account has one profile that stores the customer’s display name and phone number. These profile details are the customer’s identity information used across the shopping experience and customer interactions on the platform. The profile is separate from shipping addresses and is maintained independently of them. The profile information is part of the customer account’s editable data and is preserved only while the account exists.
 
-## Administrator Operations
+### View Profile Information
 
-Administrators manage platform governance and can approve or reject seller registrations. They also review requests from users who want to become administrators, then approve or reject those requests. Regular administrators and super administrators have different authority levels, and super administrators can promote or demote other administrators according to the grade rules. Administrators can create, edit, and delete categories, including subcategories, and they can view category structures for management purposes. They can view products, product snapshots, seller snapshots, and order-related records when handling disputes or policy checks. Administrators can also suspend and unsuspend sellers, ban and unban customers, and take enforcement actions on products and orders. Their operations are focused on platform oversight, approval workflows, moderation, and dispute support rather than ordinary shopping activity.
+A signed-in customer can view their own profile information. The system shows the customer’s current display name and phone number. Profile viewing is available only after the customer has signed in, and the customer cannot manage profile details while signed out.
 
-### Seller Approval Decisions
+### Edit Profile Information
 
-Administrators can review pending seller registration requests and decide whether to approve or reject them.
+A signed-in customer can edit their own profile information. The customer can change the display name and phone number. The system must treat these changes as updates to editable customer data, and the updated values become the customer’s current profile information after a successful edit.
 
-Administrators can approve a seller registration request only when the request is still pending.
-Administrators can reject a seller registration request only when the request is still pending.
-When a seller registration request is approved, the seller approval status becomes approved.
-When a seller registration request is rejected, the seller approval status becomes rejected.
-When a seller registration request is rejected, the administrator records a rejection reason.
-When a seller registration request has already been approved or rejected, it cannot be processed again.
-If a seller registration request is rejected, the seller can submit a new registration request.
+### Profile Snapshot on Change
 
-```mermaid
-sequenceDiagram
-    participant A as "Administrator"
-    participant S as "System"
-    A->>S: "Review seller registration request"
-    S-->>A: "Show pending request details"
-    A->>S: "Approve or reject request"
-    S-->>A: "Update seller approval status"
-```
+Whenever a customer profile is modified, the system creates a snapshot of the change. The snapshot records when the change was made, what was changed, and the values before and after the change. Profile snapshots are part of the platform’s immutable history and cannot be deleted. Relevant parties may view these snapshots for dispute resolution, as defined for the snapshot principle.
 
-### Administrator Request Review
+### Profile Deleted with Account Deletion
 
-Administrators can review requests from users who want to become administrators.
-
-A user can submit an administrator request with a reason.
-Super administrators can review pending administrator requests.
-Super administrators can approve a pending administrator request.
-Super administrators can reject a pending administrator request.
-When an administrator request is approved, the requester becomes a regular administrator.
-When an administrator request is rejected, the request is marked as rejected.
-When an administrator request is rejected, the system preserves the review decision associated with the request.
-A resolved administrator request cannot be processed again.
-
-```mermaid
-sequenceDiagram
-    participant U as "User"
-    participant A as "Super Administrator"
-    participant S as "System"
-    U->>S: "Submit administrator request"
-    A->>S: "Review pending request"
-    A->>S: "Approve or reject request"
-    S-->>A: "Store final request outcome"
-```
-
-### Administrator Grade Management
-
-Super administrators can manage administrator grades.
-
-There are two administrator grades: regular administrator and super administrator.
-Super administrators can promote a regular administrator to super administrator.
-Super administrators can demote another super administrator to regular administrator.
-A super administrator cannot demote themself.
-When a regular administrator is promoted, the person gains super administrator grade.
-When a super administrator is demoted, the person becomes a regular administrator.
-
-```mermaid
-flowchart LR
-    A["regular administrator"] -->|"Promote"| B["super administrator"]
-    B -->|"Demote"| A
-```
-
-### Category Creation and Editing
-
-Administrators can create categories and subcategories.
-
-Administrators can create a category with a name and description.
-Administrators can edit a category's name.
-Administrators can edit a category's description.
-Administrators can create a subcategory under an existing category.
-The category structure supports only one level of subcategory nesting.
-Category creation and editing are administrative operations and are not available to non-administrators.
-
-```mermaid
-flowchart LR
-    A["category"] --> B["subcategory"]
-```
-
-### Category Deletion
-
-Administrators can delete categories.
-
-When an administrator deletes a category, products that belonged to that category become uncategorized.
-When an administrator deletes a category that has subcategories, the deletion is handled as a category management action and the affected products are no longer associated with the deleted category.
-Category deletion is an administrative operation.
-Deleted categories are removed from active category management views.
-
-```mermaid
-flowchart LR
-    A["active category"] -->|"Delete"| B["deleted category"]
-    B --> C["products become uncategorized"]
-```
-
-### Platform Oversight of Products and Orders
-
-Administrators can oversee products and orders across the platform.
-
-Administrators can view all products on the platform.
-Administrators can view snapshots of any product.
-Administrators can view all orders on the platform.
-Administrators can force-cancel individual order items.
-Administrators can force-cancel an entire order.
-Administrators can force-refund individual order items.
-Administrators can force-refund an entire order.
-When an administrator force-cancels or force-refunds an order item, the affected stock is restored.
-When an administrator force-cancels or force-refunds an order item, the order records reflect the final enforcement decision.
-
-```mermaid
-sequenceDiagram
-    participant A as "Administrator"
-    participant S as "System"
-    A->>S: "View products or orders"
-    S-->>A: "Show platform records"
-    A->>S: "Apply enforcement action"
-    S-->>A: "Update order outcome and restore stock when needed"
-```
-
-### Seller Suspension and Unsuspension
-
-Administrators can suspend and unsuspend seller accounts.
-
-When a seller is suspended, the seller's products are hidden from search and category listings.
-When a seller is suspended, the seller's products cannot be purchased.
-When a seller is suspended, the seller can still process existing orders.
-When a seller is suspended, the seller cannot create new products.
-When a seller is suspended, the seller cannot edit existing products.
-Administrators can unsuspend a suspended seller.
-When a seller is unsuspended, the seller's products become visible again.
-
-```mermaid
-flowchart LR
-    A["active seller"] -->|"Suspend"| B["suspended seller"]
-    B -->|"Unsuspend"| A
-```
-
-### Customer and Seller Account Bans
-
-Administrators can ban and unban customer accounts and seller accounts.
-
-When a customer is banned, the customer cannot log in.
-When a customer is unbanned, the customer can log in again if the account is otherwise in good standing.
-When a seller is banned, the seller cannot log in.
-When a seller is banned, existing orders remain in place.
-When a seller is unbanned, the seller can log in again if the account is otherwise in good standing.
-Account bans and unbans are administrative enforcement actions.
-
-```mermaid
-flowchart LR
-    A["active account"] -->|"Ban"| B["banned account"]
-    B -->|"Unban"| A
-```
-
-## Profile Operations
-
-Every customer and seller has a profile that reflects their public or account-facing identity. A customer profile contains a display name and phone number, and the customer can view and edit both values. A seller profile contains the shop name, shop description, and logo image, and the seller can update those values. Profile changes are not silent because each edit must be preserved through snapshots for later review. Relevant parties such as the owner or administrators can view profile history when a dispute or audit requires it. Customers can see seller profiles as part of product and seller profile viewing. Profile deletion only happens indirectly through account deletion, while the related historical snapshots remain available. The profile operations therefore focus on presenting current identity information, allowing edits, and preserving prior states.
-
-### Customer Profile Information
-
-Customers have a profile that contains a display name and a phone number. The system shows these values as the customer’s account-facing identity. Customers can view their current display name and phone number at any time. The system keeps the profile information associated with the customer account unless the account is deleted.
-
-### Edit Customer Profile Information
-
-Customers can edit their display name and phone number. When a customer changes either value, the system updates the profile information and preserves the previous state in a snapshot. The updated profile becomes the current account-facing identity immediately after the change is accepted. If a customer account is no longer active because it has been deleted, the profile can no longer be edited as an active record.
-
-### Seller Profile Information
-
-Sellers have a profile that contains a shop name, a shop description, and a logo image. These values represent the seller’s storefront identity. The system makes the seller profile available so that the seller can manage it and so that customers can recognize the seller when viewing products and seller information.
-
-### Edit Seller Profile Information
-
-Sellers can edit their shop name, shop description, and logo image. When a seller changes any part of the profile, the system updates the current profile and preserves the previous state in a snapshot. Each profile change is recorded as a distinct change history entry so that prior versions remain available for later review. If a seller account is no longer active because it has been deleted, the seller profile can no longer be edited as an active record.
-
-### Profile Change Snapshot History
-
-Every profile change creates a snapshot that preserves the previous state of the changed profile information. The snapshot records when the change was made, what changed, and the values before and after the change. Snapshots are preserved as historical records and cannot be removed. This history allows the system to retain the earlier profile state even after later edits or account deletion.
-
-### Profile History Review and Visibility
-
-The owner of the profile can review the profile change history when needed for dispute resolution or account review. Administrators can also review profile history for the same purpose. Customers can view seller profiles when browsing products or seller information, but they only see the current seller profile details, not the edit history. Profile history remains available even when the related account is deleted, so earlier profile states can still be reviewed if needed.
+If a customer deletes their account, the customer profile information is deleted as part of that account removal. After account deletion, the profile is no longer available for viewing or editing. The account deletion behavior for orders and reviews follows the customer account rules and does not change the separate handling of those records.
 
 ## ShippingAddress Operations
 
-Customers can maintain multiple shipping addresses for use during checkout. Each address stores recipient name, phone number, street address, city, state or province, postal code, and country. Customers can add a new address, view their saved addresses, edit an existing address, and delete an address they no longer need. One saved address can be marked as the default shipping address so checkout can proceed more quickly. The customer chooses among their saved addresses when placing an order, and the default address is used when they want the system to preselect one. Address management is tied to the customer account and is not available to guests. If an address is changed or removed, the customer must still have access to the remaining saved addresses for future orders. Address operations support convenient and accurate shipping without altering order records after checkout.
+Customers can maintain multiple shipping addresses for use during checkout. Each address includes recipient name, phone number, street address, city, state or province, postal code, and country, so it can be used for delivery without extra correction. Customers can add a new address, edit an existing one, and delete an address they no longer want to use. One address can be marked as the default shipping address, which helps speed up checkout. During checkout, customers must select a shipping address or use the default if one is set. Once an order has been placed, the shipping address on that order cannot be changed. Address data is part of customer-owned information and should be available only to the signed-in customer. Address operations should support multiple saved locations rather than a single fixed destination.
 
 ### Multiple Shipping Addresses
 
-Customers can save more than one shipping address in their account.
-A customer’s saved addresses are used only for that customer’s own checkout and address management needs.
-Customers can view, add, edit, and delete their saved addresses at any time while their account is active.
-Customers can keep addresses for different recipients or delivery locations, provided each address belongs to their account.
+Customers can maintain multiple shipping addresses for their account.
+Each shipping address belongs to one customer account and is used for delivery during checkout.
+The system supports more than one saved address so customers can keep separate destinations for different orders.
+Customers can browse their saved addresses and use them when placing an order.
 
-```mermaid
-sequenceDiagram
-    participant C as Customer
-    participant S as System
-    C->>S: Save a new shipping address
-    S->>S: Store the address under the customer account
-    S-->>C: Address appears in the saved address list
-```
+### Add Shipping Address
 
-### Shipping Address Details
+Customers can add a new shipping address to their account.
+Each shipping address includes recipient name, phone number, street address, city, state or province, postal code, and country.
+A newly added address becomes available for checkout and future deliveries.
 
-Each saved shipping address includes recipient name, phone number, street address, city, state or province, postal code, and country.
-Customers can enter and later update any of these address details for an existing saved address.
-If a customer adds a new address, the system records it as a complete shipping destination for future checkout use.
-If a customer edits an address, the updated address is used for later orders, while existing orders keep the address information they already captured at checkout.
+### Edit Shipping Address
 
-```mermaid
-flowchart LR
-    A["Saved shipping address"] --> B["Recipient name"]
-    A --> C["Phone number"]
-    A --> D["Street address"]
-    A --> E["City"]
-    A --> F["State or province"]
-    A --> G["Postal code"]
-    A --> H["Country"]
-```
+Customers can edit an existing shipping address they own.
+When an address is edited, the updated details replace the previous address information for future use.
+Customers can update any of the address details that belong to the shipping address.
 
-### Edit Saved Address
+### Delete Shipping Address
 
-Customers can edit a saved shipping address that belongs to their account.
-When a customer edits a saved address, the updated details replace the previous address details for future use.
-The customer remains responsible for keeping the address accurate enough for delivery.
-Editing one saved address does not change any other saved address.
-
-```mermaid
-sequenceDiagram
-    participant C as Customer
-    participant S as System
-    C->>S: Edit a saved shipping address
-    S->>S: Update the selected address for the customer account
-    S-->>C: Updated address is available for future checkout
-```
-
-### Delete Saved Address
-
-Customers can delete a saved shipping address that they no longer want to use.
-When a saved address is deleted, it is removed from the customer’s available address list.
-Deleting one saved address does not delete the customer account or any other saved addresses.
-If a deleted address was previously selected for checkout, the customer must select another saved address before placing a new order.
-
-```mermaid
-flowchart LR
-    A["Saved address"] --> B["Delete address"]
-    B --> C["Remove from saved address list"]
-    C --> D["Remaining saved addresses stay available"]
-```
+Customers can delete a shipping address they own.
+Deleted shipping addresses are no longer available for selection during checkout.
+Customers can continue using their remaining saved addresses after one address is deleted.
 
 ### Default Shipping Address
 
-Customers can mark one saved address as their default shipping address.
-The default shipping address is the address the system preselects when the customer begins checkout, if a default address exists.
-A customer can change which saved address is set as the default shipping address.
-Only one saved address can function as the default shipping address at a time for a customer.
-If the default shipping address is deleted, the customer must choose another saved address for future checkout.
+Customers can set one saved shipping address as the default shipping address.
+The default shipping address is the address the system uses when the customer does not choose another address during checkout.
+Customers can change which saved address is marked as the default.
 
-```mermaid
-flowchart LR
-    A["Saved addresses"] --> B["Set one as default"]
-    B --> C["Default shipping address"]
-    C --> D["Preselected during checkout"]
-```
+### Shipping Address Fields
 
-### View Saved Addresses
+A shipping address contains recipient name and phone number, along with street address, city, state or province, postal code, and country.
+These details are used to identify who receives the shipment and where the order should be delivered.
+A shipping address is only complete when all address details are provided as part of the address record.
 
-Customers can view the list of shipping addresses saved in their account.
-The saved address list shows the stored shipping address details so the customer can choose the correct destination for delivery.
-The list reflects the customer’s current saved addresses, including the address currently marked as default.
-Customers cannot view saved addresses that belong to another customer account.
+### Select Address at Checkout
 
-```mermaid
-sequenceDiagram
-    participant C as Customer
-    participant S as System
-    C->>S: View saved shipping addresses
-    S->>S: Return the customer’s saved address list
-    S-->>C: Address list is displayed
-```
+During checkout, customers can select one of their saved shipping addresses for the order.
+If a default shipping address is set, the customer can use it instead of selecting another saved address.
+The selected shipping address is shown as part of the order review before the order is placed.
 
-### Checkout Address Selection
+### Shipping Address Locked After Order Placement
 
-At checkout, customers select one of their saved shipping addresses for the order.
-If a default shipping address exists, the system may preselect it for the customer.
-The selected shipping address is used for the order being placed and becomes part of that order’s shipping information.
-A customer can choose a different saved address during checkout before the order is placed.
-If no saved shipping address is available, the customer cannot complete checkout until one is added.
+Once an order has been placed, the shipping address for that order cannot be changed.
+The shipping address used for the order remains fixed after placement so the order keeps the delivery destination that was confirmed at checkout.
+Customers must choose the correct shipping address before the order is placed.
 
-```mermaid
-sequenceDiagram
-    participant C as Customer
-    participant S as System
-    C->>S: Start checkout
-    S->>S: Show saved shipping addresses and preselect default if available
-    C->>S: Choose shipping address and continue
-    S-->>C: Selected address is used for the order
-```
+## SellerAccount Operations
+
+Sellers register with email and password and log in with the same credentials. Sellers can change their password after account creation. Before a seller can sell, the account must be approved by an administrator, so registration alone does not grant selling rights. Sellers can view their approval status and see whether the account is pending, approved, or rejected. If the account is rejected, the seller can review the rejection reason and submit a new registration request. Sellers can delete their account only when they have no pending orders in paid or shipped status and no pending cancellation or refund requests. When a seller account is deleted, the seller's products are removed from active listings, but order history and snapshots remain preserved. Past orders must still show the seller shop name so older purchases remain understandable. Seller account operations should also respect suspension and ban outcomes from administrator management where applicable.
+
+### Seller Registration and Login
+
+Sellers can register using an email address and password.
+Sellers can log in using the same email address and password they used to register.
+Sellers can change their password after their account has been created.
+A seller account does not become eligible to sell immediately after registration; administrator approval is required before selling is allowed.
+
+### Seller Approval Status
+
+Sellers can view the current approval status of their account.
+The approval status is shown as pending, approved, or rejected.
+If the account is rejected, the seller can view the reason for the rejection.
+If the account is rejected, the seller can submit a new registration request.
+
+### Seller Account Deletion
+
+Sellers can delete their account only when they have no pending orders in paid or shipped status and no pending cancellation or refund requests.
+When a seller account is deleted, the seller's products are removed from active listings.
+When a seller account is deleted, the seller's order history is preserved for seller records and legal purposes.
+When a seller account is deleted, the seller's shop name is preserved in past orders so earlier purchases remain understandable.
 
 ## SellerProfile Operations
 
-A seller profile represents the shop identity shown to customers across the platform. It includes the shop name, shop description, and logo image, and sellers can update these values to keep their storefront current. Every edit to the seller profile must create a snapshot so the previous shop identity can be recovered for dispute review. Customers can view seller profiles when browsing products or opening a seller page. Past order items preserve the seller profile snapshot that was valid at the time of purchase, even if the seller later changes the profile or deletes the account. Seller profile operations therefore support storefront presentation, customer transparency, and historical preservation. The current profile is the public-facing version, while snapshots keep earlier versions available to relevant parties. These operations are essential for proving what a shop looked like when a transaction occurred.
+Each seller has a profile that presents the shop name, shop description, and logo image to customers. Customers can view seller profiles from product pages and use them to understand who is selling the product. Sellers can edit the shop name, description, and logo when their store identity changes. Every edit must create a snapshot so past versions of the seller profile remain available for dispute resolution. Seller profile changes affect how the seller is presented in products and past orders, so the platform must preserve prior versions. The profile is not meant to be deleted separately from the seller account; it follows the seller account lifecycle. If the seller account is deleted, the profile information used in past order records must still remain visible in historical snapshots. Seller profile management should support a consistent storefront identity across browsing and order history.
 
-### Seller Storefront Identity
+### Shop Name Display
 
-A seller profile is the public storefront identity for a seller.
-It defines how the seller is presented to customers across the platform and is the version of the shop identity currently associated with the seller.
-The seller profile includes the shop name, shop description, and logo image.
-When a seller updates any of these values, the storefront identity changes for future customer viewing, while earlier versions remain preserved through snapshots.
-
-```mermaid
-flowchart LR
-    A["Current seller profile"] -->|"Update shop name, description, or logo"| B["Updated seller profile"]
-    A -->|"Create snapshot"| C["Historical shop identity"]
-    B -->|"Create snapshot"| C
-```
-
-### Seller Profile Updates
-
-The seller can update the shop name, shop description, and logo image in the seller profile.
-Each update changes the current storefront identity for future viewing by customers.
-Each update also creates a snapshot that preserves the prior seller profile state for dispute review and historical reference.
-A seller profile update must preserve the complete shop identity that existed before the change, including the values that were replaced.
-
-```mermaid
-sequenceDiagram
-    participant S as Seller
-    participant P as Seller Profile
-    participant H as Historical Record
-    S->>P: Update shop information
-    P->>H: Save previous state as snapshot
-    P-->>S: Updated profile becomes current
-```
-
-### Customer Viewing of Seller Profiles
-
-Customers can view a seller profile when browsing products or when opening the seller profile itself.
-The customer sees the current public-facing seller profile, not an edited draft or hidden version.
-The profile shown to customers reflects the seller storefront identity that is active at the time of viewing.
-This visibility allows customers to identify the shop name, read the shop description, and recognize the logo image associated with the seller.
+The seller profile SHALL display the shop name to customers wherever the seller profile is shown.
+The shop name SHALL be the primary business name used to identify the seller in browsing contexts and product-related contexts.
+The shop name SHALL remain associated with the seller profile as part of the seller’s storefront identity.
+When a seller changes the shop name, the updated shop name SHALL be used for future customer-facing views of the seller profile.
 
 ```mermaid
 flowchart LR
-    A["Customer opens seller profile"] --> B["System shows current shop name"]
-    B --> C["System shows current shop description"]
-    C --> D["System shows current logo image"]
+    A["Seller profile"] --> B["Shop name"]
+    B --> C["Customer-facing display"]
+    B --> D["Storefront identity"]
 ```
 
-### Seller Profile Snapshots and Historical Preservation
+### Shop Description Display
 
-Every seller profile edit creates a snapshot of the previous state.
-The snapshot preserves the historical shop identity so that earlier versions of the seller profile remain available for dispute resolution and record review.
-Snapshots are kept even after later seller profile updates, so the shop identity can be traced over time.
-Relevant parties can review snapshots to understand what the seller profile looked like before a change was made.
+The seller profile SHALL display the shop description to customers wherever the seller profile is shown.
+The shop description SHALL help customers understand the seller’s storefront identity.
+When a seller edits the shop description, the updated description SHALL be used for future customer-facing views of the seller profile.
+The shop description SHALL be preserved in profile snapshots so previous versions remain available for dispute resolution.
 
-```mermaid
-flowchart LR
-    A["Seller profile edit"] --> B["Create snapshot of previous state"]
-    B --> C["Historical shop identity preserved"]
-    C --> D["Relevant parties can review snapshot"]
-```
 
-### Seller Profile at Time of Purchase
+### Logo Image Management
 
-When a customer purchases a product, the seller profile state at that time is preserved with the purchase record.
-The preserved seller profile in past orders remains associated with the order item even if the seller later changes the shop name, shop description, or logo image.
-This preserved seller profile provides the historical shop identity that applied when the order was placed.
-If the seller later deletes the account, the preserved seller profile in past orders remains available for order history and dispute review.
+The seller profile SHALL include a logo image as part of the seller’s customer-facing presentation.
+Sellers SHALL be able to change the logo image as part of editing their seller profile.
+When the logo image is updated, the updated logo SHALL be used for future customer-facing views of the seller profile.
+The logo image SHALL be preserved in seller profile snapshots so past versions of the storefront identity remain available.
+
+
+### Customer View of Seller Profile
+
+Customers SHALL be able to view seller profiles.
+A customer view of a seller profile SHALL show the shop name, shop description, and logo image.
+A customer viewing a product SHALL be able to use the seller profile to understand who is selling the product.
+The seller profile view SHALL support a consistent storefront identity across product browsing and order history.
+
+
+### Edit Seller Profile
+
+Sellers SHALL be able to edit their seller profile.
+The editable seller profile information SHALL include the shop name, shop description, and logo image.
+When a seller edits the seller profile, the updated profile SHALL replace the previous customer-facing profile information for future views.
+Seller profile edits SHALL support changes to the seller’s storefront identity over time.
+
+
+### Seller Profile Snapshot on Edit
+
+Every seller profile edit SHALL create a snapshot of the previous seller profile state.
+Each seller profile snapshot SHALL record what changed and preserve the prior seller profile values.
+Seller profile snapshots SHALL be immutable and SHALL remain available after later edits.
+Seller profile snapshots SHALL support dispute resolution by preserving profile change history.
+
+
+### Storefront Identity
+
+The seller profile SHALL represent the seller’s storefront identity.
+The storefront identity SHALL consist of the shop name, shop description, and logo image.
+Changes to any part of the seller profile SHALL be reflected in the storefront identity shown to customers.
+The platform SHALL preserve past storefront identity versions through seller profile snapshots.
+
+
+### Past Order Seller Information
+
+When a seller profile is changed, the seller information preserved in past order records SHALL remain unchanged.
+Past orders SHALL continue to show the seller information captured at the time of purchase.
+The preserved seller information in past orders SHALL support historical review and dispute resolution.
+The seller profile used in past order records SHALL remain visible even if the seller profile later changes.
+
+
+### Profile Change History Preserved
+
+The platform SHALL preserve seller profile change history for all edits.
+Seller profile change history SHALL remain available even after later seller profile updates.
+Seller profile change history SHALL support review of prior shop name, shop description, and logo image values.
+Seller profile change history SHALL be preserved for dispute resolution and historical reference.
 
 
 ## Category Operations
 
-Categories organize products so customers can browse and discover items by topic. Administrators create and manage categories, including one level of subcategories, and they can edit category names and descriptions. Customers can view the full list of categories and navigate into a category to see the products assigned to it. When a category is deleted, products are not removed from the platform, but they become uncategorized. The category structure must support both top-level categories and a single nested subcategory level, with no deeper hierarchy. Category operations are therefore centered on administration, browsing, and product organization. Customers are only consumers of category information, while administrators control the structure. Any category changes should preserve the browsing experience and keep products discoverable.
+Products are organized into categories so customers can browse and find items by topic or type. Categories can also contain subcategories, but only one level of nesting is allowed, so category structure stays simple and understandable. Administrators create, edit, and delete categories, while customers can only browse the category list and view products inside a category. Each category has a name and description that help explain what belongs there. When a category is deleted, products that were assigned to it become uncategorized rather than disappearing from the platform. Customers should still be able to browse the full category list and navigate into subcategories where they exist. Category operations must support browsing flows as well as product organization for sellers and administrators. The category structure should remain stable enough to support search and category page listings.
 
-### Category Browsing
+### Category Organization
 
-Customers can browse the full list of categories to discover how products are organized on the platform.
-Customers can view a category as a browsing entry point for the products assigned to it.
-Customers can navigate from a category into the products that belong to that category.
-Customers can use category browsing to move through the platform’s product organization without needing administrative access.
+Products are organized into categories so customers can browse and find items by topic or type.
 
-```mermaid
-flowchart LR
-    A["Customer views category list"] --> B["Customer selects a category"]
-    B --> C["System shows products in that category"]
-```
+Categories may contain subcategories, but only one level of nesting is allowed. A subcategory may belong to a parent category, and no deeper nesting is permitted.
 
-### Category Structure Management
-
-Administrators can manage the category structure for the platform.
-Administrators can create top-level categories.
-Administrators can create subcategories under a category.
-A category can have only one level of nesting beneath a top-level category.
-The system does not allow deeper category hierarchies beyond one subcategory level.
-Category structure management is used to keep product organization consistent and understandable for customers.
+Each category has a name and a description that explain what belongs in that category.
 
 ```mermaid
 flowchart LR
-    A["Top-level category"] --> B["Subcategory"]
-    B --> C["No deeper nesting"]
+    A["Category"] -->|"may contain"| B["Subcategory"]
+    B -->|"no further nesting"| C["Not allowed"]
 ```
 
-### Administrator-Managed Categories
+### Administrator Category Management
 
-Administrators are the only users who can create, edit, and delete categories.
-Customers can view categories, but they cannot change category structure.
-Category management is restricted to administrators so that product organization remains centrally controlled.
-Category administration includes maintaining both category names and category descriptions.
+Administrators can create categories and subcategories.
 
-```mermaid
-sequenceDiagram
-    participant A as Administrator
-    participant S as System
-    A->>S: Manage category structure
-    S->>S: Apply category changes
-    S-->>A: Category updated
-```
+Administrators can edit category names and descriptions.
 
-### Category Name and Description Updates
+Administrators can delete categories.
 
-Administrators can update a category’s name.
-Administrators can update a category’s description.
-When a category is edited, the updated name and description replace the previous category details for future browsing.
-Category name and description updates are part of normal category structure maintenance.
+Category management is restricted to administrators only; customers can browse categories but cannot create, edit, or delete them.
 
-```mermaid
-flowchart LR
-    A["Administrator edits category name or description"] --> B["System updates category details"]
-    B --> C["Customers see updated category information"]
-```
+### Customer Category Browsing
 
-### Product Browsing by Category
+Customers can browse the full list of categories.
 
-Customers can view products within a selected category.
-Products are shown under the category that organizes them.
-If a category contains products, the category view presents those products as part of browsing and discovery.
-If a category has no products, the category view still remains available to support category-based browsing.
-Product browsing by category helps customers find products by topic or grouping rather than by search alone.
+Customers can browse subcategories when a category contains them.
 
-```mermaid
-flowchart LR
-    A["Customer selects category"] --> B["System shows products in category"]
-    B --> C["Customer browses listed products"]
-```
+Customers can view products within a category.
 
-### Category Deletion and Uncategorized Products
+Category listings presented to customers must reflect the category structure, including any available subcategories.
 
-Administrators can delete a category.
-When a category is deleted, products that belonged to it are not deleted from the platform.
-When a category is deleted, the affected products become uncategorized.
-Deleted categories no longer remain available as active browsing destinations.
-Category deletion must preserve the products while removing the category assignment.
-
-```mermaid
-flowchart LR
-    A["Administrator deletes category"] --> B["System removes category"]
-    B --> C["Products become uncategorized"]
-    C --> D["Products remain on platform"]
-```
-
-### Customer Category List
-
-Customers can view the complete list of available categories.
-The category list is a customer-facing browsing feature and is separate from category management.
-The category list provides the starting point for category-based product discovery.
-Customers use the category list to move from a general product organization view into specific category browsing.
-
-```mermaid
-flowchart LR
-    A["Customer views category list"] --> B["Customer selects a category"]
-    B --> C["Customer views products in category"]
-```
-
-## Product Operations
-
-Sellers can create products that belong to their own shop and must provide a name, description, category, and base price. Customers can browse product listings and view detailed product pages, while sellers can manage only their own products. Sellers can edit their products, and every edit must preserve the previous state through a snapshot. A product can be deleted only when there are no pending order items and no pending cancellation or refund requests for any of its variants. Deleting a product removes it from search and category listings, and it also deletes its variants and inventory records. Product snapshots remain available even after deletion, and sellers can review snapshots of their own products while administrators can review snapshots of any product. Product listing views should continue to show products by name, seller shop name, image, and pricing information when available. Products with no variants remain visible in search but are treated as unavailable for purchase.
-
-### Product Creation
-
-Sellers can create a product for their own shop.
-A product shall belong to the seller who created it.
-A product shall require a name.
-A product shall require a description.
-A product shall require a category.
-A product shall require a base price.
-A product may be created only by a seller.
-
-```mermaid
-flowchart LR
-    A["Seller"] -->|"Creates product"| B["Product belongs to seller"]
-    B --> C["Product includes required name, description, category, and base price"]
-```
-
-### Product Editing
-
-Sellers can edit only their own products.
-A product edit shall preserve the previous state by creating a snapshot.
-The snapshot shall preserve the editable product information that changed during the edit.
-A seller shall be able to review snapshots of their own products.
-An administrator shall be able to review snapshots of any product.
-
-```mermaid
-sequenceDiagram
-    participant S as Seller
-    participant P as Product
-    participant N as Snapshot
-    S->>P: Edit own product
-    P->>N: Create snapshot of previous state
-    P-->>S: Updated product is saved
-```
-
-### Product Deletion
-
-Sellers can delete only their own products.
-A product shall be deletable only when there are no pending order items for any of its variants.
-A product shall be deletable only when there are no pending cancellation requests for any of its variants.
-A product shall be deletable only when there are no pending refund requests for any of its variants.
-When a product is deleted, the product shall be removed from listings.
-When a product is deleted, its variants shall be deleted with it.
-When a product is deleted, its inventory records shall be deleted with it.
-When a product is deleted, its snapshots shall remain available.
-Deleted products shall no longer appear in search results or category listings.
-
-```mermaid
-flowchart LR
-    A["Delete product request"] --> B["Check pending order items"]
-    B --> C["Check pending cancellation requests"]
-    C --> D["Check pending refund requests"]
-    D -->|"If all clear"| E["Delete product and variants"]
-    E --> F["Remove from listings"]
-    E --> G["Preserve snapshots"]
-```
-
-### Product Visibility in Listings
-
-Products shall continue to appear in product listings before deletion.
-Product listing views shall present product information in a way that supports browsing by customers.
-When a product has no variants, it may still appear in search but shall be treated as unavailable for purchase.
-When a product is deleted, it shall no longer appear in search or category listings.
-A deleted product shall remain represented in preserved snapshots for review and dispute resolution.
-
-```mermaid
-flowchart LR
-    A["Product exists"] --> B["Visible in listings"]
-    B --> C["Product deleted"]
-    C --> D["Removed from search and category listings"]
-    C --> E["Snapshots remain available"]
-```
-
-## ProductVariant Operations
-
-Product variants let sellers offer different option combinations under the same product. Each variant has a unique SKU code, option values, an optional price override, and a stock quantity managed for availability. Sellers can add variants to their own products, edit the SKU code, option values, and price, and delete variants when business conditions allow it. A product must have at least one variant to be purchasable, so variants directly control whether the product can be bought. Variant edits must create snapshots so the historical state of options and pricing is preserved. Customers see available variants on the product detail page along with their pricing and stock status. Variants with zero stock are shown as out of stock and cannot be added to the cart. When a product has no variants, it remains visible but is treated as unavailable.
-
-### Variant Identification and Pricing
-
-A product variant is identified by its SKU code, which is required and must be unique within the product.
-
-Each variant stores its option values as the specific combination of choices that distinguishes it from other variants of the same product.
-
-A variant may define a price override. When a price override is present, it represents the selling price for that variant instead of the product's base price.
-
-The product detail page shows each available variant together with its option values, price, and stock status.
-
-```mermaid
-flowchart LR
-    A["Product"] --> B["Product Variant"]
-    B --> C["SKU Code"]
-    B --> D["Option Values"]
-    B --> E["Price Override"]
-    B --> F["Stock Quantity"]
-    G["Product Detail Page"] --> B
-```
-
-### Adding Variants to a Product
-
-Sellers can add variants to products they own.
-
-When a seller adds a variant, the variant becomes part of that product and is available for customers to view on the product detail page when it is not out of stock.
-
-A product can contain multiple variants, and each variant represents one purchasable option combination for that product.
-
-```mermaid
-sequenceDiagram
-    participant S as Seller
-    participant P as Product
-    participant V as Product Variant
-    S->>P: Add variant to product
-    P->>V: Create variant under product
-    V-->>S: Variant becomes available for product management
-```
-
-### Variant Stock Quantity and Availability
-
-Each variant has its own stock quantity.
-
-The stock quantity determines whether the variant is available for purchase.
-
-When a variant's stock quantity reaches zero, the variant is shown as out of stock.
-
-Out-of-stock variants cannot be added to the cart.
-
-The product detail page shows the stock status for each variant so customers can see whether it is available.
-
-```mermaid
-flowchart LR
-    A["Stock Quantity Above Zero"] --> B["Variant Available"]
-    C["Stock Quantity = 0"] --> D["Out of Stock"]
-    D --> E["Cannot Be Added to Cart"]
-    B --> F["Shown on Product Detail Page"]
-    D --> F
-```
-
-### Editing Variants and Preserving History
-
-Sellers can edit the SKU code, option values, and price of their own variants.
-
-Every variant edit creates a snapshot so the previous state of the variant is preserved.
-
-The snapshot preserves the changed variant values so the history of option combinations and pricing can be reviewed later.
-
-```mermaid
-sequenceDiagram
-    participant S as Seller
-    participant V as Product Variant
-    participant X as Snapshot
-    S->>V: Edit SKU code, option values, or price
-    V->>X: Record previous and updated values
-    X-->>S: Historical state preserved
-```
-
-### Deleting Variants and Purchase Constraints
-
-Sellers can delete variants only when the variant has no pending order items with paid or shipped status.
-
-Sellers can delete variants only when the variant has no pending cancellation requests and no pending refund requests.
-
-A variant cannot be deleted while it is still needed for active purchase processing.
-
-When a variant is deleted, it is removed from the product's purchasable set.
-
-```mermaid
-flowchart LR
-    A["Variant"] --> B["Pending Paid or Shipped Order Items"]
-    A --> C["Pending Cancellation or Refund Requests"]
-    B --> D["Deletion Blocked"]
-    C --> D
-    A --> E["No Active Purchase References"]
-    E --> F["Variant Can Be Deleted"]
-```
-
-### Product Purchasability Depends on Variants
-
-A product must have at least one variant to be purchasable.
-
-If a product has no variants, it remains visible in search but is treated as unavailable.
-
-Customers can view variant availability on the product detail page, but they cannot purchase a product that has no variants.
-
-```mermaid
-flowchart LR
-    A["Product Has Variants"] --> B["Product Is Purchasable"]
-    C["Product Has No Variants"] --> D["Product Is Unavailable"]
-    D --> E["Visible in Search"]
-    D --> F["Not Purchasable"]
-```
-
-## ProductImage Operations
-
-Sellers can upload multiple images for each product to support product presentation. Images can be reordered, and the first image becomes the main thumbnail used in listings. Sellers can also delete individual images when they no longer represent the product well. Image changes are part of the product history and must be included in product snapshots. Customers see these images on product listings and the product detail page, where all images are available for viewing. Image operations must maintain the order that shoppers rely on for visual comparison and trust. Because image changes affect how the product is presented, each update is part of the product’s recorded history. These operations are focused on storefront display rather than separate content management.
-
-### Product Image Management
-
-Sellers can upload multiple images for a product to support product presentation.
-The product image set is ordered, and that order is preserved whenever the product is viewed.
-The first image in the ordered set is the main thumbnail image used for product listings.
-Sellers can reorder the images for their own products, and the updated order becomes the new display order.
-Sellers can delete individual product images when they no longer want them shown.
-Customers can view all images for a product on the product detail page.
-Product image changes are part of the product’s recorded history and are included in product snapshots.
-Each image-related change preserves the previous state so the product’s visual presentation can be reviewed later.
-
-```mermaid
-flowchart LR
-    A["Seller uploads product images"] --> B["Ordered image set is updated"]
-    B --> C["First image becomes main thumbnail"]
-    B --> D["Customers view all images on product detail page"]
-    B --> E["Product snapshot records image change"]
-    A --> F["Seller reorders images"]
-    F --> B
-    A --> G["Seller deletes an image"]
-    G --> B
-```
-
-
-## InventoryRecord Operations
-
-Inventory for each variant is tracked through inventory history records rather than by directly changing a current stock value. Sellers can add inventory for restocking and subtract inventory for adjustment or loss, and each record must include the quantity change, reason, and timestamp. Order placement automatically creates a negative inventory record, while cancellation or refund processing automatically creates a positive one. The current stock shown to customers and sellers is derived from the sum of all inventory history records. Sellers can view the full inventory history for each variant to understand how stock changed over time. Inventory records support accountability because they explain why stock increased or decreased. When the total stock reaches zero, the variant is marked out of stock and cannot be added to the cart. Inventory record operations therefore support stock visibility, auditability, and transaction-driven updates.
-
-### Inventory History Record
-
-Each change to a variant’s stock is recorded as an inventory history record.
-An inventory history record identifies whether the change increases or decreases stock, the reason for the change, and the time the change occurred.
-Inventory history records exist to explain how a variant’s stock changed over time and to support accountability for stock movements.
-Inventory history records are preserved as part of the variant’s history and are not treated as a replacement for current stock visibility.
-```mermaid
-flowchart LR
-    A["Stock change event"] --> B["Inventory history record"]
-    B --> C["Variant stock history"]
-    B --> D["Accountability review"]
-```
-
-### Restocking, Adjustment, and Automatic Stock Change Records
-
-When a seller adds stock to a variant, the system creates an inventory history record with a positive quantity change.
-When a seller records an adjustment or loss, the system creates an inventory history record with a negative quantity change.
-The reason for a restocking change is recorded so sellers can distinguish replenishment from other stock movements.
-The reason for an adjustment or loss is recorded so the stock history explains why stock decreased outside normal sales.
-When an order is placed successfully, the system automatically creates a negative inventory history record for each purchased variant.
-When a cancellation or refund restores stock, the system automatically creates a positive inventory history record for the affected variant.
-```mermaid
-sequenceDiagram
-    participant S as Seller
-    participant M as System
-    participant O as Order Process
-    participant R as Cancellation or Refund Process
-    S->>M: Record restocking or adjustment
-    M->>M: Create inventory history record
-    O->>M: Order placed successfully
-    M->>M: Create negative inventory history record
-    R->>M: Cancellation or refund restores stock
-    M->>M: Create positive inventory history record
-```
-
-### Timestamped Inventory Records and Current Stock Calculation
-
-Each inventory history record includes the time the change was made.
-The current stock for a variant is calculated from the full sequence of inventory history records for that variant.
-The system does not rely on a manually entered stock value as the source of truth for current stock.
-Customers and sellers see stock availability based on the stock calculated from history.
-This approach ensures that every stock figure can be traced back to the underlying inventory history records.
-```mermaid
-flowchart LR
-    A["Inventory history records"] --> B["Stock calculation"]
-    B --> C["Current stock"]
-    C --> D["Availability display"]
-```
-
-### Full Inventory History View
-
-Sellers can view the full inventory history for each variant they own.
-The inventory history view shows each recorded stock change in chronological order.
-The view supports understanding when stock was added, reduced, or restored.
-The view is intended to help sellers audit stock movement and explain discrepancies during review or dispute handling.
-If a variant has no inventory history records, the history view shows that no stock changes have been recorded yet.
-```mermaid
-flowchart LR
-    A["Seller"] --> B["Full inventory history view"]
-    B --> C["Chronological stock changes"]
-    C --> D["Audit and review"]
-```
-
-### Out of Stock Status and Inventory Accountability
-
-When the calculated stock for a variant reaches zero, the system marks the variant as out of stock.
-An out of stock variant cannot be added to the cart.
-Inventory history records support accountability by showing the sequence of stock changes that led to the current stock state.
-Because inventory history records are preserved, the system can explain why a variant became unavailable even after multiple restocks, sales, adjustments, cancellations, or refunds.
-The combination of recorded reasons, timestamps, and change values allows sellers and administrators to review stock responsibility when needed.
-```mermaid
-flowchart LR
-    A["Calculated stock reaches zero"] --> B["Variant marked out of stock"]
-    B --> C["Cannot be added to cart"]
-    A --> D["Inventory accountability review"]
-```
-
-## Wishlist Operations
-
-Customers can save products to a wishlist for later consideration. The wishlist contains products rather than specific variants, and customers can view the list in a paginated format. Customers can add products to the wishlist and remove them when they are no longer interested. Wishlist items should reflect the current product availability experience, but the saved relationship is centered on the product itself. If a seller deletes a product, it is automatically removed from all wishlists so customers do not keep links to deleted items. Wishlist operations help customers track products they want without purchasing immediately. The feature is available only to registered customers because guest browsing is not allowed. The list must remain simple and focused on product saving and removal actions.
-
-### Wishlist Product Saving and Removal
-
-Customers can save products to their wishlist for later purchase consideration.
-The wishlist acts as a customer product favorites list and stores products rather than specific variants.
-When a customer saves a product to the wishlist, the saved item represents the product as a whole and not a selected variant.
-A customer can remove a saved product from the wishlist when they no longer want to keep it as a favorite.
-The system keeps the wishlist focused on product saving and removal only, without turning it into a variant selection list.
-The wishlist is available only to registered customers, because guest browsing is not allowed.
-
-```mermaid
-sequenceDiagram
-    participant C as "Customer"
-    participant S as "System"
-    C->>S: "Save product to wishlist"
-    S->>S: "Store product as a favorite"
-    S-->>C: "Product saved"
-    C->>S: "Remove product from wishlist"
-    S->>S: "Remove saved product"
-    S-->>C: "Product removed"
-```
-
-### Wishlist Viewing and Pagination
-
-A customer can view the list of products saved in the wishlist.
-The wishlist list is paginated so customers can browse saved products in manageable groups.
-When viewing the wishlist, the system shows saved products rather than product variants.
-The wishlist view supports the customer's later purchase consideration by helping them revisit products they previously saved.
-If a customer has no saved products, the wishlist view shows an empty list.
-Only registered customers can access the wishlist view.
-
-```mermaid
-flowchart LR
-    A["Customer opens wishlist"] --> B["System shows saved products"]
-    B --> C["System applies pagination"]
-    C --> D["Customer browses saved products"]
-```
-
-### Automatic Removal of Deleted Products from Wishlists
-
-If a seller deletes a product, the system automatically removes that product from every customer's wishlist.
-This automatic removal keeps customers from holding saved links to products that no longer exist.
-The removal happens without requiring a customer to take any action.
-After automatic removal, the deleted product no longer appears in any wishlist view.
-The wishlist remains a list of active products that customers may consider for later purchase.
-
-```mermaid
-flowchart LR
-    A["Seller deletes product"] --> B["System removes product from wishlists"]
-    B --> C["Product no longer appears in wishlist view"]
-```
-
-## Cart Operations
-
-Customers can keep a shopping cart that contains selected product variants and quantities. A cart is built from specific variants, not from products alone, because checkout requires a concrete purchase choice. When the same variant is added again, the quantity is combined into the existing cart entry instead of creating a duplicate line. Customers can view the cart, adjust item quantities, and remove items before checkout. The cart shows the total price of all items so customers can review cost before proceeding. If a variant has less stock than the cart quantity, a warning is shown, and if a variant becomes deleted or out of stock it is marked unavailable. Unavailable items cannot be checked out, which keeps the purchase flow aligned with current product availability. Cart operations are therefore about collecting purchasable variant selections and keeping them accurate until order placement.
-
-### Variant-Based Cart Selection
-
-Customers use the cart to collect specific product variants rather than products alone. Each cart item represents one selected variant and its quantity, so the cart reflects an exact purchasable choice.
-
-When a customer adds a variant that is already in the cart, the system combines the quantities into the existing cart item instead of creating a duplicate cart line.
-
-The cart keeps the selected variant identity visible to the customer so they can confirm which version of a product they intend to buy. If a product has multiple variants, the cart entry remains tied to the chosen variant and does not change into a product-level entry.
-
-Mermaid diagram:
-```mermaid
-flowchart LR
-    A["Customer selects variant"] --> B["Cart item created"]
-    B --> C["Same variant added again"]
-    C --> D["Quantities combined"]
-    D --> E["Cart item remains one line"]
-```
-
-### View and Update Cart Contents
-
-Customers can view the contents of their cart at any time. The cart shows each item with the product name, the selected variant details, the item quantity, and the item subtotal.
-
-Customers can edit the quantity of any cart item before checkout. When a quantity is changed, the cart updates the item subtotal and the cart total price accordingly.
-
-Customers can remove a cart item from the cart. After removal, the item no longer appears in the cart summary.
-
-The cart total price is the combined total of all cart item subtotals, and it is shown so customers can review the full cost before proceeding to checkout.
-
-Mermaid diagram:
 ```mermaid
 sequenceDiagram
     participant C as Customer
     participant S as System
-    C->>S: View cart
-    S-->>C: Show cart items and total price
-    C->>S: Change item quantity
-    S-->>C: Update subtotal and total price
-    C->>S: Remove cart item
-    S-->>C: Remove item from cart
+    C->>S: Browse category list
+    S->>S: Show categories and any subcategories
+    C->>S: Open a category
+    S->>S: Show products within the category
 ```
 
-### Cart Availability Warnings and Checkout Readiness
+### Category Deletion and Product Reassignment
 
-If the available stock for a cart item is lower than the quantity in the cart, the system shows a stock warning for that item so the customer can review the mismatch before buying.
+When a category is deleted, products assigned to that category become uncategorized rather than disappearing from the platform.
 
-If a variant becomes deleted or out of stock, the system marks the cart item as unavailable. An unavailable cart item remains visible in the cart so the customer can see what needs attention.
+Customers can still browse the category list after a category deletion.
 
-Unavailable cart items cannot be checked out. The cart is considered ready for checkout only when the items included for checkout are available and the customer can proceed without unavailable items blocking the purchase.
+Subcategories are also removed from customer browsing when their category structure is deleted.
 
-Mermaid diagram:
+Products that become uncategorized remain available for other platform browsing and discovery flows that do not depend on a category assignment.
+
+## Product Operations
+
+Sellers can create products with a required name, description, category, and base price. A product belongs to the seller who created it, and only that seller can edit or delete it unless an administrator intervenes. Customers can browse products through search results, category pages, and product detail pages. Product edits must create snapshots so earlier versions remain available for dispute resolution. A product can be deleted only when there are no pending order items for any variant and no pending cancellation or refund requests. When a product is deleted, all of its variants and inventory records are removed from active use, and the product no longer appears in search or category listings. Deleted products must still have preserved snapshots for authorized viewing by the seller or administrator. If a product has no variants, it remains visible in search but is shown as unavailable. Product operations must support both active selling and historical record keeping.
+
+### Product Creation and Ownership
+
+Sellers can create products for sale.
+
+A product must include a name, a description, a category, and a base price.
+
+The selected category may be a subcategory.
+
+Each product is owned by the seller who created it.
+
+Only the owning seller can edit or delete the product, unless an administrator intervenes under administrator oversight rules defined elsewhere.
+
+### Product Editing and Snapshot Creation
+
+Sellers can edit their own products.
+
+When a product is edited, the system creates a snapshot of the previous state.
+
+The snapshot preserves the product’s state for later dispute resolution and historical reference.
+
+If a product edit is not successfully saved, no snapshot is created.
+
+### Product Deletion Rules
+
+A seller can delete a product only when there are no pending order items for any of its variants.
+
+A seller can delete a product only when there are no pending cancellation requests or refund requests for any of its variants.
+
+When a product is deleted, all of its variants are deleted from active use.
+
+When a product is deleted, all inventory records for its variants are removed from active use.
+
+When a product is deleted, it no longer appears in search results or category listings.
+
+Deleted products remain preserved in snapshot history for authorized viewing by the seller or an administrator.
+
+### Product Availability Without Variants
+
+A product must have at least one variant to be purchasable.
+
+If a product has no variants, it remains visible in search results.
+
+If a product has no variants, it is shown as unavailable.
+
+### Snapshot Preservation After Deletion
+
+Snapshots for a product are preserved after the product is deleted.
+
+The preserved snapshots support later review by the seller who owns the product and by administrators.
+
+Product snapshots must continue to represent the product’s prior state even after the active product has been removed.
+
+## ProductImage Operations
+
+Sellers can upload multiple images for each product to present the product clearly to customers. The images can be reordered, and the first image becomes the main thumbnail shown in listings. Sellers can also delete images they no longer want attached to the product. Image changes must be included in the product snapshot so the platform preserves the visual state of the product at the time of any edit. Customers view these images on the product detail page, so the image order directly affects the browsing experience. Product image management belongs to the seller who owns the product and should not be available to other sellers. If a product is deleted, its image history remains part of the preserved product snapshots. Image operations should support both merchandising and historical accuracy.
+
+### Product Image Management
+
+Sellers can add multiple images to a product to present it clearly to customers.
+
+Sellers can upload images for products they own, and each uploaded image becomes part of that product’s image set.
+
+Sellers can reorder a product’s images, and the first image in the order becomes the main thumbnail image used for product listings.
+
+Sellers can remove an image from a product when they no longer want it attached to that product.
+
+Customers view the product’s images on the product detail page, so the current image order directly affects how the product is presented during browsing.
+
+Image management belongs to the seller who owns the product and is not available to other sellers.
+
+When a product is deleted, its images are no longer managed as active product content, but the visual history remains preserved through the product snapshots.
+
+### Image Snapshots and Preserved Visual History
+
+Image changes are included in product snapshots so the platform preserves the visual state of a product whenever its images are changed.
+
+A snapshot records the change time, what changed, and the values before and after the change.
+
+The preserved visual history allows owners and administrators to review earlier image states for dispute resolution.
+
+If a product image is reordered, added, or deleted, the previous image state is preserved in the product snapshot.
+
+Product snapshots include the product’s image state at the time of the change, so the visual history remains available even after later edits or product deletion.
+
+Only the seller who owns the product can manage its images, and image history remains tied to that seller-owned product record for historical review.
+
+## ProductVariant Operations
+
+A product can have multiple variants, and each variant represents a specific combination of option values such as color and size. Sellers can add variants to their own products and edit the SKU code, option values, and price later if needed. Each variant must have a unique SKU code, and stock quantity starts at zero. A product must have at least one variant to be purchasable, which means variants are essential for checkout. If a product has no variants, it can still be seen in search but is marked unavailable. Sellers can delete variants only when there are no pending order items and no pending cancellation or refund requests for that variant. Variant edits must create snapshots so earlier variant states can be reviewed. Customers do not manage variants directly, but they choose from available variants on the product detail page and in the cart. Variant operations must preserve both purchase readiness and historical versioning.
+
+### Product Variant Combinations
+
+A product variant represents one specific combination of option values for a product, such as a color and size combination.
+Each variant is tied to one product and describes a purchasable combination of that product’s options.
+Sellers can create multiple variants for the same product so customers can choose among the available combinations.
+A variant’s combination must be distinct from the other variants of the same product so that each combination can be identified separately.
+
 ```mermaid
 flowchart LR
-    A["Cart item in stock"] --> B["Stock falls below cart quantity"]
-    B --> C["Show stock warning"]
-    A --> D["Variant deleted or out of stock"]
-    D --> E["Mark item unavailable"]
-    E --> F["Block checkout for that item"]
-    C --> G["Customer reviews cart"]
-    F --> G
-    G --> H["Checkout ready only with available items"]
+    A["Product"] -->|"contains"| B["Variant 1: Red / Large"]
+    A -->|"contains"| C["Variant 2: Blue / Small"]
+    A -->|"contains"| D["Variant 3: Black / Medium"]
+```
+
+### SKU Code Management
+
+Each product variant has an SKU code that identifies that variant.
+The SKU code is required when a seller creates a variant.
+The seller can edit the SKU code later as part of variant editing.
+The system must treat the SKU code as the variant’s business identifier within the platform.
+If a seller enters an SKU code that is already in use by another variant, the change is rejected.
+
+```mermaid
+flowchart LR
+    A["Create or edit variant"] --> B["Enter SKU code"] --> C["Save variant"]
+    C -->|"If SKU code is already used"| D["Reject change"]
+```
+
+### Option Values Management
+
+Each variant stores the option values that define its combination, such as color, size, or other product-specific choices.
+Sellers can create variants by selecting the option values that belong to that product.
+Sellers can later edit a variant’s option values.
+Option values are part of the variant snapshot history, so earlier combinations can be reviewed after changes.
+The option values for a variant must continue to represent a valid product combination after editing.
+
+```mermaid
+flowchart LR
+    A["Variant"] --> B["Option values"]
+    B --> C["Snapshot preserves previous option values"]
+```
+
+### Variant Pricing
+
+Each variant has its own price.
+A variant may use a price that differs from the product’s base price.
+When a variant has its own price, that price is the one shown and used for that variant.
+Sellers can edit a variant’s price later.
+Every price change is captured in a snapshot so the previous price can be reviewed.
+
+```mermaid
+flowchart LR
+    A["Product base price"] --> B["Variant price"]
+    B -->|"May override"| C["Price shown for the variant"]
+    C --> D["Snapshot records change"]
+```
+
+### Variant Stock Starts at Zero
+
+When a seller creates a new variant, its stock quantity starts at zero.
+The variant is not considered stocked until inventory records add quantity to it.
+This starting state applies before any restocking or order activity occurs.
+A zero-stock variant is still a valid variant record, but it is not available as stock until inventory is added.
+
+```mermaid
+flowchart LR
+    A["New variant"] --> B["Stock quantity = 0"] --> C["Inventory added later"]
+```
+
+### Add Variant to Product
+
+Sellers can add one or more variants to a product they own.
+A product may contain multiple variants so that customers can choose among different combinations and prices.
+When a seller adds a variant, the variant becomes part of that product’s purchasable options once it has stock and is otherwise available.
+Adding a variant is a product-level operation performed by the seller of that product.
+
+```mermaid
+sequenceDiagram
+    participant S as Seller
+    participant P as Product
+    S->>P: Add variant
+    P-->>S: Variant becomes part of product
+```
+
+### Edit Variant Snapshot
+
+When a seller edits a variant, the system creates a snapshot of the previous state.
+The snapshot preserves the changed fields, the values before the change, the values after the change, and when the change was made.
+Variant snapshots are immutable and remain available for later review.
+This preserves the history of SKU code changes, option value changes, and price changes.
+
+```mermaid
+flowchart LR
+    A["Variant edit"] --> B["Snapshot created"] --> C["Previous state preserved"]
+```
+
+### Delete Variant Restrictions
+
+Sellers can delete a variant only when no pending order items exist for that variant.
+Sellers can delete a variant only when there are no pending cancellation requests for that variant.
+Sellers can delete a variant only when there are no pending refund requests for that variant.
+When a variant is deleted, it no longer remains available for future purchase selection.
+Deletion is blocked whenever the variant is still needed for active order processing or dispute handling.
+
+```mermaid
+flowchart LR
+    A["Delete variant request"] --> B{ "Pending order items?" }
+    B -->|"Yes"| E["Reject deletion"]
+    B -->|"No"| C{ "Pending cancellation or refund requests?" }
+    C -->|"Yes"| E
+    C -->|"No"| D["Delete variant"]
+```
+
+### Purchasable Only With at Least One Variant
+
+A product must have at least one variant to be purchasable.
+If a product has no variants, customers cannot buy it.
+The product may still exist in the catalog, but it is not ready for purchase until at least one variant is present.
+This rule ensures that every purchasable product has at least one selectable variant.
+
+```mermaid
+flowchart LR
+    A["Product"] --> B{"Has at least one variant?"}
+    B -->|"Yes"| C["Purchasable"]
+    B -->|"No"| D["Not purchasable"]
+```
+
+### Unavailable Product With No Variants
+
+When a product has no variants, customers can still see it in search results.
+A product with no variants is shown as unavailable.
+An unavailable product cannot be treated as ready for purchase until variants are added.
+This visibility rule lets customers see the product while making its current purchase state clear.
+
+```mermaid
+flowchart LR
+    A["Product with no variants"] --> B["Visible in search"] --> C["Shown as unavailable"]
+```
+
+### Customer Selection of Variant Options
+
+Customers choose a specific variant from the product detail page before buying.
+Customers do not add only the product itself to the cart; they select a variant that matches the options they want.
+The selected variant determines the item that can be added to the cart and later purchased.
+If a product has no variants, customers cannot complete this selection because there is no purchasable variant to choose.
+
+```mermaid
+sequenceDiagram
+    participant C as Customer
+    participant S as System
+    C->>S: View product
+    S-->>C: Show available variants
+    C->>S: Select one variant
+    S-->>C: Use selected variant for cart and purchase
+```
+
+## InventoryRecord Operations
+
+Inventory records track how the stock quantity of each product variant changes over time. Sellers can add inventory for restocking or subtract inventory for adjustments and loss, and each record must include the reason and timestamp for the change. Order placement automatically creates a negative inventory record, while cancellation and refund events create positive inventory records when stock is restored. Current stock is calculated from the full record history rather than from a manually edited balance. Sellers can view the full inventory history for each variant to understand how stock moved over time. Inventory records are part of business audit history, so they should support dispute resolution and operational review. When stock reaches zero, the variant is shown as out of stock and cannot be added to the cart. Inventory operations must reflect actual stock movement rather than simple counter edits.
+
+### Stock Change History
+
+Inventory records provide the business history of how stock changes for each product variant over time. Each record captures a stock change event as part of the audit trail for that variant.
+
+The system records stock changes for restocking, inventory adjustments or loss, order placement, cancellation, and refund activity. This history is used to explain why stock increased or decreased instead of relying on a manually edited balance.
+
+```mermaid
+flowchart LR
+    A["Stock change event"] --> B["Inventory record"]
+    B --> C["Variant stock history"]
+    C --> D["Current stock"]
+```
+
+The inventory history for a variant must preserve the sequence of changes so that sellers can review how stock moved over time. This history is part of the business record for dispute resolution and operational review.
+
+### Restocking Records
+
+When a seller adds inventory to a product variant, the system records that increase as a restocking record. The record reflects that stock was added back into availability for that specific variant.
+
+Restocking records are visible as part of the full inventory history for the variant. They contribute to the current stock total and are not treated differently from other stock change records once recorded, except for the fact that they represent a positive stock change initiated by the seller.
+
+A restocking record must remain part of the immutable inventory history after it is created.
+
+### Inventory Adjustments or Loss
+
+When a seller needs to correct stock for damage, loss, shrinkage, or another inventory adjustment, the system records that change as an inventory adjustment record. This record reflects a stock decrease caused by a business adjustment rather than a customer order.
+
+Inventory adjustment records are included in the variant’s full inventory history and affect the current stock total. They allow sellers to explain why stock was reduced outside of normal order processing.
+
+The inventory history must show these adjustments clearly so that sellers can distinguish them from restocking and order-driven stock changes.
+
+### Reason and Timestamp
+
+Every inventory record must include the reason for the change and the time it was recorded. The reason explains why the stock changed, and the timestamp identifies when the change was made.
+
+These details are part of the business history of the variant and support later review of stock movement. A record without a reason or timestamp is not a valid inventory history entry.
+
+The recorded reason and timestamp must remain associated with the inventory record for the life of the history entry.
+
+### Order-Driven Negative Inventory Records
+
+When an order is placed successfully, the system creates a negative inventory record for each purchased variant. This record shows that stock decreased because the item was sold.
+
+The negative inventory record is part of the same inventory history as seller-initiated stock changes. It contributes to the current stock calculation for the variant and helps explain why the available quantity changed after checkout.
+
+```mermaid
+flowchart LR
+    A["Order placed"] --> B["Negative inventory record"]
+    B --> C["Variant history updated"]
+    C --> D["Current stock decreases"]
+```
+
+If the order is not successfully placed, no order-driven negative inventory record is created.
+
+### Cancellation and Refund Positive Inventory Records
+
+When an order item is cancelled or refunded and stock is restored, the system creates a positive inventory record for the affected variant. This record shows that stock increased because the item returned to inventory.
+
+Positive inventory records created from cancellations and refunds are included in the variant’s inventory history. They are used to explain stock restoration after post-purchase business actions.
+
+```mermaid
+flowchart LR
+    A["Cancellation or refund"] --> B["Positive inventory record"]
+    B --> C["Variant history updated"]
+    C --> D["Current stock increases"]
+```
+
+The restoration record must remain visible in the inventory history even after the related order item changes status.
+
+### Current Stock From History
+
+Current stock is calculated by summing all inventory records for the variant. The system does not rely on a manually edited stock balance as the source of truth.
+
+This calculation includes positive records from restocking, cancellations, and refunds, as well as negative records from orders and inventory adjustments or loss. The result determines the stock quantity currently available for that variant.
+
+Because stock is derived from history, the full record set for the variant must remain available for accurate stock review.
+
+### Variant Inventory History
+
+Sellers can view the full inventory history for each product variant. The history shows every inventory record associated with that variant in the order the changes were made.
+
+The history is used to understand stock movement over time and to support dispute resolution. It includes all recorded increases and decreases, along with their reasons and timestamps.
+
+The inventory history belongs to the variant and represents the complete business record of its stock movement.
+
+### Out of Stock Display and Cart Restriction
+
+When the current stock for a variant reaches zero, the system shows that variant as out of stock.
+
+A variant shown as out of stock cannot be added to the cart. This rule applies even if the variant still exists in the product listing or inventory history.
+
+```mermaid
+flowchart LR
+    A["Current stock is zero"] --> B["Show: out of stock"]
+    B --> C["Cannot add to cart"]
+```
+
+The out of stock display must reflect the stock status derived from inventory history, not a separate manual flag.
+
+## ShoppingCart Operations
+
+Customers use the shopping cart to prepare selected product variants for purchase. A customer can add a specific variant with a chosen quantity, and the system combines quantities if the same variant is added more than once. Customers can view the cart, change item quantities, and remove items before checkout. The cart must show item details, including product name, variant options, price, quantity, subtotal, and the total price of the cart. If a variant has less stock than the requested cart quantity, the cart should show a warning so the customer can adjust the order. If a variant is deleted or out of stock, it must be marked unavailable in the cart. Unavailable items cannot continue to checkout. Cart behavior should support careful purchase review before payment is confirmed.
+
+### Add Variant to Cart
+
+Customers can add a specific product variant to their shopping cart by choosing a quantity.
+Adding to cart always targets one variant, not a product by itself.
+If the customer adds a variant that is already present in the cart, the system combines the quantities into one cart item instead of creating a separate entry.
+If the customer adds a variant that is no longer available, the system marks that cart item as unavailable.
+If the customer adds a variant whose stock is lower than the requested quantity, the cart reflects that the quantity exceeds current stock and shows a warning to the customer.
+If the requested quantity is valid and the variant is available, the item is added to the cart for later checkout.
+
+```mermaid
+flowchart LR
+    A["Choose variant"] --> B["Choose quantity"]
+    B --> C["Add to cart"]
+    C --> D["Existing cart item?\"]
+    D -->|"Yes"| E["Combine quantities"]
+    D -->|"No"| F["Create cart item"]
+    E --> G["Cart updated"]
+    F --> G["Cart updated"]
+```
+
+### View Shopping Cart
+
+Customers can view the contents of their shopping cart at any time before checkout.
+The cart displays each item with the product name, variant options, price, quantity, and subtotal.
+The cart also displays the total price of all items in the cart.
+Items that are unavailable remain visible in the cart so the customer can see what must be resolved before checkout.
+The cart view supports purchase review before the order is placed.
+
+```mermaid
+flowchart LR
+    A["Open cart"] --> B["Show cart items"]
+    B --> C["Show item details"]
+    B --> D["Show totals"]
+    B --> E["Show availability state"]
+```
+
+### Change Cart Quantity
+
+Customers can change the quantity of an item already in their cart.
+When the quantity is changed, the cart item stays linked to the same selected variant.
+If the customer changes the quantity for the same variant, the cart updates the existing cart item rather than creating another line.
+The cart recalculates the item's subtotal and the cart total after the quantity change.
+If the new quantity is higher than the current stock, the cart shows a warning.
+If the quantity is changed to a valid amount, the cart reflects the updated purchase intent.
+
+```mermaid
+flowchart LR
+    A["Select cart item"] --> B["Change quantity"]
+    B --> C["Update same cart line"]
+    C --> D["Recalculate subtotal"]
+    D --> E["Recalculate cart total"]
+    B --> F["Check stock"]
+    F -->|"Insufficient"| G["Show warning"]
+```
+
+### Remove Cart Item
+
+Customers can remove an item from their shopping cart.
+Removing an item deletes that selected variant from the cart view.
+If the customer removes the last quantity for a variant, the cart no longer shows that variant as a cart item.
+Removing a cart item updates the cart total accordingly.
+If a customer attempts to remove an item that is not present, the cart remains unchanged.
+
+```mermaid
+flowchart LR
+    A["Select cart item"] --> B["Remove item"]
+    B --> C["Delete cart line"]
+    C --> D["Update cart total"]
+```
+
+### Cart Subtotal and Total Price
+
+Each cart item shows a subtotal based on that item's quantity and price.
+The cart total is the sum of all item subtotals.
+When a cart item quantity changes, the subtotal and total price are recalculated.
+When an item is removed, the cart total is recalculated.
+The cart must present pricing information clearly enough for the customer to review the purchase before checkout.
+
+```mermaid
+flowchart LR
+    A["Item price"] --> B["Quantity"]
+    B --> C["Item subtotal"]
+    C --> D["Cart total"]
+    E["Remove or change item"] --> D
+```
+
+### Low Stock Warning
+
+If a variant has less stock than the quantity in the cart, the cart shows a warning.
+The warning helps the customer notice that the requested quantity is higher than the current stock level.
+The warning remains associated with the cart item until the quantity is adjusted or the stock situation changes.
+The warning does not remove the item from the cart by itself.
+
+```mermaid
+flowchart LR
+    A["Cart quantity"] --> B["Compare with stock"]
+    B -->|"Stock is lower"| C["Show warning"]
+    B -->|"Stock is enough"| D["No warning"]
+```
+
+### Unavailable Cart Item
+
+If a variant is deleted, the corresponding cart item is marked as unavailable.
+If a variant is out of stock, the corresponding cart item is marked as unavailable.
+Unavailable cart items remain visible so the customer can identify what must be resolved before checkout.
+An unavailable cart item cannot continue to checkout until it becomes available again.
+
+```mermaid
+flowchart LR
+    A["Variant deleted or out of stock"] --> B["Mark cart item unavailable"]
+    B --> C["Keep item visible"]
+    C --> D["Block checkout for that item"]
+```
+
+### Out of Stock Cart Behavior
+
+When a variant reaches zero stock, the cart marks that variant as out of stock.
+An out-of-stock variant cannot be added to the cart.
+If an item already exists in the cart and later becomes out of stock, the item is marked as unavailable.
+The cart keeps the item visible so the customer can see why it cannot be checked out.
+Out-of-stock behavior supports safe purchase preparation before payment.
+
+```mermaid
+flowchart LR
+    A["Stock reaches zero"] --> B["Mark variant out of stock"]
+    B --> C["Prevent new add to cart"]
+    B --> D["Mark existing cart item unavailable"]
+```
+
+### Checkout Readiness
+
+The cart is ready for checkout only when all items in the cart are available.
+Unavailable cart items prevent checkout from continuing.
+The customer must resolve unavailable items or adjust quantities before proceeding.
+The cart must support a final review step before the order is placed.
+Checkout readiness depends on the cart containing selectable items that can be purchased as part of the order process.
+
+```mermaid
+flowchart LR
+    A["Cart contents"] --> B["Check availability"]
+    B -->|"All available"| C["Ready for checkout"]
+    B -->|"Any unavailable"| D["Checkout blocked"]
 ```
 
 ## CartItem Operations
 
-Each cart item represents one selected variant and its quantity within the customer's cart. Customers add a cart item by choosing a specific variant and specifying how many units they want. If the same variant is added again, the existing cart item quantity increases rather than creating a second cart item. Customers can update the quantity of a cart item or remove it entirely from the cart. Cart item display includes the product name, variant options, price, quantity, and subtotal so customers can verify the purchase details. When a variant changes to unavailable, the cart item remains visible but cannot be used for checkout until the issue is resolved. Cart item operations support precise purchase selection and quantity control. These operations are the line-level building blocks of the full cart experience.
+Each cart item represents one selected product variant inside the shopping cart. The cart item stores the chosen quantity and contributes to the subtotal shown to the customer. When the same variant is added again, the quantities should combine into the existing cart item rather than creating a second line. Customers can update the quantity of a cart item or remove it entirely from the cart. The cart item must remain tied to a specific variant, because purchase preparation requires variant-level selection rather than product-level selection. If the linked variant becomes deleted or unavailable, the cart item must be marked unavailable. Cart items also support warning behavior when stock is lower than the selected quantity. These behaviors help customers confirm exactly what they are about to buy.
 
-### Variant-Based Purchase Line
+### Cart Item Quantity
 
-A cart item represents one variant-based purchase line within a customer's cart.
-A cart item is created only when the customer selects a specific product variant, not just a product.
-A cart item stores the chosen variant and the quantity the customer wants to buy.
-A cart item is treated as the line-level unit of cart control for changing or removing a selected purchase.
+Each cart item stores the quantity selected for one specific product variant. The quantity shown in the cart reflects the customer’s chosen amount for that variant and is used to calculate the cart item subtotal. Customers can change this quantity while reviewing their cart. If the quantity is changed, the cart item remains tied to the same variant and only the amount changes.
 
-```mermaid
-flowchart LR
-    A["Customer selects a specific variant"] --> B["Cart item is created"]
-    B --> C["Cart item represents one purchase line"]
-    C --> D["Customer updates quantity or removes the line"]
-```
+### Combined Cart Line Behavior
 
-### Cart Item Quantity and Merging
+When a customer adds the same product variant to the cart more than once, the system combines the quantities into one cart item instead of creating a separate line. This combined behavior keeps the cart organized around one line per variant. The resulting cart item continues to represent the full quantity selected for that variant.
 
-When a customer adds the same variant again, the system combines the quantities into the existing cart item.
-The system does not create a second cart item for the same variant.
-The cart item quantity always reflects the combined quantity for that selected variant.
-When the customer updates the quantity of a cart item, the system changes the quantity for that existing line item.
+### Variant-Specific Cart Item
 
-```mermaid
-sequenceDiagram
-    participant C as Customer
-    participant S as System
-    C->>S: Add the same variant again
-    S->>S: Combine quantities into the existing cart item
-    C->>S: Update the cart item quantity
-    S->>S: Change the quantity on that line item
-```
+A cart item always represents a specific product variant, not a product in general. Customers must select a variant before an item can be added to the cart. This supports purchase preparation at variant level, because price, stock, and availability are determined by the chosen variant.
 
-### Cart Item Subtotal and Display
+### Cart Item Subtotal
 
-Each cart item shows the product name and the selected variant options so the customer can verify exactly what is being purchased.
-Each cart item shows its subtotal based on the selected variant price and the cart item quantity.
-The cart continues to show the cart item even when the selected variant becomes unavailable.
-When a cart item is unavailable, it remains visible in the cart but cannot be used for checkout until it becomes available again.
-If the selected variant is deleted or out of stock, the cart item is marked as unavailable in the cart.
+Each cart item shows a subtotal based on the selected quantity and the variant’s price. If the variant has an override price, that price is used for the cart item subtotal. The subtotal updates when the quantity changes or when the selected variant changes through cart replacement behavior elsewhere in the cart workflow.
 
-```mermaid
-flowchart LR
-    A["Cart item is visible"] --> B["Product name and variant options are shown"]
-    B --> C["Subtotal is shown for the line item"]
-    C --> D["If variant is unavailable, checkout is blocked for that line"]
-```
+### Update Item Quantity
 
-### Cart Item Removal
+Customers can update the quantity of a cart item. The cart item remains associated with the same variant after the update. If the updated quantity is accepted, the cart reflects the new amount and recalculates the cart item subtotal and the cart total accordingly.
 
-A customer can remove a cart item from the cart at any time.
-Removing a cart item deletes that selected variant line from the cart.
-Removal applies to the specific cart item only and does not affect other cart items in the cart.
-If the customer adds the same variant later, the system creates or restores the cart item again through the normal add-to-cart behavior.
+### Remove Cart Item
 
-```mermaid
-flowchart LR
-    A["Customer removes cart item"] --> B["Selected variant line is deleted from cart"]
-    B --> C["Other cart items remain unchanged"]
-```
+Customers can remove a cart item from the cart. Removing the item deletes that selected variant line from the cart view and removes its subtotal contribution from the cart total. If the customer adds the same variant again later, it is treated as a new cart entry, subject to combined cart line behavior.
+
+### Unavailable Cart Item After Variant Deletion
+
+If the linked product variant is deleted, the cart item is marked as unavailable. An unavailable cart item remains visible in the cart so the customer can see that the selected item can no longer be purchased as originally selected. Unavailable cart items cannot be used for checkout.
+
+### Low Stock Warning on Cart Item
+
+If the variant’s stock is lower than the cart item quantity, the cart item shows a low stock warning. The warning informs the customer that the selected quantity exceeds the currently available stock for that variant. The warning does not change the selected quantity by itself.
+
+### Variant-Level Purchase Selection
+
+The cart supports purchase preparation only when the customer has selected specific variants. The customer cannot prepare a cart item for checkout using product-level selection alone. This ensures that the intended variant, quantity, and price are clear before checkout begins.
+
+## Wishlist Operations
+
+Customers can save products to a wishlist for later consideration. The wishlist contains products rather than specific variants, which makes it useful for product discovery and return visits. Customers can view the wishlist in a paginated list and remove products they no longer want to keep. If a seller deletes a product, the system must automatically remove that product from all wishlists so customers do not keep broken references. Wishlist items are separate from cart items because they are not intended for immediate checkout. Customers must be signed in to maintain a wishlist, since guest browsing is not allowed. The wishlist helps customers track products they may want to compare or purchase later. Wishlist operations should stay simple and focused on saved product interest.
+
+### Save Product for Later
+
+Customers can save products to their wishlist for later consideration.
+Saving a product is a business action for expressing interest in a product without moving it into the shopping cart.
+The system shall keep wishlist entries at the product level so customers can revisit products they may want to buy later.
+Saved products are treated as part of the customer's product discovery list and support return visits to items of interest.
+
+### Wishlist Contains Products, Not Variants
+
+The wishlist contains products only and does not store specific variants.
+A customer saves a product as a single wishlist item even when that product has multiple variants.
+This keeps the wishlist focused on saved product interest rather than variant-level selection.
+When a customer reviews the wishlist, each entry represents a product, not an option combination.
+
+### View Paginated Wishlist
+
+Customers can view their wishlist in a paginated list.
+The wishlist view shows the products the customer has saved for later.
+Pagination applies to wishlist browsing so customers can move through saved products in manageable groups.
+The system shall preserve the customer's saved product list across visits to support repeat browsing.
+
+### Remove Product from Wishlist
+
+Customers can remove products from their wishlist.
+Removing a product deletes that product from the customer's saved product list while leaving the product itself unchanged.
+This allows customers to keep their wishlist focused on current product interest.
+If a customer removes a product that is no longer present in the wishlist, the operation has no effect on the saved list.
+
+### Automatic Removal When Product Deleted
+
+If a seller deletes a product, the system automatically removes that product from all wishlists.
+This prevents customers from keeping saved references to products that no longer exist.
+Automatic removal applies to every customer's wishlist that contains the deleted product.
+The deleted product no longer appears as a saved item in wishlist browsing after removal.
+
+### Signed-In Wishlist Access
+
+Customers must be signed in to use wishlist features.
+Wishlist functionality is not available to unauthenticated visitors because guest browsing is not allowed on the platform.
+Only a customer account can maintain saved products in a wishlist.
+If a customer is not signed in, the system does not allow wishlist operations.
+
+### Saved Product Interest and Wishlist Browsing
+
+The wishlist is a customer-facing place for saved product interest.
+Customers use it to browse products they have marked for later rather than items ready for immediate purchase.
+The wishlist supports product discovery by helping customers return to products they have already considered.
+Wishlist browsing is limited to the customer's own saved products and is intended to complement other product browsing activities.
 
 ## Order Operations
 
-An order is created only after checkout is completed and payment succeeds. Orders contain one or more order items, may include items from different sellers, and are shown to customers in a paginated history sorted by newest first. Customers can view order summaries and full order details, including the shipping address, line items, and shipment tracking information. Each order has an overall status derived from the statuses of its items, so the order reflects the state of the full purchase rather than a single line. After an order is placed, the shipping address cannot be changed. Order records must preserve the purchasing context for legal and seller-record purposes, even when a customer later deletes an account. Orders also support the lifecycle of cancellation, refund, shipping, and delivery across their items. The order operation set is primarily about recording and presenting completed purchases.
+An order is created when payment succeeds after checkout review and confirmation. The order contains one or more order items, and the items can come from different sellers. Customers can view an order history list that is sorted by newest first and shows the order number, date, total price, and overall order status. Customers can also open a full order detail view that shows item details, shipping address, and shipments with tracking information. The overall order status is derived from the statuses of its items, so the order reflects the state of all purchased items together. Order placement must remove purchased items from the cart and decrease stock for each purchased variant. If payment fails, the order is not created and the customer can try again. Order operations preserve the commercial history of a transaction even when individual items later change state through cancellation or refund.
 
-### Order Placement and Record Creation
+### Order Creation After Successful Payment
 
-An order is created only after checkout is completed and payment succeeds.
-An order is not created when payment fails, and the customer may try again.
-An order may contain items from different sellers.
-Each purchased variant becomes an order item, and identical quantities for the same variant are combined into a single order item.
-Once an order is placed, the shipping address for that order is locked and cannot be changed.
-The order record preserves the purchase context needed for legal purposes and seller records, even if the customer later deletes the account.
-A placed order must remain available for the customer to review in order history.
+When a customer confirms checkout and payment succeeds, the system creates an order for the purchased items.
 
-Mermaid flow:
-```mermaid
-flowchart LR
-    A["Checkout complete"] --> B["Payment succeeds"]
-    B --> C["Create order record"]
-    C --> D["Create order items"]
-    C --> E["Lock shipping address"]
-    B --> F["Order not created when payment fails"]
-```
+The order contains one or more order items, and those items may belong to different sellers.
 
+When the order is created, the system decreases stock for each purchased variant and removes the purchased items from the customer’s cart.
 
-### Order History List
+Each purchased variant becomes an order item with its own status.
 
-Customers can view a list of their orders.
-The order history is paginated.
-The order history is sorted with the newest orders first.
-Each order entry in the list shows the order number, order date, total price, and overall order status.
-The order history continues to show preserved orders even after the customer deletes the account, because order records are retained for legal and seller-record purposes.
-
-Mermaid flow:
-```mermaid
-flowchart LR
-    A["Customer opens order history"] --> B["System retrieves preserved orders"]
-    B --> C["Paginate results"]
-    C --> D["Sort newest first"]
-    D --> E["Display order list"]
-```
-
-
-### Order Summary and Full Details
-
-Customers can review an order summary before placing the order.
-The order summary shows the items being purchased, the shipping address, and the total price.
-Customers can view the full details of a placed order.
-The full order details show each item with product name, variant, quantity, price, and item status.
-The full order details also show the shipping address and the shipments associated with the order.
-The order detail view includes tracking information for each shipment and shows which items are included in each shipment.
-Because orders may include items from different sellers, the order details must present the purchased items in a way that keeps each seller's shipped items grouped within their own shipment context.
-
-Mermaid flow:
-```mermaid
-flowchart LR
-    A["Order summary"] --> B["Items"]
-    A --> C["Shipping address"]
-    A --> D["Total price"]
-    E["Full order details"] --> F["Item list"]
-    E --> G["Shipping address"]
-    E --> H["Shipments"]
-    H --> I["Tracking information"]
-```
-
-
-### Order Status and Shipment Tracking in the Purchase Record
-
-The overall order status is derived from the statuses of the order items.
-If all order items are paid, the order status is paid.
-If any order item is shipped and none are delivered yet, the order status is shipped.
-If all order items are delivered, the order status is delivered.
-If all order items are cancelled, the order status is cancelled.
-If all order items are refunded, the order status is refunded.
-If the order contains mixed item states, the order status is partially completed.
-Order details must present shipment tracking information so customers can follow the delivery progress of the items in the order.
-Shipment tracking information is part of the preserved order record so the purchase history remains complete after later account changes.
-
-Mermaid flow:
-```mermaid
-flowchart LR
-    A["Order items"] --> B["All paid"] --> C["Order paid"]
-    A --> D["Any shipped and none delivered"] --> E["Order shipped"]
-    A --> F["All delivered"] --> G["Order delivered"]
-    A --> H["All cancelled"] --> I["Order cancelled"]
-    A --> J["All refunded"] --> K["Order refunded"]
-    A --> L["Mixed states"] --> M["Order partially completed"]
-```
-
-
-## OrderItem Operations
-
-An order item represents a purchased product variant with a quantity, and it is the smallest unit for fulfillment and post-purchase actions. Each item keeps its own status, which can be paid, shipped, delivered, cancelled, or refunded. When an order is created, the purchased product and variant are captured as snapshots, along with the seller profile snapshot, so the order item preserves the state at the time of purchase. Customers can view item-level details inside an order, including product name, variant, quantity, price, and current item status. Sellers process shipping and respond to cancellation or refund requests at the item level, which allows different items in the same order to progress independently. Customers can request cancellation for paid items and refund for delivered items, subject to the business rules for each workflow. Order item operations are central to preserving transactional accuracy and making partial fulfillment possible. These records remain even when the related customer or seller account later changes or is deleted.
-
-### Purchased Product Variant Line
-
-Each order item shall represent one purchased product variant line within an order.
-Each order item shall be tied to a single product variant and a single seller at the time of purchase.
-If a customer purchases multiple units of the same variant in one order, the system shall keep them as one order item with a quantity greater than one.
-An order item shall preserve the purchased product variant line even if the related product or variant is later changed or deleted.
-
-### Quantity Per Order Item
-
-Each order item shall store the quantity purchased for that variant.
-The system shall treat the quantity as the number of units covered by that item’s status, shipping, cancellation, refund, and review history.
-If the same variant is purchased more than once in the same order, the system shall combine the purchase into a single order item and increase the quantity instead of creating separate order items.
-The quantity shown in order history shall match the quantity recorded for that order item at the time the order was placed.
-
-### Item-Level Status
-
-Each order item shall have its own status independent of other items in the same order.
-The system shall support the item statuses paid, shipped, delivered, cancelled, and refunded.
-A paid item shall indicate that payment has completed and the item is waiting for seller fulfillment.
-A shipped item shall indicate that the seller has shipped the item.
-A delivered item shall indicate that the item has been confirmed as received.
-A cancelled item shall indicate that the item was cancelled through the cancellation workflow.
-A refunded item shall indicate that the item was refunded through the refund workflow.
-The status of one order item shall not force every other item in the same order to move to the same status.
-
-### Product, Variant, and Seller Profile Snapshots in Order Items
-
-Each order item shall preserve a snapshot of the purchased product at the time of purchase.
-Each order item shall preserve a snapshot of the purchased variant at the time of purchase.
-Each order item shall preserve a snapshot of the seller profile at the time of purchase.
-The product snapshot stored with the order item shall preserve the product name, description, variant context, and price shown at purchase time.
-The variant snapshot stored with the order item shall preserve the variant option values and price used for that purchase.
-The seller profile snapshot stored with the order item shall preserve the shop name and logo shown at purchase time.
-These snapshots shall remain available with the order item even if the current product, variant, or seller profile later changes or is deleted.
-
-### Item-Level Cancellation and Refund
-
-Customers shall be able to request cancellation for an order item only while the item is paid.
-Customers shall be able to request a refund for an order item only while the item is delivered.
-The system shall keep cancellation and refund behavior at the item level rather than at the whole-order level.
-When a cancellation request is approved, only the requested order item shall become cancelled.
-When a refund request is approved, only the requested order item shall become refunded.
-The system shall allow other items in the same order to continue through their own fulfillment, cancellation, or refund process independently.
-
-### Item Details in Order History
-
-When customers view order history, the system shall show each order item’s purchased product name, variant information, quantity, price, and current item status.
-When customers view the full details of an order, the system shall show the order items as separate item-level records rather than only as a combined order total.
-The item details shown in order history shall reflect the preserved purchase snapshots for the product, variant, and seller profile.
-If an item has been cancelled or refunded, the item details shall still remain visible in the order record with its final status.
-
-### Partial Order Fulfillment
-
-The system shall allow items in the same order to move through different statuses independently.
-If some items in an order are shipped, delivered, cancelled, or refunded while others remain paid, the order shall remain partially completed.
-The system shall support partial fulfillment by allowing a single order to contain a mix of item-level outcomes.
-An order shall not be forced into a single final state until the statuses of all of its order items are considered together.
-This behavior shall allow one customer order to be fulfilled across multiple item-level outcomes without losing the individual history of any item.
-
-### Order Item State Progression
-
-The system shall keep the item-level state progression aligned with the supported statuses for order items.
-A paid order item may later become shipped, delivered, cancelled, or refunded according to the applicable business workflow.
-A shipped order item may later become delivered according to the delivery workflow.
-A cancelled order item shall remain cancelled.
-A refunded order item shall remain refunded.
-The system shall preserve the full item-level history needed to explain how the final status was reached.
-
-### Preservation After Account Changes
-
-An order item shall remain part of the customer’s order history even if the related customer account is later deleted.
-An order item shall remain part of seller records even if the related seller account is later deleted.
-The preserved product, variant, and seller profile snapshots shall allow the order item to remain understandable after related accounts or catalog data are no longer active.
-The system shall continue to show the item-level record as part of the order history for relevant business and legal recordkeeping purposes.
-
-## Shipment Operations
-
-A shipment represents one package sent by a seller and can include one or more order items from that same seller. Different sellers ship separately, so a shipment never mixes items from different sellers. Sellers create shipments when they are ready to send items and must provide tracking information such as carrier name and tracking number. When a shipment is created, all included items move to shipped status together. Customers can view shipment information and use it to follow the delivery process. Delivery confirmation works at the shipment level, so the customer confirms the package rather than each individual item. If the customer does not confirm delivery, the shipment still completes automatically after the waiting period defined in the requirements. Shipment operations support packaging, tracking, and delivery visibility across the order lifecycle.
-
-### Shipment Creation and Item Grouping
-
-A shipment is created by a seller for one order and represents one package sent by that seller.
-A shipment may include one or more order items, as long as all included items belong to the same seller.
-The system shall not allow a shipment to mix order items from different sellers.
-When a seller creates a shipment, the shipment shall be associated with the selected order items and the shipment details entered by the seller.
+If payment fails, the system does not create an order, and the customer can try again.
 
 ```mermaid
 sequenceDiagram
-    participant S as "Seller"
-    participant M as "System"
     participant C as "Customer"
-    S->>M: "Create shipment for selected order items"
-    M->>M: "Validate seller ownership and item grouping"
-    M->>M: "Create shipment"
-    M-->>C: "Shipment becomes visible in order details"
+    participant S as "System"
+    participant P as "Payment"
+    C->>S: "Confirm order"
+    S->>P: "Process payment"
+    P-->>S: "Payment succeeds"
+    S->>S: "Create order"
+    S->>S: "Decrease stock"
+    S->>S: "Remove purchased items from cart"
+    S-->>C: "Order created"
 ```
 
-### Shipment Tracking Information
+### Order History List
 
-Each shipment includes the carrier name and tracking number provided by the seller.
-The system shall store the carrier name and tracking number as the shipment's tracking information.
-Customers can view the tracking information for each shipment in their order details.
-Sellers can review the tracking information they entered for a shipment after it is created.
-If tracking information is not provided, the shipment cannot be completed as a shipping action.
+Customers can view a list of all their orders.
+
+The order history list is paginated.
+
+The order history list is sorted by newest first.
+
+Each entry in the order history list shows the order number, the date, the total price, and the overall order status.
+
+Customers can open an order from the list to view its full details.
+
+### Order Summary Fields
+
+The order list and order detail views present the order number and date as identifiers for the order.
+
+The order list presents the total price of the order.
+
+The order list and order detail views present the overall order status, which reflects the combined state of the order items.
+
+If the order contains items with different states, the overall order status still represents the order as a whole.
+
+### Order Detail View
+
+Customers can view the full details of a single order.
+
+The order detail view shows the list of items in the order, including the product name, variant, quantity, price, and item status.
+
+The order detail view shows the shipping address used for the order.
+
+The order detail view shows the shipments for the order, including tracking information.
+
+The order detail view shows which items are included in each shipment.
+
+### Shipping Address in Order
+
+The shipping address selected at checkout becomes part of the order.
+
+Once the order is placed, the shipping address cannot be changed.
+
+The shipping address is shown in the order detail view so the customer can review the delivery destination associated with the order.
+
+### Shipments and Tracking in Order
+
+An order may include one or more shipments.
+
+Each shipment belongs to one seller and may contain one or more order items from that seller.
+
+Different sellers always ship separately.
+
+Each shipment shows tracking information for the items included in that shipment.
+
+The order detail view groups items by shipment so customers can see which items travel together.
+
+### Cart Cleared After Order Placement
+
+When an order is created successfully, the purchased items are removed from the customer’s cart.
+
+Only the items included in the successful order are removed from the cart.
+
+### Failed Payment No Order Created
+
+If payment fails during checkout, the system does not create an order.
+
+If payment fails, the customer can retry the payment process.
+
+If payment fails, the customer’s cart remains available for another attempt.
+
+## OrderItem Operations
+
+Each order item represents a purchased product variant and quantity inside an order. Order items have their own status, which can move through paid, shipped, delivered, cancelled, or refunded depending on the business workflow. A single order can contain items from different sellers, so each item is managed according to its own seller relationship. When an order is created, each purchased item stores a snapshot of the product, variant, and seller profile so the purchase record remains accurate even if the source listings later change. Customers can see item-level details in order history, including product name, variant, quantity, price, and status. Sellers and administrators can view order items for operational handling such as shipping, cancellation, or refund review. Item-level control is important because some items in the same order may progress differently from others. Order item operations must preserve both current state and the purchased history for each item.
+
+### Order Item as a Purchased Variant Line
+
+An order item represents one purchased product variant within an order.
+
+Each order item is created for a specific variant that the customer selected during checkout.
+
+Each order item stores the quantity purchased for that variant.
+
+If a customer buys multiple units of the same variant in one order, the system records them as one order item with a quantity greater than one.
+
+Order items can belong to orders that contain products from different sellers.
+
+A mixed-seller order is represented as one order containing multiple order items, with each item managed independently according to its own seller relationship.
 
 ```mermaid
 flowchart LR
-    A["Seller enters shipment details"] --> B["Carrier name provided"]
-    A --> C["Tracking number provided"]
-    B --> D["Shipment created"]
-    C --> D
+    A["Order"] --> B["Order Item"]
+    B --> C["Purchased Product Variant"]
+    B --> D["Quantity"]
+    A --> E["Order Item"]
+    E --> F["Purchased Product Variant"]
 ```
 
-### Shipment Shipping Action
 
-When a shipment is created for shipping, all order items included in that shipment change to shipped status together.
-The system shall apply shipped status to every item in the shipment at the same time.
-If an order item is not included in the shipment, its status does not change.
-A shipment can be used to ship one item or multiple items from the same seller.
+### Order Item Status
+
+Each order item has its own status.
+
+The order item status can be paid, shipped, delivered, cancelled, or refunded.
+
+A paid order item means payment has been completed and the item is waiting for seller shipment.
+
+A shipped order item means the seller has shipped the item.
+
+A delivered order item means the item has been delivered.
+
+A cancelled order item means the item was cancelled through the cancellation workflow.
+
+A refunded order item means the item was refunded through the refund workflow.
+
+Order item status is tracked separately for each item so that items within the same order can progress independently.
 
 ```mermaid
 flowchart LR
-    A["Shipment created"] --> B["Items included in shipment"]
-    B --> C["All included items change to shipped status"]
-    C --> D["Shipment is visible for tracking"]
+    A["paid"] -->|"Ship"| B["shipped"]
+    B -->|"Deliver"| C["delivered"]
+    A -->|"Cancel"| D["cancelled"]
+    C -->|"Refund"| E["refunded"]
 ```
 
-### Shipment-Level Delivery Confirmation
 
-Delivery confirmation is handled at the shipment level, not at the individual order item level.
-Customers confirm delivery for a shipment after reviewing its tracking information.
-When a customer confirms delivery for a shipment, all order items in that shipment change to delivered status together.
-The system shall treat the shipment as the unit of delivery completion for customer confirmation.
-If a shipment is not confirmed by the customer, the shipment still reaches delivery completion automatically after the waiting period defined for the platform.
+### Seller-Specific Handling of Order Items
+
+Each order item is associated with the seller of the purchased product.
+
+Sellers handle only the order items that belong to their own products.
+
+In an order containing items from multiple sellers, each seller manages shipping, cancellation review, and refund review only for their own items.
+
+Items from different sellers are never combined into the same shipment.
+
+Seller-specific handling ensures that operational actions apply only to the relevant item while the rest of the order continues independently.
 
 ```mermaid
 flowchart LR
-    A["Shipment shipped"] --> B["Customer views tracking information"]
-    B --> C["Customer confirms delivery"]
-    C --> D["All shipment items change to delivered status"]
-    A --> E["No customer confirmation"]
-    E --> F["Shipment completes automatically"]
+    A["Mixed Seller Order"] --> B["Seller A Items"]
+    A --> C["Seller B Items"]
+    B --> D["Seller A Shipment"]
+    C --> E["Seller B Shipment"]
 ```
 
-### Shipment Visibility and Completion
 
-Customers can view shipment details as part of their order history and order details.
-The shipment view shows which order items are included in each shipment and the associated tracking information.
-Different sellers always ship through separate shipments, so a single shipment never contains items from more than one seller.
-Delivery completion for a shipment applies to all items in that shipment, and the shipment is considered complete only when its delivery confirmation process has finished.
-The system shall preserve shipment details for customer review after the shipment is completed.
+### Order Item Purchase Snapshot
+
+When an order item is created, the system saves a snapshot of the purchased product.
+
+The order item snapshot preserves the product name, description, variant options, and price at the time of purchase.
+
+The snapshot ensures that the purchase record remains accurate even if the source product or variant changes later.
+
+The order item also stores a snapshot of the seller profile at the time of purchase.
+
+The seller profile snapshot preserves the shop name and logo at the time of purchase.
+
+These snapshots are part of the order item record and are preserved for later viewing.
+
+
+### Item-Level Order History
+
+Customers can view order history at the order item level within an order.
+
+For each item, the system shows the product name, variant, quantity, price, and item status.
+
+Item-level history allows customers to understand the progress of each purchased variant even when other items in the same order have different statuses.
+
+This item-level view is especially important for mixed-seller orders, where different items may be shipped or completed at different times.
+
+Sellers and administrators can also use item-level history when handling shipping, cancellations, refunds, and dispute review.
+
+
+## Shipment Operations
+
+A shipment represents a package sent by one seller, and it can include one or more order items from that same seller. Different sellers always ship separately, so shipment grouping must respect seller boundaries. Sellers select the order items they want to send together and then enter tracking information such as carrier name and tracking number. When a shipment is created, all items in that shipment change to shipped status. Customers can view shipment tracking details from their order history. Customers confirm delivery per shipment, not per item, and that confirmation changes all items in the shipment to delivered. If the customer does not confirm delivery, the items automatically become delivered after the waiting period described by the business rules. Shipment operations support both seller fulfillment actions and customer delivery confirmation.
+
+### Shipment by Seller
+
+A shipment is a package sent by one seller.
+A shipment may contain one or more order items, but all items in the shipment must belong to the same seller.
+Different sellers always ship separately, so items from different sellers cannot be combined into the same shipment.
+Sellers can create shipments only for order items that still need shipping.
+Customers can view shipments as part of their order details and order history.
 
 ```mermaid
 flowchart LR
-    A["Order details"] --> B["Shipment details displayed"]
-    B --> C["Tracking information shown"]
-    C --> D["Delivery confirmation completed"]
-    D --> E["Shipment marked complete"]
+    A["Order items needing shipping"] --> B["Select one seller's items"]
+    B --> C["Create one shipment"]
+    C --> D["Items remain grouped by seller"]
+```
+
+### Shipping Information
+
+When creating a shipment, the seller provides the carrier name and tracking number.
+All items included in the same shipment share the same tracking information.
+Customers can view the tracking information for each shipment from their order details.
+Tracking information is shown at the shipment level, not separately for each item.
+
+```mermaid
+sequenceDiagram
+    participant S as Seller
+    participant M as System
+    participant C as Customer
+    S->>M: Create shipment with tracking information
+    M->>M: Store shipment details for the grouped items
+    C->>M: View order shipment details
+    M-->>C: Show carrier name and tracking number
+```
+
+### Shipment Creation and Item Status Change
+
+When a shipment is created, all order items included in that shipment change to shipped status.
+Shipment creation applies to every item in the shipment at the same time.
+Once items are marked as shipped, they are treated as shipped order items for later delivery confirmation and order progress.
+A shipment can be created only for items that still need shipping.
+
+```mermaid
+flowchart LR
+    A["Items need shipping"] --> B["Shipment created"]
+    B --> C["All included items become shipped"]
+```
+
+### Customer Delivery Confirmation
+
+Customers confirm delivery per shipment, not per item.
+When a customer confirms delivery for a shipment, all order items in that shipment change to delivered status.
+Delivery confirmation is available to customers from the shipment details they can view in their order history.
+The confirmation affects only the selected shipment and does not affect other shipments in the same order.
+
+```mermaid
+flowchart LR
+    A["Shipment view"] --> B["Customer confirms delivery"]
+    B --> C["All items in shipment become delivered"]
+```
+
+### Automatic Delivery After Waiting Period
+
+If the customer does not confirm delivery, the items in the shipment automatically change to delivered after the waiting period described by the business rules.
+This automatic delivery applies per shipment.
+When automatic delivery occurs, all items in that shipment change together to delivered status.
+The waiting period is defined in the business rules file and is not redefined here.
+
+```mermaid
+flowchart LR
+    A["Shipment shipped"] --> B["Waiting period passes"]
+    B --> C["All items in shipment become delivered"]
+```
+
+### Seller Fulfillment Workflow
+
+Sellers can view the order items for their products that need shipping.
+From those items, sellers choose one or more items to include in a shipment.
+The seller then enters the shipment tracking information and creates the shipment.
+After shipment creation, the items are marked as shipped and become visible to customers with tracking details.
+This workflow supports seller fulfillment of their own order items while keeping shipments separated by seller.
+
+```mermaid
+sequenceDiagram
+    participant S as Seller
+    participant M as System
+    participant C as Customer
+    S->>M: View items that need shipping
+    S->>M: Select one or more items
+    S->>M: Enter carrier name and tracking number
+    S->>M: Create shipment
+    M->>M: Mark included items as shipped
+    C->>M: View shipment tracking details
+    M-->>C: Show shipment information
 ```
 
 ## CancellationRequest Operations
 
-Customers can request cancellation for individual order items that are still in paid status and have not been shipped. Each request includes a reason, and the seller for that item can approve or reject it. When the seller responds, the state of the request must be preserved through a snapshot so the decision history is visible later. If approved, the item becomes cancelled and a refund is processed for that item only. Stock is restored through inventory history when a cancellation is completed. The remaining items in the same order continue to move through their own workflows without interruption. Sellers and administrators can view cancellation requests when handling disputes or monitoring operations. Cancellation request operations therefore support pre-shipment reversal with a documented decision trail.
+Customers can request cancellation for individual order items that are still in paid status and have not been shipped. A cancellation request must include a reason so the seller can understand the customer's concern. The seller for that item can approve or reject the request. When the seller responds, a snapshot of the request state is created so the decision history is preserved. If the request is approved, the item becomes cancelled and the refund is processed for that item only. Stock is restored through an inventory record when cancellation is approved. The remaining items in the order continue normally, so cancellation does not automatically affect the whole order unless every item is cancelled. Cancellation request operations must keep item-level business control and preserve dispute records.
 
 ### Cancel Paid Order Item
 
-Customers can request cancellation for an individual order item only when the item is still in paid status and has not been shipped.
-A cancellation request applies to one order item at a time and does not cancel the entire order.
-The system keeps the other items in the same order active so they can continue through their own workflows.
+Customers can request cancellation for an individual order item only when the item is still in paid status and has not been shipped. The cancellation request is tied to that single order item, not to the full order. The customer provides a cancellation reason so the seller can understand why the item should be cancelled. The seller of the item reviews the request and either approves or rejects it. When the seller responds, the system records a snapshot of the request state so the decision history is preserved. If the request is approved, the item becomes cancelled, the customer receives a refund for that cancelled item only, and stock is restored for that item through an inventory record. If the request is rejected, the order item continues in its current processing flow. This operation supports item-level cancellation rather than whole-order cancellation, so other items in the same order continue normally unless they are separately cancelled.
 
-```mermaid
-flowchart LR
-    A["Paid order item"] -->|"Request cancellation"| B["Cancellation request"]
-    B -->|"Approve"| C["Item cancelled"]
-    B -->|"Reject"| D["Item remains paid"]
-```
+### Cancellation Workflow and Partial Order Cancellation
 
-The system shall allow a customer to create a cancellation request for a paid order item that has not been shipped.
-The system shall keep the cancellation scope limited to the selected order item.
-The system shall preserve the rest of the order when one item enters the cancellation workflow.
+A cancellation request is processed independently for each eligible order item. An order may contain multiple items from different sellers or with different statuses, and a cancellation decision applies only to the targeted item. When one item is cancelled, the remaining items in the order are not automatically changed. This allows partial order cancellation, where some items are cancelled and other items continue through shipping, delivery, or other later stages. If all items in an order are eventually cancelled, the overall order is considered cancelled. The cancellation workflow preserves item-level control so that each request, response, and outcome is tracked separately.
 
-### Cancellation Reason and Decision Handling
+### Request State Snapshot
 
-Each cancellation request includes a reason provided by the customer.
-The seller for the affected order item can review the request and either approve it or reject it.
-When the seller responds, the decision becomes part of the preserved request history so the outcome can be reviewed later.
-
-```mermaid
-sequenceDiagram
-    participant C as Customer
-    participant S as Seller
-    participant SYS as System
-    C->>SYS: Submit cancellation request with reason
-    SYS-->>S: Make request available for review
-    S->>SYS: Approve or reject request
-    SYS-->>C: Show final request outcome
-```
-
-The system shall record a cancellation reason for each submitted cancellation request.
-The system shall allow the seller of the item to approve the request.
-The system shall allow the seller of the item to reject the request.
-The system shall preserve the seller’s decision as part of the request history.
-
-### Request State Snapshot Preservation
-
-When the seller approves or rejects a cancellation request, the system preserves the state of the request through a snapshot.
-The snapshot captures the request state before and after the seller’s response so the decision history remains visible later.
-This preserves the full cancellation decision trail for dispute resolution.
-
-```mermaid
-flowchart LR
-    A["Request pending"] -->|"Seller responds"| B["Snapshot created"]
-    B -->|"Approve or reject"| C["Final request state preserved"]
-```
-
-The system shall create a request state snapshot when the seller responds to a cancellation request.
-The system shall preserve the request state before and after the seller response.
-The system shall keep the snapshot available for later review as part of the decision history.
-The system shall not remove preserved request history after the request is resolved.
-
-### Approved Cancellation Effects
-
-If the seller approves the cancellation request, the item becomes cancelled and a refund is processed for that item only.
-The cancellation does not affect unrelated items in the same order.
-The system restores stock for the cancelled item through inventory history so the stock change is recorded.
-
-```mermaid
-flowchart LR
-    A["Approved cancellation request"] --> B["Item cancelled"]
-    B --> C["Refund processed for item"]
-    B --> D["Stock restored through inventory history"]
-```
-
-The system shall mark the affected order item as cancelled when the cancellation request is approved.
-The system shall process a refund for the cancelled order item only.
-The system shall restore stock for the cancelled item through inventory history.
-The system shall leave the remaining order items unchanged when one item is cancelled.
-
-### Pending Cancellation Request View and Decision History
-
-Sellers and administrators can view pending cancellation requests when handling disputes or monitoring operations.
-The preserved request history lets relevant parties review the original reason, the response, and the outcome after the request is resolved.
-This supports pre-shipment reversal with a documented decision trail.
-
-```mermaid
-flowchart LR
-    A["Pending request"] -->|"Viewed by seller or administrator"| B["Review request details"]
-    B -->|"After resolution"| C["Decision history remains available"]
-```
-
-The system shall allow sellers to view pending cancellation requests for their items.
-The system shall allow administrators to view pending cancellation requests.
-The system shall keep resolved cancellation requests available for decision history review.
-The system shall support pre-shipment reversal through the cancellation request workflow.
+Every seller response to a cancellation request creates a snapshot of the request state. The snapshot preserves what changed, including the request state before and after the seller’s decision, so the cancellation history can be reviewed later. Snapshots are immutable and remain available for dispute resolution. Relevant parties can view these preserved records when they need to understand how the cancellation request was handled.
 
 ## RefundRequest Operations
 
-Customers can request a refund for an individual order item after it has been delivered. Each refund request requires a reason and must be made within the allowed time window after delivery. The seller for that item can approve or reject the request, and the response state must be preserved through a snapshot. If approved, the item becomes refunded and stock is returned through inventory history. The remaining items in the order are not affected by the refund request. Sellers and administrators can review refund requests as part of service and dispute handling. Refund request operations support post-delivery reversal while keeping the rest of the order intact. The workflow must preserve both the customer’s claim and the seller’s decision for later reference.
+Customers can request a refund for individual order items that have already been delivered. A refund request must include a reason, and it can only be submitted within the allowed time window after delivery. The seller for that item can approve or reject the request. When the seller responds, a snapshot of the request state is created to preserve the decision history. If approved, the item becomes refunded and its stock is restored through an inventory record. Refund handling is per item, so the rest of the order can continue to stand on its own. If all items in an order are refunded, the overall order becomes refunded. Refund request operations must support post-delivery issue handling while preserving audit history.
 
 ### Refund Request Creation
 
-Customers can request a refund for an individual order item only after that item has been delivered.
-The request must describe the reason for the refund.
-The request is part of an item-level workflow and applies to one purchased order item at a time, not to the entire order.
-The refund request serves as a post-delivery reversal for that specific item.
-The remaining items in the order continue their existing processing without being changed by the refund request.
-
-```mermaid
-flowchart LR
-    A["Delivered order item"] -->|"Request refund"| B["Refund request"]
-    B -->|"Applies to one item"| C["Item-level refund workflow"]
-    B -->|"Does not change"| D["Remaining order items"]
-```
-
-### Refund Request Time Window and Reason
-
-A refund request is valid only within the allowed time window after the order item has been delivered.
-The request must include a refund reason so the seller can review the customer’s claim.
-If the refund request is outside the allowed time window, it is not accepted.
-If the refund reason is missing, the request is not accepted.
-The time window and the reason together define the customer’s dispute review record for the request.
+Customers can request a refund for an order item only after the item has been delivered.
+The refund request must include a reason.
+The request is time-limited and can be submitted only within the allowed period after delivery.
+Refund requests are submitted per order item, not for the entire order.
+Refund request creation supports post-delivery issue handling for items that do not meet the customer’s expectations after receipt.
 
 ```mermaid
 sequenceDiagram
     participant C as Customer
     participant S as System
-    participant L as Seller
-    C->>S: Submit refund request with reason
-    S->>S: Check delivery timing and request reason
-    S-->>C: Accept or reject the request
-    S-->>L: Make request available for review
+    participant V as Seller
+    C->>S: Request refund for delivered item
+    S->>S: Verify delivery and refund window
+    S->>S: Record refund request and reason
+    S-->>C: Refund request submitted
+    S-->>V: Refund request available for review
 ```
 
-### Seller Review of Refund Requests
+### Refund Request Review
 
-The seller for the order item can approve or reject the refund request.
-The seller’s decision applies only to the requested order item.
-When the seller responds, the system preserves the request state as a snapshot.
-The snapshot records the state of the refund request at the moment of the seller’s response so the dispute review record can be reviewed later.
-Once the seller has responded, the request state is preserved for later reference and dispute handling.
+The seller of the order item can review the refund request.
+The seller can approve the request or reject it.
+When the seller responds, the system records a snapshot of the request state to preserve the decision history.
+The snapshot preserves the state before and after the seller’s response.
+Refund request review supports seller handling of post-delivery issue resolution.
+
+```mermaid
+sequenceDiagram
+    participant V as Seller
+    participant S as System
+    V->>S: Approve or reject refund request
+    S->>S: Record request state snapshot
+    S->>S: Update request status
+    S-->>V: Response recorded
+```
+
+### Refund Approval Outcome
+
+If the seller approves the refund request, the order item becomes refunded.
+When an item becomes refunded, the system restores the item’s stock through an inventory record.
+Refund handling is performed per item, so other items in the same order continue according to their own statuses.
+If all items in an order are refunded, the overall order becomes refunded.
+This enables partial order refunds when only some items in the order are refunded.
 
 ```mermaid
 flowchart LR
-    A["Refund request"] -->|"Seller approves"| B["Refund approved"]
-    A -->|"Seller rejects"| C["Refund rejected"]
-    B -->|"Create snapshot"| D["Request state snapshot"]
-    C -->|"Create snapshot"| D
+    A["delivered item"] -->|"Refund requested"| B["refund request"]
+    B -->|"Approved"| C["refunded item"]
+    C -->|"Restore stock"| D["inventory record"]
+    C -->|"All items refunded"| E["refunded order"]
+    B -->|"Rejected"| F["request closed without refund"]
 ```
 
-### Approved Refund Effects
+### Refund Rejection Outcome
 
-When a refund request is approved, the refunded order item is marked as refunded.
-The system restores the item’s stock through inventory history for the affected variant.
-The refund changes only the selected order item and does not affect other items in the order.
-If the refunded item is the last remaining non-final item in the order, the order status follows the order-level rules defined elsewhere.
-The approved refund is preserved as part of the dispute review record along with the request snapshot.
+If the seller rejects the refund request, the order item does not become refunded.
+The request outcome remains part of the preserved request history through its snapshot record.
+A rejected refund request does not change the status of other items in the order.
+Refund rejection supports resolution of post-delivery issues without altering the purchased item state.
 
-```mermaid
-flowchart LR
-    A["Approved refund request"] --> B["Item marked refunded"]
-    B --> C["Stock restored"]
-    B --> D["Request snapshot preserved"]
-    B --> E["Other order items remain unchanged"]
-```
 
-### Refund Request Review and Audit Visibility
+### Refund Request View and History
 
-Refund requests are available for later review by the parties allowed to inspect dispute records.
-The preserved snapshot allows reviewers to see what changed, when the change happened, and the request state before and after the seller’s response.
-The refund request history supports dispute handling by keeping the customer’s reason, the seller’s decision, and the resulting state together.
-Snapshots related to refund requests are immutable and remain available after the request is resolved.
-
-```mermaid
-flowchart LR
-    A["Refund request history"] --> B["Customer reason"]
-    A --> C["Seller decision"]
-    A --> D["Request state snapshot"]
-    D --> E["Dispute review record"]
-```
+Customers can view their refund requests.
+Sellers can view refund requests for their own order items.
+Relevant parties can view snapshots for dispute resolution.
+Refund request history shows the request state changes preserved over time.
+Preserved request history supports review of how a post-delivery issue was handled from submission through final decision.
 
 ## Review Operations
 
-Customers can write reviews only for products they have purchased and only after the related item has been delivered. Each review contains a required rating and optional text content, and customers can write only one review per product per order. Reviews are visible on the product detail page and are sorted by newest first. Customers can edit their own reviews, and every edit must create a snapshot so the previous text and rating remain available. Customers can delete their own reviews, but the historical snapshots remain preserved. Deleted customer accounts do not remove review history; instead, their reviews continue to appear as written by a deleted user. Product ratings are calculated from the non-deleted reviews that remain visible. Review operations therefore balance customer expression, purchase verification, and historical preservation.
+Customers can write reviews only for products they have purchased after the related item has been delivered. A customer may leave only one review per product per order, which prevents duplicate feedback for the same purchase. Each review includes a required rating and optional text content. Reviews appear on the product detail page and are sorted by newest first so the latest customer experiences are easy to see. Customers can edit their own reviews, and every edit must create a snapshot to preserve the previous version. Customers can also delete their own reviews, but the historical snapshots remain preserved. Product average rating is calculated only from non-deleted reviews. Review operations must support trustworthy product feedback while protecting historical records.
 
-### Review Eligibility
+### Purchase-Based Review Eligibility
 
-Customers can create a review only for a product variant that they purchased and only after the related order item has been delivered.
-Customers cannot create a review for a product they did not purchase.
-Customers cannot create a review before delivery has been confirmed for the related order item.
+Customers can write a review only for a product they have purchased.
+A review is allowed only after the related order item has been delivered.
+A customer can write only one review per product per order, which prevents duplicate feedback for the same purchase.
+Review eligibility is tied to the purchased order item rather than to the product in general.
 
-### One Review Per Product Per Order
+### Review Content and Display
 
-A customer can write only one review for the same product within the same order.
-If a customer has already submitted a review for that product in that order, the system does not allow another review for the same product and order combination.
+Each review includes a required rating and optional text content.
+Reviews are shown on the product detail page.
+Reviews are sorted by newest first so the latest customer feedback appears before older feedback.
+Reviews remain visible even when the customer who wrote them later deletes their account; in that case, the review is shown as coming from a deleted user.
 
-### Review Content
-
-Each review must include a star rating.
-The star rating is required when the review is created.
-Each review may include review text content.
-Review text content is optional and a review may be submitted without it.
-
-### Edit Own Review
+### Review Editing and Deletion
 
 Customers can edit their own reviews.
-A customer can edit only a review they created.
-When a review is edited, the updated rating and text replace the previously visible content.
-Each review edit creates a snapshot of the prior state for historical preservation.
-
-### Delete Own Review
-
+When a review is edited, a snapshot is created to preserve the previous state.
 Customers can delete their own reviews.
-A customer can delete only a review they created.
-When a review is deleted, the review is no longer shown as an active review.
-Historical review snapshots are preserved after deletion.
+When a review is deleted, the review history is preserved through snapshots, while the review is no longer treated as active content.
+Review edit and delete actions apply only to the customer who created the review.
 
-### Deleted User Display for Reviews
+### Review Rating Summary
 
-If a customer deletes their account, their preserved reviews continue to exist.
-Preserved reviews from deleted customer accounts are shown as written by a deleted user.
-The system does not remove preserved review history when the customer account is deleted.
-
-### Review Listing Order
-
-Reviews are displayed in newest-first order.
-When reviews are listed for a product, the most recently created review appears before older reviews.
-The review listing order is preserved when customers view reviews on the product detail page.
-
-### Review Operations Flow
-
-```mermaid
-sequenceDiagram
-    participant C as "Customer"
-    participant S as "System"
-    C->>S: "Request review creation after delivery"
-    S->>S: "Verify purchase and one-review rule"
-    S->>S: "Save review with rating and optional text"
-    C->>S: "Edit or delete own review"
-    S->>S: "Preserve review snapshot and update visibility"
-```
+A product’s average rating is calculated from all non-deleted reviews.
+Deleted reviews do not affect the average rating.
+The total review count shown with a product reflects the review set used for display on the product detail page.
 
 ## Snapshot Operations
 
-Snapshots preserve the previous state whenever editable business data changes. They are required for product edits, product variant edits, seller profile edits, review edits, and changes to cancellation or refund request states. A snapshot must show when the change occurred, what changed, and the values before and after the change. Snapshots are immutable and cannot be deleted because they are part of the platform’s financial and dispute record. Relevant parties such as owners and administrators can view snapshots when investigating disputes or checking historical changes. Product snapshots must capture the full product state, including images and the related variant snapshots at that moment. Order item snapshots also preserve the product, variant, and seller profile state at the time of purchase. Snapshot operations are therefore about historical truth, auditability, and dispute resolution across the platform.
+Snapshots preserve the previous state whenever editable business data changes. They must record when the change was made, what was changed, and the values before and after the change. Snapshots are immutable, so they cannot be edited or deleted once created. Relevant parties such as owners and administrators can view snapshots for dispute resolution and historical review. The snapshot principle applies to products, variants, seller profiles, order items, reviews, cancellation requests, and refund requests. Product snapshots must preserve the full product state, including images and the full set of variant snapshots at that time. This makes it possible to see a complete historical version of a product and its variants at any point in time. Snapshot operations are essential for business transparency in a money-exchange platform.
 
-### Editable Data Change History
+### Snapshot Record
 
-Editable business data must retain a change history whenever it is modified. The system shall create a snapshot for each accepted change to editable product data, product variant data, seller profile data, review data, and cancellation or refund request state. The change history shall preserve the previous state so that the earlier values can be reviewed later for dispute resolution and audit purposes.
+A snapshot is an immutable history record created when editable business data changes successfully.
 
-```mermaid
-flowchart LR
-    A["Editable business data"] -->|"Change accepted"| B["Snapshot created"]
-    B -->|"Preserves previous state"| C["Change history available"]
-    C -->|"Used for disputes and review"| D["Relevant parties"]
-```
+Each snapshot records the time the change was made, the fields that changed, and the values before and after the change.
 
-### Before and After Values
+Snapshots are preserved as historical evidence and cannot be edited or deleted after creation.
 
-Each snapshot shall record both the values before the change and the values after the change. The system shall show what was changed in a way that allows a reviewer to compare the earlier state with the updated state. This applies to every editable business item that produces a snapshot, including products, variants, seller profiles, reviews, cancellation requests, and refund requests.
+Snapshots exist to support business transparency on a platform where money is exchanged and to preserve the prior state of changed data for later review.
 
-A snapshot must therefore make the difference between the prior state and the new state visible for later inspection. This requirement supports dispute resolution by allowing relevant parties to verify exactly how the data changed.
+### Snapshot Access and Dispute Review
 
-### Change Timestamp
+Snapshots can be viewed by the owners of the related business data and by administrators.
 
-Each snapshot shall include the time when the change was made. The timestamp shall allow reviewers to see when the edit, correction, or response occurred relative to other business events. The timestamp is part of the permanent historical record and is used together with the before and after values to understand the sequence of changes.
+Snapshot access is intended for dispute resolution and historical review.
 
-### Immutable Snapshot
+Relevant parties can use snapshots to compare what changed, when it changed, and how the values differed before and after the change.
 
-Snapshots shall be immutable after they are created. A snapshot shall preserve the historical state exactly as it was recorded at the time of the change. The system shall treat each snapshot as a fixed record of business history rather than as editable current data.
+If a business record is changed, the related snapshot history remains available even when the underlying record is later deleted, provided the parent domain rules preserve that history.
 
-```mermaid
-flowchart LR
-    A["Change occurs"] --> B["Snapshot created"]
-    B --> C["Snapshot stored as immutable record"]
-    C --> D["Snapshot remains unchanged"]
-```
+### Product Full-State Snapshot
 
-### Snapshot Deletion Is Not Allowed
+When a product is edited, the system creates a product snapshot that preserves the product's full state at that point in time.
 
-The system shall not allow snapshots to be deleted. Because snapshots are part of the platform’s financial and dispute record, they must remain available after creation. Even if the related business data later changes or is removed, the snapshot itself must remain preserved for historical review.
+The product snapshot includes the product's complete set of fields and the product's images.
 
-### Owner and Administrator Visibility
+The product snapshot also preserves the snapshots of all variants that exist at that moment, so the product and its variants can be reviewed together as one historical state.
 
-Relevant owners and administrators shall be able to view snapshots when investigating disputes or checking historical changes. The system shall make snapshots available only to the parties who are entitled to review the historical record for that item. This visibility applies to the preserved history, not to a mutable working copy of the data.
-
-### Product Snapshot With Images
-
-When a product is edited, the system shall create a product snapshot that captures the full product state at that moment. The product snapshot shall include the product’s name, description, category, base price, and images. The snapshot shall also include the related variant snapshots that exist at that moment so that the product’s complete state can be reviewed later.
-
-```mermaid
-flowchart LR
-    A["Product edited"] --> B["Product snapshot created"]
-    B --> C["Includes product fields"]
-    B --> D["Includes images"]
-    B --> E["Includes variant snapshots"]
-    C --> F["Complete product history"]
-    D --> F
-    E --> F
-```
+This allows owners and administrators to inspect a complete previous version of a product without relying on the current product data.
 
 ### Variant Snapshot History
 
-When a product variant is edited, the system shall create a variant snapshot that preserves the variant’s historical state. The variant snapshot shall support later review of how the variant changed over time, including its option values, price, and SKU code as part of the preserved business history. Variant snapshot history shall remain available even after the variant or related product is no longer active.
+When a product variant is edited, the system creates a snapshot for that variant.
 
-### Seller Profile Snapshot History
+The variant snapshot records the changed fields, the change timestamp, and the before and after values.
 
-When a seller profile is edited, the system shall create a snapshot of the seller profile’s previous state. The seller profile snapshot history shall preserve changes to the shop name, shop description, and logo image so that past seller identity details can be reviewed later. This history shall support both dispute resolution and review of past order records that reference the seller profile at the time of purchase.
+Variant snapshot history preserves the historical state of the variant so owners and administrators can review how the variant changed over time.
 
-### Review and Request State Snapshots
+Variant snapshots are part of the product's historical record and support review of variant-specific edits independently from the current variant state.
 
-When a review is edited, the system shall create a snapshot of the review’s previous state. When a cancellation request or refund request changes state because the seller responds, the system shall create a snapshot of the request state. These snapshots shall preserve the state before and after the change so that the review history or request handling history can be examined later.
+### Seller Profile Snapshot
 
-```mermaid
-sequenceDiagram
-    participant U as "User"
-    participant S as "System"
-    participant A as "Administrator"
-    U->>S: "Edit review or request changes state"
-    S->>S: "Create snapshot of prior state"
-    S->>S: "Record before and after values"
-    S-->>A: "Historical record available for review"
-```
+When a seller profile is edited, the system creates a snapshot of the seller profile.
+
+The seller profile snapshot records the changed fields, the change timestamp, and the before and after values.
+
+Each edit creates a new preserved history entry so previous shop name, shop description, and logo image values remain available for review.
+
+Seller profile snapshots support dispute resolution and review of the seller identity shown at the time a change occurred.
+
+### Review Snapshot
+
+When a review is edited, the system creates a snapshot of the review.
+
+The review snapshot records the changed fields, the change timestamp, and the before and after values.
+
+Review snapshots preserve the history of the review text and rating so the prior version remains available even after later edits or deletion.
+
+Review snapshots can be viewed by relevant parties for dispute resolution and historical review.
+
+### Cancellation Request Snapshot
+
+When a cancellation request changes state or content, the system creates a snapshot of the request.
+
+The cancellation request snapshot records the changed fields, the change timestamp, and the before and after values.
+
+This preserves the request history as it moves through review and response, so relevant parties can see what was requested and how the request changed.
+
+Cancellation request snapshots support dispute resolution by preserving the state of the request at each recorded change.
+
+### Refund Request Snapshot
+
+When a refund request changes state or content, the system creates a snapshot of the request.
+
+The refund request snapshot records the changed fields, the change timestamp, and the before and after values.
+
+This preserves the request history as it moves through review and response, so relevant parties can see what was requested and how the request changed.
+
+Refund request snapshots support dispute resolution by preserving the state of the request at each recorded change.
+
+## AdministratorApprovalRequest Operations
+
+Any customer or seller can submit a request to become an administrator. The request must include a reason so super administrators can understand why the user wants elevated access. Super administrators can view the list of pending requests and decide whether to approve or reject them. If approved, the user becomes a regular administrator. If rejected, the request is closed and the user does not gain administrator privileges. This workflow should support platform governance by giving only super administrators the authority to review the requests. The request list is part of operational oversight rather than customer shopping activity. Administrator approval requests must keep a clear record of intent and decision status.
+
+### Administrator Approval Request Submission
+
+Any customer or seller can submit a request to become an administrator. The request must include a reason so that the platform can understand why the user is asking for elevated access. Submitting the request creates a pending administrator request for governance review. A user may use this request as the formal path to seek platform oversight responsibilities rather than ordinary shopping or selling access. The request remains in a tracked status until it is reviewed.
+
+### Pending Administrator Request Review
+
+Super administrators can view the list of pending administrator requests. The list is used for platform oversight and governance review, not for general customer browsing. Each request must remain visible in its current status until a super administrator decides to approve or reject it. The request status must clearly indicate whether it is pending, approved, or rejected.
+
+### Administrator Request Decision
+
+A super administrator can review a pending administrator request and either approve it or reject it. When a request is approved, the requesting user becomes a regular administrator. When a request is rejected, the user does not gain administrator privileges. The decision closes the review of that request and updates its tracked status accordingly.
+
+### Administrator Access Governance
+
+Only super administrators can review administrator approval requests. This workflow exists to control who can gain administrator access and to preserve platform governance. The request process must support oversight by distinguishing between ordinary users and users who are being considered for administrator responsibilities. Rejected requests do not grant administrator access, and approved requests grant regular administrator access only.
+
+### Request Status Tracking and Oversight Records
+
+Each administrator approval request must keep a clear record of its status so that the platform can show whether it is pending, approved, or rejected. The request must preserve the reason provided by the applicant and the outcome of the review. This record supports platform oversight and provides a traceable history of the request from submission to final decision.
 
 ## SellerApprovalRequest Operations
 
-A seller approval request is created when a seller registers and must pass administrator review before the seller can sell. Administrators can view pending requests, approve them, or reject them with a reason. Sellers can see the current approval status so they know whether they are pending, approved, or rejected. If a request is rejected, the seller can submit a new registration request instead of being permanently blocked from applying again. The request process is separate from ordinary seller login because approval determines whether selling is enabled. This workflow supports controlled onboarding for merchants while keeping the status visible to the applicant. Seller approval requests are part of platform governance and are important for managing marketplace quality. Their operations focus on registration, review, response, and resubmission.
+A seller registration request must wait for administrator approval before the seller can begin selling. Administrators review pending seller requests and decide whether to approve or reject them. When a request is rejected, the administrator must provide a rejection reason so the seller understands what needs attention. Sellers can view their approval status and see the rejection reason if applicable. Rejected sellers can submit a new registration request after addressing the issue. The request process protects the marketplace by controlling who can sell on the platform. Seller approval requests are separate from seller account login, because login does not imply selling rights until approval is granted. This workflow supports controlled marketplace entry and clear status visibility for sellers.
 
-### Seller Registration Request Submission
+### Seller Registration Approval Workflow
 
-Sellers can submit a registration request as part of the merchant onboarding process.
-A submitted registration request starts the seller approval lifecycle and enters a pending approval status.
-The request represents the seller's intent to become eligible to sell on the platform.
-The system keeps the registration request separate from ordinary seller login so that approval can be evaluated before selling is enabled.
+A seller registration request must be reviewed by an administrator before the seller can begin selling on the platform. The system keeps seller requests in a pending state until an administrator approves or rejects the request. Administrators can review the list of pending seller requests and decide the outcome of each request. This workflow controls marketplace entry by ensuring that selling rights are granted only after approval.
 
-```mermaid
-sequenceDiagram
-    participant S as Seller
-    participant A as Administrator
-    participant P as Platform
-    S->>P: Submit registration request
-    P->>P: Record request as pending
-    A->>P: Review request
-    P-->>S: Show current approval status
-```
+### Seller Approval Status Visibility
 
-### Pending Approval Status and Status Visibility
+Sellers can view the current approval status of their registration request. The available approval status values are pending, approved, and rejected. A pending status indicates that the request is waiting for administrator review. An approved status indicates that the seller is allowed to sell on the platform. A rejected status indicates that the request was not accepted.
 
-A seller with a submitted registration request remains in pending approval status until an administrator completes review.
-The seller can view the current approval status of the request at any time.
-The visible approval status must communicate whether the request is pending, approved, or rejected.
-The status view supports merchant onboarding control by letting applicants know whether they can proceed with selling or need to take further action.
+### Seller Registration Rejection
 
+When an administrator rejects a seller registration request, the administrator must provide a rejection reason. The rejection reason is shown to the seller so the seller can understand what needs to be addressed before trying again. A rejected request remains rejected unless the seller submits a new registration request.
 
-### Administrator Review of Sellers
+### Seller Request Resubmission After Rejection
 
-Administrators can review submitted seller registration requests as part of merchant onboarding control.
-When reviewing a request, the administrator can approve the request or reject the request.
-The review process determines whether the seller becomes eligible to sell on the platform.
-The request remains associated with the seller during review so that the outcome is visible to the applicant.
+A seller whose registration request was rejected can submit a new registration request after addressing the rejection reason. The new request is treated as a separate reviewable request from the earlier rejected request. The system preserves the earlier request’s outcome for reference while allowing the seller to try again.
 
+### Approved Seller Selling Rights
 
-### Approve Seller Registration
-
-When an administrator approves a seller registration request, the request status becomes approved.
-When the request is approved, the seller becomes eligible to sell on the platform.
-Approval completes the registration request lifecycle for that request.
-Approved sellers can continue to use the approved registration state as the basis for seller onboarding and selling access.
-
-```mermaid
-flowchart LR
-    A["Submitted request"] -->|"Administrator approves"| B["Approved request"]
-    B -->|"Selling enabled"| C["Eligible to sell"]
-```
-
-### Reject Seller Registration with Reason
-
-When an administrator rejects a seller registration request, the request status becomes rejected.
-A rejected request includes a rejection reason so the seller can understand why the application was not approved.
-Rejection completes the request lifecycle for that request.
-The rejection outcome is shown to the seller through the approval status view.
-
-
-### Resubmit Rejected Registration
-
-A seller whose registration request was rejected can submit a new registration request.
-Resubmission allows the seller to try again after a rejection instead of being permanently blocked from merchant onboarding.
-The new submission begins a new request lifecycle and is evaluated independently from the earlier rejected request.
-The seller can use the approval status view to determine whether the resubmitted request is pending, approved, or rejected.
-
-
-### Registration Request Lifecycle
-
-The seller registration request lifecycle begins when a seller submits a registration request.
-The request remains pending until an administrator reviews it.
-The lifecycle ends when the request is approved or rejected.
-If approved, the seller becomes eligible to sell.
-If rejected, the seller may submit a new registration request.
-
-```mermaid
-flowchart LR
-    A["No active request"] -->|"Submit registration request"| B["Pending approval"]
-    B -->|"Approve"| C["Approved"]
-    B -->|"Reject with reason"| D["Rejected"]
-    D -->|"Submit new registration request"| B
-```
-
-## AdministratorRequest Operations
-
-Any customer or seller can submit a request to become an administrator by explaining their reason. Super administrators review these requests and decide whether to approve or reject them. When approved, the applicant becomes a regular administrator rather than a super administrator. The request should remain visible to the reviewing super administrators as part of the governance workflow. This operation supports controlled growth of the administrative team without giving automatic privileges. Rejected requests remain part of the administrative decision history so the platform can show what happened to the application. The process is separate from seller approval and account management because it applies to platform authority. Administrator request operations therefore support role elevation with documented review and approval decisions.
-
-### Administrator Application Request
-
-Any customer or seller can submit an administrator application request to begin the role elevation process.
-The system shall require the applicant to provide a reason for requesting administrative access.
-The system shall store the request as pending after submission so it can be reviewed through the governance workflow.
-The system shall allow only one active pending administrator application request for the same applicant at a time.
-The system shall keep submitted administrator application requests visible to the reviewing super administrators until a decision is made.
-
-```mermaid
-sequenceDiagram
-    participant A as "Applicant"
-    participant S as "System"
-    participant SA as "Super Administrator"
-    A->>S: "Submit administrator application request"
-    S->>S: "Store request with reason and pending status"
-    SA->>S: "Open pending request list"
-    S-->>SA: "Show pending request for review"
-```
-
-### Super Administrator Review
-
-The system shall provide super administrators with a pending request list containing administrator application requests that have not yet been decided.
-The system shall allow super administrators to review each pending request together with the applicant's reason for requesting administrative access.
-The system shall support the governance workflow by presenting each request for an explicit approve or reject decision.
-The system shall record the reviewer, the decision, and the time of the decision for each reviewed request.
-The system shall keep the reviewed request available as decision history after the decision is made.
-
-```mermaid
-sequenceDiagram
-    participant SA as "Super Administrator"
-    participant S as "System"
-    SA->>S: "Open pending request list"
-    S-->>SA: "Display pending administrator application requests"
-    SA->>S: "Review request and submit decision"
-    S->>S: "Record decision history for the request"
-```
-
-### Approve Administrator Request
-
-When a super administrator approves an administrator application request, the system shall mark the request as approved.
-When a request is approved, the system shall complete the administrative role elevation for the applicant.
-When a request is approved, the system shall make the applicant a regular administrator rather than a super administrator.
-The system shall preserve the approved request in decision history for governance purposes.
-The system shall show the approval outcome as part of the request's recorded history.
-
-```mermaid
-flowchart LR
-    A["Pending administrator application request"] -->|"Approve"| B["Approved request"]
-    B -->|"Become"| C["Regular administrator"]
-    B -->|"Record"| D["Decision history"]
-```
-
-### Reject Administrator Request
-
-When a super administrator rejects an administrator application request, the system shall mark the request as rejected.
-The system shall preserve the rejected request in decision history for the governance workflow.
-The system shall retain the applicant's submitted reason together with the rejection outcome as part of the request record.
-The system shall show rejected requests separately from pending requests in the review workflow.
-The system shall keep the rejection decision available for later reference by super administrators.
-
-```mermaid
-flowchart LR
-    A["Pending administrator application request"] -->|"Reject"| B["Rejected request"]
-    B -->|"Record"| C["Decision history"]
-    B -->|"Keep for reference"| D["Governance workflow"]
-```
-
-### Decision History for Administrator Requests
-
-The system shall preserve every administrator application request after submission, including requests that are approved or rejected.
-The system shall preserve the decision history for each request so the governance workflow remains auditable.
-The system shall show the request reason together with the final decision in the historical record.
-The system shall make the decision history available to the super administrators who review administrator requests.
-The system shall keep historical request records separate from the pending request list.
-
-```mermaid
-flowchart LR
-    A["Submitted request"] --> B["Pending request list"]
-    B -->|"Approve or reject"| C["Decision history"]
-    C --> D["Governance workflow reference"]
-```
+A seller gains selling rights only after the seller registration request has been approved by an administrator. Before approval, the seller cannot begin selling on the platform. After approval, the seller is eligible to proceed as a seller according to the platform’s marketplace rules.
 
 # Error Scenarios and Edge Cases
 
 Business-level error scenarios, edge case coverage, and expected system behaviors for exceptional conditions.
 
-## Customer Error Scenarios
+## CustomerAccount Error Scenarios
 
-Customers cannot use shopping features unless they have a registered account, so any attempt to browse, wishlist, cart, or checkout without signing in must be blocked. If a customer tries to sign up with information that does not meet the account rules, the platform should reject the request and keep the customer unregistered. A customer who changes a password must use the current account identity, and the system should prevent unauthorized password changes. When a customer deletes their account, the platform must preserve orders and order history, while profile information is removed and reviews remain visible as coming from a deleted user. If a customer tries to interact with an order item that is not in the correct status, such as requesting cancellation for an item that is already shipped, the request should be rejected. When a customer requests a refund outside the allowed period or for an item that is not delivered, the platform should not accept the request. If a product, variant, or wishlisted item is deleted by a seller, the customer-facing lists should update so the removed item is no longer treated as active. Customer actions that depend on a default address should fall back to another saved address only when the user explicitly selects it, otherwise checkout should stop until a valid shipping address is chosen. Any operation involving unavailable items should clearly explain why the item cannot proceed. If the customer account is banned, login and all account-based operations must be denied.
+Customers cannot use any customer features until they register and log in, so attempts to access account-related actions without an authenticated account must be blocked. Registration fails when the email is already tied to an existing account or when the provided credentials do not meet the platform’s basic account rules. Login fails when the email and password do not match a registered customer account, and banned or deleted accounts must not be allowed back in. Password changes should only be allowed for the account owner, and the system must reject attempts that do not come from the current logged-in customer. If a customer deletes their account, the profile information is removed, but the customer’s orders, order history, and reviews remain available under the preserved deleted-user identity rules. If deletion is requested while the account is already in a deleted or otherwise inaccessible state, the system should treat it as unavailable rather than creating duplicate outcomes. Because customer records affect shopping, reviews, and order history, the system must keep preserved records stable even after the account itself is gone. Any account action that cannot be completed should leave the existing account state unchanged.
 
-### Customer Account Required Before Shopping
+### Customer Account Access and Login Failures
 
-Customers must have a registered and signed-in account before they can use any shopping feature.
-If a person is not signed in, the platform rejects access to shopping features such as browsing products, adding products to a wishlist, using a cart, or proceeding to checkout.
-If a signed-out person attempts a shopping action, the platform keeps the action unavailable until the person signs in.
-
-```mermaid
-flowchart LR
-    A["Signed-out visitor"] -->|"Attempts shopping feature"| B["Access rejected"]
-    B -->|"Signs in"| C["Shopping features available"]
-```
-
-### Sign-Up Rejection For Invalid Customer Registration
-
-When a customer submits a registration request that does not meet the account rules, the platform rejects the request.
-If registration is rejected, the person remains unregistered and cannot use customer features.
-Invalid registration attempts do not create a customer account.
-
-```mermaid
-sequenceDiagram
-    participant P as Person
-    participant S as System
-    P->>S: Submit customer registration
-    S->>S: Check account rules
-    S-->>P: Reject registration if invalid
-```
-
-### Unauthorized Password Change Blocked
-
-A customer can change a password only while acting as the authenticated account owner.
-If a password change request is not made by the current account owner, the platform rejects the request.
-If the request is rejected, the existing password remains unchanged.
+Customers must register before they can use any customer features.
+If a person tries to access customer account actions before registering and logging in, the system rejects the request.
+If a registration attempt uses an email address that is already tied to an existing account, the system rejects the request.
+If a login attempt uses an email and password combination that does not match a registered customer account, the system rejects the request.
+If a customer account has been banned, the system rejects login attempts for that account.
+If a customer account has been deleted, the system rejects any attempt to reuse that account for login or other customer access.
+If a customer account is unavailable because it has been deleted or banned, the system does not restore access through the failed action.
 
 ```mermaid
 flowchart LR
-    A["Password change request"] -->|"Submitted by account owner"| B["Accepted"]
-    A -->|"Submitted by other user"| C["Rejected"]
+    A["Unregistered user"] -->|"Tries customer features"| B["Rejected"]
+    C["Duplicate email"] -->|"Registers"| B
+    D["Wrong credentials"] -->|"Logs in"| B
+    E["Banned customer"] -->|"Logs in"| B
+    F["Deleted customer"] -->|"Reuses account"| B
 ```
 
-### Customer Account Deletion Preserves Orders And Reviews
+### Password Change and Account State Preservation
 
-When a customer deletes their account, the platform removes the customer profile information.
-The platform preserves the customer's orders and order history for seller records and legal purposes.
-The platform also preserves the customer's reviews.
-After deletion, preserved reviews remain associated with the deleted account history rather than being removed.
+Only the owner of the customer account can change the password.
+If a password change request does not come from the account owner, the system rejects the request.
+If a customer account deletion request cannot be completed, the system leaves the existing account state unchanged.
+If any customer account action fails, the system preserves the current account state and does not partially apply the change.
+If a customer deletes their account, the profile information is removed while the customer’s orders and order history remain preserved.
+If account deletion fails, preserved records remain unchanged.
 
 ```mermaid
 flowchart LR
-    A["Customer account deleted"] --> B["Profile information removed"]
-    A --> C["Orders preserved"]
-    A --> D["Reviews preserved"]
+    A["Account owner"] -->|"Requests password change"| B["Allowed"]
+    C["Non-owner"] -->|"Requests password change"| D["Rejected"]
+    E["Deletion request"] -->|"Fails"| F["Account state unchanged"]
+    G["Deletion request"] -->|"Succeeds"| H["Profile removed"]
+    H --> I["Orders and order history preserved"]
 ```
 
-### Deleted User Shown On Preserved Reviews
+### Deleted-User Identity and Preserved Reviews
 
-When a preserved review belongs to a deleted customer account, the platform displays the reviewer as a deleted user.
-The review content remains visible, but the original customer identity is not shown as an active account.
-This labeling applies to preserved reviews after customer account deletion.
-
-```mermaid
-flowchart LR
-    A["Preserved review"] --> B["Customer account deleted"]
-    B --> C["Review shown as deleted user"]
-```
-
-### Cancel Request Rejected After Shipment
-
-A customer can request cancellation only for an order item that is still in the paid status and has not been shipped.
-If an order item has already been shipped, the platform rejects the cancellation request.
-If the request is rejected, the item keeps its current status and continues in the order flow.
-
-```mermaid
-flowchart LR
-    A["Paid order item"] -->|"Cancellation requested"| B["Request allowed"]
-    C["Shipped order item"] -->|"Cancellation requested"| D["Request rejected"]
-```
-
-### Refund Request Rejected Before Delivery Or After Time Limit
-
-A customer can request a refund only for an order item that has been delivered.
-If an order item has not been delivered yet, the platform rejects the refund request.
-If the refund request is submitted after the allowed time window has passed, the platform also rejects the request.
-If the request is rejected, the item remains in its current order state.
-
-```mermaid
-flowchart LR
-    A["Delivered order item within allowed time window"] -->|"Refund requested"| B["Request allowed"]
-    C["Not delivered"] -->|"Refund requested"| D["Request rejected"]
-    E["Delivered but time window passed"] -->|"Refund requested"| D
-```
-
-### Wishlist Item Removed When Product Is Deleted
-
-If a seller deletes a product, the platform automatically removes that product from every customer's wishlist.
-The customer does not need to remove the item manually.
-After removal, the deleted product no longer appears as an active wishlist item.
-
-```mermaid
-flowchart LR
-    A["Product deleted by seller"] --> B["Removed from all wishlists"]
-    B --> C["No longer active in customer wishlist"]
-```
-
-### Checkout Blocked Until A Shipping Address Is Selected
-
-A customer cannot proceed to checkout without a valid shipping address selection.
-If the customer has no selected shipping address, the platform stops checkout and requires a shipping address to be chosen first.
-If a default shipping address exists, it may be used only when the customer explicitly uses it for checkout.
+When a customer deletes their account, the customer’s reviews are preserved.
+Preserved reviews are shown as written by a deleted user instead of by the original customer identity.
+If a review is already preserved under deleted-user identity, it remains available in that form.
+The system must keep preserved reviews stable even after the original customer account no longer exists.
+If review display or account deletion processing fails, the system does not alter the preserved review identity.
 
 ```mermaid
 sequenceDiagram
     participant C as Customer
     participant S as System
-    C->>S: Proceed to checkout
-    S->>S: Check selected shipping address
-    S-->>C: Block checkout until an address is selected
+    C->>S: Delete account
+    S->>S: Remove profile information
+    S->>S: Preserve orders and reviews
+    S->>S: Show preserved reviews as deleted user
 ```
 
-### Banned Customer Login Denied
+## CustomerProfile Error Scenarios
 
-If a customer account is banned, the platform rejects login attempts for that account.
-A banned customer cannot access account-based shopping features until the account is unbanned.
-The ban state prevents the customer from signing in.
+A customer profile can only be edited by the owning customer, so another account must not be able to change the display name or phone number. If the customer submits incomplete or unusable profile information, the system should reject the change and keep the existing profile intact. When profile edits are saved, the previous state must still be preserved through snapshot behavior, so failed updates must not create a misleading change record. If a customer has deleted their account, profile editing is no longer available because the profile information itself has been removed. The system should also prevent partial corruption where only one visible profile value changes while the rest of the profile remains in an undefined state. Customers may update either or both profile values, but an unsuccessful edit must not erase the existing display name or phone number. When profile data is viewed after changes, it should reflect the latest successful update only. If a request targets a profile that no longer exists, the system should respond as unavailable rather than recreating the account.
 
-```mermaid
-flowchart LR
-    A["Banned customer account"] -->|"Login attempt"| B["Login denied"]
-    B --> C["Account-based features unavailable"]
-```
+### Customer Profile Ownership and Edit Access
 
-## Seller Error Scenarios
+A customer can edit a customer profile only through the customer account that owns it.
+If a customer profile is no longer available after account deletion, profile editing is unavailable.
+If a request targets a missing profile, the system treats the profile as unavailable rather than recreating it.
 
-Sellers cannot sell or manage products until their account has been approved, and rejected sellers must see the rejection result before they can submit a new registration request. If a seller is suspended or banned, the platform must prevent login as well as product creation and product editing, while still allowing them to handle already existing orders when permitted. A seller trying to delete their account must be blocked whenever there are pending order items, pending cancellation requests, or pending refund requests. Sellers may only delete products and variants when there are no pending order items and no related pending requests tied to those items. If a product has no variants, it can remain visible in search but must be treated as unavailable for purchase. A seller cannot add a variant that would violate the product’s purchasable state rules, and deleting the last remaining variant should make the product unavailable rather than purchasable. Inventory changes must not allow stock handling that conflicts with order activity, and stock restoration should follow only approved cancellation or refund outcomes. When a seller edits products, variants, or profile information, the platform must preserve snapshots so previous states remain available for dispute resolution. If a seller attempts to ship order items that do not belong to their shop, the action must be rejected. Any seller operation that conflicts with a product’s deletion state, approval state, or pending request state must stop and show the reason clearly.
+### Invalid Display Name and Phone Number Updates
 
-### Seller Approval and Re-registration
+If a customer submits an invalid display name update, the system rejects the change and preserves the existing display name.
+If a customer submits an invalid phone number update, the system rejects the change and preserves the existing phone number.
+A failed update must not remove one profile value while leaving the other unchanged in an inconsistent state.
+A customer may update the display name, the phone number, or both in one edit, but any invalid value causes the edit to fail.
+When an edit fails, the profile continues to show the latest successful values only.
 
-Seller accounts shall remain unable to sell until administrator approval has been granted.
-If a seller registration request is rejected, the system shall show the rejection result to the seller.
-If a seller registration request is rejected, the seller shall be allowed to submit a new registration request.
-If a seller registration request is still pending, the system shall prevent the seller from selling.
-If a seller registration request has already been approved, the system shall treat the seller as eligible to sell according to the account status rules defined elsewhere.
+### Profile Snapshot Preservation
 
-```mermaid
-flowchart LR
-    A["Seller registration submitted"] --> B["Pending approval"]
-    B -->|"Approved"| C["Seller may sell"]
-    B -->|"Rejected"| D["Seller sees rejection result"]
-    D --> E["Submit new registration request"]
-```
+Every successful customer profile edit preserves the previous state through snapshot behavior.
+The snapshot records what changed and preserves the values before and after the edit.
+If an edit is rejected, no misleading snapshot is created for that failed change.
+Snapshots remain available as historical records of successful profile changes.
+The current profile display always reflects the latest successful edit, not failed attempts.
 
-### Suspended Seller Restrictions
+### Partial Update Safety and Data Consistency
 
-When a seller account is suspended, the system shall prevent the seller from creating new products.
-When a seller account is suspended, the system shall prevent the seller from editing existing products.
-When a seller account is suspended, the system shall continue to allow the seller to handle existing orders only where existing order handling is otherwise permitted.
-If a suspended seller attempts to create or edit a product, the system shall reject the action.
-If a suspended seller later returns to an active state, product creation and product editing shall remain governed by the seller account status at that time.
-
-```mermaid
-flowchart LR
-    A["Seller account suspended"] --> B["Create product"]
-    A --> C["Edit product"]
-    B --> D["Rejected"]
-    C --> D
-    A --> E["Existing order handling"]
-```
-
-### Seller Account Deletion Blockers
-
-If a seller has any pending order items in paid or shipped status, the system shall block seller account deletion.
-If a seller has any pending cancellation requests, the system shall block seller account deletion.
-If a seller has any pending refund requests, the system shall block seller account deletion.
-If any of the deletion blockers are present, the system shall show the reason for the rejection.
-If none of the deletion blockers are present, the seller account deletion process may continue according to the account lifecycle rules defined elsewhere.
-
-```mermaid
-flowchart LR
-    A["Seller requests account deletion"] --> B["Check pending order items"]
-    B -->|"Yes"| C["Deletion blocked"]
-    B -->|"No"| D["Check pending cancellation requests"]
-    D -->|"Yes"| C
-    D -->|"No"| E["Check pending refund requests"]
-    E -->|"Yes"| C
-    E -->|"No"| F["Deletion may continue"]
-```
-
-### Product and Variant Deletion Safety
-
-If a product has any pending order items in paid or shipped status, the system shall block product deletion.
-If a product has any pending cancellation requests tied to any of its variants, the system shall block product deletion.
-If a product has any pending refund requests tied to any of its variants, the system shall block product deletion.
-If a variant has any pending order items in paid or shipped status, the system shall block variant deletion.
-If a variant has any pending cancellation requests, the system shall block variant deletion.
-If a variant has any pending refund requests, the system shall block variant deletion.
-If the last remaining variant of a product is removed, the system shall mark the product as unavailable rather than purchasable.
-If a product has no variants, the system shall allow the product to remain visible in search while treating it as unavailable for purchase.
-
-```mermaid
-flowchart LR
-    A["Delete product or variant requested"] --> B["Check pending order items"]
-    B -->|"Yes"| C["Deletion blocked"]
-    B -->|"No"| D["Check pending cancellation requests"]
-    D -->|"Yes"| C
-    D -->|"No"| E["Check pending refund requests"]
-    E -->|"Yes"| C
-    E -->|"No"| F["Deletion allowed"]
-    F --> G["If last variant removed, product becomes unavailable"]
-```
-
-### Seller Shipping Ownership Validation
-
-A seller shall only ship order items that belong to that seller's own shop.
-If a seller attempts to ship order items belonging to another shop, the system shall reject the action.
-If a shipment contains more than one item, every item in that shipment shall still belong to the same seller.
-If the shipping attempt does not match the seller ownership of the order items, the system shall show the rejection reason clearly.
-
-```mermaid
-flowchart LR
-    A["Seller starts shipping"] --> B["Check item ownership"]
-    B -->|"Own shop items"| C["Shipping may continue"]
-    B -->|"Another shop's items"| D["Rejected"]
-```
-
-### Snapshot Preservation After Seller Edits
-
-Whenever a seller edits editable seller data, the system shall create a snapshot of the previous state.
-The snapshot shall preserve what changed, when the change was made, and the values before and after the change.
-Seller profile edits shall create a snapshot.
-Product edits shall create a snapshot.
-Variant edits shall create a snapshot.
-Snapshots created from seller edits shall remain available for dispute resolution according to the snapshot viewing rules defined elsewhere.
-If a seller account is later deleted, the snapshots created from the seller's edits shall still be preserved.
-
-```mermaid
-flowchart LR
-    A["Seller edits data"] --> B["Create snapshot"]
-    B --> C["Store before and after values"]
-    C --> D["Snapshot remains available"]
-```
-
-## Administrator Error Scenarios
-
-Administrator actions must respect role boundaries, so only super administrators can approve, reject, promote, or demote administrator requests and grades. A super administrator cannot demote themselves, and attempts to do so must be rejected. When reviewing seller approvals, an administrator must supply a rejection reason if the seller application is rejected. If a seller approval request has already been resolved, the platform should not allow the same request to be approved again or rejected again. Category management must handle conflicts where a category is removed while products still reference it, in which case products should become uncategorized rather than blocked. Product oversight actions must preserve snapshots, and administrators should still be able to view historical states even after a product has been deleted. If an administrator force-cancels or force-refunds an order item that is already finalized by another action, the platform must reject the duplicate intervention. Banning and unbanning operations must be consistent with current account state, so an already banned account should not be banned again as a separate new state. Administrator requests should not be approved or rejected after final review, and the resolution state must remain stable once decided. Any administrative action that conflicts with an existing status, such as trying to change a non-pending request, should be blocked and explained.
-
-### Super Administrator Review of Administrator Requests
-
-Super administrator approval is required before an administrator request can be resolved as approved.
-
-When an administrator request is pending, the system allows only a super administrator to approve or reject it.
-
-If a non-super administrator attempts to approve or reject an administrator request, the action is rejected.
-
-If an administrator request has already been approved or rejected, the system does not allow it to be resolved again.
-
-```mermaid
-sequenceDiagram
-    participant SA as "Super Administrator"
-    participant S as "System"
-    SA->>S: "Review pending administrator request"
-    S->>S: "Check that the request is still pending"
-    S->>S: "Approve or reject the request once"
-    S-->>SA: "Resolution recorded"
-    SA->>S: "Attempt to resolve the same request again"
-    S-->>SA: "Request rejected"
-```
-
-### Super Administrator Self-Demotion Is Blocked
-
-A super administrator may demote another regular administrator only when the target account is eligible for demotion.
-
-If a super administrator attempts to demote their own account, the action is rejected.
-
-The system keeps the acting super administrator's grade unchanged when a self-demotion attempt is rejected.
-
-```mermaid
-flowchart LR
-    A["Super administrator"] -->|"Attempt self-demotion"| B["System checks target account"]
-    B -->|"Target is the acting account"| C["Reject action"]
-    B -->|"Target is another account"| D["Allow demotion if permitted"]
-```
-
-### Seller Approval Rejection Requires a Reason
-
-When an administrator rejects a seller approval request, a rejection reason must be provided.
-
-If the rejection reason is missing, the rejection action is rejected.
-
-A rejected seller approval request retains the rejection reason for later review.
-
-If a seller approval request has already been resolved, the system does not allow it to be rejected again or approved again.
-
-```mermaid
-sequenceDiagram
-    participant A as "Administrator"
-    participant S as "System"
-    A->>S: "Reject seller approval request"
-    S->>S: "Check that a rejection reason was provided"
-    S-->>A: "Reject request or block missing reason"
-```
-
-### Resolved Seller Approval Requests Cannot Be Processed Again
-
-A seller approval request can be handled only while it is pending.
-
-If a seller approval request has already been approved, it cannot be rejected afterward.
-
-If a seller approval request has already been rejected, it cannot be approved afterward.
-
-If an administrator attempts to act on a resolved seller approval request, the system rejects the action and preserves the final request state.
-
-```mermaid
-flowchart LR
-    A["Pending seller approval request"] -->|"Approve or reject"| B["Resolved request"]
-    B -->|"Attempt second decision"| C["Rejected by system"]
-```
-
-### Deleted Categories Leave Products Uncategorized
-
-When an administrator deletes a category, any products that referenced that category are not blocked from existing as products.
-
-Instead, those products become uncategorized.
-
-Products that become uncategorized continue to exist, but they no longer belong to the deleted category.
-
-This behavior applies when a category is removed even if products still reference it at the time of deletion.
-
-```mermaid
-flowchart LR
-    A["Category"] -->|"Deleted"| B["Products that referenced it"]
-    B -->|"Category removed"| C["Products become uncategorized"]
-```
-
-### Administrators Can View Product Snapshots After Deletion
-
-Administrators can view snapshots of any product, including products that have already been deleted.
-
-Deleting a product does not remove its snapshots.
-
-Historical product states remain available for administrator review after product deletion.
-
-If an administrator requests a deleted product's history, the system provides the preserved snapshots rather than rejecting the request because the product is deleted.
-
-```mermaid
-sequenceDiagram
-    participant A as "Administrator"
-    participant S as "System"
-    A->>S: "View snapshots for a deleted product"
-    S->>S: "Load preserved historical snapshots"
-    S-->>A: "Snapshots displayed"
-```
-
-### Duplicate Force-Cancel Actions Are Blocked After Final Order Actions
-
-If an administrator force-cancels an order item or order that has already been finalized by another action, the system rejects the duplicate intervention.
-
-A final order action includes any action that has already brought the targeted item or order to a completed state.
-
-The system does not apply a second force-cancel to the same finalized target.
-
-When a duplicate force-cancel is rejected, the previous final state remains unchanged.
-
-```mermaid
-flowchart LR
-    A["Administrator force-cancel request"] --> B["Check final order state"]
-    B -->|"Already finalized"| C["Reject duplicate force-cancel"]
-    B -->|"Not finalized"| D["Proceed with force-cancel"]
-```
-
-### Duplicate Force-Refund Actions Are Blocked After Final Order Actions
-
-If an administrator force-refunds an order item or order that has already been finalized by another action, the system rejects the duplicate intervention.
-
-A final order action includes any action that has already completed the targeted item or order.
-
-The system does not apply a second force-refund to the same finalized target.
-
-When a duplicate force-refund is rejected, the previous final state remains unchanged.
-
-```mermaid
-flowchart LR
-    A["Administrator force-refund request"] --> B["Check final order state"]
-    B -->|"Already finalized"| C["Reject duplicate force-refund"]
-    B -->|"Not finalized"| D["Proceed with force-refund"]
-```
-
-### Already Banned Accounts Cannot Be Banned Again
-
-When an administrator bans a customer or seller, the account enters a banned state.
-
-If an administrator attempts to ban an account that is already banned, the action is rejected.
-
-The system does not create a new banned state for an account that is already banned.
-
-An already banned account remains in its current banned state until it is unbanned.
-
-```mermaid
-flowchart LR
-    A["Account"] -->|"Ban"| B["Banned"]
-    B -->|"Ban again"| C["Rejected by system"]
-```
-
-### Administrator Requests Cannot Be Resolved Twice
-
-An administrator request can be approved or rejected only while it is pending.
-
-If an administrator request has already been approved, the system blocks any later rejection.
-
-If an administrator request has already been rejected, the system blocks any later approval.
-
-Once an administrator request has been resolved, its decision state remains stable and cannot be changed by another administrative action.
-
-```mermaid
-sequenceDiagram
-    participant SA as "Super Administrator"
-    participant S as "System"
-    SA->>S: "Resolve administrator request"
-    S->>S: "Record final decision"
-    SA->>S: "Attempt a second resolution"
-    S-->>SA: "Request rejected"
-```
-
-## Profile Error Scenarios
-
-Profile updates are only valid for registered accounts, so anonymous or deleted accounts cannot edit profile details. If a customer or seller submits a display name, phone number, or other profile value that conflicts with the account rules, the platform should reject the update. When a profile change is accepted, the previous state must be preserved in a snapshot for later review. If a deleted account is displayed in historical records, its preserved references should not be editable as an active profile. A customer profile should not accept changes after account deletion, and the same rule applies to seller profiles after seller account deletion. If multiple profile changes happen over time, each change should create its own snapshot rather than overwriting earlier history. When the platform shows profile data to other users, it must not expose deleted profile details as though they are still active. Any profile edit that would break account ownership or expected identity presentation should be blocked. If a profile update is requested while the account is suspended or otherwise inactive, the request should not proceed. The system should keep profile error handling consistent across customer and seller identities.
-
-### Registered Account Required for Profile Edit
-
-A profile edit request is valid only when the account is registered and active. Anonymous access cannot modify profile information.
-
-If a profile edit is requested for an unregistered account, the platform rejects the request.
-
-If a profile edit is requested for an account that is not active, the platform rejects the request.
-
-```mermaid
-flowchart LR
-    A["Profile edit request"] --> B["Registered and active account"]
-    A --> C["Not registered or not active"]
-    B --> D["Accept profile edit"]
-    C --> E["Reject profile edit"]
-```
-
-### Profile Update Blocked After Account Deletion
-
-A deleted customer account cannot change profile information.
-
-A deleted seller account cannot change profile information.
-
-If a profile update is requested after account deletion, the platform rejects the request.
-
-If a deleted account appears in historical records, its preserved profile reference remains read-only and cannot be updated as an active profile.
-
-```mermaid
-flowchart LR
-    A["Profile update request"] --> B["Account deleted"]
-    A --> C["Account not deleted"]
-    B --> D["Reject profile update"]
-    C --> E["Continue profile update processing"]
-```
-
-### Snapshot Created for Each Profile Change
-
-Every accepted change to customer profile information creates a snapshot of the previous state and the new state.
-
-Every accepted change to seller profile information creates a snapshot of the previous state and the new state.
-
-A snapshot records when the change was made, what changed, and the values before and after the change.
-
-Each accepted profile change creates its own snapshot, even when multiple changes happen over time.
-
-Snapshots created for profile changes are preserved for later review.
-
-```mermaid
-flowchart LR
-    A["Profile change accepted"] --> B["Create snapshot"]
-    B --> C["Record before state"]
-    B --> D["Record after state"]
-    B --> E["Record change time"]
-    B --> F["Preserve for review"]
-```
-
-### Deleted Profile Not Editable as Active Record
-
-When a profile belongs to a deleted account, the platform treats it as preserved history rather than an active record.
-
-An inactive preserved profile cannot be edited as though it were still active.
-
-If a user attempts to edit a deleted profile through an active-profile workflow, the platform rejects the request.
-
-This rule applies equally to customer profiles and seller profiles.
-
-```mermaid
-flowchart LR
-    A["Profile reference"] --> B["Active account"]
-    A --> C["Deleted account"]
-    B --> D["Editable as active record"]
-    C --> E["Read-only historical record"]
-    E --> F["Reject active edit request"]
-```
-
-### Customer Profile Inactive During Account Suspension
-
-When a customer account is suspended or otherwise inactive, profile edits cannot proceed.
-
-If a customer submits a profile update while the account is suspended, the platform rejects the request.
-
-A suspended customer profile remains unavailable for active editing until the account becomes active again.
-
-```mermaid
-flowchart LR
-    A["Customer profile update request"] --> B["Account suspended or inactive"]
-    A --> C["Account active"]
-    B --> D["Reject request"]
-    C --> E["Allow request to continue"]
-```
-
-### Seller Profile Inactive During Account Suspension
-
-When a seller account is suspended or otherwise inactive, profile edits cannot proceed.
-
-If a seller submits a profile update while the account is suspended, the platform rejects the request.
-
-A suspended seller profile remains unavailable for active editing until the account becomes active again.
-
-```mermaid
-flowchart LR
-    A["Seller profile update request"] --> B["Account suspended or inactive"]
-    A --> C["Account active"]
-    B --> D["Reject request"]
-    C --> E["Allow request to continue"]
-```
-
-### Identity Presentation Conflict Rejected
-
-If a profile change would conflict with the account's expected identity presentation, the platform rejects the request.
-
-This applies when the requested profile value would no longer match the identity presentation the account is expected to maintain.
-
-The platform does not apply the conflicting change, and the existing profile information remains unchanged.
-
-```mermaid
-flowchart LR
-    A["Profile change request"] --> B["Identity presentation conflict"]
-    A --> C["No conflict"]
-    B --> D["Reject change"]
-    C --> E["Apply change"]
-```
-
-### Profile History Preserved for Review
-
-Accepted profile changes remain available in historical form for later review.
-
-Profile history is preserved so that relevant parties can review prior values when needed.
-
-The preserved history must remain associated with the profile change trail and must not be overwritten by later edits.
-
-If multiple accepted edits exist, each edit remains separately reviewable in the history trail.
-
-```mermaid
-flowchart LR
-    A["Accepted profile change"] --> B["Preserve history"]
-    B --> C["Review prior values"]
-    B --> D["Keep separate edit records"]
-```
-
-### Display Name Update Rejected
-
-A customer display name update is rejected when the requested value violates the account rules described for profile editing.
-
-A seller display name update is rejected when the requested value violates the account rules described for profile editing.
-
-If the requested display name creates an identity presentation conflict, the platform rejects the update.
-
-If the account is deleted, suspended, or otherwise inactive, the display name update is rejected.
-
-```mermaid
-flowchart LR
-    A["Display name update request"] --> B["Meets profile rules"]
-    A --> C["Violates profile rules"]
-    B --> D["Accept update"]
-    C --> E["Reject update"]
-```
-
-### Phone Number Update Rejected
-
-A customer phone number update is rejected when the requested value violates the account rules described for profile editing.
-
-A seller phone number update is rejected when the requested value violates the account rules described for profile editing.
-
-If the requested phone number creates an identity presentation conflict, the platform rejects the update.
-
-If the account is deleted, suspended, or otherwise inactive, the phone number update is rejected.
-
-```mermaid
-flowchart LR
-    A["Phone number update request"] --> B["Meets profile rules"]
-    A --> C["Violates profile rules"]
-    B --> D["Accept update"]
-    C --> E["Reject update"]
-```
+A customer profile edit must not partially apply if one requested change is invalid.
+If either the display name update or the phone number update fails validation, neither value is changed.
+The system must prevent partial corruption where one visible profile value changes while the other becomes undefined.
+A failed edit must not erase the existing profile data.
+After any failed edit, the profile remains exactly as it was before the request.
 
 ## ShippingAddress Error Scenarios
 
-A shipping address can only be managed by a registered customer, and deleted customers must not be able to add or edit addresses. If a customer tries to save an address without the required recipient or location details, the platform should reject it. Customers may store multiple addresses, but only one address can be the default at a time. When a new default is chosen, the previous default must be cleared automatically so the account remains consistent. If a customer deletes the default address, the platform should not leave the account without a usable shipping choice when checkout is already in progress; the customer must select another valid address before placing the order. An address used by an order cannot be changed for that placed order, because the shipping destination is fixed once checkout is complete. When an address is edited, the platform should preserve the previous state in a snapshot for dispute handling. If a customer attempts to use an address that has been removed, checkout should stop and require another saved address. Address errors should always make it clear whether the problem is missing information, an invalid saved address, or a conflict with an active checkout. The system should treat default address selection and address deletion as customer-facing state changes that must remain stable and traceable.
+Customers can manage multiple shipping addresses, but only an authenticated customer should be able to add, edit, or delete their own addresses. Address changes must be rejected when required recipient or location details are missing, because shipping depends on a complete delivery destination. If a customer edits an address that does not belong to them, the system must block the action and preserve the original record. A default shipping address can be set from the customer’s own saved addresses, and the system should not allow a deleted or unavailable address to remain the default. When the default address is removed, the customer should no longer rely on it during checkout and must choose another address. Deleting an address that is already absent should not affect the rest of the customer’s address list. Address operations should not disturb other saved addresses or the delivery information already used by existing orders. If an update fails, the customer’s previously saved address details should remain unchanged.
 
-### Registered Customer Access
+### Customer-Owned Shipping Address Only
 
-A shipping address can be managed only by a registered customer.
-If a person is not a registered customer, the platform rejects attempts to add, edit, delete, or select shipping addresses.
-If a customer account is deleted, the platform rejects further shipping address management actions for that account.
-
-```mermaid
-flowchart LR
-    A["Person"] -->|"Attempts address management"| B["Registered customer check"]
-    B -->|"Registered customer"| C["Address management allowed"]
-    B -->|"Not registered customer"| D["Request rejected"]
-```
-
-### Required Shipping Address Details
-
-If a customer tries to save a shipping address without recipient details, the platform rejects the address.
-If a customer tries to save a shipping address without shipping location details, the platform rejects the address.
-The platform must treat missing recipient details and missing shipping details as separate rejection conditions so that the customer can identify what must be completed.
+Customers can add, edit, and delete only shipping addresses that belong to their own account.
+If a customer attempts to manage a shipping address that belongs to another customer, the action is rejected and the original address remains unchanged.
+Shipping address ownership is enforced for all address management actions, including marking an address as the default shipping address.
+A customer’s saved address list is never modified by actions on another customer’s address.
 
 ```mermaid
 flowchart LR
-    A["Save shipping address"] --> B["Check recipient details"]
-    B -->|"Missing"| C["Reject address"]
-    B -->|"Present"| D["Check shipping details"]
-    D -->|"Missing"| C
-    D -->|"Present"| E["Save address"]
+    A["Customer selects shipping address"] --> B["System checks ownership"]
+    B -->|"Own address"| C["Allow action"]
+    B -->|"Another customer's address"| D["Reject action"]
 ```
 
-### Default Shipping Address Rules
+### Complete Delivery Details Required
 
-A customer may have multiple shipping addresses.
-Only one shipping address can be the default at a time.
-When a customer sets a new default shipping address, the previous default is cleared automatically so that the account remains consistent.
-If a customer deletes the default shipping address, the platform must not leave multiple default addresses in the account.
+A shipping address must include the full set of delivery details required for shipping: recipient name, phone number, street address, city, state or province, postal code, and country.
+If any required delivery detail is missing, the system rejects the add or edit request.
+A partially completed address cannot be saved as a usable shipping address.
+The system preserves the previously saved address information when a save attempt fails because delivery details are incomplete.
 
 ```mermaid
 flowchart LR
-    A["Customer selects new default address"] --> B["System clears previous default"]
-    B --> C["System marks selected address as default"]
-    C --> D["One default address remains"]
+    A["Address save request"] --> B["Check delivery details"]
+    B -->|"Complete"| C["Save address"]
+    B -->|"Incomplete"| D["Reject request"]
 ```
 
-### Deleted or Invalid Saved Address at Checkout
+### Default Address Must Remain Valid
 
-If a customer tries to use a shipping address that has been deleted, the platform blocks checkout until another valid saved address is chosen.
-If a customer tries to use a shipping address that is no longer valid as a saved address, the platform blocks checkout.
-The platform must make the address unavailable for checkout as soon as it is removed or otherwise invalidated as a saved address.
+A deleted shipping address cannot remain the default shipping address.
+If the default shipping address is deleted, the system removes the default designation from that address before completing the deletion.
+After the default address is removed, the customer no longer has a default shipping address until another saved address is selected as default.
+Deleting the default address does not delete or alter the customer’s other saved addresses.
 
 ```mermaid
 flowchart LR
-    A["Checkout uses saved address"] --> B["Validate saved address"]
-    B -->|"Valid"| C["Continue checkout"]
-    B -->|"Deleted or invalid"| D["Block checkout"]
-    D --> E["Choose another saved address"]
+    A["Default shipping address"] --> B["Delete address"]
+    B --> C["Remove default designation"]
+    C --> D["Default address no longer available"]
 ```
 
-### Fixed Address After Order Placement
+### Safe Deletion of Missing or Repeated Addresses
 
-Once an order is placed, the shipping address for that order is fixed.
-The shipping address used for a placed order cannot be changed afterward.
-If a customer attempts to change the shipping address after order placement, the platform rejects the change and keeps the original order shipping destination.
+If a customer tries to delete a shipping address that is already absent, the system handles the request safely and leaves the customer’s saved address list unchanged.
+If the same address is removed more than once, the repeated deletion attempt does not affect any remaining saved addresses.
+A failed deletion attempt does not create any change to the customer’s address list.
+The system preserves all unaffected saved addresses when handling deletion of a missing address.
 
 ```mermaid
 flowchart LR
-    A["Order placed"] --> B["Shipping address fixed"]
-    B --> C["Customer attempts change"]
-    C --> D["Change rejected"]
-    D --> B
+    A["Delete address request"] --> B["Check whether address exists"]
+    B -->|"Exists"| C["Delete address"]
+    B -->|"Missing"| D["Leave address list unchanged"]
 ```
 
-### Canonical Snapshot Handling for Shipping Address Edits
+### Checkout Requires an Available Default Address
 
-When a customer edits a shipping address, the platform preserves the previous state in a single snapshot.
-The snapshot records the time of the change and the values before and after the edit.
-Snapshots created for shipping address edits are immutable.
+If a customer has no default shipping address, the system does not assume one during checkout.
+When checkout requires a shipping address, the customer must choose from the customer’s saved addresses if no default address exists.
+If the customer expects to use a default address but none is available, the system requires the customer to select another saved address before checkout can continue.
+The absence of a default shipping address does not change any existing saved addresses.
 
 ```mermaid
 flowchart LR
-    A["Existing shipping address"] --> B["Edit address"]
-    B --> C["Create snapshot"]
-    C --> D["Save updated address"]
-    C --> E["Preserve previous state"]
+    A["Checkout starts"] --> B["Default shipping address available?"]
+    B -->|"Yes"| C["Use default or selected address"]
+    B -->|"No"| D["Customer selects another saved address"]
 ```
 
-### Active Checkout Conflicts
+### Address List Remains Unchanged on Failure
 
-If a customer deletes a shipping address that is being used in an active checkout, the platform must require the customer to select another valid address before the order can be placed.
-If a customer attempts to continue an active checkout with an address that has become unavailable, the platform blocks the checkout.
-The platform must clearly treat this as a conflict between the saved address state and the in-progress checkout state.
+If an address add, edit, delete, or default-selection request fails, the customer’s saved address list remains unchanged.
+A failed address operation does not partially update the address record.
+The system keeps the previously saved values when an update cannot be completed.
+Other saved addresses are not affected by a failed operation on one address.
 
 ```mermaid
 flowchart LR
-    A["Active checkout"] --> B["Address becomes unavailable or deleted"]
-    B --> C["Checkout conflict detected"]
-    C --> D["Block order placement"]
-    D --> E["Select another valid address"]
+    A["Address operation fails"] --> B["No partial update"]
+    B --> C["Saved address list unchanged"]
 ```
+
+## SellerAccount Error Scenarios
+
+Seller accounts require registration and login before any selling activity can happen, so unauthenticated access to seller actions must be blocked. Seller registration can be rejected during administrator review, and a rejected seller must see the rejection state before submitting a new registration request. Login fails when the email and password do not match a seller account, and banned or otherwise inaccessible seller accounts must not be allowed to sign in. Sellers can change their password only for their own account, and unauthorized password change attempts must be rejected. Account deletion is only allowed when the seller has no pending orders in paid or shipped status and no pending cancellation or refund requests. If any of those blocking conditions exist, the seller account must remain active and the deletion request must fail cleanly. When deletion is allowed, the seller’s products are removed from listings, while order history and snapshots remain preserved for records. If a seller tries to delete an account that is already unavailable, the system should not duplicate the deletion outcome.
+
+### Seller Account Access and Login Errors
+
+Sellers must be registered and signed in before they can use seller functions.
+If a seller account is banned, the system must block sign-in for that account.
+If the email and password do not match a seller account, the system must reject the sign-in attempt.
+If a seller account is otherwise not eligible for access, the system must not allow seller actions to proceed.
+
+### Seller Registration Review Outcomes
+
+Seller registration is subject to administrator review.
+If an administrator rejects a seller registration, the registration remains rejected and the seller must be able to see that outcome.
+If a seller registration is rejected, the rejection reason must be available to the seller.
+A rejected seller may submit a new registration request after seeing the rejected outcome.
+A new registration request from a rejected seller must be treated as a new review request rather than an automatic approval.
+
+### Seller Password Change Ownership Check
+
+A seller can change the password only for the seller account they own.
+If a seller attempts to change the password for an account they do not own, the change must be rejected.
+If the seller is not authorized to act on the target seller account, the password change must not take effect.
+
+### Seller Account Deletion Blocking Conditions
+
+A seller account deletion request must be rejected if the seller has any pending order items in paid or shipped status.
+A seller account deletion request must be rejected if the seller has any pending cancellation requests.
+A seller account deletion request must be rejected if the seller has any pending refund requests.
+If any blocking condition exists, the seller account must remain active and the deletion outcome must not be applied.
+If a seller account has already been deleted or is no longer available for deletion, the system must not process the deletion outcome again.
+
+### Seller Account Deletion Preserves Records
+
+When a seller account is deleted, the seller’s products are removed from listings.
+When a seller account is deleted, order history is preserved for records.
+When a seller account is deleted, snapshots associated with the seller’s past activity are preserved.
+When a seller account is deleted, the shop name shown in past orders is preserved.
+When a seller account deletion is completed, preserved records must remain available for business and legal reference.
 
 ## SellerProfile Error Scenarios
 
-Seller profile changes are only allowed for approved and active sellers, and suspended or deleted sellers must not be able to update their shop information. If a seller tries to edit the shop name, shop description, or logo in a way that violates account or ownership rules, the platform should reject the change. Every accepted seller profile edit must preserve the previous state as a snapshot so later disputes can reference the earlier shop identity. If a seller deletes their account, the historical shop name and logo used in past orders must remain unchanged in those records. Customers viewing seller profiles should still see the latest active shop details, but deleted or inactive seller profiles must not appear as editable current profiles. If a logo image is removed or replaced, the change should be reflected in snapshots and the previous appearance should remain available historically. A seller cannot cause a current profile change to rewrite the shop identity stored in completed orders. If the seller profile is missing required visible information, customers should still be shown the preserved historical order data rather than an incomplete order reference. Profile errors should focus on protecting current shop identity and preserving past transactional context. Any attempt to update a seller profile outside the seller’s active account state must be blocked.
+A seller profile can be edited only by the owning seller, and other accounts must not be able to change the shop name, description, or logo. If the seller submits an incomplete or unusable profile update, the system should reject it and preserve the current profile values. Every successful edit creates a snapshot, so failed edits must not produce a false history entry or overwrite the previous state. If the seller account is suspended, the seller may still process existing orders but should not be able to create new profile changes that conflict with the suspension rules. Customers can view seller profiles, but a removed or deleted seller account should not expose editable profile actions. When the logo is changed, the new visual identity must replace the old one only after a successful save. If the seller profile no longer exists, edits and views should treat it as unavailable rather than recreating it implicitly. Any failed profile operation must leave the shop name, description, and logo unchanged.
 
-### Approved Seller Requirement for Profile Edit
+### Owner-Only Editing and Failed Update Preservation
 
-A seller profile edit is allowed only when the seller has been approved to sell.
-If a seller has not been approved, the platform rejects any attempt to change the shop name, shop description, or logo image.
-If a seller approval request is still pending or has been rejected, the seller profile remains non-editable as a current shop profile.
-A rejected seller may submit a new registration request instead of editing the unapproved profile state.
-A customer-facing seller profile must never be updated from an unapproved seller account.
+A seller profile can be edited only by the owning seller account. Any attempt by another account to change the shop name, shop description, or logo image must be rejected.
 
-```mermaid
-flowchart LR
-    A["Seller attempts profile edit"] --> B["Is seller approved?"]
-    B -->|"Yes"| C["Allow edit"]
-    B -->|"No"| D["Reject edit"]
-    D --> E["Seller profile remains unchanged"]
-```
+If a profile update fails for any reason, the system keeps the existing shop name, shop description, and logo image unchanged. A failed update must not partially apply changes. A failed update must also not create a snapshot or replace the previous state.
 
-### Suspended or Deleted Seller Cannot Update Shop Profile
+If the seller submits a profile update that does not complete successfully, the seller profile remains in its prior state exactly as it was before the attempt.
 
-A suspended seller cannot update the shop name, shop description, or logo image.
-A deleted seller cannot update the shop name, shop description, or logo image.
-If a seller account is suspended or deleted before a profile change is submitted, the platform rejects the change and preserves the existing shop identity.
-If a seller account is no longer active, the seller profile is treated as historical information rather than an editable current profile.
-Any attempt to change a shop profile outside an active seller state must be blocked.
+### Snapshot Creation After Successful Edit
 
-```mermaid
-flowchart LR
-    A["Seller profile change request"] --> B["Is seller account active?"]
-    B -->|"Yes"| C["Check approval status"]
-    B -->|"No"| D["Reject change"]
-    C -->|"Approved"| E["Allow edit"]
-    C -->|"Not approved"| D
-```
+A seller profile snapshot is created only after a successful edit. The snapshot records the previous and updated values for the profile change.
 
-### Snapshot Preservation for Shop Identity Changes
+If the edit does not succeed, no snapshot is created. The preserved history must reflect only completed changes, not failed attempts.
 
-When a seller changes the shop name, the platform creates a snapshot of the previous shop identity.
-When a seller changes the shop description, the platform creates a snapshot of the previous shop identity.
-When a seller changes the logo image, the platform creates a snapshot of the previous shop identity.
-Each accepted seller profile edit must preserve what the shop identity looked like before the change and after the change.
-Snapshots for seller profile edits must remain available for later dispute resolution.
-The previous state of the seller profile must remain recoverable as historical evidence even after later edits occur.
+This rule applies to seller profile edits as a single business operation, so each successful change produces a record of what changed and what the seller profile looked like before and after the change.
 
-```mermaid
-sequenceDiagram
-    participant S as Seller
-    participant P as Platform
-    S->>P: Request shop profile change
-    P->>P: Save previous shop identity as snapshot
-    P->>P: Apply accepted change
-    P-->>S: Change recorded
-```
+### Suspended Seller Profile Changes Blocked
 
-### Historical Order Identity Remains Unchanged
+When a seller account is suspended, changes to the seller profile are blocked. The suspended seller may still process existing orders, but the seller profile itself must not accept new changes while the suspension is in effect.
 
-When a seller changes the shop name, past orders must continue to show the shop name that was preserved at the time of purchase.
-When a seller changes the logo image, past orders must continue to show the logo that was preserved at the time of purchase.
-A seller profile edit must not rewrite the shop identity stored in completed orders.
-Order history must retain the historical seller identity even if the current seller profile later changes.
-If a seller account is deleted, the seller identity shown in completed orders must remain the preserved historical identity.
+If a suspended seller attempts to change the shop name, shop description, or logo image, the request is rejected and the profile remains unchanged.
 
-```mermaid
-flowchart LR
-    A["Seller profile changes or seller account ends"] --> B["Completed orders exist"]
-    B --> C["Keep preserved shop name and logo in orders"]
-    C --> D["Do not overwrite historical identity"]
-```
+A suspension does not alter the current profile values; it only prevents profile edits during the suspended state.
 
-### Customer Views Active Seller Profile Only
+### Customer View and Missing Seller Profile Handling
 
-Customers can view only the seller profile that is currently active.
-Customers must not be shown a deleted seller profile as an editable current profile.
-Customers must not be shown a suspended seller profile as if it were an active storefront identity.
-If a seller profile is inactive, customers may still see preserved historical order information, but not an editable live profile.
-The platform must present the latest active shop details when a seller profile is available.
-If a seller profile lacks current visible information, historical order records must still remain accessible with their preserved seller identity.
+Customers can view seller profiles when the seller profile exists and is available.
 
-```mermaid
-flowchart LR
-    A["Customer views seller information"] --> B["Is seller profile active?"]
-    B -->|"Yes"| C["Show current seller profile"]
-    B -->|"No"| D["Hide as active profile"]
-    D --> E["Show preserved historical order identity only"]
-```
+If a seller account has been deleted, customer-facing viewing of that seller profile is unavailable. The system must not recreate the seller profile implicitly for viewing purposes.
+
+If a seller profile is missing, views and edit attempts treat it as unavailable rather than as a new profile. A missing seller profile does not produce a replacement profile automatically.
+
+When a seller profile has been deleted or is otherwise unavailable, the system preserves the prior state history already recorded, but the profile itself is not exposed as an active editable profile.
 
 ## Category Error Scenarios
 
-Category creation, editing, and deletion are reserved for administrators, so customer or seller attempts must be rejected. If a category name or description is missing or otherwise invalid, the platform should not save the category change. Because categories may have only one level of subcategory nesting, any attempt to create deeper nesting must be blocked. When a category is deleted, products in that category must become uncategorized rather than disappear from the platform unexpectedly. Customers should still be able to browse categories and category-linked products, but a deleted category should no longer behave as a normal active listing. If products remain associated with a category that has been removed, the system must handle that transition without breaking product visibility. Administrators editing a category must see the change reflected consistently across the browsing experience. Category errors should also prevent broken parent-child relationships that exceed the allowed subcategory structure. If a category operation conflicts with current product organization, the platform should preserve product access while applying the allowed uncategorized outcome. All category failures should clearly indicate whether the issue is authorization, missing data, or unsupported hierarchy.
+Categories are managed by administrators only, so customer attempts to create, edit, or delete categories must be blocked. A category change should be rejected if the category target does not exist or if the request would break the allowed one-level subcategory structure. When a category is deleted, products in that category become uncategorized, so the system must preserve product visibility without leaving them in a removed category. If a category name or description update fails, the current category information should remain unchanged. Customers can browse categories and category products, but deleted categories should no longer appear in those browsing lists. The system must prevent creating deeper nesting beyond a single subcategory level, because the platform only supports one level of subcategories. If administrators try to delete a category that is already missing, the system should treat it as unavailable without affecting unrelated categories. Category operations should not break product browsing for items that were previously assigned to the category.
 
 ### Administrator-Only Category Management
 
 Only administrators can create, edit, or delete categories.
-If a customer or seller attempts to change a category, the platform rejects the request.
-The platform treats category management actions as administrator-only even when the category is referenced by products or browsing pages.
-Category changes made by an administrator are applied consistently so that category browsing reflects the latest approved state.
+Customer attempts to perform any category management operation are rejected.
+Category management actions are limited to category records and their allowed one-level subcategories.
 
 ```mermaid
 flowchart LR
-    A["Customer or seller attempts category change"] --> B["System checks category management permission"]
-    B -->|"Not allowed"| C["Reject request"]
-    B -->|"Allowed"| D["Apply category change"]
-    D --> E["Browsing reflects updated category state"]
+    A["Customer"] -->|"Create or edit or delete category"| B["Rejected"]
+    C["Administrator"] -->|"Create or edit or delete category"| D["Allowed"]
 ```
 
+### One-Level Subcategory Structure Enforcement
 
-### Invalid Category Name Rejected
-
-If a category name is missing or otherwise invalid, the platform rejects the category creation or category edit request.
-The platform does not save a category change when the category name fails validation.
-The rejection applies whether the category is being created as a top-level category or as a subcategory.
-An invalid category name does not change the category’s current browsing visibility or its relationship to products.
+The category structure supports only one level of subcategories.
+A category may have subcategories, but a subcategory may not contain its own subcategories.
+Any change that would create deeper nesting is rejected.
+This rule applies to both new category creation and category edits.
 
 ```mermaid
 flowchart LR
-    A["Administrator submits category name"] --> B["System validates name"]
-    B -->|"Invalid"| C["Reject change"]
-    B -->|"Valid"| D["Save category change"]
+    A["Category"] --> B["Subcategory"]
+    B -->|"Attempt another nesting level"| C["Rejected"]
 ```
 
+### Invalid Category Edit Rejected
 
-### Invalid Category Description Rejected
-
-If a category description is missing or otherwise invalid, the platform rejects the category creation or category edit request.
-The platform does not save a category change when the category description fails validation.
-A description validation failure does not alter the category’s current products or subcategories.
-The category remains in its previous state when the description cannot be accepted.
-
-```mermaid
-flowchart LR
-    A["Administrator submits category description"] --> B["System validates description"]
-    B -->|"Invalid"| C["Reject change"]
-    B -->|"Valid"| D["Save category change"]
-```
-
-
-### One-Level Subcategory Nesting
-
-Categories can have at most one level of subcategory nesting.
-If a category operation would create a deeper parent-child chain, the platform rejects the request.
-A subcategory may belong to one parent category, but it cannot contain another subcategory beneath it.
-The platform preserves the existing category hierarchy when a deeper nesting attempt is blocked.
-
-```mermaid
-flowchart LR
-    A["Top-level category"] --> B["Subcategory"]
-    B -->|"Attempt deeper nesting"| C["Reject request"]
-```
-
-
-### Broken Parent-Child Category Relationship Blocked
-
-If a category change would produce a broken parent-child relationship, the platform rejects the request.
-The platform blocks category edits that would leave a subcategory without a valid parent relationship or create an unsupported hierarchy.
-A rejected hierarchy change does not remove products from their current browsing path unless the category is actually deleted through an allowed operation.
-The platform keeps the category structure consistent after any rejected parent-child update.
-
-```mermaid
-flowchart LR
-    A["Administrator edits category relationship"] --> B["System checks parent-child consistency"]
-    B -->|"Broken relationship"| C["Reject request"]
-    B -->|"Consistent"| D["Save relationship"]
-```
-
-
-### Category Deletion Preserves Product Visibility
-
-When an administrator deletes a category, products assigned to that category do not disappear from the platform unexpectedly.
-Products associated with the deleted category become uncategorized.
-The platform preserves product visibility so that the products can still be found through product browsing paths that are not dependent on the removed category.
-The deleted category no longer behaves as an active category in browsing.
-
-```mermaid
-flowchart LR
-    A["Administrator deletes category"] --> B["System removes active category"]
-    B --> C["Products become uncategorized"]
-    C --> D["Product visibility is preserved"]
-```
-
-
-### Deleted Category Makes Products Uncategorized
-
-If a category is deleted, every product that was assigned to that category is marked as uncategorized.
-The uncategorized outcome applies instead of removing the product from the platform.
-If the deleted category had subcategories, the products affected by that deletion remain visible as uncategorized products.
-The platform preserves the product record after category deletion so that the product can continue to be managed.
-
-```mermaid
-flowchart LR
-    A["Category deleted"] --> B["Associated products"] --> C["Marked uncategorized"]
-```
-
-
-### Category Edit Reflected Across Browsing
-
-When an administrator edits a category name or description, the updated category information is reflected across category browsing.
-The platform shows the latest saved category details wherever the category is presented to users.
-If the edit affects a parent category, browsing also reflects the updated relationship for its subcategories.
-A successful category edit does not leave inconsistent category information in different browsing views.
+A category edit is rejected when the target category does not exist.
+A category edit is also rejected when the requested change would violate the allowed category structure.
+When an edit is rejected, the category remains unchanged.
+If a category name or description update does not succeed, the existing category information is preserved.
 
 ```mermaid
 sequenceDiagram
-    participant A as Administrator
+    participant U as Administrator
     participant S as System
-    participant U as User
-    A->>S: Edit category information
-    S->>S: Save category change
-    U->>S: Browse categories
-    S-->>U: Show updated category information
+    U->>S: Request category edit
+    S->>S: Validate category target and structure
+    S-->>U: Accept or reject without changing the category on failure
 ```
 
+### Deleted Category Becomes Uncategorized
 
-### Category Conflict with Product Organization
-
-If a category operation conflicts with current product organization, the platform preserves product access while applying the permitted category outcome.
-When a category is deleted, the conflict is resolved by making related products uncategorized rather than hiding or deleting them.
-If a requested category change would disrupt product organization in a way that is not allowed, the platform rejects the request.
-The platform handles category conflicts without breaking the ability to browse products that remain valid in the catalog.
+When a category is deleted, products that belonged to that category become uncategorized.
+Category deletion does not remove the affected products.
+Category deletion must preserve product visibility for those products.
+Products that were assigned to the deleted category remain available through browsing paths that do not depend on the deleted category record.
 
 ```mermaid
 flowchart LR
-    A["Category change conflicts with product organization"] --> B["System evaluates allowed outcome"]
-    B -->|"Allowed deletion outcome"| C["Products become uncategorized"]
-    B -->|"Not allowed"| D["Reject request"]
-    C --> E["Product access preserved"]
+    A["Category"] -->|"Delete"| B["Deleted category"]
+    B --> C["Products become uncategorized"]
+    C --> D["Product visibility preserved"]
 ```
 
+### Customer Browsing Excludes Deleted Categories
 
-### Authorization Blocked for Category Changes
-
-If a customer or seller attempts to manage categories, the platform blocks the request because category management is reserved for administrators.
-An unauthorized category change does not create, update, or delete any category data.
-The platform returns the same blocked outcome for unauthorized category creation, editing, and deletion attempts.
-Unauthorized attempts do not alter category browsing results.
+Customers browsing categories do not see deleted categories.
+Customers browsing products within categories do not see products through deleted category listings.
+Deleted categories are removed from category browsing results.
+Browsing behavior remains available for products that were previously assigned to the deleted category, but the deleted category itself is not shown.
 
 ```mermaid
 flowchart LR
-    A["Customer or seller category request"] --> B["System checks authorization"]
-    B -->|"Unauthorized"| C["Block request"]
-    B -->|"Authorized"| D["Process category change"]
+    A["Customer browsing categories"] --> B["Deleted category"]
+    B -->|"Excluded"| C["Not shown in browsing results"]
 ```
 
+### Missing Category Treated as Unavailable
+
+If a category target is missing, the system treats it as unavailable.
+A missing category does not affect unrelated categories.
+If an administrator attempts to delete a category that is already missing, the request is handled as an unavailable category condition.
+If an administrator attempts to edit a missing category, the request is rejected and the existing category list remains unchanged.
+
+```mermaid
+flowchart LR
+    A["Requested category"] --> B{"Exists?"}
+    B -->|"No"| C["Unavailable"]
+    B -->|"Yes"| D["Continue"]
+```
+
+### Category Deletion Preserves Product Browsing
+
+Deleting a category must not break browsing for products that were previously assigned to it.
+Products affected by category deletion remain visible in the platform according to their preserved product state.
+Category deletion does not remove unrelated products from browsing.
+After deletion, the system continues to support browsing of the remaining category structure without exposing the deleted category.
+
+```mermaid
+flowchart LR
+    A["Delete category"] --> B["Affected products become uncategorized"]
+    B --> C["Product browsing remains available"]
+    A --> D["Deleted category removed from category lists"]
+```
+
+### Category and Subcategory Structure Validation
+
+The system validates category and subcategory structure before accepting category changes.
+A category cannot be assigned in a way that breaks the one-level nesting rule.
+A category operation that would create invalid structure is rejected before any category data is changed.
+Structural validation applies consistently to creation, editing, and deletion scenarios involving categories and subcategories.
+
+```mermaid
+flowchart LR
+    A["Category operation"] --> B["Validate structure"]
+    B -->|"Valid"| C["Accept"]
+    B -->|"Invalid"| D["Reject"]
+```
 
 ## Product Error Scenarios
 
-Only sellers can create and edit their own products, and any attempt by another seller or customer must be rejected. A product cannot be created without the required name, description, category, and base price. If a seller tries to delete a product that still has pending order items or pending cancellation or refund requests for any variant, the platform must block the deletion. Deleting a product must also remove all of its variants and inventory records, and it must take the product out of search and category listings. If a product has already been deleted, the seller should not be able to edit it again. When a product is edited, the previous state must be preserved in a snapshot even if the product is later removed. If all variants have been removed, the product may still appear in search but should be shown as unavailable for purchase. Product errors must ensure that active order history and snapshot history remain intact even when the product itself is no longer available. Customers should not be able to interact with deleted products as if they are purchasable listings. Any product conflict should be resolved in favor of preserving orders, inventory history, and snapshots.
+Only the seller who owns a product can edit or delete it, so attempts by other sellers or customers must be rejected. Product creation must fail if the required product information is missing or if the product cannot be assigned to a valid category. A product cannot be deleted while any variant still has pending order items in paid or shipped status, or while there are pending cancellation or refund requests for any variant. If deletion is blocked, the existing product and its variants must remain visible according to their normal listing rules. When a product is removed, all of its variants and inventory records are deleted as part of the same business action, but historical snapshots are preserved. Deleted products must no longer appear in search or category listings, and they should also disappear from wishlists. Sellers should still be able to view their own product snapshots after deletion, and administrators should remain able to review any preserved snapshots. If a product edit fails, the previous product information and snapshot history should remain intact.
 
-### Seller Ownership and Edit Rights
+### Product Owner-Only Editing
 
-Only the seller who owns a product can edit that product.
-If a seller attempts to edit a product owned by another seller, the system rejects the request.
-If a customer attempts to edit a product, the system rejects the request.
-If a product has been deleted, it is no longer editable as an active product.
-The system preserves the product's historical record even when the active product is no longer available.
+Only the seller who owns a product can edit that product. Attempts by any other seller or by a customer to edit the product are rejected. If an edit is rejected, the product remains unchanged and its existing snapshot history remains intact.
 
-### Required Product Information Validation
+### Missing Product Information Rejected
 
-A product cannot be created unless its name, description, category, and base price are provided.
-If any required product information is missing, the system rejects the request.
-A product cannot be treated as complete for selling purposes until all required product information is present.
+Product creation is rejected when any required product information is missing. A product must have a name, description, category, and base price before it can be created. If creation is rejected, the product is not added to listings and no new product snapshot is created.
+
+### Invalid Category Assignment Rejected
+
+Product creation and product editing are rejected when the product cannot be assigned to a valid category. A product may be assigned to a category or a subcategory only when that category assignment is valid. If category assignment is rejected, the product keeps its previous category and remains unchanged.
 
 ### Product Deletion Blocked by Pending Order Items
 
-A seller cannot delete a product while any variant of that product has pending order items.
-Pending order items include items that are paid or shipped.
-If such order items exist, the system rejects the deletion request.
-The product remains available in the seller's active product history when deletion is blocked.
+A seller cannot delete a product while any variant of that product has pending order items in paid or shipped status. If deletion is blocked for this reason, the product and its variants remain available according to their normal listing rules, and no deletion snapshot replaces the existing product history.
 
 ### Product Deletion Blocked by Cancellation Requests
 
-A seller cannot delete a product while any variant of that product has a pending cancellation request.
-If a pending cancellation request exists for any variant of the product, the system rejects the deletion request.
-The system keeps the product active until the cancellation request is resolved.
+A seller cannot delete a product while any variant of that product has a pending cancellation request. If deletion is blocked for this reason, the product remains available according to its normal listing rules, and all existing snapshots remain preserved.
 
 ### Product Deletion Blocked by Refund Requests
 
-A seller cannot delete a product while any variant of that product has a pending refund request.
-If a pending refund request exists for any variant of the product, the system rejects the deletion request.
-The system keeps the product active until the refund request is resolved.
+A seller cannot delete a product while any variant of that product has a pending refund request. If deletion is blocked for this reason, the product remains available according to its normal listing rules, and all existing snapshots remain preserved.
 
-### Deleted Product Removed from Search and Category Listings
+### Deleted Product Removed from Search Listings
 
-When a product is deleted, it no longer appears in search results.
-When a product is deleted, it no longer appears in category listings.
-Customers should not see deleted products as purchasable listings in browsing results.
+When a product is deleted, it no longer appears in product search results. Deleted products are treated as removed from search even if they previously matched a customer search query.
 
-### Product Snapshot Preserved After Edit
+### Deleted Product Removed from Category Listings
 
-Whenever a product is edited, the system creates a snapshot of the previous state.
-The snapshot preserves the product state even if the product is later deleted.
-The snapshot remains available for dispute resolution by relevant parties.
+When a product is deleted, it no longer appears in category listings. Deleted products are treated as removed from category browsing even if they previously belonged to a category or subcategory.
 
-### Product Unavailable When No Variants Remain
+### Product Snapshots Preserved After Deletion
 
-If all variants of a product have been removed, the product remains visible in search.
-If all variants of a product have been removed, the product is shown as unavailable for purchase.
-A product with no remaining variants cannot be treated as purchasable until at least one variant exists again.
-
-### Active Product History Preserved After Deletion
-
-Deleting a product does not remove the active order history associated with that product.
-Deleting a product does not remove snapshots associated with that product.
-Deleting a product does not remove inventory history associated with that product's variants.
-The system preserves historical records so that past orders, prior product states, and related records remain available after deletion.
-
-## ProductVariant Error Scenarios
-
-Product variants can only be managed by the seller who owns the product. A variant must have a unique SKU code, defined option values, and a stock quantity that starts at zero, so any missing or conflicting variant information should be rejected. If a seller tries to delete a variant that still has pending order items or pending cancellation or refund requests, the deletion must not proceed. A product must keep at least one variant to remain purchasable, so removing the last variant should make the product unavailable rather than breaking the listing. When a variant is edited, the prior state must be recorded in a snapshot for later review. If a variant is out of stock or deleted, customers should see it as unavailable and should not be able to add it to the cart. Variant conflicts should also prevent an edited price or option set from creating ambiguous product choices. When variant state changes affect product availability, the platform should keep the product visible if required but clearly marked as unavailable. Inventory history must continue to reflect changes for the remaining active variants. Any variant error must prioritize order protection and accurate availability display.
-
-### Variant Ownership and Identity
-
-Product variants belong to the seller who owns the parent product. A seller can manage only the variants of their own products.
-
-A variant must have a unique SKU code within the product. If a seller attempts to create or edit a variant so that its SKU code conflicts with another variant of the same product, the change is rejected.
-
-A variant must have clearly defined option values. If the option values create an ambiguous choice that could be confused with another existing variant of the same product, the change is rejected.
-
-### Variant Stock and Availability
-
-A newly created variant starts with zero stock.
-
-If a variant has zero stock, customers must see it as out of stock and must not be able to add it to the cart.
-
-If a variant is deleted or otherwise no longer available, customers must see it as unavailable in the cart and must not be able to proceed with it as a purchasable item.
-
-### Variant Deletion Protection
-
-A seller cannot delete a variant if that variant has any pending order items.
-
-A seller cannot delete a variant if that variant has any pending cancellation requests.
-
-A seller cannot delete a variant if that variant has any pending refund requests.
-
-If deleting a variant would remove the last remaining variant of a product, the product must remain visible but be treated as unavailable rather than being broken or removed incorrectly from the platform.
-
-### Variant Edit History and Conflict Handling
-
-When a variant is edited, the previous state of that variant must be preserved in a snapshot.
-
-The snapshot must support later review of what changed and the values before and after the change.
-
-If a seller attempts to edit a variant in a way that creates an ambiguous option combination for the product, the change is rejected.
-
-If a variant edit would conflict with the product’s existing variant structure, the platform must prevent the change rather than allowing duplicate or unclear variant choices.
+When a product is deleted, all existing product snapshots are preserved. Sellers can still view snapshots of their own deleted products, and administrators can still view snapshots of any deleted product. Deletion does not remove the historical record of the product's prior states.
 
 ## ProductImage Error Scenarios
 
-Product images can only be changed by the seller who owns the product. If a seller tries to upload too many images, remove an image that is not attached to the product, or reorder images that do not belong to the current product, the platform should reject the action. The first image must remain the main thumbnail, so reordering errors that would leave the product without a valid main image should not be accepted. Image updates must be included in product snapshots so earlier product presentation can still be reviewed later. If a product is deleted, its images should no longer appear in active listings. When an image is replaced or removed, the product detail view should continue to show the remaining images in the correct order. If image changes conflict with an edit that is already blocked for business reasons, the platform should not apply the image change separately. Customers should never see broken image state as part of a live product listing. Image errors should make clear whether the issue is ownership, invalid image membership, or an unsupported change to the image order. The system should keep historical image context only through snapshots, not through active deleted listings.
+Product images belong to a seller’s product, so image changes must be restricted to the product owner. If a seller tries to upload, reorder, or delete images for a product they do not own, the system must reject the action. Image updates should fail cleanly when the product no longer exists or has been removed from sale. Because image changes are part of the product’s preserved history, a failed image operation must not disturb the existing image order or main image selection. The first image is treated as the main image, so reordering must keep exactly one image in that position after a successful change. If all images are removed, the product should still follow the platform’s product rules, but the image list itself should remain consistent and not produce broken display behavior. Product image edits must be reflected in product snapshots when the change succeeds, but not when it fails. Any unavailable image target should be handled as a normal business error rather than altering unrelated images.
 
-### Product Owner Control Over Images
+### Product Image Ownership and Access Restrictions
 
-The seller who owns a product is the only party who can change that product’s images.
-If a seller attempts to upload, replace, remove, or reorder images for a product they do not own, the platform rejects the action.
-If an image change is attempted while the product is in a state where the product edit itself is not allowed for business reasons, the image change is not applied separately.
-If an image ownership conflict is detected, the platform rejects the request without changing the product’s current image set.
+If a seller tries to change images for a product they do not own, the system rejects the action.
+If a seller tries to reorder images for a product they do not own, the system rejects the action.
+If a seller tries to delete an image from a product they do not own, the system rejects the action.
+If the product no longer exists or has been removed from sale, image changes are rejected.
+If an image change is rejected, the existing image list remains unchanged.
 
-### Invalid Image Attachment Rejection
+### Main Image Position Rules
 
-If a seller attempts to attach an image that is not part of the current product, the platform rejects the action.
-If a seller attempts to remove an image that is not attached to the product, the platform rejects the action.
-If a seller attempts to operate on an image that does not belong to the product’s current image set, the platform rejects the action as an invalid product image membership case.
-The platform preserves the current product image set unchanged when an invalid attachment is rejected.
+The first image in the product image order is the main image.
+When image reordering succeeds, the product keeps exactly one main image position.
+A successful reorder must not create more than one image in the main image position.
+If a reorder request would leave the product without a valid main image position, the system rejects the action.
+If a reorder request fails, the previous image order remains in place.
 
-### Image Reorder Membership Validation
+### Product Image Snapshot Behavior
 
-If a seller attempts to reorder images using an image that belongs to another product, the platform rejects the action.
-If a seller attempts to reorder images using an image that is not currently attached to the product, the platform rejects the action.
-If a reorder operation includes foreign images or invalid product image membership, the platform rejects the request and keeps the existing order unchanged.
-The platform must not apply a partial reorder when one or more images in the reorder request are invalid.
+When a product image change succeeds, the change is included in the product snapshot.
+Image uploads, reordering, and deletions are all treated as product image changes for snapshot purposes.
+If a product image operation fails, no new product snapshot is created for that failed attempt.
+A failed image update must not alter the preserved image order or the main image selection.
+The snapshot created after a successful change must reflect the updated image order.
 
-### Main Thumbnail Ordering
+### Unavailable Product Image Targets
 
-The first image in a product’s image order is the main thumbnail image.
-If a reorder request would leave the product without a valid first image, the platform rejects the action.
-If a seller attempts to move an image in a way that removes the main thumbnail position or leaves the image order without a clear first image, the platform does not accept the change.
-The product listing continues to use the current first image as the main thumbnail unless a valid reorder is successfully completed.
+If the target image for reordering no longer exists, the system handles the request as a normal business error.
+If the target image for deletion no longer exists, the system handles the request as a normal business error.
+If the target image is unavailable for any other product image operation, the system rejects the action without changing unrelated images.
+Unavailable image targets must not cause any other product images to be reordered or deleted.
+After an unavailable target error, the product keeps its existing image state.
 
-### Snapshot Capture for Image Changes
+## ProductVariant Error Scenarios
 
-Whenever a product image is changed, the change is recorded in a product snapshot.
-The snapshot preserves the product image state before the change and after the change.
-The snapshot records which image change was made and when it was made.
-The snapshot remains available for later review through the product’s historical record.
-If an image change is rejected, no new snapshot is created for that rejected change.
+Variants can only be added, edited, or deleted by the seller who owns the parent product. A variant must have a unique SKU code, so duplicate identifiers should be rejected to avoid confusion across products and orders. Variant edits must fail if the seller tries to change option values, price, or SKU on a variant that belongs to another seller’s product. A product with no variants remains visible in search but is shown as unavailable, so attempts to purchase it should not proceed. Variant deletion is blocked when there are pending order items in paid or shipped status or when cancellation or refund requests are still pending for that variant. If a deletion request succeeds, the product may still remain purchasable only if other variants are available; otherwise the product becomes unavailable. Variant price overrides and option combinations must remain consistent with the parent product, and failed changes must not alter the current purchasable state. Any variant operation on a missing or already removed variant should be treated as unavailable rather than creating duplicate entries.
 
-### Deleted Product Image Handling
+### Variant Ownership and Editing
 
-When a product is deleted, its images are removed from active listings.
-Deleted product images no longer appear in live product browsing or product detail presentation.
-Historical image information remains available only through snapshots.
-The platform does not keep deleted product images visible as active content after the product is removed.
+A product variant can be managed only by the seller who owns the parent product. Any attempt by another seller to edit a variant is rejected. A variant edit must not be applied unless it is performed by the owning seller, and the current variant state must remain unchanged when the edit is rejected.
 
-### Image Order Preservation After Removal
+Mermaid diagram:
+```mermaid
+flowchart LR
+    A["Seller attempts variant edit"] --> B["Owns parent product?"]
+    B -->|"Yes"| C["Edit allowed"]
+    B -->|"No"| D["Edit rejected"]
+```
 
-When an image is removed from a product, the remaining images keep their correct order.
-The platform reuses the current image sequence so that the surviving images stay in the intended relative order.
-If only one image remains after a removal, that remaining image becomes the product’s first image.
-The platform does not scramble or reassign the order of the remaining images after a valid removal.
+### SKU Code Uniqueness
 
-### Broken Image State Prevention in Live Listings
+A variant SKU code must be unique. If a seller attempts to create or edit a variant using a SKU code that is already in use, the change is rejected. This rule prevents two variants from sharing the same identifier and avoids confusion across products and orders.
 
-Customers must never see a broken image state in a live product listing.
-If an image change would create an invalid or incomplete live listing state, the platform rejects the change.
-If the current image set cannot be presented correctly because of an invalid image operation, the live listing remains unchanged.
-Only valid image sets with a clear main thumbnail and valid membership may appear in active product listings.
+### Product Availability Without Variants
+
+A product with no variants is shown as unavailable. It remains visible in search, but it cannot be treated as purchasable until at least one variant exists. If all variants are removed from a product, the product becomes unavailable for purchase.
+
+### Variant Deletion Blocking Conditions
+
+A variant cannot be deleted when it has pending order items in paid or shipped status. A variant cannot be deleted when it has a pending cancellation request. A variant cannot be deleted when it has a pending refund request. If any of these conditions exist, the deletion request is rejected and the variant remains available in its current state.
+
+Mermaid diagram:
+```mermaid
+flowchart LR
+    A["Variant deletion requested"] --> B["Pending order items?"]
+    B -->|"Yes"| H["Delete rejected"]
+    B -->|"No"| C["Pending cancellation request?"]
+    C -->|"Yes"| H
+    C -->|"No"| D["Pending refund request?"]
+    D -->|"Yes"| H
+    D -->|"No"| E["Delete allowed"]
+```
+
+### Missing Variant Handling
+
+If a customer or seller references a variant that no longer exists, the system treats it as unavailable. A missing variant must not be treated as selectable, purchasable, or editable. Missing-variant handling prevents duplicate entries from being created for an already removed variant.
+
+### Option Value and Price Consistency
+
+A variant edit must preserve consistency between the variant’s option values and its price changes. If an attempted change would leave the variant in an inconsistent state relative to the parent product, the change is rejected. When a rejected change occurs, the current variant options, price, and purchasable state remain unchanged.
 
 ## InventoryRecord Error Scenarios
 
-Inventory history is tied to each product variant, so inventory changes must be made against the correct active variant. Sellers can add stock with a positive change or subtract stock with an adjustment reason, but the platform should reject inventory changes that are not tied to a valid reason or that conflict with the variant’s current availability. Because current stock is calculated from history, the platform must not allow inventory records that would break the integrity of that history. Order placement, cancellation, and refund events automatically create inventory changes, so duplicate manual corrections should not double-count the same business event. If a variant has already been deleted, its inventory history should remain available for review but should not accept new active adjustments. A stock level that reaches zero must be displayed as out of stock, and out of stock variants cannot be added to cart. Sellers viewing inventory history should see the full sequence of changes, including restocks and losses, so inconsistencies can be traced. Inventory errors should prevent negative or conflicting adjustments from hiding actual availability. If an inventory change conflicts with a pending order item or request outcome, the platform should resolve the conflict in a way that protects order accuracy. Historical records must remain readable even when the related product or variant is no longer active.
+Inventory history is used to calculate current stock, so every stock change must be recorded with a clear reason and timestamp. Restocking and adjustment actions should be rejected if the seller does not own the variant or if the variant no longer exists. The system must not allow inventory changes that would break the business meaning of the record, such as a missing reason for a manual adjustment. Order placement, cancellation, and refund actions create inventory changes automatically, so manual edits must not overwrite those automatic records. If an inventory operation fails, the current stock calculation should remain unchanged and still reflect the existing history. Inventory history should remain available for seller review even when a variant is out of stock or the product has been removed, as long as the historical record is still relevant. The system should treat invalid quantity changes as errors rather than silently correcting them, because stock history must remain trustworthy. When a variant reaches zero stock, the out-of-stock state should remain consistent until new inventory is added through a valid restock action.
 
-### Inventory Changes Must Be Tied to an Active Variant
+### Inventory History Calculates Current Stock
 
-Inventory records can be created only for a variant that is currently active and linked to an existing product.
-If the related variant has been deleted, the platform rejects any new inventory change for that variant.
-If the related variant is not the correct variant for the intended product, the platform rejects the inventory change.
-If a seller attempts to adjust inventory for a variant that is no longer available for active stock management, the platform rejects the request.
-Historical inventory records for that variant remain readable even after the variant is no longer active.
+Inventory history is the authoritative basis for current stock. The system calculates the current stock of each product variant by summing all inventory records for that variant. Sellers can rely on the inventory history as the source of truth when checking stock availability. If the inventory history is incomplete, the current stock state is not considered trustworthy until the missing record issue is resolved.
 
 ```mermaid
 flowchart LR
-    A["Inventory change requested"] --> B["Variant active and available"]
-    B --> C["Record accepted"]
-    A --> D["Variant deleted or inactive"]
-    D --> E["Record rejected"]
-    D --> F["History remains readable"]
+    A["Inventory records"] --> B["Sum quantity changes"]
+    B --> C["Current stock"]
+    C --> D["Availability status"]
 ```
 
-### Restock and Adjustment Changes Require Valid Reasons
+### Restock Rejected for Missing Variant
 
-A positive inventory change used for restocking must be treated as a deliberate stock increase.
-A negative inventory change used for adjustment or loss must include a reason.
-If a seller submits an inventory adjustment without a valid reason, the platform rejects the request.
-If a seller submits a restock or adjustment change that does not match the intended stock movement, the platform rejects the request.
-The inventory history must clearly show the reason for each accepted stock change so that the change can be reviewed later.
+A restock action is rejected when the referenced product variant does not exist. A restock action is also rejected when the seller does not own the variant. The system does not create an inventory record for a missing or unauthorized variant, and the current stock remains unchanged. This prevents inventory history from containing records that cannot be tied to a valid variant.
+
+### Manual Adjustment Requires Reason
+
+A manual inventory adjustment requires a reason. The system rejects a manual adjustment when the reason is missing or unclear. This rule applies to quantity changes made for adjustment or loss, so that the inventory history always explains why the stock changed. The resulting record must remain meaningful to sellers reviewing stock history later.
+
+### Automatic Inventory Records Preserved
+
+Inventory records created automatically by order placement, cancellation, or refund are preserved as part of the stock history. These automatic records are not replaced by later manual edits. The history must remain intact so the sequence of stock changes can be reviewed after sales, cancellations, and refunds have occurred. This preservation supports trust in the inventory record trail.
+
+### Failed Inventory Change Leaves Stock Unchanged
+
+If an inventory operation fails, the system leaves the current stock unchanged. No partial stock update is applied when the operation cannot be completed. The existing inventory history remains the basis for the current stock calculation. This ensures that a failed change does not distort the stock count or break the historical trail.
+
+### Seller Views Full Inventory History
+
+Sellers can view the full inventory history for each of their product variants. The history includes both restocking and adjustment records, as well as automatic records created by order-related events. Sellers use this view to understand how stock has changed over time and to review the meaning of each recorded change. The history remains available even when the variant is out of stock or the product has been removed, if the historical record is still relevant.
+
+### Zero Stock Remains Out of Stock
+
+When a variant reaches zero stock, it remains marked as out of stock. The out-of-stock state does not change unless a valid inventory record increases the stock again. The system uses the current inventory history to keep the availability state consistent with the calculated stock total. A zero-stock variant cannot be treated as available until new stock is recorded.
+
+### Invalid Quantity Change Rejected
+
+The system rejects invalid quantity changes instead of correcting them automatically. Quantity changes must be valid for the intended stock action, and invalid values do not create inventory records. This protects the accuracy of stock history and prevents misleading inventory totals. Invalid quantity input leaves the existing stock calculation unchanged.
+
+### Inventory Record Trustworthiness and Timestamp
+
+Each inventory record must remain trustworthy as a historical entry. The record includes the timestamp of the change so sellers can understand when the stock movement occurred. Inventory history is only meaningful when each record clearly reflects a valid stock change with an understandable reason and a reliable time reference. Records that cannot be trusted do not support accurate stock review.
 
 ```mermaid
 flowchart LR
-    A["Inventory change requested"] --> B["Positive restock change"]
-    A --> C["Negative adjustment change"]
-    C --> D["Reason provided"]
-    D --> E["Record accepted"]
-    C --> F["No reason"]
-    F --> G["Record rejected"]
+    A["Valid stock change"] --> B["Create inventory record"]
+    B --> C["Store reason"]
+    B --> D["Store timestamp"]
+    C --> E["Trustworthy history"]
+    D --> E
 ```
 
-### Duplicate Stock Changes from the Same Business Event Are Prevented
+## ShoppingCart Error Scenarios
 
-The platform rejects a stock change when it would duplicate an inventory change that has already been recorded for the same business event.
-If an order placement has already created the stock reduction for a purchased variant, a manual repeat of that same reduction is rejected.
-If a cancellation or refund has already restored stock for the same item, a repeated restoration for the same event is rejected.
-This rule protects the accuracy of the inventory history and prevents the same business event from affecting stock more than once.
+Only registered customers can use the shopping cart, so access must be blocked for unauthenticated visitors. Customers can add only specific product variants, not general products, and attempts to add unavailable variants must be rejected. If a variant is deleted or out of stock, it should be marked unavailable in the cart and prevented from checkout. When the same variant is added multiple times, the system combines quantities instead of creating duplicate lines, so repeated adds should not split the cart into separate items. If the requested quantity exceeds available stock, the cart should show a warning so the customer understands the limitation before checkout. Cart updates should not silently replace the selected variant with another one or change the customer’s chosen quantity without instruction. Removing an item that is no longer in the cart should be handled safely without affecting other cart contents. Cart errors should leave the remaining items, totals, and warnings consistent with the latest valid state.
+
+### Registered Customer Cart Access Only
+
+Only registered customers can use the shopping cart. If a visitor has not registered, access to cart functions is blocked.
 
 ```mermaid
 flowchart LR
-    A["Stock change requested"] --> B["Same business event already recorded"]
-    B --> C["Duplicate change rejected"]
-    A --> D["New business event"]
-    D --> E["Change accepted"]
+    A["visitor"] -->|"register"| B["registered customer"]
+    A -->|"cart access blocked"| C["no cart access"]
+    B -->|"use cart"| D["shopping cart"]
 ```
 
-### Zero Stock Is Shown as Out of Stock
 
-When the calculated stock for a variant reaches zero, the variant is shown as out of stock.
-If stock is greater than zero, the variant is not shown as out of stock.
-The out-of-stock state is based on the calculated inventory history for the variant.
-The seller’s inventory history still remains visible after the variant reaches zero stock.
+### Specific Variant Required for Cart Items
+
+Customers add specific product variants to the shopping cart, not general products. If a customer tries to add a product without selecting a specific variant, the request is rejected.
+
+Cart items remain tied to the selected variant and do not change to a different variant automatically.
+
+### Unavailable Variant Rejected in Cart
+
+If a customer tries to add a variant that is unavailable, the request is rejected. Unavailable variants are not treated as valid cart selections.
+
+A variant that is unavailable remains unavailable for cart use until its availability changes.
+
+### Deleted Variant Marked Unavailable
+
+If a variant is deleted after it has already been added to the cart, the cart shows that item as unavailable.
+
+An unavailable cart item can remain visible in the cart, but it cannot be treated as a normal purchasable item.
+
+### Out of Stock Variant Prevented from Checkout
+
+If a variant is out of stock, it is shown as out of stock in the cart. Out of stock items cannot be checked out.
 
 ```mermaid
 flowchart LR
-    A["Inventory history recalculated"] --> B["Stock equals zero"]
-    B --> C["Variant shown as out of stock"]
-    A --> D["Stock above zero"]
-    D --> E["Variant shown as available"]
+    A["variant in cart"] -->|"stock reaches 0"| B["out of stock"]
+    B -->|"checkout blocked"| C["cannot checkout"]
 ```
 
-### Out of Stock Variants Are Blocked from Cart Use
 
-A variant shown as out of stock cannot be added to the cart.
-If a customer tries to add an out-of-stock variant to the cart, the platform rejects the action.
-If a variant becomes out of stock after it was already selected elsewhere in the shopping flow, it remains unavailable for cart use until stock becomes available again.
-This rule applies to the variant’s current availability as determined by inventory history.
+### Combined Quantity for Same Variant
 
-```mermaid
-flowchart LR
-    A["Customer selects variant"] --> B["Variant in stock"]
-    B --> C["Can be added to cart"]
-    A --> D["Variant out of stock"]
-    D --> E["Add to cart rejected"]
-```
+If the same variant is added to the cart more than once, the system combines the quantities into a single cart item.
 
-### Sellers Can View the Full Inventory History of Each Variant
+The system does not create duplicate cart lines for the same variant.
 
-Sellers can view the full sequence of inventory records for each variant.
-The history shows every accepted stock increase, stock decrease, restock, and adjustment for that variant.
-Rejected inventory changes do not replace the recorded history of accepted changes.
-The full inventory history remains available for review even when the related variant has been deleted.
+### Stock Warning in Cart
 
-```mermaid
-flowchart LR
-    A["Seller views variant history"] --> B["Accepted stock changes shown"]
-    B --> C["History includes increases and decreases"]
-    C --> D["History remains available after deletion"]
-```
+If a variant's stock is less than the quantity in the cart, the cart shows a warning.
 
-### Order-Driven Inventory Changes Must Not Be Counted Twice
+The warning informs the customer that the requested quantity is higher than the available stock.
 
-When an order is placed, the inventory reduction caused by that order is recorded once for the purchased variant.
-When a cancellation or refund restores stock, the restoration is recorded once for the affected item.
-If the same order-driven change is already present in the inventory history, the platform rejects any repeated change that would count the event a second time.
-This prevents order processing, cancellation processing, and refund processing from creating duplicate stock effects.
+### Safe Removal of Missing Cart Item
 
-```mermaid
-flowchart LR
-    A["Order, cancellation, or refund event"] --> B["Inventory change recorded once"]
-    B --> C["History updated"]
-    A --> D["Same event submitted again"]
-    D --> E["Duplicate rejected"]
-```
+If a customer tries to remove a cart item that is no longer present, the system handles the request safely.
 
-### Historical Inventory Records Remain Readable After Deletion
+This does not affect the other items in the cart.
 
-Inventory history remains readable after the related variant is deleted.
-The platform does not remove accepted inventory records simply because the variant is no longer active.
-The historical record must continue to show the sequence of changes, their reasons, and their timestamps for review.
-This allows sellers to trace past stock movements even when the active variant no longer exists.
+### Shopping Cart Totals Remain Consistent
 
-```mermaid
-flowchart LR
-    A["Variant deleted"] --> B["Inventory history retained"]
-    B --> C["Seller can read past records"]
-    C --> D["Past stock movements remain traceable"]
-```
+After cart errors or failed cart actions, the remaining cart items, item quantities, warnings, and total price remain consistent with the latest valid cart state.
 
-## Wishlist Error Scenarios
-
-Only registered customers can manage wishlists, so anonymous users and deleted accounts must be blocked. If a customer adds a product that later gets deleted by the seller, the platform should automatically remove that product from the wishlist. Wishlist actions must apply to products rather than specific variants, and attempts to save a variant directly should be rejected. A customer should not see duplicate wishlist entries for the same product. If a product is unavailable because it has no variants, the product may still appear in search but wishlist handling should not treat it as a purchasable variant. Wishlist pagination should continue to work even when some saved products are removed. If a customer removes an item that is no longer present, the platform should treat the request as already resolved rather than creating a conflict. Wishlist state should remain consistent with current product availability and deletion outcomes. Any wishlist error should clarify whether the issue is account access, product deletion, or an unsupported saved item type. The platform must keep the wishlist focused on current product references only.
-
-### Registered Customer Required for Wishlist
-
-Only registered customers can manage a wishlist.
-If a person is not a registered customer, the system rejects any wishlist action.
-If an account is not active or has been removed, the system treats the account as unable to manage a wishlist.
-Wishlist access remains restricted to customer accounts and is not available to anonymous visitors.
-
-### Deleted Account Cannot Manage Wishlist
-
-When a customer account has been deleted, the system prevents that account from viewing, adding to, editing, or removing wishlist items.
-A deleted account does not regain wishlist access through existing saved data.
-Any wishlist action attempted from a deleted account is treated as an access failure.
-
-### Wishlist Stores Products, Not Variants
-
-A wishlist entry represents a product, not a specific variant.
-The system rejects any attempt to save a variant directly to the wishlist.
-If a customer attempts to add a product through a variant-specific action, the system does not create a variant-based wishlist entry.
-Wishlist items remain product-level references only.
-
-### Duplicate Wishlist Entry Rejected
-
-The system keeps only one wishlist entry for the same product per customer.
-If a customer tries to save a product that is already in the wishlist, the system rejects the duplicate entry.
-The system does not create multiple wishlist rows or repeated copies of the same product in the wishlist.
-
-### Deleted Product Removed from Wishlist
-
-If a product is deleted, the system automatically removes that product from every customer wishlist that contains it.
-Removed entries do not remain as active wishlist items after product deletion.
-Wishlist views exclude products that no longer exist.
-
-### Unavailable Product Not Treated as Variant
-
-If a product has no variants and is shown as unavailable, the system does not treat that product as a purchasable variant for wishlist handling.
-A customer cannot save an unavailable product by selecting a non-existent variant.
-Wishlist logic continues to work at the product level even when the product is unavailable.
-
-### Wishlist Pagination After Removals
-
-Wishlist pagination remains valid when saved products are removed from the wishlist.
-If removals reduce the number of remaining wishlist items, the system adjusts the visible pages accordingly.
-The system does not show broken or empty wishlist pages caused only by removed items.
-
-### Already Removed Wishlist Item Treated as Resolved
-
-If a customer tries to remove a wishlist item that is no longer present, the system treats the request as already resolved.
-The system does not create a conflict for an item that has already been removed automatically or manually.
-The wishlist remains unchanged when the item is already absent.
-
-### Wishlist Consistency with Product Availability
-
-The wishlist stays consistent with the current availability of saved products.
-If a saved product is deleted, the system removes it from the wishlist.
-If a saved product is no longer supported as a wishlist target, the system does not keep an invalid wishlist reference.
-Wishlist views always reflect the current valid set of saved products.
-
-### Unsupported Variant Save Rejected
-
-The system rejects any wishlist action that attempts to save a variant instead of a product.
-If a customer selects an unsupported saved item type, the system does not store it in the wishlist.
-Wishlist errors clearly indicate that the requested saved item type is not supported.
-
-## Cart Error Scenarios
-
-Only registered customers can use the cart, and the cart must reject actions from anonymous or deleted accounts. A customer must choose a specific product variant before adding an item, because products without variant selection are not valid cart items. If the same variant is added again, the platform should combine quantities instead of creating a duplicate line. When a variant becomes deleted, unavailable, or out of stock, the cart should mark it as unavailable and prevent checkout for that item. If the customer sets a quantity that exceeds available stock, the cart should show a warning so the mismatch is visible before checkout. Cart totals must stay consistent when items are removed or quantities are changed. If a product is deleted by the seller, the cart should keep the existing reference long enough to show that the item is unavailable, but it should not allow purchase. Cart operations should not allow unavailable items to be silently converted into valid purchase items. Any issue with the cart must be expressed as a business conflict between current inventory, product state, and the customer’s selected quantity. The cart should always preserve accurate item-level status for later checkout decisions.
-
-### Registered Customer Cart Access
-
-Only registered customers can use the cart.
-If an anonymous user attempts to use the cart, the system rejects the action.
-If a deleted customer account attempts to use the cart, the system rejects the action.
-The cart must not be available as an active shopping area for users who do not have a valid customer account.
-
-```mermaid
-sequenceDiagram
-    participant C as "Customer"
-    participant S as "System"
-    C->>S: "Use cart"
-    S->>S: "Check customer account status"
-    S-->>C: "Allow cart access or reject the action"
-```
-
-### Specific Variant Required for Cart Add
-
-A customer must choose a specific product variant before adding an item to the cart.
-A product without a selected variant cannot be added to the cart.
-If a customer tries to add a product without selecting a variant, the system rejects the action.
-The cart stores variant-based items, not product-only selections.
-
-
-### Duplicate Variant Quantities Combined
-
-If the same product variant is added to the cart again, the system combines the quantities into one cart item.
-The system must not create a second cart line for the same variant.
-When quantities are combined, the cart item quantity is updated to reflect the total selected amount.
-
-
-### Deleted Variant Marked Unavailable in Cart
-
-If a product variant is deleted after it has already been added to the cart, the cart item is marked as unavailable.
-An unavailable deleted variant remains visible in the cart so the customer can see what changed.
-A deleted variant cannot be treated as a valid purchasable cart item.
-
-
-### Out of Stock Item Blocked at Checkout
-
-If a cart item is out of stock, the item cannot be checked out.
-The system must block checkout when any included item is out of stock.
-Out of stock status takes priority over normal cart selection for purchase completion.
-
-
-### Cart Quantity Exceeds Available Stock Warning
-
-If the customer sets a cart quantity that exceeds the available stock for a variant, the system shows a warning.
-The warning must make the quantity mismatch visible before checkout.
-The cart may keep the selected quantity visible, but the customer must be informed that the requested quantity exceeds availability.
-
-
-### Cart Totals Update After Item Changes
-
-When a cart item is added, removed, or its quantity is changed, the cart totals are updated.
-The total price must reflect the current cart contents.
-The subtotal for each item must also reflect the current quantity.
-
-
-### Deleted Product Remains Unavailable in Cart
-
-If a product is deleted by the seller after it has already been added to the cart through one of its variants, the cart item is marked as unavailable.
-The deleted product remains visible in the cart long enough for the customer to understand why it cannot be purchased.
-A deleted product in the cart cannot be converted into a purchasable item.
-
-
-### Cart Item State Reflects Current Inventory
-
-The cart item state must reflect the current inventory and product availability status of the selected variant.
-If the selected variant becomes deleted or out of stock, the cart item state changes to unavailable.
-If the selected variant remains available, the cart item continues to be treated as valid for purchase.
-
-
-### Unavailable Items Cannot Become Purchasable
-
-An unavailable cart item cannot become purchasable without the underlying product variant becoming available again.
-The system must not silently restore purchasability for an unavailable item.
-If a cart item is unavailable, checkout must continue to treat it as unavailable until the underlying availability issue is resolved.
-
-```mermaid
-flowchart LR
-    A["Cart item added"] --> B["Variant or product changes"]
-    B --> C["Item remains valid"]
-    B --> D["Item becomes unavailable"]
-    D --> E["Checkout blocked for that item"]
-```
+A failed cart action does not silently change other cart contents.
 
 ## CartItem Error Scenarios
 
-Cart items inherit the customer’s cart rules, so they cannot be edited or removed by anonymous users or by accounts that are no longer active. If a customer changes quantity for a variant that has become unavailable, the cart item should remain visible but must be treated as unavailable for checkout. A cart item should always represent one selected variant, and attempts to change it into a different product without re-adding the correct variant should be blocked. If the same variant already exists in the cart, quantity updates must preserve the combined line rather than splitting it. When stock drops below the cart quantity, the item should warn the customer instead of silently failing. If an item is removed from the cart after the related product or variant has been deleted, the platform should accept the removal and clear the conflict. Cart item pricing and subtotal display should reflect the current cart state, but invalid state changes must not overwrite the underlying product rules. A cart item that has become unavailable should not be treated as a valid checkout item until the customer resolves the issue. Business errors should keep cart item identity stable while allowing only legitimate quantity or removal changes. The platform should not allow cart item edits that bypass variant selection or availability checks.
+A cart item represents one selected variant and its quantity, so quantity changes must apply to the correct item only. If a customer changes the quantity to an invalid value, the update should be rejected and the existing cart item should remain unchanged. Cart items should not be created for unavailable variants, and already unavailable items should remain visible only as unavailable until removed or corrected. When the same variant is added again, the quantity should merge into the existing cart item rather than creating a duplicate line. If a cart item is removed and the customer tries to modify it afterward, the system should treat it as missing rather than restoring it automatically. Quantity updates that exceed stock should not erase the item, but they should preserve the warning state so the customer can adjust it. Cart item subtotal and total calculations must continue to use the latest valid quantity and price information. Any failure in a cart item action must not alter other cart items in the same cart.
 
-### Cart Item Access and Visibility
+### Cart Item Quantity Update Validation
 
-Cart items follow the same access rules as the customer’s cart. If a customer is not allowed to access the cart, the cart item is not editable or removable by that customer. If the cart item’s related variant becomes unavailable, the cart item remains visible in the cart so the customer can recognize the problem. A cart item that is visible but unavailable must not be treated as a valid checkout item until the issue is resolved.
+A customer can change the quantity of a cart item only by updating the quantity for that specific variant line. If the requested quantity is not valid, the update is rejected and the existing cart item remains unchanged. If the same variant already exists in the cart, adding it again updates the existing line instead of creating a second line for the same variant. If a cart item is removed and later referenced for modification, the system treats it as missing rather than restoring it automatically. Any failed quantity update must not change other cart items in the same cart.
 
-### Selected Variant Integrity
+### Unavailable Cart Item Handling
 
-A cart item must always represent one selected variant. A cart item cannot be changed into a different product without selecting and adding the correct variant again. If a customer attempts to change a cart item into a different product or a non-selected variant, the change is rejected. This keeps the cart item tied to the originally selected variant until the customer explicitly replaces it through a valid cart action.
+If a cart item becomes unavailable because its variant is deleted or out of stock, the item remains visible in the cart as unavailable until the customer removes it or corrects it through a valid cart update. An unavailable cart item cannot be treated as a new cart item, and the system must preserve its unavailable state during cart viewing. If an unavailable item is referenced after removal, the system treats it as absent rather than recreating it.
 
-### Quantity Combination for the Same Variant
+### Stock-Aware Quantity Warnings
 
-If the same variant already exists in the cart, adding that variant again combines the quantities into a single cart item rather than creating a second line. Quantity changes must preserve the combined cart item structure. The system must not split the same variant into multiple cart items when the customer is updating quantity for that variant.
+If a customer sets a cart item quantity higher than the variant’s current stock, the cart item remains in the cart and the stock warning remains visible. The warning must persist until the customer changes the quantity to a valid amount or removes the item. A quantity that exceeds stock does not remove the cart item and does not affect other cart items in the cart.
 
-### Unavailable Variant Quantity Changes
+### Cart Item Subtotal Calculation
 
-If a variant becomes unavailable, quantity changes for the related cart item are blocked until the variant is usable again. The cart item remains visible while unavailable, but the customer cannot increase or otherwise adjust its quantity as a valid cart action. This rule applies even when the cart item is still shown for review.
+A cart item subtotal must always use the latest valid quantity for that cart item. If a quantity update is rejected, the subtotal remains based on the previous valid quantity. If a cart item is unavailable, its subtotal remains associated with the last valid cart state until the item is removed or corrected. Cart totals must reflect only the valid cart item quantities currently stored in the cart.
 
-### Stock Warning for Cart Item Quantity
+### Isolation Between Cart Items
 
-If the stock available for a variant is less than the quantity in the cart item, the cart item must show a warning to the customer. The warning must make the stock mismatch clear without removing the item automatically. The cart item should continue to display its current quantity while the warning is present.
+A cart item change affects only the selected variant line and does not alter other cart items in the same cart. If one cart item update fails, the other items remain unchanged. If one cart item becomes unavailable, the availability state of the other cart items is not changed. The cart must preserve each item as an independent line so that modifications to one item do not merge into or overwrite a different variant line.
 
-### Removal After Product or Variant Deletion
+## Wishlist Error Scenarios
 
-If a cart item’s related product or variant has been deleted, removing the cart item must still be accepted. The customer can clear the deleted item from the cart without the deletion causing a failure. Once removed, the deleted product or variant conflict is cleared from the cart.
+Only registered customers can maintain a wishlist, so browsing or editing a wishlist without an account must be blocked. Customers save products, not variants, and attempts to add a variant-only reference should be rejected. If the same product is added more than once, the wishlist should keep a single product entry rather than duplicating it. When a seller deletes a product, that product must automatically disappear from every customer wishlist. Removing a product that is no longer present in the wishlist should be handled safely without changing the remaining saved products. Because wishlist content is paginated, missing or deleted products should not break the rest of the saved list. A customer should not be able to keep an unavailable deleted product as a normal wishlist item. Failed wishlist updates must leave the rest of the customer’s saved products unchanged.
 
-### Cart Item Subtotal and Current State
+### Registered Customer Wishlist Access Only
 
-A cart item’s subtotal must reflect the current cart state. When the cart quantity changes, the subtotal updates to match the current quantity and current price shown in the cart. If the item becomes unavailable or deleted, the cart item may remain visible, but its displayed subtotal must continue to reflect the current cart state rather than a stale prior state.
+Only registered customers can access and maintain a wishlist. Browsing, viewing, or editing wishlist content without a customer account is not permitted. Wishlist actions are available only to the account that owns the wishlist.
 
-### Checkout Blocking Until Cart Item Is Resolved
+### Wishlist Stores Products, Not Variants
 
-A cart item that is unavailable must block checkout until the customer resolves the issue. The customer cannot proceed to checkout with an unresolved unavailable cart item. Once the cart item is restored to a valid state or removed, checkout can proceed according to the cart’s remaining valid items.
+A wishlist entry represents a product, not a specific variant. Customers cannot save variant-only references to the wishlist. The same product must remain a single wishlist entry regardless of how many variants the product has.
+
+### Duplicate Saved Product Is Ignored
+
+If a customer adds a product that is already in the wishlist, the system keeps only one saved entry for that product. The existing wishlist entry remains unchanged, and the product is not duplicated in the list.
+
+### Deleted Product Removed From Wishlist
+
+When a seller deletes a product, that product is removed automatically from every customer wishlist. Deleted products must not continue to appear as saved wishlist items.
+
+### Safe Removal of Missing Wishlist Product
+
+Removing a product that is no longer present in the wishlist is handled safely. The system does not fail the removal action, and the customer's remaining wishlist items are preserved unchanged.
+
+### Paginated Wishlist Remains Stable
+
+Because the wishlist is paginated, missing or deleted products must not break the rest of the saved list. Customers can continue to view the remaining wishlist items normally even when some entries are no longer available.
+
+### Deleted Product Not Kept as a Normal Wishlist Item
+
+A product deleted by its seller must not remain in the wishlist as a normal saved item. If a deleted product is still encountered in wishlist content, it is treated as removed rather than retained as an active wishlist entry.
+
+### Wishlist Update Failure Leaves Saved Items Unchanged
+
+If a wishlist update cannot be completed, the customer's existing saved products remain unchanged. A failed wishlist operation must not partially modify the saved list or affect other wishlist entries.
+
+### Wishlist Product Entry Deduplication
+
+The wishlist maintains one entry per product. Repeated attempts to save the same product do not create multiple entries, and the customer's wishlist continues to show each saved product only once.
 
 ## Order Error Scenarios
 
-An order can only be created when payment succeeds, so a failed payment must leave no order behind and should allow the customer to retry. Once an order is placed, the shipping address is fixed and cannot be changed. If one or more items in the cart are unavailable, checkout must stop before an order is created. Order history should remain available to the customer even if the customer later deletes the account, because order records are preserved for seller records and legal purposes. If order items have mixed statuses, the overall order must reflect the derived status rules rather than forcing a simple single-state label. Duplicate order creation attempts from the same checkout flow should not create duplicate business records. When a customer views past orders, deleted products or sellers should still be shown through preserved order snapshots rather than live product data. If an order contains items from multiple sellers, each seller-related action must remain scoped to the correct item. Order errors should protect payment integrity, address consistency, and historical record preservation. Any failed order attempt must be treated as uncreated rather than partially committed.
+An order is created only after payment succeeds, so payment failure must leave no order behind and should allow the customer to try again. If the checkout includes unavailable items, those items cannot be ordered and the order creation process must stop for them. Orders should preserve the shipping address selected at checkout, so later address changes must not alter an already placed order. If stock changes between cart review and payment completion, the order should reflect the actual available purchase result rather than silently assuming the cart is still valid. Customers must only see their own orders, and empty or unrelated order history views should not expose other customers’ data. Because an order may contain items from multiple sellers, one seller’s issue should not erase the other sellers’ items from the same order. If a full order is cancelled or refunded through item-level outcomes, the overall order status should follow the derived status rules rather than a manual overwrite. Failed order creation should not remove previously preserved snapshots or historical records from unrelated completed orders.
 
-### Payment Success Required for Order Creation
+### Order Placement and Payment Outcome
 
-A checkout attempt can create an order only when payment succeeds.
-If payment fails, the system shall not create an order.
-If payment fails, the customer shall be allowed to retry checkout.
-If payment fails, the customer’s cart shall remain available for a later checkout attempt.
+Order placement requires successful payment. The system shall create an order only after payment succeeds. If payment fails, the system shall not create an order, and the customer shall be able to try placing the order again. If order creation fails after payment is not completed successfully, the customer’s existing order history shall remain unchanged.
 
-### Failed Payment Creates No Order
+```mermaid
+sequenceDiagram
+    participant C as "Customer"
+    participant S as "System"
+    C->>S: "Place order"
+    S->>S: "Process payment"
+    alt "Payment succeeds"
+        S->>S: "Create order"
+        S-->>C: "Order created"
+    else "Payment fails"
+        S-->>C: "No order created"
+    end
+```
 
-If payment does not succeed, the checkout attempt shall be treated as uncreated.
-If payment does not succeed, the system shall not save a partial order.
-If payment does not succeed, the customer shall not see the attempt in order history.
-If payment does not succeed, order creation shall not continue to the point of recording order items.
+### Checkout Eligibility and Shipping Address Locking
 
-### Shipping Address Is Fixed After Order Placement
+Unavailable items cannot be ordered. The system shall stop checkout for items that are unavailable. The system shall not allow an order to be placed with unavailable items included.
 
-Once an order is placed, the shipping address for that order shall be fixed.
-If an order has been placed, the customer shall not be able to change its shipping address.
-If a customer later edits saved addresses in their account, the change shall not alter the shipping address already attached to a placed order.
+Once an order is placed, the shipping address shall remain locked to the address selected at checkout. Later changes to the customer’s shipping addresses shall not alter the shipping address stored on an already placed order.
 
-### Unavailable Cart Items Block Checkout
+### Stock Changes During Order Creation
 
-If one or more items in the cart are unavailable, checkout shall stop before an order is created.
-If an item is unavailable because it is deleted or out of stock, that item shall prevent checkout until the cart is corrected.
-If checkout is blocked by unavailable items, the customer shall be able to review the cart and remove or replace the unavailable items before trying again.
+If stock changes between cart review and payment completion, the system shall base order creation on the stock available at the time payment is completed. The system shall not silently treat an earlier cart review as still valid when stock has changed. If the available purchase result differs from the cart state because stock changed, the order creation result shall reflect the actual available purchase result.
 
-### Customer Order History Remains After Account Deletion
+### Customer Order Visibility
 
-If a customer deletes their account, their existing order history shall remain available through preserved order records.
-If a customer deletes their account, previously placed orders shall not be removed from the system.
-If a customer deletes their account, the order history shown for those orders shall remain based on the preserved order records rather than the deleted customer account.
+The system shall show each customer only their own orders. A customer shall not be able to view another customer’s order history or order details. Empty order history views shall not expose data belonging to other customers.
 
-### Derived Overall Order Status Rules
+```mermaid
+flowchart LR
+    A["Customer"] --> B["Own orders only"]
+    B --> C["Order history"]
+    A --> D["Other customers' orders"]
+    D --> E["Not visible"]
+```
 
-The overall order status shall be derived from the statuses of its order items.
-If all order items are paid, the overall order status shall be paid.
-If any order item is shipped and none are delivered yet, the overall order status shall be shipped.
-If all order items are delivered, the overall order status shall be delivered.
-If all order items are cancelled, the overall order status shall be cancelled.
-If all order items are refunded, the overall order status shall be refunded.
-If an order contains mixed item statuses, the overall order status shall be partially completed.
+### Multi-Seller Order Preservation
 
-### Duplicate Checkout Orders Are Blocked
+An order may contain items from multiple sellers, and the system shall keep those items separate within the same order. One seller’s issue shall not erase the other sellers’ items from that order. The order shall preserve each seller’s items independently so that the order remains understandable even when multiple sellers are involved.
 
-A duplicate checkout attempt shall not create a second order for the same successful purchase flow.
-If the same checkout flow is submitted again after a successful order has already been created, the system shall block creation of a duplicate order.
-If a duplicate checkout attempt is blocked, the customer shall not receive two separate orders for the same purchase attempt.
+### Derived Overall Order Status
 
-### Preserved Order Snapshots for Deleted Products
+The overall order status shall be derived from the statuses of its order items. If all items are paid, the order shall be paid. If any item is shipped and none are delivered yet, the order shall be shipped. If all items are delivered, the order shall be delivered. If all items are cancelled, the order shall be cancelled. If all items are refunded, the order shall be refunded. Mixed item states shall result in a partially completed order.
 
-If a product is later deleted, past order items for that product shall continue to show the preserved order snapshot.
-If a product is deleted after purchase, the customer’s past order details shall still show the product information captured at the time of purchase.
-If a product is deleted after purchase, the seller’s product deletion shall not remove the snapshot stored with the order item.
+### Unchanged History After Failed Order Creation
 
-### Order Items From Multiple Sellers Stay Separate
+Failed order creation shall leave history unchanged. If order placement does not complete successfully, previously preserved snapshots and historical records related to other completed orders shall remain intact. A failed order attempt shall not remove or alter unrelated completed order history.
 
-If an order contains items from multiple sellers, each seller-related action shall remain limited to that seller’s own order items.
-If an order contains items from multiple sellers, the system shall not merge seller-specific handling into a single seller scope.
-If an order contains items from multiple sellers, the customer’s order record shall keep the items separated by their seller context.
-
-### Failed Checkout Leaves No Order Behind
-
-If checkout fails before payment succeeds, the system shall treat the attempt as uncreated.
-If checkout fails, the system shall not leave a partially committed order behind.
-If checkout fails, the customer shall be able to retry without inheriting a partially created order.
+```mermaid
+flowchart LR
+    A["Payment attempt"] --> B["Payment fails"]
+    B --> C["No order created"]
+    C --> D["Existing history unchanged"]
+```
 
 ## OrderItem Error Scenarios
 
-Each order item belongs to one purchased variant and one seller, so actions must be scoped to the correct item and seller only. A customer can cancel only paid items that have not shipped, and a refund can be requested only after delivery and within the allowed time window. If an item is already cancelled, refunded, shipped, or delivered in a way that conflicts with the requested action, the platform should reject the new request. When a seller responds to a cancellation or refund request, the system must preserve a snapshot of the request state. If an item has already been handled by a previous approval or rejection, it should not accept the same action again. Order item snapshots must preserve the product, variant, and seller profile at the time of purchase, even if current catalog data changes later. If a seller account is deleted, the historical seller name in past order items must still remain visible. An order item should never be reassigned to another seller or another variant after purchase. Business errors must keep item-level history consistent and prevent cross-item interference. Item status changes should remain separate from the overall order unless the derived order rule requires a broader result.
+Each order item belongs to a specific purchased variant and has its own status, so item actions must be evaluated individually. Customers cannot cancel an item that has already been shipped, and they cannot request a refund until the item has been delivered. If an item is already cancelled or refunded, the system should not allow the same item to be processed again in the opposite direction. Quantity-based items must remain grouped as one order item per variant, so duplicate item entries for the same purchase should not appear. A seller’s response to a cancellation or refund request should update only that item and not disrupt unrelated items in the order. If an item belongs to a seller who is suspended or otherwise restricted, the existing order item still needs to remain available for processing within the platform rules. When an item is included in a shipment, all items in that shipment move together through the delivery flow. Any failed item transition should leave the item’s current status unchanged.
 
-### Order Item Scope and Ownership
+### Order Item Status Is Handled Individually
 
-Each order item is handled only within the seller context that owns the purchased variant at the time of purchase.
-An order item must not be processed by a different seller.
-An order item must remain tied to the purchased variant and the selling party that fulfilled it.
-If a request targets an order item outside that seller scope, the request is rejected.
-If a request attempts to move an order item from one seller to another after purchase, the request is rejected.
-If a request attempts to change the purchased variant associated with an order item, the request is rejected.
+Each order item is evaluated on its own status instead of as part of the entire order.
 
-```mermaid
-flowchart LR
-    A["Order item request"] --> B["Check seller scope"]
-    B --> C["Matches owning seller"]
-    B --> D["Does not match owning seller"]
-    C --> E["Continue handling"]
-    D --> F["Reject request"]
-    E --> G["Keep item linked to original purchase"]
-```
+An item action applies only to the specific purchased variant represented by that item.
 
-### Cancellation Eligibility and Status Conflicts
+If an order contains multiple items, one item may move forward in its lifecycle while another remains in a different status.
 
-A customer can cancel only an order item that is still paid and has not been shipped.
-If an order item has already been shipped, the cancellation request is rejected.
-If an order item has already been delivered, cancelled, or refunded, the cancellation request is rejected.
-If an order item is in any status that conflicts with cancellation, the request is rejected.
-If a cancellation request is submitted for an item that has already been resolved, the new cancellation request is rejected.
-If a cancellation request is submitted more than once for the same item while a prior request is already pending, the duplicate request is rejected.
+A seller’s action on one item must not change the status of unrelated items in the same order.
 
-```mermaid
-flowchart LR
-    A["Cancellation request"] --> B["Check item status"]
-    B --> C["Paid and not shipped"]
-    B --> D["Shipped, delivered, cancelled, or refunded"]
-    C --> E["Accept request"]
-    D --> F["Reject request"]
-    E --> G["Allow seller response"]
-    G --> H["Store request snapshot"]
-```
+When an item is already in a final state for the requested action, the system rejects the duplicate action for that item.
 
-### Refund Eligibility and Time Window
+### Cancellation and Refund Eligibility by Item Status
 
-A customer can request a refund only after the order item has been delivered.
-A refund request is rejected if the item has not been delivered yet.
-A refund request is rejected if it is submitted outside the allowed time window after delivery.
-If an order item is already refunded, cancelled, or otherwise resolved in a way that conflicts with refund handling, a new refund request is rejected.
-If a refund request already exists for the same delivered item, a duplicate refund request is rejected.
+A cancelled item cannot be cancelled again.
 
-```mermaid
-flowchart LR
-    A["Refund request"] --> B["Check delivery status"]
-    B --> C["Delivered"]
-    B --> D["Not delivered"]
-    C --> E["Check request time window"]
-    E --> F["Within allowed time window"]
-    E --> G["Outside allowed time window"]
-    D --> H["Reject request"]
-    F --> I["Accept request"]
-    G --> H
-```
+A refunded item cannot be refunded again.
 
-### Request Response Snapshot Preservation
+If an item is not in the required status for the requested action, the request is rejected for that item.
 
-When a seller responds to a cancellation request, the state of that request response is preserved in a snapshot.
-When a seller responds to a refund request, the state of that request response is preserved in a snapshot.
-The preserved snapshot records the request state at the moment the seller responded.
-The preserved snapshot remains available even after the request has been approved or rejected.
-If a seller tries to respond again to a request that has already been handled, the request is rejected.
-The preserved snapshot must continue to reflect the historical response state for dispute resolution.
+If an item has already been cancelled or refunded, the system does not allow the opposite request to be created for the same item.
 
-```mermaid
-sequenceDiagram
-    participant C as Customer
-    participant S as Seller
-    participant P as Platform
-    C->>P: Submit cancellation or refund request
-    S->>P: Respond to request
-    P->>P: Preserve response snapshot
-    P-->>S: Response recorded
-    S->>P: Try to respond again
-    P-->>S: Reject duplicate response
-```
+### One Order Item Per Purchased Variant
 
-### Purchase-Time Snapshot Integrity
+Each purchased variant is represented by one order item.
 
-Each purchased order item preserves the product snapshot that existed at the time of purchase.
-Each purchased order item preserves the seller profile snapshot that existed at the time of purchase.
-If the current product name, description, variant options, or price changes later, the order item must still show the purchase-time snapshot values.
-If the seller profile changes later, the order item must still show the purchase-time seller profile snapshot values.
-The historical purchase record must not be rewritten to match later catalog changes.
-If a request attempts to replace the preserved purchase-time snapshot with current catalog data, the request is rejected.
+Multiple quantities of the same purchased variant remain grouped within that single order item rather than appearing as separate items.
 
-```mermaid
-flowchart LR
-    A["Order item created"] --> B["Capture product snapshot"]
-    A --> C["Capture seller profile snapshot"]
-    B --> D["Preserve historical item view"]
-    C --> D
-    D --> E["Current product or seller changes later"]
-    E --> F["Historical snapshots stay unchanged"]
-```
+If a customer buys the same variant in one purchase, the order shows one item with the combined quantity.
 
-### Deleted Seller Name and Post-Purchase Immutability
+Duplicate order item entries for the same purchased variant are not created.
 
-If a seller account is deleted after an order was placed, the historical seller name in past order items remains visible.
-A deleted seller must not erase or rewrite the seller name recorded in past order items.
-An order item must not be reassigned to another seller after purchase.
-An order item must not be reassigned to another variant after purchase.
-If a request attempts to change the seller reference or variant reference on a completed order item, the request is rejected.
-Historical order item records must remain consistent even when the seller account no longer exists.
+### Shipment Moves Item Statuses Together
 
-```mermaid
-flowchart LR
-    A["Purchased order item"] --> B["Seller account later deleted"]
-    B --> C["Keep historical seller name visible"]
-    A --> D["Attempt to reassign seller or variant"]
-    D --> E["Reject request"]
-```
+When an item is included in a shipment, the items in that shipment move through the delivery flow together.
+
+A shipment affects only the items assigned to that shipment.
+
+If a shipment is created for multiple items, those items share the same shipment outcome for delivery confirmation.
+
+An item that is not part of the shipment is not affected by that shipment’s status changes.
+
+### Seller Response Affects Only One Item
+
+When a seller approves or rejects a cancellation request, the response applies only to the requested item.
+
+When a seller approves or rejects a refund request, the response applies only to the requested item.
+
+A seller response does not change the status of other order items in the same order.
+
+A seller response does not remove or overwrite unrelated request information belonging to other items.
+
+### Failed Item Transition Leaves Status Unchanged
+
+If an item transition fails, the item keeps its current status.
+
+A failed cancellation or refund transition does not change the item status.
+
+A failed shipment-related transition does not change the item status.
+
+When a requested action cannot be completed for a specific item, the system leaves that item exactly as it was before the attempt.
+
+### Shipment and Item Delivery Error Handling
+
+If an item is not part of a shipment, shipment-based delivery changes do not apply to it.
+
+If a shipment action is attempted on items that do not belong together in the same shipment, the action is rejected for that shipment set.
+
+If a seller response is made for one item, the response must not trigger a state change for any other item in the order.
+
+If an item has already reached its required final status for the requested action, the system rejects further processing for that same item.
 
 ## Shipment Error Scenarios
 
-A shipment can only include order items from the same seller, so any attempt to mix sellers in one shipment must be rejected. Sellers should only ship items that belong to their own products and that are currently eligible to be shipped. If a shipment is created with missing tracking information, the platform should not treat it as a complete shipment. Once a shipment exists, all included items must share the same tracking information, so conflicting tracking updates should be blocked. Customers confirm delivery per shipment, not per item, and the platform must reject delivery confirmation attempts for unrelated items. If delivery is not confirmed, items must still progress automatically to delivered after the required waiting period. Shipment state changes should not be duplicated by repeated shipping actions on the same items. If a shipment includes items that have been cancelled or refunded already, the platform should stop the shipment from being created. Shipment errors should preserve item-level status integrity and keep seller boundaries clear. Any conflict involving shipment contents, tracking details, or delivery confirmation should be handled without disturbing other sellers’ shipments.
+A shipment must contain order items from only one seller, so mixing items from different sellers should be rejected. Sellers can ship only items that belong to their products and still need shipping, so items already delivered or otherwise completed should not be added to a new shipment. If a shipment is created without tracking information, the system should reject it because customers must be able to follow delivery progress. A seller may bundle multiple eligible items into one shipment or send them individually, but each item can belong to only one shipment at a time. Once a shipment exists, its tracking information should apply consistently to every item included in that shipment. Delivery confirmation applies per shipment, so invalid attempts to confirm delivery for unrelated items should not change shipment status. If a shipment is missing or already completed, further shipping actions should be treated as unavailable rather than recreating the shipment. Failed shipment creation must not alter the statuses of the underlying order items.
 
-### Shipment Items Must Belong to the Same Seller
+### Single-Seller Shipment Restriction
 
-A shipment shall contain order items from only one seller.
-If a shipping attempt includes order items from more than one seller, the system shall reject the shipment creation.
-A seller shall be able to include only order items that belong to that seller's products in a shipment.
-If a seller attempts to ship an item that belongs to another seller, the system shall reject the action.
-The system shall preserve seller boundaries when grouping order items into shipments.
+A shipment may contain order items from only one seller.
+If a seller tries to include order items from more than one seller in the same shipment, the shipment creation must be rejected.
+A shipment that violates the single-seller rule must not be created.
 
-```mermaid
-flowchart LR
-    A["Shipping attempt"] --> B["Check seller ownership"]
-    B --> C["Items from one seller only"]
-    B --> D["Items from multiple sellers"]
-    D --> E["Reject shipment creation"]
-```
+### Eligible Items Must Still Need Shipping
 
-### Shipment Tracking Information Must Be Present and Shared
+Only order items that still need shipping may be added to a shipment.
+If an order item is already delivered or otherwise completed, it must not be added to a new shipment.
+Items that do not need shipping are treated as unavailable for shipment creation.
 
-A shipment shall not be considered complete unless tracking information is provided.
-If tracking information is missing when a shipment is created, the system shall reject the shipment creation.
-All order items included in the same shipment shall share the same tracking information.
-If a seller attempts to assign conflicting tracking information to items within the same shipment, the system shall block the update.
-If tracking information is changed for a shipment, the updated tracking information shall apply to all items in that shipment.
+### Tracking Information Required for Shipment
 
-```mermaid
-sequenceDiagram
-    participant S as Seller
-    participant P as Platform
-    S->>P: Create shipment without tracking information
-    P-->>S: Reject shipment creation
-    S->>P: Create shipment with tracking information
-    P-->>S: Accept shipment with shared tracking information
-```
+A shipment cannot be created without tracking information.
+If carrier information or tracking number information is missing, the shipment creation must be rejected.
+Customers must not receive a shipment record that lacks tracking information.
 
-### Shipment Creation Must Exclude Cancelled or Refunded Items
+### One Shipment Per Eligible Item Set
 
-A shipment shall not be created with an order item that has already been cancelled.
-If a shipment creation attempt includes a cancelled item, the system shall reject the shipment creation.
-A shipment shall not be created with an order item that has already been refunded.
-If a shipment creation attempt includes a refunded item, the system shall reject the shipment creation.
-The system shall keep cancelled and refunded items out of shipment flows so that shipment contents remain valid.
+Each eligible order item may belong to only one shipment at a time.
+If a seller attempts to ship the same eligible item again in another shipment, the new shipment request must be rejected for that item.
+A seller may bundle multiple eligible items into one shipment or ship them individually, but the same item cannot be assigned to multiple active shipments.
 
-```mermaid
-flowchart LR
-    A["Shipment creation attempt"] --> B["Check item status"]
-    B --> C["Item is eligible"]
-    B --> D["Item is cancelled or refunded"]
-    D --> E["Reject shipment creation"]
-```
+### Shared Tracking Information Per Shipment
 
-### Duplicate Shipping Actions Must Be Rejected
+All order items included in the same shipment must share the same tracking information.
+If a seller changes or enters tracking information for a shipment, the same tracking information must apply to every item in that shipment.
+Tracking information cannot vary between items within the same shipment.
 
-If a shipment already exists for the selected order items, the system shall reject a repeated shipping action for those same items.
-If a seller tries to ship order items that have already been included in a shipment, the system shall not create a second shipment for the same items.
-The system shall prevent duplicate shipment state changes for the same order items.
-Repeated shipping actions shall not alter the status of items that are already part of an existing shipment.
+### Delivery Confirmation Per Shipment
 
-```mermaid
-flowchart LR
-    A["Repeated shipping action"] --> B["Check existing shipment"]
-    B --> C["Items already shipped"]
-    C --> D["Reject duplicate action"]
-```
+Delivery confirmation is handled per shipment, not per individual order item.
+If a customer confirms delivery for a shipment, all order items in that shipment are marked as delivered together.
+If a customer attempts to confirm delivery for items outside the shipment, the shipment status must not change.
 
-### Delivery Confirmation and Automatic Delivery Handling
+### Completed Shipment Treated as Unavailable
 
-Customers shall confirm delivery per shipment rather than per individual order item.
-If a customer attempts to confirm delivery for a single item outside its shipment context, the system shall reject the confirmation.
-When a shipment is confirmed delivered, all order items in that shipment shall change to delivered.
-If a shipment is not confirmed by the customer, the system shall still change the items in that shipment to delivered after the waiting period defined for delivery confirmation.
-Automatic delivery shall apply to the full shipment, not to individual items within the shipment.
+Once a shipment has already been completed, further shipping actions for that shipment are unavailable.
+If a seller tries to recreate or resubmit a completed shipment, the system must treat the shipment as unavailable rather than creating a new one.
+Completed shipments cannot be reopened through a new shipping action.
 
-```mermaid
-flowchart LR
-    A["Shipment shipped"] --> B["Wait for customer confirmation"]
-    B --> C["Customer confirms delivery"]
-    C --> D["All shipment items become delivered"]
-    B --> E["Waiting period ends without confirmation"]
-    E --> F["All shipment items become delivered automatically"]
-```
+### Shipment Creation Failure Leaves Item Statuses Unchanged
+
+If shipment creation fails, the statuses of the underlying order items must remain unchanged.
+A failed shipment creation must not mark items as shipped.
+A failed shipment creation must not partially change the state of any included order item.
+
+### Bundle or Individual Shipping Allowed
+
+A seller may ship eligible order items individually or bundle multiple eligible items into one shipment.
+The choice to bundle or ship individually is allowed as long as the shipment contains items from only one seller, the items still need shipping, and tracking information is provided.
+The shipment creation must reject only the invalid combination, not the choice between bundling and individual shipping.
 
 ## CancellationRequest Error Scenarios
 
-Cancellation requests can only be made for order items that are paid and not yet shipped, so any later status must cause the request to be rejected. The customer must provide a reason, and missing or unclear reasons should not create a valid request. Sellers can approve or reject cancellation requests, but they should not be able to respond twice to the same request. When a seller responds, the platform must create a snapshot of the request state before the status changes are finalized. If a request is already resolved, it should no longer accept new responses or edits. Approved cancellations must restore stock through inventory history, while rejected requests must leave the item order flow unchanged. Cancellation handling is per order item, so a request for one item must not affect other items in the same order. Requests tied to items that were already shipped or otherwise finalized must be blocked to protect the shipping workflow. The platform should keep past request records available for dispute review even after resolution. Any cancellation conflict should clearly show whether the problem is item status, missing reason, or an already resolved request.
+Cancellation requests can only be submitted for order items that are still in paid status and have not been shipped. If the customer tries to cancel an item that is already shipped, delivered, cancelled, or refunded, the request must be rejected. A cancellation request must include a reason, and missing or unusable reasons should stop the request from being created. Sellers can approve or reject the request, and each response should create a snapshot of the request state so dispute records remain complete. If a seller responds after the item has already moved to another final state, the response should not overwrite the current item outcome. Approved cancellations restore stock and process the item-level refund, while rejected requests leave the order item active. Reopening or duplicating an already resolved request should not create a second active request for the same item. Any failure in the cancellation flow must leave the request and item in their last valid state.
 
-### Cancellation Eligibility and Required Reason
+### Paid Order Item Cancellation Only
 
-Cancellation requests can be created only for an order item that is in paid status and has not been shipped.
-If an order item has already been shipped, the platform rejects the cancellation request.
-If an order item is in any status other than paid, the platform rejects the cancellation request.
-A customer must provide a cancellation reason when submitting a request.
-If the cancellation reason is missing, the platform rejects the request.
-If the cancellation reason is unclear or not provided in a usable form, the platform does not create a valid cancellation request.
-Cancellation handling applies to one order item at a time.
-A cancellation request for one order item must not affect any other item in the same order.
+A customer can submit a cancellation request only for an order item that is still in paid status.
 
-### Seller Response and Request State Control
+If the order item has already moved to cancelled or refunded status, the system rejects the cancellation request.
 
-A seller can respond to a cancellation request only once.
-If a seller has already approved or rejected a request, the platform rejects any additional response attempt.
-If a cancellation request has already been resolved, the platform does not allow edits to the request.
-If a cancellation request has already been resolved, the platform does not allow a new response to be recorded.
-When a seller responds to a cancellation request, the platform creates a snapshot of the request state before the final status change is completed.
-The snapshot preserves the request state for later dispute review.
-The snapshot preserves the values before and after the seller response is applied.
-
-### Approved and Rejected Cancellation Outcomes
-
-If a cancellation request is approved, the corresponding order item is cancelled.
-If a cancellation request is approved, the platform restores stock through inventory history for the affected item.
-If a cancellation request is approved, the approved item does not continue through the normal shipping flow.
-If a cancellation request is rejected, the corresponding order item remains unchanged.
-If a cancellation request is rejected, the order item continues through its existing order flow without interruption.
-If a cancellation request is rejected, the platform does not restore stock for that item.
-If a cancellation request is rejected, only that request is affected and other items in the same order remain unchanged.
-
-### Preservation for Dispute Review
-
-Cancellation request records are preserved after the request is resolved.
-Resolved cancellation request records remain available for dispute review.
-The platform keeps the request history visible to relevant parties for review of the final outcome.
-The preserved record includes the request state snapshots associated with seller responses.
-The preserved record remains available even after the request is approved or rejected.
-
-## RefundRequest Error Scenarios
-
-Refund requests can only be made for delivered order items, and the request must be submitted within the allowed seven-day window after delivery. If the item is not delivered or the deadline has passed, the platform should reject the request. The customer must provide a reason, and a missing reason should not create a valid refund request. Sellers can approve or reject the refund request, but once they respond, the request should not be processed again in another state. Every seller response must create a snapshot so the previous request state remains visible for dispute handling. Approved refunds should restore stock through inventory history, while rejected refunds should leave the completed order item unchanged. A refund request applies to one order item only and must not affect other items in the same order. If the item has already been refunded, the platform should block a duplicate refund request. Requests for items that are still awaiting delivery must be denied. Any refund edge case should clearly distinguish between timing violations, item status violations, and repeat-resolution conflicts.
-
-### Refund Eligibility and Timing
-
-Customers can request a refund only for an order item whose delivery has been completed.
-A refund request is valid only while the item remains within the allowed seven-day period after delivery.
-If an order item is not delivered, the platform rejects the refund request.
-If the seven-day period after delivery has passed, the platform rejects the refund request.
-If a customer tries to request a refund for an item that has already been refunded, the platform rejects the request as a duplicate.
-If a customer tries to request a refund for an item that has already been resolved through another final outcome, the platform rejects the request.
+If a cancellation request is submitted for an item that is already covered by another active cancellation request, the system rejects the duplicate request.
 
 ```mermaid
 flowchart LR
-    A["Delivered order item"] -->|"Within seven days"| B["Refund request allowed"]
-    A -->|"After seven days"| C["Refund request rejected"]
-    D["Undelivered order item"] --> C
-    E["Already refunded item"] --> C
-    F["Already resolved item"] --> C
+    A["paid order item"] -->|"Cancel request allowed"| B["cancellation request submitted"]
+    C["cancelled order item"] -->|"Cancel request rejected"| D["request not created"]
+    E["refunded order item"] -->|"Cancel request rejected"| D
 ```
 
-### Refund Request Content and Scope
+### Cancellation Reason Required
 
-A refund request must include a reason.
-If the reason is missing, the platform rejects the request.
-A refund request applies to one order item only.
-If a customer attempts to use one refund request for multiple order items, the platform rejects the request.
-If a customer attempts to request a refund for an order item that does not meet the refund eligibility rules, the platform rejects the request.
+A cancellation request must include a reason.
 
-```mermaid
-flowchart LR
-    A["Refund request"] --> B["One order item only"]
-    A --> C["Reason provided"]
-    B -->|"Yes"| D["Request can be reviewed"]
-    B -->|"No"| E["Request rejected"]
-    C -->|"Present"| D
-    C -->|"Missing"| E
-```
+If the reason is missing, empty, or otherwise unusable, the system rejects the request and does not create a cancellation request record.
 
-### Seller Response and Request State Handling
+The reason is part of the request content that is preserved for later review and dispute handling.
 
-When a seller responds to a refund request, the platform creates a snapshot of the request state.
-The snapshot preserves the previous state so that the response history remains available for dispute handling.
-Once a refund request has already been resolved, the platform does not allow another seller response for the same request.
-If a seller tries to respond to a refund request that has already been approved or rejected, the platform rejects the action.
-If a seller tries to process the same refund request more than once, the platform rejects the action.
+### Seller Response Recording
+
+The seller of the order item can approve or reject the cancellation request.
+
+When the seller responds, the system records that response as part of the request history.
+
+If the seller responds after the order item has already moved to a final outcome, the response does not overwrite the item’s current outcome.
 
 ```mermaid
 sequenceDiagram
     participant C as Customer
     participant S as Seller
-    participant P as Platform
-    C->>P: Submit refund request
-    S->>P: Approve or reject refund request
-    P->>P: Create request snapshot
-    P-->>S: Request marked as resolved
-    S->>P: Attempt second response
-    P-->>S: Action rejected
+    participant M as System
+    C->>M: Submit cancellation request
+    S->>M: Approve or reject request
+    M->>M: Record seller response
+    M-->>C: Request outcome is updated
 ```
 
-### Approved and Rejected Refund Outcomes
+### Cancellation Request Snapshot on Response
 
-If a refund request is approved, the platform restores stock for the refunded order item through inventory history.
-If a refund request is rejected, the item remains unchanged.
-An approved refund changes only the requested order item and does not affect other items in the same order.
-A rejected refund changes nothing about the completed order item.
-If a refund request has already been approved or rejected, the platform keeps that outcome final and does not allow it to be processed again.
+Each seller response creates a snapshot of the cancellation request state.
 
-```mermaid
-flowchart LR
-    A["Refund request"] --> B["Approved"]
-    A --> C["Rejected"]
-    B --> D["Stock restored"]
-    B --> E["Item refunded"]
-    C --> F["Item unchanged"]
-```
+The snapshot preserves the request state at the moment of the response so dispute records remain complete.
+
+Snapshots are created for both approved and rejected responses.
+
+If the response cannot be applied, no new snapshot is created for that failed response attempt.
+
+### Resolved Request Cannot Reopen
+
+Once a cancellation request has been resolved, it cannot be reopened.
+
+A resolved request cannot be resubmitted as a second active request for the same order item.
+
+If a customer tries to reopen or duplicate a resolved request, the system rejects the attempt.
+
+### Approved Cancellation Restores Stock
+
+If the seller approves the cancellation request, the item is cancelled and the stock quantity for that item is restored through an inventory record.
+
+The approved cancellation also triggers the item-level refund process for that order item only.
+
+If the stock restoration cannot be completed, the cancellation outcome must not advance beyond the last valid request state.
+
+### Rejected Cancellation Keeps Item Active
+
+If the seller rejects the cancellation request, the order item remains active.
+
+A rejected cancellation does not cancel the item and does not restore stock.
+
+The rest of the order continues normally after the rejection.
+
+### Cancellation Request State Remains Last Valid
+
+Any failure in the cancellation flow leaves the cancellation request and the order item in their last valid state.
+
+The system does not replace the current request state with a partial or incomplete result.
+
+If an approval or rejection cannot be completed, the previous valid request state remains in effect.
+
+## RefundRequest Error Scenarios
+
+Refund requests can only be submitted for order items that have been delivered, and requests outside the allowed delivery window must be rejected. If the item has not been delivered, has already been refunded, or is otherwise not eligible, the system must not create a new refund request. A refund request must include a reason, and missing reasons should be treated as invalid. Sellers can approve or reject the request, and each response should preserve a snapshot of the request state for later review. If the seller responds after the item has already changed to another final state, the response should not replace the existing outcome. Approved refunds restore stock and complete the item-level refund, while rejected requests leave the item as delivered. Duplicate refund requests for the same item should not create conflicting active requests. Failed refund processing must keep the existing item and request state unchanged.
+
+### Delivered Item Required for Refund Request
+
+A customer can request a refund only for an order item whose status is delivered.
+If the item has not been delivered, the refund request must be rejected.
+If the item has already been refunded, the system must not create a new refund request for it.
+If the item is otherwise not eligible for a refund request, the system must not create a new refund request.
+
+### Refund Window Within Seven Days
+
+A refund request can be submitted only within seven days after the item is delivered.
+If the request is submitted after that window has passed, it must be rejected.
+The refund eligibility check is based on the delivered item and the delivery date of that item.
+
+### Refund Reason Required
+
+A refund request must include a reason.
+If the reason is missing, the refund request must be rejected.
+A refund request without a reason is not valid for submission.
+
+### Seller Approval or Rejection Recorded
+
+The seller of the delivered item can approve or reject the refund request.
+When the seller responds, the outcome must be recorded as part of the request state.
+If the seller approves the request, the item is refunded.
+If the seller rejects the request, the item remains delivered.
+
+### Refund Request Snapshot on Response
+
+When the seller approves or rejects a refund request, a snapshot of the request state must be created.
+The snapshot must preserve the request state at the moment of the seller response.
+Snapshot creation applies to each seller response for the request.
+
+### Duplicate Refund Request Prevented
+
+The system must not allow duplicate active refund requests for the same order item.
+If a refund request already exists for the item, a new conflicting active request must not be created.
+This prevents multiple active refund requests from being opened for one item.
+
+### Approved Refund Restores Stock
+
+If a refund request is approved, the refunded item must restore its stock quantity.
+The stock restoration must occur through the inventory history for that variant.
+The approved refund changes the item to refunded and returns the item quantity to stock.
+
+### Refund Request State Stays Unchanged on Failure
+
+If refund processing fails, the existing order item state and refund request state must remain unchanged.
+A failed refund process must not replace the current outcome.
+The item must keep its current status until the refund is completed successfully.
 
 ## Review Error Scenarios
 
-A review can only be written by a customer who purchased the product and only after the related item has been delivered. If the item is not delivered, the platform must reject the review submission. A customer can write only one review per product per order, so duplicate submissions for the same purchase should be blocked. Reviews must preserve their history through snapshots whenever they are edited. If a customer deletes a review, the snapshot history should remain available, but the active review should no longer count toward the product average rating. Reviews should continue to display on product detail pages in newest-first order, even if some reviews are deleted or show a deleted user identity. The platform should reject review edits from anyone other than the original author. If the product or seller is deleted later, the review history should still exist in preserved form. Rating and text content errors should not overwrite a review that already belongs to another purchase. Review conflicts should always be handled in favor of purchase ownership, delivery status, and snapshot preservation.
+A customer can write a review only after the purchased item has been delivered, so attempts to review earlier item states must be rejected. Customers can write only one review per product per order, and duplicate reviews for the same purchase should not be allowed. A review must include a rating, and invalid rating values should prevent the review from being created. Text content is optional, but when provided it should not break the review if the rating is valid. Customers can edit or delete only their own reviews, and any attempt to modify another customer’s review must be blocked. Review edits must preserve snapshot history, while deletions must keep the snapshots but mark the review as deleted. Deleted reviews should still support the platform’s preserved history behavior without contributing to the active average rating. If a review target no longer exists because the purchased product is unavailable, the preserved review record should still behave according to the deleted-user and snapshot rules.
 
-### Review Eligibility and Purchase Ownership
+### Delivery Required Before Review
 
-THE shoppingMall platform SHALL allow a customer to submit a review only when the customer owns the related purchase.
-WHEN a customer attempts to submit a review for an item they did not purchase, THE shoppingMall platform SHALL reject the review.
-WHEN a customer attempts to submit a review before the related order item has been delivered, THE shoppingMall platform SHALL reject the review.
-IF the review is not tied to a delivered purchase, THEN THE shoppingMall platform SHALL not create the review.
-
-```mermaid
-sequenceDiagram
-    participant C as "Customer"
-    participant S as "System"
-    C->>S: "Submit review"
-    S->>S: "Check purchase ownership"
-    S->>S: "Check delivery status"
-    S-->>C: "Accept review or reject review"
-```
-
-### One Review per Product per Order
-
-THE shoppingMall platform SHALL allow at most one review per product per order from the original purchaser.
-WHEN a customer submits a review for a product that already has a review from the same order, THE shoppingMall platform SHALL reject the duplicate submission.
-IF a customer attempts to submit a second review for the same product within the same order, THEN THE shoppingMall platform SHALL block the duplicate review.
+A customer can write a review only for a product item that has already been delivered.
+If the purchased item has not reached delivered status, the system rejects the review attempt.
+Review availability is tied to the delivered state of the purchased item, so earlier item states do not qualify for review creation.
 
 ```mermaid
 flowchart LR
-    A["Delivered order item"] --> B["Customer writes first review"]
-    B --> C["Review is accepted"]
-    B --> D["Second review for same product and order"]
-    D --> E["Review is rejected"]
+    A["Purchased item"] -->|"Not delivered"| B["Review rejected"]
+    A -->|"Delivered"| C["Review allowed"]
 ```
 
-### Review Editing and Snapshot Preservation
+### One Review Per Product Per Order
 
-WHEN a customer edits an existing review, THE shoppingMall platform SHALL preserve the previous state in a snapshot.
-THE shoppingMall platform SHALL record the change time, the values before the edit, and the values after the edit for every review edit.
-THE shoppingMall platform SHALL retain review snapshots after the review is updated.
-IF a review is edited, THEN THE shoppingMall platform SHALL keep the review history available for dispute resolution.
+A customer can write only one review for the same product within the same order.
+If a review already exists for that product and order combination, the system rejects any additional review attempt.
+This rule prevents duplicate reviews for the same purchase while still allowing separate reviews for different products or different orders.
 
 ```mermaid
 flowchart LR
-    A["Existing review"] --> B["Customer edits review"]
-    B --> C["Snapshot of previous state is created"]
-    B --> D["Review is updated"]
-    C --> E["Snapshot history remains available"]
+    A["Review attempt"] --> B{"Same product and same order already reviewed?"}
+    B -->|"Yes"| C["Review rejected"]
+    B -->|"No"| D["Review created"]
 ```
 
-### Review Deletion and Preserved History
+### Required Rating for Review
 
-WHEN a customer deletes their own review, THE shoppingMall platform SHALL remove the active review from normal display.
-WHEN a customer deletes a review, THE shoppingMall platform SHALL preserve the snapshot history of that review.
-IF a review has been deleted, THEN THE shoppingMall platform SHALL keep the preserved review record available in history.
-THE shoppingMall platform SHALL continue to show preserved review history even after the active review is deleted.
+A review must include a rating.
+If the rating is missing, the system rejects the review.
+If the rating value is not valid, the system rejects the review instead of creating an incomplete review.
+Text content may be optional, but a review cannot be created without a rating.
 
 ```mermaid
 flowchart LR
-    A["Active review"] --> B["Customer deletes review"]
-    B --> C["Active review is removed"]
-    B --> D["Snapshot history remains"]
-    D --> E["History stays preserved"]
+    A["Review submission"] --> B{"Rating provided and valid?"}
+    B -->|"No"| C["Review rejected"]
+    B -->|"Yes"| D["Review created"]
 ```
 
-### Deleted User Identity on Preserved Reviews
+### Own Review Only Editing
 
-WHEN a customer account is deleted, THE shoppingMall platform SHALL preserve that customer's existing reviews.
-WHEN a preserved review belongs to a deleted customer account, THE shoppingMall platform SHALL display the reviewer identity as "deleted user".
-THE shoppingMall platform SHALL continue to preserve review history even when the original customer identity is no longer available.
-IF a review is shown after the author account is deleted, THEN THE shoppingMall platform SHALL not display the deleted customer's original account identity.
+A customer can edit only their own review.
+If a customer attempts to edit a review written by another customer, the system blocks the change.
+The review owner remains the only person allowed to modify the review content or rating.
 
 ```mermaid
 flowchart LR
-    A["Customer account deleted"] --> B["Reviews are preserved"]
-    B --> C["Review display uses deleted user identity"]
-    C --> D["Review history remains visible"]
+    A["Edit review attempt"] --> B{"Review owner?"}
+    B -->|"No"| C["Edit rejected"]
+    B -->|"Yes"| D["Edit allowed"]
 ```
 
-### Review Visibility and Rating Calculation
+### Own Review Only Deletion
 
-THE shoppingMall platform SHALL display product reviews on the product detail view in newest-first order.
-WHEN a review has been deleted, THE shoppingMall platform SHALL exclude that review from the product's average rating.
-THE shoppingMall platform SHALL continue to show preserved review history separately from the active review count.
-IF deleted reviews exist for a product, THEN THE shoppingMall platform SHALL not include them in the rating used for the product summary.
+A customer can delete only their own review.
+If a customer attempts to delete another customer’s review, the system blocks the deletion.
+Deleting a review does not remove its preserved history, but the active review is no longer treated as available for normal display.
 
 ```mermaid
 flowchart LR
-    A["Product detail view"] --> B["Reviews displayed newest first"]
-    B --> C["Deleted reviews excluded from average rating"]
-    C --> D["Active rating summary is updated"]
+    A["Delete review attempt"] --> B{"Review owner?"}
+    B -->|"No"| C["Deletion rejected"]
+    B -->|"Yes"| D["Deletion allowed"]
 ```
 
-### Review Edit Authorization
+### Review Snapshot Preserved After Edit
 
-WHEN a customer attempts to edit a review created by another customer, THE shoppingMall platform SHALL reject the edit.
-THE shoppingMall platform SHALL allow review edits only from the original author of the review.
-IF the requesting customer is not the original author, THEN THE shoppingMall platform SHALL not apply the review changes.
-THE shoppingMall platform SHALL preserve the review snapshot history regardless of whether the edit is accepted or rejected.
+When a review is edited, the system preserves a snapshot of the previous state.
+The snapshot records the change time, the fields that changed, and the values before and after the edit.
+A review edit must not overwrite its preserved history.
 
 ```mermaid
-sequenceDiagram
-    participant C as "Customer"
-    participant S as "System"
-    C->>S: "Request review edit"
-    S->>S: "Check original author"
-    S-->>C: "Allow edit or reject edit"
+flowchart LR
+    A["Review edit"] --> B["Create snapshot"]
+    B --> C["Preserve previous state"]
+    C --> D["Updated review"]
+```
+
+### Deleted Review Excluded From Average Rating
+
+A deleted review does not contribute to the product’s average rating.
+The product’s average rating is calculated only from active reviews that are not deleted.
+Deleting a review therefore removes it from rating calculations while keeping the preserved history intact.
+
+```mermaid
+flowchart LR
+    A["Reviews"] --> B["Active reviews"]
+    A --> C["Deleted reviews"]
+    B --> D["Average rating"]
+    C --> E["Excluded from average rating"]
+```
+
+### Duplicate Review Prevented
+
+The system prevents duplicate review creation for the same product purchase.
+If a customer tries to submit another review for a product that has already been reviewed in the same order, the system rejects the duplicate.
+This rule applies even if the new review contains different text or a different rating.
+
+```mermaid
+flowchart LR
+    A["New review attempt"] --> B{"Existing review for same product and order?"}
+    B -->|"Yes"| C["Duplicate prevented"]
+    B -->|"No"| D["Review created"]
+```
+
+### Review Availability Tied to Delivered Item
+
+A review remains available only when it is tied to a delivered purchased item.
+If the purchased item has not been delivered, the review option is not available.
+Once the item reaches delivered status, the customer may submit the review for that delivered purchase.
+This availability rule ensures review creation follows the delivery state of the item.
+
+```mermaid
+flowchart LR
+    A["Purchased item status"] --> B{"Delivered?"}
+    B -->|"No"| C["Review unavailable"]
+    B -->|"Yes"| D["Review available"]
 ```
 
 ## Snapshot Error Scenarios
 
-Snapshots are immutable, so once a snapshot is created it cannot be edited or deleted. If editable data changes, the platform must create a new snapshot rather than modifying the prior one. Snapshot records must show when the change happened and what changed, including values before and after the change. Only relevant parties such as owners or administrators should be able to view snapshots for dispute resolution. If a business object is deleted later, its snapshots must remain available where the requirements preserve history. Snapshot handling should cover products, variants, seller profiles, order items, reviews, cancellation requests, and refund requests without mixing their histories together. If a change fails before it is accepted, no snapshot should be created for that failed attempt. Repeated edits should create separate snapshots for each accepted change so the history remains complete. A snapshot must not be treated as a live editable record. Any attempt to remove or rewrite snapshot history must be rejected to protect transaction traceability.
+Snapshots are immutable, so they must never be edited or deleted once created. If a business change fails, the system should not create a misleading snapshot that suggests the change was completed. Snapshots must only appear for changes that are actually allowed by the platform rules, such as successful edits to products, seller profiles, reviews, cancellation requests, and refund requests. Users with the right relationship to the data, such as owners or administrators, may view relevant snapshots, but others should not be able to access them. Because snapshots preserve before-and-after values, missing or incomplete change information should be treated as invalid rather than stored as a partial record. A preserved snapshot must continue to reflect the exact state at the time of change even if the live object is later deleted. If a related object no longer exists, the snapshot history should remain available for dispute resolution. Snapshot viewing failures should not alter the preserved history.
 
-### Snapshot Immutability and Deletion Protection
+### Snapshot Immutability
 
-Snapshots are permanent records once created.
-Snapshots cannot be edited, rewritten, or deleted by any party.
-A snapshot must remain a historical record and must not be treated as a live editable business object.
-If a user attempts to change snapshot content directly, the request is rejected.
-If a user attempts to remove snapshot history, the request is rejected.
-
-```mermaid
-flowchart LR
-    A["Snapshot created"] --> B["Snapshot remains immutable"]
-    B --> C["Edit attempt"]
-    C --> D["Request rejected"]
-    B --> E["Delete attempt"]
-    E --> D
-```
-
-### Snapshot Creation for Accepted Changes
-
-When editable business data is successfully changed, the platform creates a new snapshot for that accepted change.
-Each accepted change produces its own snapshot entry rather than modifying an earlier one.
-Repeated edits to the same business object create separate snapshots so that the history remains complete.
-If a change is not accepted, no new snapshot is created for that failed attempt.
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant S as System
-    U->>S: Submit a change to editable data
-    S->>S: Accept or reject the change
-    alt Change accepted
-        S->>S: Create a new snapshot
-        S-->>U: Change recorded
-    else Change rejected
-        S-->>U: Change not recorded
-    end
-```
-
-### Snapshot Content and Change Time
-
-Each snapshot records the time the change was made.
-Each snapshot records what changed.
-Each snapshot records the values before the change and the values after the change.
-These details must be visible in the historical record so the change can be reviewed later.
-A snapshot that does not include the change time, the changed values, the prior values, and the later values does not satisfy the snapshot record requirement.
+Snapshots are immutable once created.
+Snapshots cannot be edited, replaced, or deleted.
+Any attempt to change a snapshot must be rejected.
+If a user attempts to modify a snapshot, the preserved history must remain unchanged.
 
 ```mermaid
 flowchart LR
-    A["Editable data changes"] --> B["Snapshot created"]
-    B --> C["Change time"]
-    B --> D["Changed values"]
+    A["Created snapshot"] -->|"Attempt edit or delete"| B["Rejected"]
+    A -->|"View"| C["Unchanged snapshot history"]
+```
+
+### Snapshot Creation on Successful Changes Only
+
+A snapshot is created only when the related business change succeeds.
+If a change fails, no snapshot is created for that attempt.
+If a change is rejected by platform rules, the snapshot history must not contain a record suggesting the change occurred.
+If a save operation does not complete successfully, the related data history must remain unchanged.
+
+```mermaid
+flowchart LR
+    A["Change attempt"] --> B{ "Succeeded?" }
+    B -->|"Yes"| C["Create snapshot"]
+    B -->|"No"| D["Create no snapshot"]
+```
+
+### Snapshot Content Preservation
+
+Each snapshot preserves the state of the change in a way that shows what changed and the values before and after the change.
+A snapshot must preserve the change timestamp, the fields that changed, the previous values, and the new values.
+If any of these parts are missing, the snapshot must be treated as invalid and must not be stored as a partial record.
+Snapshots must remain accurate even if the live object later changes again.
+
+```mermaid
+flowchart LR
+    A["Successful change"] --> B["Snapshot"]
+    B --> C["Change timestamp"]
+    B --> D["Changed fields"]
     B --> E["Before values"]
     B --> F["After values"]
 ```
 
-### Snapshot Access for Dispute Resolution
+### Snapshot Access for Relevant Parties
 
-Snapshots are viewable only by relevant parties such as owners and administrators.
-A user who is not a relevant party cannot view snapshot history.
-Snapshot access is intended for dispute resolution and historical review.
-The platform must keep snapshot visibility separated from ordinary live record viewing so that historical records are reviewed only by the parties allowed to see them.
+Relevant parties may view snapshots for dispute resolution.
+The owner of the related data may view snapshots tied to that data.
+Administrators may view snapshots when platform oversight or dispute resolution requires it.
+Users without a relevant relationship to the data must not be able to view the snapshots.
+If a snapshot view is requested by an unauthorized user, the request must be rejected.
 
 ```mermaid
 flowchart LR
-    A["Snapshot history"] --> B["Owner"]
+    A["Snapshot"] --> B["Owner"]
     A --> C["Administrator"]
-    A --> D["Other user"]
-    D --> E["Access rejected"]
+    A --> D["Unauthorized user"]
+    D -->|"Reject view"| E["Access denied"]
 ```
 
 ### Snapshot Preservation After Deletion
 
-If a business object is later deleted, its snapshots remain preserved when the requirements state that history must be retained.
-Deleting the underlying business object does not delete its preserved snapshots.
-Preserved snapshots remain available for later review by relevant parties.
-The preserved history must still be identifiable as the history of the deleted business object.
+A snapshot remains available after the related live object is deleted.
+Deletion of the related object must not remove or alter the preserved snapshot history.
+If the related object no longer exists, the snapshot history must still be available for dispute resolution.
+Historical snapshots must continue to reflect the exact state that existed when the change was made.
 
 ```mermaid
 flowchart LR
-    A["Business object deleted"] --> B["Snapshots preserved"]
-    B --> C["Historical review remains available"]
+    A["Live object"] -->|"Deleted"| B["Object no longer exists"]
+    A --> C["Snapshot history remains"]
+    B --> C
 ```
 
-### Snapshot History Separation by Entity Type
+### Snapshot Viewing Does Not Alter History
 
-Snapshot history must remain separate for each business object type.
-A product snapshot must not be mixed with a product variant snapshot, seller profile snapshot, review snapshot, cancellation request snapshot, or refund request snapshot.
-Each entity type keeps its own historical trail so the change history remains clear and traceable.
-When a user reviews snapshots, the system must present the correct history for the specific entity being examined.
+Viewing snapshots must not change the preserved history.
+Opening or inspecting a snapshot must not create a new snapshot.
+Viewing a snapshot must not modify its timestamp, changed fields, before values, or after values.
+If a snapshot view fails, the stored history must remain unchanged.
 
 ```mermaid
 flowchart LR
-    A["Snapshot histories"] --> B["Products"]
-    A --> C["Product variants"]
-    A --> D["Seller profiles"]
-    A --> E["Reviews"]
-    A --> F["Cancellation requests"]
-    A --> G["Refund requests"]
+    A["View snapshot"] --> B{ "Success?" }
+    B -->|"Yes"| C["History unchanged"]
+    B -->|"No"| C
 ```
+
+## AdministratorApprovalRequest Error Scenarios
+
+Any customer or seller can request administrator status, but each request must contain a reason and should be rejected if that reason is missing or unusable. A user cannot submit a duplicate pending request while another one is still under review. Super administrators are the only ones who can approve or reject these requests, so regular administrators must not process them. If a request is already approved or rejected, it should not be processed again as if it were still pending. When a request is rejected, the user should remain in the original role and the request should keep its final outcome. If a request is approved, the user becomes a regular administrator, not a super administrator. Pending request lists should not include completed requests, and failed review actions must leave the request state unchanged. The system should preserve the request outcome for later accountability and review.
+
+### Administrator Request Reason Requirement
+
+A request to become an administrator must include a reason.
+If the reason is missing or unusable, the request is rejected.
+The system only accepts requests that provide enough information to explain why the user is seeking administrator status.
+This requirement applies to both customer and seller accounts that are eligible to submit the request.
+
+### Duplicate Pending Request Blocking
+
+A user cannot submit a new administrator request while another request from the same user is still pending.
+If a pending request already exists, the new request is rejected.
+This prevents multiple unresolved requests from being reviewed at the same time for the same user.
+Once the earlier request reaches a final outcome, the user may submit a new request if needed.
+
+### Super Administrator Review Only
+
+Only super administrators can approve or reject administrator requests.
+If a regular administrator attempts to review a request, the action is rejected and the request remains unchanged.
+Pending requests are visible for review only to super administrators.
+This ensures administrator approval requests are handled by the highest review role only.
+
+### Approval Outcome Becomes Regular Administrator
+
+When a pending administrator request is approved, the user becomes a regular administrator.
+Approval does not make the user a super administrator.
+The approved request keeps its final approved outcome for later reference.
+The user’s new role is determined only by the approval outcome of the request.
+
+### Rejection Preserves Original Role
+
+When a pending administrator request is rejected, the user remains in the original role they had before the request.
+Rejection does not change the user into an administrator.
+The rejected request keeps its final rejected outcome for later reference.
+A rejected request must not alter the user’s current role or grant any administrator privileges.
+
+### Completed Request Cannot Be Processed Again
+
+Once an administrator request has reached a final outcome, it cannot be approved or rejected again as if it were still pending.
+Any later attempt to process the same completed request is rejected.
+The stored outcome of the request remains unchanged.
+This applies to requests that are already approved or already rejected.
+
+### Pending List Excludes Completed Requests
+
+The pending administrator request list includes only requests that are still under review.
+Approved requests and rejected requests do not appear in the pending list.
+If a request reaches a final outcome, it is removed from the list of pending requests.
+This keeps the pending list limited to actionable requests only.
+
+### Request Outcome Preservation for Accountability
+
+The outcome of every administrator request is preserved for accountability and later review.
+Approved and rejected requests remain available as completed records.
+The preserved record supports later review of who requested administrator status, how the request was resolved, and what final outcome was recorded.
+A completed request must keep its outcome even after it is no longer pending.
+
+### Final State Enforcement
+
+An administrator request must end in one of its final outcomes and stay there.
+Once approved or rejected, the request cannot return to pending.
+The system must treat the final outcome as the authoritative state for the request.
+Any action that conflicts with the final state is rejected and leaves the request unchanged.
 
 ## SellerApprovalRequest Error Scenarios
 
-A seller approval request must be tied to a seller registration attempt, and requests that are missing required account context should not be accepted. If a seller application is already pending, the platform should not create a duplicate pending request for the same registration. Rejected sellers may submit a new registration request, but the new request should be treated as a fresh pending case rather than altering the old decision. When administrators approve or reject a request, the request state must stop changing afterward. A rejection must include a reason so the seller can understand why the application was denied. If a request has already been resolved, repeated approval or rejection attempts must be blocked. Seller approval status should remain visible so the seller can see whether the request is pending, approved, or rejected. The platform should keep the rejection reason available for rejected requests and prevent it from being overwritten without a new request. Approval request handling should not allow a seller to sell before approval is complete. Any request conflict should clearly distinguish duplicate submission, already resolved status, or missing rejection reason.
+A seller registration request can be rejected or approved by administrators only, and the request must remain pending until a final decision is made. If the seller is already approved or rejected, the system should not allow the same request to be processed again as pending. Rejection requires a reason, and missing rejection details should block the decision from being finalized. If a seller resubmits after rejection, the new registration request should be treated as a new request rather than reopening the old one. Seller approval should not bypass the requirement for administrator review, and a seller should not become active before the approval outcome is recorded. Pending sellers should see their current status correctly, while rejected sellers should see the rejection reason. If the request target is missing or no longer valid, the system should treat it as unavailable rather than creating a conflicting approval outcome. Any failed approval action must leave the existing seller request status unchanged.
 
-### Seller registration request context required
+### Seller Registration Pending Review
 
-A seller approval request must be tied to a valid seller registration attempt.
-The platform shall not accept a seller approval request when the account context for the seller registration is missing.
-The platform shall treat a request without seller registration context as an invalid submission and not place it into the approval workflow.
+A seller registration request remains in pending review until an administrator makes a final decision.
+A pending seller registration request can be approved or rejected only once.
+If the request has already been approved or rejected, it is no longer treated as pending.
+If a seller resubmits after rejection, the new submission is treated as a new registration request rather than reopening the old request.
 
-```mermaid
-flowchart LR
-    A["Seller registration attempt"] --> B["Seller approval request"]
-    B --> C["Pending review"]
-    B --> D["Rejected as invalid"]
-    E["Missing registration context"] --> D
-```
+### Administrator-Only Seller Approval
 
-### Duplicate pending seller request blocked
+Only an administrator can approve or reject a seller registration request.
+A seller registration request must not become active before administrator review is completed.
+If a non-administrator attempts to process the request, the decision is not accepted and the request remains unchanged.
 
-The platform shall allow only one pending seller approval request for the same seller registration at a time.
-If a seller submits another request while a pending request already exists, the platform shall block the duplicate submission.
-The platform shall keep the existing pending request unchanged when a duplicate pending submission is attempted.
+### Rejection Reason Required
 
-A duplicate pending submission is treated as a conflict rather than a new registration case.
+A seller registration request cannot be rejected without a rejection reason.
+If the rejection reason is missing, the rejection cannot be finalized.
+A rejection decision without a reason leaves the seller registration request unchanged.
 
-### Rejected seller submits fresh request
+### Approved Seller Becomes Active
 
-When a seller approval request has been rejected, the seller may submit a new registration request.
-The platform shall treat the new submission as a fresh pending request.
-The platform shall not alter the previously rejected request when the seller submits a new request.
-The new request shall be reviewed independently from the earlier rejection.
+When a seller registration request is approved, the seller becomes active.
+The approval outcome must be recorded before the seller is treated as active.
+A seller must not be shown as active while the request is still pending.
 
-### Request state locked after approval or rejection
+### Rejected Seller Resubmits New Request
 
-Once an administrator approves or rejects a seller approval request, the request state shall stop changing.
-The platform shall prevent any further approval or rejection action on a resolved request.
-The platform shall preserve the final decision for the resolved request and keep it fixed after resolution.
-Any later attempt to modify the resolved request shall be blocked.
+A rejected seller may submit a new registration request.
+The new registration request is handled independently from the rejected request.
+The previously rejected request remains rejected and is not reopened.
 
-### Rejection reason required
+### Pending Request Cannot Be Reprocessed
 
-When an administrator rejects a seller approval request, a rejection reason shall be required.
-The platform shall not allow a rejection to be completed without a reason.
-The rejection reason shall remain available to explain why the seller registration was denied.
+A pending seller registration request cannot be processed again after a final decision has already been recorded.
+If the request is already approved or rejected, it must not be processed as though it were still pending.
+Any attempt to reprocess a finalised request leaves the existing seller registration request status unchanged.
 
-### Resolved seller approval request cannot change
+### Seller Status Shown Correctly
 
-A seller approval request that has already been approved or rejected shall be immutable in its decision state.
-The platform shall block repeated approval attempts for an approved request.
-The platform shall block repeated rejection attempts for a rejected request.
-The platform shall distinguish this condition from a duplicate pending submission and from a missing registration context.
+A seller’s registration status is shown according to the current request state.
+Pending sellers are shown as pending.
+Rejected sellers are shown as rejected and can see the rejection reason.
+Approved sellers are shown as approved.
 
-### Approval status visible to seller
+### Missing Seller Request Treated as Unavailable
 
-The seller shall be able to view the current approval status of the seller approval request.
-The visible approval status shall show whether the request is pending, approved, or rejected.
-The platform shall keep the status visible after the request has been resolved so the seller can confirm the outcome.
+If the requested seller registration request is missing or no longer valid, it is treated as unavailable.
+An unavailable request cannot be approved or rejected.
+The system must not create a conflicting approval outcome for a missing request.
 
-### Rejection reason preserved for rejected request
+### SellerApprovalRequest Unchanged on Failed Decision
 
-When a seller approval request is rejected, the rejection reason shall remain available for that rejected request.
-The platform shall not overwrite the rejection reason for the resolved request.
-If the seller submits a new registration request later, the new request shall not erase or replace the reason recorded for the earlier rejection.
-
-### Seller cannot sell before approval
-
-A seller shall not be able to sell before the seller approval request has been approved.
-The platform shall keep a seller in a non-selling state while the request is pending or rejected.
-Only an approved seller approval request shall allow the seller to proceed as an active seller.
-
-### Duplicate submission conflict
-
-If a seller submits the same registration request more than once while a pending request already exists, the platform shall treat the repeated submission as a duplicate submission conflict.
-If the platform detects the conflict, it shall not create an additional pending request.
-The platform shall distinguish this conflict from a resolved request that cannot change and from a rejected request that may be resubmitted as a fresh case.
-
-## AdministratorRequest Error Scenarios
-
-Any registered customer or seller can submit an administrator request, but the request must include a reason. If the reason is missing or unclear, the platform should reject the request instead of creating an incomplete application. Super administrators are responsible for reviewing pending administrator requests, and once a request has been approved or rejected, it should not be processed again. A user should not be able to submit duplicate pending administrator requests that would create conflicting reviews. When approved, the user becomes a regular administrator, so the platform must keep the result consistent with the administrator grade rules. If a request is rejected, the rejection state must remain visible for future reference. Requests that are no longer pending should not remain editable as though they were still awaiting review. Administrator request errors should also prevent a non-super administrator from acting on the approval queue. The system should keep each request’s final state stable so the decision history is trustworthy. Any error in this area should identify whether the issue is missing reason, duplicate submission, or already resolved status.
-
-### Administrator Request Submission Requires a Reason
-
-When a customer or seller submits an administrator request, the platform SHALL require a request reason.
-If the request reason is missing, the platform SHALL reject the submission and not create the administrator request.
-If the request reason is unclear, the platform SHALL reject the submission and not create the administrator request.
-
-### Duplicate Pending Administrator Requests Are Blocked
-
-If a customer or seller already has a pending administrator request, the platform SHALL reject any new administrator request submission from the same user.
-If a duplicate pending submission is rejected, the platform SHALL identify the conflict as a duplicate pending administrator request.
-
-### Super Administrators Review Pending Requests
-
-When an administrator request is pending, the platform SHALL allow a super administrator to review it.
-When a super administrator approves an administrator request, the platform SHALL update the approval status to approved.
-When a super administrator rejects an administrator request, the platform SHALL update the approval status to rejected.
-
-### Resolved Administrator Requests Cannot Be Processed Again
-
-If an administrator request has already been approved or rejected, the platform SHALL prevent it from being processed again.
-If a resolved administrator request is submitted for review again, the platform SHALL reject the action because the request is already resolved.
-If a resolved administrator request is edited, the platform SHALL reject the change and preserve the final state.
-
-### Non-Super Administrators Cannot Review the Queue
-
-If the current user is not a super administrator, the platform SHALL prevent that user from reviewing pending administrator requests.
-If a non-super administrator attempts to access the review queue, the platform SHALL reject the action.
-
-### Rejected Requests Remain Visible and Final State Stays Stable
-
-If an administrator request is rejected, the platform SHALL keep the rejected request visible for future reference.
-The platform SHALL preserve the final state of an approved or rejected administrator request without allowing it to change back to pending.
-If the same submission is attempted again after resolution, the platform SHALL reject it as a duplicate submission conflict rather than creating a new pending request.
-
-### Administrator Request Duplicate Submission Conflict
-
-When the platform detects another submission that would repeat an already pending or already resolved administrator request for the same user, the platform SHALL treat it as a duplicate submission conflict.
-If a duplicate submission conflict occurs, the platform SHALL not create a new request.
-If a duplicate submission conflict occurs, the platform SHALL preserve the existing request state unchanged.
+If a seller approval decision fails for any reason, the existing seller registration request status remains unchanged.
+A failed approval action does not convert a pending request into approved or rejected.
+A failed rejection action does not convert a pending request into rejected.
 
 # End-to-End User Scenarios
 
@@ -4010,197 +2832,129 @@ Cross-domain user scenarios that span multiple concepts, describing complete use
 
 Define end-to-end user scenarios that span multiple concepts, describing complete user journeys from start to finish.
 
-### Customer Shopping Journey
+### End-to-End Purchase Journey
 
-A customer’s end-to-end shopping journey begins after the account is created and continues through product discovery, cart management, checkout, payment, order fulfillment, and post-purchase actions.
+A customer must complete the full shopping journey from registration through purchase using an authenticated account.
+
+The journey begins with account registration because the platform does not allow guest browsing.
+
+After registration, the customer can browse categories, search products, open a product detail page, review seller and product information, and evaluate available variants.
+
+The customer can add a selected variant to the cart with a chosen quantity.
+
+The customer can proceed from the cart to checkout, select a shipping address or use the default shipping address, and review the order summary before placing the order.
+
+The customer confirms payment, and the system completes the purchase only when payment succeeds.
+
+When the purchase is completed, the system creates the order, reduces stock for the purchased variants, removes the purchased items from the cart, and records the purchase snapshots for the purchased product, variant, and seller profile.
+
+If payment fails, the order is not created and the customer can retry payment.
+
+If any item is unavailable during checkout, the customer cannot complete the purchase with that item included.
 
 ```mermaid
 sequenceDiagram
     participant C as "Customer"
     participant S as "System"
-    participant K as "Seller"
-    C->>S: "Search and review products"
-    S-->>C: "Show products, categories, and product details"
-    C->>S: "Add a specific variant to cart"
-    S-->>C: "Update cart and totals"
-    C->>S: "Proceed to checkout and confirm order"
-    S-->>C: "Process payment and create the order"
-    K->>S: "Ship order items"
-    S-->>C: "Show tracking information"
-    C->>S: "Confirm delivery"
-    S-->>C: "Update item status and order history"
+    C->>S: "Register and log in"
+    C->>S: "Browse categories or search products"
+    C->>S: "View product details"
+    C->>S: "Add selected variant to cart"
+    C->>S: "Proceed to checkout"
+    C->>S: "Select shipping address and review order"
+    C->>S: "Confirm payment"
+    S->>S: "Create order on successful payment"
+    S-->>C: "Order completed or payment failed"
 ```
-
-The customer can search products by name, browse categories, and open product details before deciding what to buy.
-The customer can add a specific product variant to the cart and can review the cart before checkout.
-The customer can choose a shipping address during checkout and can place the order after payment is confirmed.
-After the order is created, the customer can view order history and order details, including shipment information.
-After delivery, the customer can complete post-purchase actions such as writing a review for a purchased product.
 
 ### Seller Product-to-Fulfillment Journey
 
-A seller’s end-to-end business journey covers approval, shop setup, product preparation, inventory management, shipping, and responses to item-level after-sales requests.
+A seller must complete the full operational journey from account approval to order fulfillment.
 
-```mermaid
-sequenceDiagram
-    participant S as "Seller"
-    participant A as "Administrator"
-    participant P as "System"
-    S->>P: "Submit seller registration"
-    A->>P: "Review approval request"
-    P-->>S: "Show approval status"
-    S->>P: "Create and maintain products"
-    S->>P: "Manage variants, images, and inventory"
-    P-->>S: "Show incoming order items"
-    S->>P: "Create shipment for one or more items"
-    P-->>S: "Update shipment status"
-    S->>P: "Respond to cancellation or refund requests"
-```
+The seller begins by registering with email and password and waiting for administrator approval before selling.
 
-The seller can view approval status before starting to sell.
-Once approved, the seller can maintain the shop profile and create products with variants and images.
-The seller can manage inventory for each variant and can see the full history of inventory changes.
-When customer orders arrive, the seller can ship items and provide tracking information.
-The seller can also review and respond to cancellation and refund requests for the seller’s own order items.
+After approval, the seller can create products, assign them to categories, add product images, and define product variants with stock quantity.
 
-### Order Exception and Resolution Journey
+Every edit to a product, variant, or seller profile creates a snapshot so the previous state remains available for dispute resolution.
 
-The platform supports an end-to-end order exception journey that covers cancellation, refund, and delivery-related resolution for individual order items.
+When customers place orders, the seller can view the order items that belong to the seller’s products and identify the items that need shipping.
+
+The seller can create a shipment containing one or more order items from the same seller and enter shared tracking information for that shipment.
+
+When the shipment is created, the included order items change to shipped.
+
+The seller can also respond to cancellation requests for paid items and refund requests for delivered items.
+
+If the seller account is deleted, the seller’s products are removed from listings while order history and snapshots are preserved.
 
 ```mermaid
 flowchart LR
-    A["Paid item"] -->|"Customer requests cancellation"| B["Cancellation request pending"]
-    B -->|"Seller approves"| C["Item cancelled and stock restored"]
-    B -->|"Seller rejects"| D["Item continues normally"]
-    E["Delivered item"] -->|"Customer requests refund"| F["Refund request pending"]
-    F -->|"Seller approves"| G["Item refunded and stock restored"]
-    F -->|"Seller rejects"| H["Item remains delivered"]
+    A["Seller registration"] --> B["Administrator approval"]
+    B --> C["Create products and variants"]
+    C --> D["Edit product or profile"]
+    D --> E["Snapshot created"]
+    C --> F["Customer order received"]
+    F --> G["Create shipment"]
+    G --> H["Order items become shipped"]
+    F --> I["Respond to cancellation or refund request"]
 ```
 
-A customer can request cancellation only for an order item that has not been shipped.
-A customer can request a refund only for a delivered order item and only within the allowed post-delivery window.
-The seller can approve or reject each request, and the item continues through the appropriate outcome.
-When a request is approved, the item’s status changes accordingly and stock is restored through inventory records.
-When a request is rejected, the original order-item progress remains in place.
+### Customer Post-Purchase Resolution Journey
 
-### Account Lifecycle and Preservation Journey
+A customer must be able to continue the journey after purchase by confirming delivery, requesting cancellations or refunds when eligible, and writing reviews after delivery.
 
-The platform’s multi-step account lifecycle supports account creation, profile updates, controlled deletion, and preservation of business records after deletion.
+For shipped items, the customer can view shipment tracking information and confirm delivery per shipment.
 
-```mermaid
-sequenceDiagram
-    participant U as "Customer or Seller"
-    participant S as "System"
-    participant A as "Administrator"
-    U->>S: "Create an account and sign in"
-    U->>S: "Edit profile or shop information"
-    S-->>U: "Record changes and create snapshots"
-    U->>S: "Request account deletion"
-    S-->>U: "Remove active account data where allowed"
-    S-->>A: "Preserve orders, reviews, and snapshots for records"
-```
+If the customer does not confirm delivery, the system automatically marks the items in that shipment as delivered after the delivery window described in the source requirements.
 
-A customer can update profile and address information during normal account use.
-A seller can update shop information and product-related content while the account remains active.
-When an account is deleted, active profile data is removed, but preserved business records remain available according to the platform’s retention behavior.
-The preserved records continue to support seller records, legal purposes, and dispute review.
-Snapshots remain available for relevant parties so that prior changes can still be reviewed after later account or content changes.
+For items that are still paid and not shipped, the customer can request cancellation with a reason.
 
-# External Integrations
+For items that are delivered, the customer can request a refund with a reason within the allowed refund window.
 
-Third-party API contracts, webhook handlers, and integration specifications.
+The seller reviews each request and either approves or rejects it, and the response state is preserved as a snapshot.
 
-## Integration Contracts
+When a cancellation or refund is approved, the item status changes accordingly and stock is restored through inventory history.
 
-Define external API dependencies, authentication methods, request/response formats, and error handling for third-party integrations.
+After an item is delivered, the customer can write one review for the purchased product in that order, and later edit or delete the review.
 
-### Third-Party Integration Scope
-
-The platform supports external integrations only for business processes that depend on outside services.
-
-The platform shall treat each third-party service as a separate integration partner with its own contract, operational expectations, and business responsibility.
-
-The platform shall support external services for authentication support, payment processing, and event notifications where those services are required by the platform’s business workflows.
-
-The platform shall define each integration in terms of the business outcome it supports rather than in terms of internal technical implementation.
-
-The platform shall allow integration partners to participate only in the parts of the workflow that are explicitly assigned to them by the platform’s business process.
+If the customer account is deleted, the customer profile is removed while orders and reviews remain preserved, with reviews shown as coming from a deleted user.
 
 ```mermaid
 flowchart LR
-    A["Platform business workflow"] --> B["Third-party service"]
-    B --> C["Business outcome"]
+    A["Order item paid"] --> B["Request cancellation"]
+    C["Order item shipped"] --> D["View tracking"]
+    D --> E["Confirm delivery"]
+    D --> F["Auto delivered later"]
+    E --> G["Request refund after delivery"]
+    F --> G
+    G --> H["Seller approves or rejects"]
+    H --> I["Write review after delivery"]
+    I --> J["Edit or delete review"]
 ```
 
-### OAuth Provider Integration
+### Cross-Platform Account Lifecycle Journey
 
-The platform shall support login through an external oauth-provider when that provider is part of the approved integration contract.
+A customer, seller, or administrator applicant can move through several linked account journeys across the platform.
 
-The platform shall use the oauth-provider only to support account access as defined by the platform’s authentication flow.
+A customer must register before using the platform, and the customer can later change the password or delete the account.
 
-The platform shall treat the external identity returned by the oauth-provider as an authentication result, not as a replacement for the platform’s own account records.
+A seller must register before selling, wait for approval, monitor approval status, and submit a new registration request if rejected.
 
-The platform shall require the oauth-provider integration to preserve the distinction between customer access, seller access, and administrator access where those roles are part of the platform’s account model.
+A user can also submit a request to become an administrator with a reason, and super administrators review that request.
 
-The platform shall reject an oauth-provider result that does not belong to the intended account flow.
+Administrators can manage sellers, products, categories, orders, and user accounts, including approving or rejecting seller registrations and banning or unbanning customers and sellers.
 
-The platform shall record oauth-provider usage as part of the relevant account access workflow so that the integration can be reviewed as a business event.
+The same person may participate in multiple journeys as a customer, seller, or administrator depending on their approved account role.
 
 ```mermaid
 sequenceDiagram
     participant U as "User"
-    participant P as "Platform"
-    participant O as "OAuth provider"
-    U->>P: "Request external sign-in"
-    P->>O: "Send authentication request"
-    O-->>P: "Return authentication result"
-    P-->>U: "Allow or deny access"
-```
-
-### Payment Gateway Integration
-
-The platform shall support payment processing through an external third-party payment service.
-
-The platform shall rely on the payment service to determine whether a payment attempt succeeds or fails.
-
-The platform shall create the order only when the payment service confirms success.
-
-The platform shall not create the order when the payment service reports failure, and the customer shall be able to retry payment.
-
-The platform shall treat the external payment result as the trigger for the order creation workflow and the related stock reduction workflow.
-
-The platform shall allow the payment integration to participate only in checkout and order placement workflows.
-
-The platform shall preserve the business result of the payment attempt for order processing and review by the relevant parties.
-
-```mermaid
-sequenceDiagram
-    participant C as "Customer"
-    participant P as "Platform"
-    participant G as "Payment service"
-    C->>P: "Place order"
-    P->>G: "Request payment processing"
-    G-->>P: "Return success or failure"
-    P-->>C: "Create order or allow retry"
-```
-
-### Webhook Event Handling
-
-The platform shall support webhook-based event notification from external third-party services when the integration contract requires asynchronous updates.
-
-The platform shall use webhook events to receive externally generated business updates that affect platform workflows.
-
-The platform shall treat each webhook event as an external notice that must be matched to the related business process before the platform applies the resulting change.
-
-The platform shall process webhook events only for the integration partners and business events that are part of the approved contract.
-
-The platform shall reject webhook events that cannot be associated with a recognized integration purpose.
-
-The platform shall allow webhook-driven updates to support business states that depend on later confirmation from an external service, such as payment confirmation or other third-party status changes required by the platform’s workflows.
-
-```mermaid
-flowchart LR
-    A["Third-party event"] --> B["Webhook notice"]
-    B --> C["Platform validates business context"]
-    C --> D["Workflow update"]
+    participant S as "System"
+    participant A as "Administrator"
+    U->>S: "Register as customer or seller"
+    U->>S: "Log in and use available features"
+    U->>S: "Request administrator role"
+    A->>S: "Review pending requests"
+    A-->>U: "Approve or reject"
+    U->>S: "Change password or delete account"
 ```

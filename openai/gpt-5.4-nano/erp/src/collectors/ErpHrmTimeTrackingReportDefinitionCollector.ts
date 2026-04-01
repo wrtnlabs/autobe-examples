@@ -11,60 +11,51 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { ErpHrmTimeTrackingReportDefinitionDimensionCollector } from "./ErpHrmTimeTrackingReportDefinitionDimensionCollector";
 import { ErpHrmTimeTrackingReportDefinitionFilterCollector } from "./ErpHrmTimeTrackingReportDefinitionFilterCollector";
 
-const toISOStringSafe = (value: unknown) => {
-  const fn = (
-    MyGlobal as unknown as {
-      toISOStringSafe?: (d: unknown) => string;
-    }
-  ).toISOStringSafe;
-  if (fn) return fn(value);
-  return (
-    value as {
-      toISOString: () => string;
-    }
-  ).toISOString();
-};
 export namespace ErpHrmTimeTrackingReportDefinitionCollector {
   export async function collect(props: {
     body: IErpHrmTimeTrackingReportDefinition.ICreate;
     organization: IEntity;
     creatorMember: IEntity;
   }) {
-    const id = v4();
+    const createdAt = new Date();
     return {
-      id,
+      id: v4(),
       code: props.body.code,
       name: props.body.name,
       description: props.body.description ?? null,
       report_type: props.body.report_type,
       is_active: props.body.is_active,
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      created_at: createdAt,
+      updated_at: createdAt,
       deleted_at: null,
       organization: { connect: { id: props.organization.id } },
       creatorMember: { connect: { id: props.creatorMember.id } },
-      definitionDimensions: {
-        create: await ArrayUtil.asyncMap(
-          props.body
-            .definitionDimensions as IErpHrmTimeTrackingReportDefinitionDimension.ICreate[],
-          (dimension) =>
-            ErpHrmTimeTrackingReportDefinitionDimensionCollector.collect({
-              body: dimension,
-              reportDefinition: { id },
-            }),
-        ),
-      },
-      definitionFilters: {
-        create: await ArrayUtil.asyncMap(
-          props.body
-            .definitionFilters as IErpHrmTimeTrackingReportDefinitionFilter.ICreate[],
-          (filter) =>
-            ErpHrmTimeTrackingReportDefinitionFilterCollector.collect({
-              body: filter,
-              reportDefinition: { id },
-            }),
-        ),
-      },
+      // Not created here
+      reportGenerationRuns: undefined,
+      definitionDimensions: props.body.definitionDimensions.length
+        ? {
+            create: await ArrayUtil.asyncMap(
+              props.body.definitionDimensions,
+              (dimension) =>
+                ErpHrmTimeTrackingReportDefinitionDimensionCollector.collect({
+                  body: dimension,
+                  reportDefinition: undefined as unknown as IEntity,
+                }),
+            ),
+          }
+        : undefined,
+      definitionFilters: props.body.definitionFilters.length
+        ? {
+            create: await ArrayUtil.asyncMap(
+              props.body.definitionFilters,
+              (filter) =>
+                ErpHrmTimeTrackingReportDefinitionFilterCollector.collect({
+                  body: filter,
+                  reportDefinition: undefined as unknown as IEntity,
+                }),
+            ),
+          }
+        : undefined,
     } satisfies Prisma.erp_hrm_time_tracking_report_definitionsCreateInput;
   }
 }

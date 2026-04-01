@@ -2,41 +2,41 @@ import { tags } from "typia";
 
 export namespace IHrmPlatformWeeklySummaryReport {
   /**
-   * Search criteria for weekly summary report queries. Contains optional date range filters to narrow timelog entries by work period, optional project filter to focus on specific work initiatives, and pagination parameters for navigating historical weekly data. All parameters are optional to allow flexible querying across different time spans and project scopes.
+   * Request parameters for querying weekly time tracking summary reports. Specifies the date range for aggregation, optional project filter, and pagination controls for retrieving paginated weekly statistics.
    */
   export type IRequest = {
     /**
-     * Start date for filtering timelog entries. Only timelogs with work date on or after this date are included in the weekly aggregation. Uses ISO 8601 date-time format.
+     * Start date of the reporting period (inclusive). ISO 8601 date format (YYYY-MM-DD). Defines the beginning of the date range for weekly aggregation.
      *
-     * @x-autobe-specification Filters hrm_platform_timelogs where work_date >= from_date. ISO 8601 date-time format. Optional parameter - if omitted, no lower bound applied. Timezone conversion uses organization's timezone setting for accurate date boundary calculations.
+     * @x-autobe-specification ISO date string (YYYY-MM-DD) defining the inclusive start boundary of the reporting period. Backend filters hrm_platform_timelogs WHERE work_date >= startDate. Used to determine the first week to include in aggregation.
      */
-    from_date?: (string & tags.Format<"date-time">) | undefined;
+    startDate: string & tags.Format<"date">;
 
     /**
-     * End date for filtering timelog entries. Only timelogs with work date on or before this date are included in the weekly aggregation. Uses ISO 8601 date-time format.
+     * End date of the reporting period (inclusive). ISO 8601 date format (YYYY-MM-DD). Defines the end of the date range for weekly aggregation.
      *
-     * @x-autobe-specification Filters hrm_platform_timelogs where work_date <= to_date. ISO 8601 date-time format. Optional parameter - if omitted, no upper bound applied. Timezone conversion uses organization's timezone setting for accurate date boundary calculations.
+     * @x-autobe-specification ISO date string (YYYY-MM-DD) defining the inclusive end boundary of the reporting period. Backend filters hrm_platform_timelogs WHERE work_date <= endDate. Used to determine the last week to include in aggregation.
      */
-    to_date?: (string & tags.Format<"date-time">) | undefined;
+    endDate: string & tags.Format<"date">;
 
     /**
-     * Optional project filter to narrow results to a specific work initiative. Only timelogs associated with the specified project code are included in the weekly aggregation. Uses UUID format.
+     * Optional project code filter. When provided, limits results to timelogs associated with the specified project. Uses project code (not UUID) for human-readable filtering.
      *
-     * @x-autobe-specification Filters results by joining hrm_platform_timelogs with hrm_platform_projects on project_id, then filtering where projects.code = project_code. UUID format. Optional parameter - if omitted, includes timelogs from all projects. Ensures organization context by joining through employees table.
+     * @x-autobe-specification Optional project code string for filtering results to a specific project. Backend looks up project_id from hrm_platform_projects WHERE code = projectCode, then filters timelogs WHERE project_id = matched_id. If omitted, includes all projects in the organization.
      */
-    project_code?: (string & tags.Format<"uuid">) | undefined;
+    projectCode?: string | undefined;
 
     /**
-     * Page number for paginated results. Specifies which page of weekly summaries to retrieve, with page 1 being the first page. Used together with limit to control result set size.
+     * Page number for pagination (1-indexed). Minimum value is 1. Determines which page of weekly summary results to retrieve.
      *
-     * @x-autobe-specification Controls pagination offset for weekly summary results. 1-indexed page number (page 1 = first page). Used with limit to calculate SQL OFFSET: (page - 1) * limit. Minimum value is 1. Defaults to 1 if not provided.
+     * @x-autobe-specification 1-indexed page number for pagination. Backend calculates OFFSET = (page - 1) * limit. Minimum value is 1. Defaults to 1 if not provided. Controls which page of weekly results to return.
      */
     page?: (number & tags.Type<"int32"> & tags.Minimum<1>) | undefined;
 
     /**
-     * Maximum number of weekly summary records to return per page. Controls the page size for pagination, with a minimum of 1 and maximum of 100 records per page.
+     * Maximum number of weekly summaries per page. Must be between 1 and 100. Controls the page size for paginated results.
      *
-     * @x-autobe-specification Controls maximum number of weekly summary records per page. Minimum value is 1, maximum is 100. Used with page to calculate SQL LIMIT clause. Defaults to organization's standard page size if not provided.
+     * @x-autobe-specification Number of records per page. Backend uses as LIMIT clause. Constrained between 1 and 100. Controls the maximum number of weekly summaries returned in one response.
      */
     limit?:
       | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
@@ -44,41 +44,41 @@ export namespace IHrmPlatformWeeklySummaryReport {
   };
 
   /**
-   * Weekly summary statistics for time tracking reports containing aggregated metrics for a specific week period: total hours worked, number of timelog entries, and count of unique employees who logged time.
+   * Weekly summary statistics for time tracking reports. Contains aggregated hours logged, timelog entry count, and unique employee count for a specific week period (Monday to Sunday). Used in organization-level time reports to show weekly activity trends.
    */
   export type ISummary = {
     /**
-     * Start date of the week period (Monday 00:00 in organization timezone)
+     * Start date of the week period (Monday at 00:00:00).
      *
-     * @x-autobe-specification Computed from timelogs: MIN(date) truncated to Monday 00:00 in organization timezone.
+     * @x-autobe-specification Computed: First day of the ISO week period (Monday 00:00:00). Derived by grouping timelog entries by ISO week and extracting the week start boundary. Format: ISO 8601 date-time.
      */
     weekStart: string & tags.Format<"date-time">;
 
     /**
-     * End date of the week period (Sunday 23:59 in organization timezone)
+     * End date of the week period (Sunday at 23:59:59).
      *
-     * @x-autobe-specification Computed from timelogs: MAX(date) truncated to Sunday 23:59 in organization timezone.
+     * @x-autobe-specification Computed: Last day of the ISO week period (Sunday 23:59:59). Derived by grouping timelog entries by ISO week and extracting the week end boundary. Format: ISO 8601 date-time.
      */
     weekEnd: string & tags.Format<"date-time">;
 
     /**
-     * Total hours worked during the week (sum of all timelog durations converted from minutes)
+     * Total hours logged by all employees during the week period.
      *
-     * @x-autobe-specification Computed from timelogs: SUM(duration_minutes) / 60 to convert minutes to hours.
+     * @x-autobe-specification Computed: SUM(duration_minutes) / 60 from hrm_platform_timelogs for all entries within the week period. Result is a decimal number representing total hours logged.
      */
     totalHours: number;
 
     /**
-     * Total number of individual timelog entries recorded during the week
+     * Number of individual time entry records logged during the week period.
      *
-     * @x-autobe-specification Computed from timelogs: COUNT(*) of all timelog entries in the week period.
+     * @x-autobe-specification Computed: COUNT(*) of hrm_platform_timelogs entries within the week period. Integer value representing the number of individual time entries.
      */
     timelogCount: number & tags.Type<"int32">;
 
     /**
-     * Number of unique employees who logged time during the week
+     * Number of unique employees who logged time during the week period.
      *
-     * @x-autobe-specification Computed from timelogs: COUNT(DISTINCT employee_id) of unique employees who logged time.
+     * @x-autobe-specification Computed: COUNT(DISTINCT employee_id) from hrm_platform_timelogs JOIN hrm_platform_employees for entries within the week period. Integer value representing unique employees who logged time.
      */
     employeeCount: number & tags.Type<"int32">;
   };

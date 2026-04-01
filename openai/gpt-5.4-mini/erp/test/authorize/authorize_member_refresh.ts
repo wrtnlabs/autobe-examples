@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmTimeTrackingMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingMember";
+import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -11,10 +11,10 @@ import typia, { tags } from "typia";
 export async function authorize_member_refresh(
   connection: api.IConnection,
   props: {
-    body: IHrmTimeTrackingMember.IRefresh;
+    body: IErpHrmTimeMember.IRefresh;
   },
-): Promise<IHrmTimeTrackingMember.IAuthorized> {
-  return await api.functional.hrmTimeTracking.auth.member.refresh(connection, {
+): Promise<IErpHrmTimeMember.IAuthorized> {
+  return await api.functional.erpHrmTime.auth.member.refresh(connection, {
     body: props.body,
   });
 }

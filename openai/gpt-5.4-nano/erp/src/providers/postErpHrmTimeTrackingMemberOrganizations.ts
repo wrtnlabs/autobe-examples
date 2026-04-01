@@ -17,69 +17,32 @@ export async function postErpHrmTimeTrackingMemberOrganizations(props: {
   member: MemberPayload;
   body: IErpHrmTimeTrackingOrganization.ICreate;
 }): Promise<IErpHrmTimeTrackingOrganization> {
-  if (props.member.type !== "member") {
-    throw new HttpException("Forbidden", 403);
-  }
-  const now = new Date();
-  const createdAt = toISOStringSafe(now);
-  const updatedAt = toISOStringSafe(now);
-  const data = {
-    id: v4(),
-    name: props.body.name,
-    description: props.body.description,
-    logo_url: props.body.logo_url ?? null,
-    currency_code: props.body.currency_code,
-    timezone: props.body.timezone,
-    fiscal_start_month: props.body.fiscal_start_month,
-    created_at: createdAt,
-    updated_at: updatedAt,
-    deleted_at: null as null,
-  };
   try {
-    const created = await MyGlobal.prisma.$transaction(async (tx) => {
-      return tx.erp_hrm_time_tracking_organizations.create({
-        data: data as unknown as Prisma.erp_hrm_time_tracking_organizationsCreateInput,
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          logo_url: true,
-          currency_code: true,
-          timezone: true,
-          fiscal_start_month: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-          departments: { select: { id: true } },
-          contracts: { select: { id: true } },
-          contractSnapshots: { select: { id: true } },
-          projects: { select: { id: true } },
-          timelogs: { select: { id: true } },
-          timesheets: { select: { id: true } },
-          timerSessions: { select: { id: true } },
-          activityLogEntries: { select: { id: true } },
-          activityLogEntrySnapshots: { select: { id: true } },
-          reportDefinitions: { select: { id: true } },
+    const nowIso = toISOStringSafe("2026-03-31T07:18:39.230Z");
+    const id = v4();
+    const created =
+      await MyGlobal.prisma.erp_hrm_time_tracking_organizations.create({
+        data: {
+          id,
+          name: props.body.name,
+          description: props.body.description,
+          logo_url: props.body.logo_url ?? null,
+          currency_code: props.body.currency_code,
+          timezone: props.body.timezone,
+          fiscal_start_month: props.body.fiscal_start_month,
+          created_at: nowIso,
+          updated_at: nowIso,
+          deleted_at: null,
         },
+        ...ErpHrmTimeTrackingOrganizationTransformer.select(),
       });
-    });
-    return ErpHrmTimeTrackingOrganizationTransformer.transform(
-      created as unknown as Parameters<
-        typeof ErpHrmTimeTrackingOrganizationTransformer.transform
-      >[0],
-    );
-  } catch (error) {
-    const maybeCode =
-      typeof error === "object" && error !== null && "code" in error
-        ? (
-            error as {
-              code?: unknown;
-            }
-          ).code
-        : undefined;
-    if (maybeCode === "P2002") {
-      throw new HttpException("Organization name already exists", 409);
+    return await ErpHrmTimeTrackingOrganizationTransformer.transform(created);
+  } catch (error: unknown) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        throw new HttpException("Organization name already exists", 409);
+      }
     }
-    throw new HttpException("Internal Server Error", 500);
+    throw new HttpException("Internal server error", 500);
   }
 }

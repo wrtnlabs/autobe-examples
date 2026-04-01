@@ -11,7 +11,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { HrmPlatformDepartmentSnapshotAtSummaryTransformer } from "../transformers/HrmPlatformDepartmentSnapshotAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,7 +19,7 @@ export async function patchHrmPlatformMemberDepartmentSnapshots(props: {
   body: IHrmPlatformDepartmentSnapshot.IRequest;
 }): Promise<IPageIHrmPlatformDepartmentSnapshot.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 100, 100);
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
@@ -32,7 +31,7 @@ export async function patchHrmPlatformMemberDepartmentSnapshots(props: {
     },
   });
   if (!employee) {
-    throw new HttpException("Employee record not found", 404);
+    throw new HttpException("You're not enrolled in any organization", 403);
   }
   const whereInput: Prisma.hrm_platform_department_snapshotsWhereInput = {
     deleted_at: null,
@@ -62,28 +61,44 @@ export async function patchHrmPlatformMemberDepartmentSnapshots(props: {
       },
     }),
   } satisfies Prisma.hrm_platform_department_snapshotsWhereInput;
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_department_snapshots.findMany({
+  const data = await MyGlobal.prisma.hrm_platform_department_snapshots.findMany(
+    {
       where: whereInput,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" as const },
-      ...HrmPlatformDepartmentSnapshotAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_department_snapshots.count({
-      where: whereInput,
-    }),
-  ]);
+      orderBy: { created_at: "desc" },
+      select: {
+        id: true,
+        hrm_platform_department_id: true,
+        parent_department_id: true,
+        name: true,
+        description: true,
+        created_at: true,
+        deleted_at: true,
+      },
+    },
+  );
+  const total = await MyGlobal.prisma.hrm_platform_department_snapshots.count({
+    where: whereInput,
+  });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmPlatformDepartmentSnapshotAtSummaryTransformer.transform,
+    data: data.map(
+      (record) =>
+        ({
+          id: record.id,
+          hrm_platform_department_id: record.hrm_platform_department_id,
+          parent_department_id: record.parent_department_id,
+          name: record.name,
+          description: record.description,
+          created_at: record.created_at.toISOString(),
+          deleted_at: record.deleted_at?.toISOString() ?? null,
+        }) satisfies IHrmPlatformDepartmentSnapshot.ISummary,
     ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
   } satisfies IPageIHrmPlatformDepartmentSnapshot.ISummary;
 }

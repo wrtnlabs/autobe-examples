@@ -21,44 +21,34 @@ export async function postHrmsMemberFilesFileIdRecover(props: {
 }): Promise<IHrmsFile> {
   const file = await MyGlobal.prisma.hrms_files.findUniqueOrThrow({
     where: { id: props.fileId },
-    select: {
-      id: true,
-      organization_id: true,
-      filename: true,
-      deleted_at: true,
-      updated_at: true,
-    },
   });
-  if (file.deleted_at !== null) {
+  if (file.deleted_at === null) {
     throw new HttpException("File is already active", 409);
   }
-  const membership = await MyGlobal.prisma.hrms_organization_members.findFirst({
-    where: {
-      hrms_member_id: props.member.id,
-      hrms_organization_id: file.organization_id,
-    },
-    select: {
-      hrms_organization_role_id: true,
-    },
-  });
-  if (!membership) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const role = await MyGlobal.prisma.hrms_organization_roles.findFirst({
+  const membership =
+    await MyGlobal.prisma.hrms_organization_members.findFirstOrThrow({
+      where: {
+        hrms_member_id: props.member.id,
+        hrms_organization_id: file.organization_id,
+        deleted_at: null,
+      },
+    });
+  const role = await MyGlobal.prisma.hrms_organization_roles.findUniqueOrThrow({
     where: {
       id: membership.hrms_organization_role_id,
+      organization_id: file.organization_id,
     },
   });
-  if (!role) {
+  if (role.name !== "Owner" && role.name !== "Manager") {
     throw new HttpException("Forbidden", 403);
   }
-  const updatedFile = await MyGlobal.prisma.hrms_files.update({
-    where: { id: file.id },
+  const now = new Date().toISOString();
+  await MyGlobal.prisma.hrms_files.update({
+    where: { id: props.fileId },
     data: {
       deleted_at: null,
       updated_at: new Date(),
     },
-    ...HrmsFileTransformer.select(),
   });
   await MyGlobal.prisma.hrms_activity_logs.create({
     data: {
@@ -67,12 +57,16 @@ export async function postHrmsMemberFilesFileIdRecover(props: {
       performed_by_id: props.member.id,
       action_type: "file_recovered",
       target_entity: "file",
-      target_id: file.id,
-      details: `File '${file.filename}' was recovered`,
+      target_id: props.fileId,
+      details: JSON.stringify({ filename: file.filename }),
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
     },
   });
-  return await HrmsFileTransformer.transform(updatedFile);
+  const recoveredFile = await MyGlobal.prisma.hrms_files.findUniqueOrThrow({
+    where: { id: props.fileId },
+    ...HrmsFileTransformer.select(),
+  });
+  return await HrmsFileTransformer.transform(recoveredFile);
 }

@@ -26,74 +26,42 @@ export async function postRedditLikeModeratorReportsReportIdApprove(props: {
   moderator: ModeratorPayload;
   reportId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeReport> {
-  // First, get the report to check community and status
-  const report = await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
-    where: { id: props.reportId },
-    select: {
-      id: true,
-      community_id: true,
-      status: true,
-    },
-  });
-  // Verify moderator has privileges for this community
-  const moderatorRole = await MyGlobal.prisma.reddit_like_moderators.findFirst({
+  // Verify report exists, is pending, and moderator has privileges for the community
+  const report = await MyGlobal.prisma.reddit_like_reports.findFirst({
     where: {
-      member_id: props.moderator.id,
-      community_id: report.community_id,
-      deleted_at: null,
+      id: props.reportId,
+      status: "pending",
+      community: {
+        moderators: {
+          some: {
+            member_id: props.moderator.id,
+            deleted_at: null,
+          },
+        },
+      },
     },
+    ...RedditLikeReportTransformer.select(),
   });
-  if (moderatorRole === null) {
-    throw new HttpException("Forbidden", 403);
+  if (report === null) {
+    throw new HttpException(
+      "Report not found or you don't have permission to approve it",
+      404,
+    );
   }
-  // Verify report is in pending status
-  if (report.status !== "pending") {
-    throw new HttpException(`Report is already ${report.status}`, 400);
-  }
-  // Execute approval in transaction
-  await MyGlobal.prisma.$transaction(async (prisma) => {
-    // Get the report with its content reference
-    const reportWithContent =
-      await prisma.reddit_like_reports.findUniqueOrThrow({
-        where: { id: props.reportId },
-        select: {
-          reportOfPost: {
-            select: {
-              post: {
-                select: { id: true },
-              },
-            },
-          },
-          commentReport: {
-            select: {
-              comment: {
-                select: { id: true },
-              },
-            },
-          },
-        },
+  // Execute content deletion and status update in transaction
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    // Delete reported content based on polymorphic type
+    if (report.reportOfPost) {
+      await tx.reddit_like_posts.delete({
+        where: { id: report.reportOfPost.post.id },
       });
-    // Delete the reported content (soft delete)
-    if (reportWithContent.reportOfPost !== null) {
-      await prisma.reddit_like_posts.update({
-        where: { id: reportWithContent.reportOfPost.post.id },
-        data: {
-          is_deleted: true,
-          deleted_at: new Date(),
-          updated_at: new Date(),
-        },
-      });
-    } else if (reportWithContent.commentReport !== null) {
-      await prisma.reddit_like_comments.update({
-        where: { id: reportWithContent.commentReport.comment.id },
-        data: {
-          is_deleted: true,
-          updated_at: new Date(),
-        },
+    } else if (report.commentReport) {
+      await tx.reddit_like_comments.delete({
+        where: { id: report.commentReport.comment.id },
       });
     }
     // Update report status to approved
-    await prisma.reddit_like_reports.update({
+    await tx.reddit_like_reports.update({
       where: { id: props.reportId },
       data: {
         status: "approved",
@@ -101,7 +69,7 @@ export async function postRedditLikeModeratorReportsReportIdApprove(props: {
       },
     });
   });
-  // Return the updated report using transformer
+  // Fetch and return updated report with approved status
   const updatedReport =
     await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
       where: { id: props.reportId },

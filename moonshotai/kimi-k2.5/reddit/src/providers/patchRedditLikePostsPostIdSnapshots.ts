@@ -22,15 +22,14 @@ export async function patchRedditLikePostsPostIdSnapshots(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditLikePostSnapshot.IRequest;
 }): Promise<IPageIRedditLikePostSnapshot.ISummary> {
-  // Verify post exists
+  // Verify post exists first
   await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
     where: { id: props.postId },
   });
-  // Pagination parameters
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
+  const limit = props.body.limit ?? 20;
   const order = props.body.order ?? "desc";
+  const skip = (page - 1) * limit;
   // Query snapshots with pagination
   const snapshots = await MyGlobal.prisma.reddit_like_post_snapshots.findMany({
     where: { reddit_like_post_id: props.postId },
@@ -39,21 +38,21 @@ export async function patchRedditLikePostsPostIdSnapshots(props: {
     orderBy: { created_at: order },
     ...RedditLikePostSnapshotAtSummaryTransformer.select(),
   });
-  // Get total count
+  // Count total for pagination
   const total = await MyGlobal.prisma.reddit_like_post_snapshots.count({
     where: { reddit_like_post_id: props.postId },
   });
-  // Transform and return
+  // Transform and return paginated response
   return {
-    data: await ArrayUtil.asyncMap(
-      snapshots,
-      RedditLikePostSnapshotAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      snapshots,
+      RedditLikePostSnapshotAtSummaryTransformer.transform,
+    ),
   };
 }

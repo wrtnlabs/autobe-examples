@@ -23,54 +23,97 @@ export async function postHrmPlatformMemberEmployeesEmployeeIdContracts(props: {
   employeeId: string & tags.Format<"uuid">;
   body: IHrmPlatformContract.ICreate;
 }): Promise<IHrmPlatformContract> {
-  // Step 1: Validate employee exists and is active
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: { id: props.employeeId },
-      select: { id: true, status: true },
-    });
+  // Step 1: Fetch employee with organization relation
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findUnique({
+    where: { id: props.employeeId },
+    select: {
+      id: true,
+      hrm_platform_organization_id: true,
+      hrm_platform_role_id: true,
+      status: true,
+      deleted_at: true,
+    },
+  });
+  if (employee === null || employee.deleted_at !== null) {
+    throw new HttpException("Employee not found", 404);
+  }
   if (employee.status !== "active") {
     throw new HttpException(
       "Cannot create contract for inactive employee",
       400,
     );
   }
-  // Step 2: Check for existing active contract
-  const existingActiveContract =
-    await MyGlobal.prisma.hrm_platform_contracts.findFirst({
+  // Step 2: Verify member has employee:manage permission
+  const roleWithPermission = await MyGlobal.prisma.hrm_platform_roles.findFirst(
+    {
+      where: {
+        id: employee.hrm_platform_role_id,
+        hrm_platform_organization_id: employee.hrm_platform_organization_id,
+        deleted_at: null,
+        permissions: {
+          some: {
+            permission: {
+              code: "employee:manage",
+              deleted_at: null,
+            },
+          },
+        },
+      },
+    },
+  );
+  if (roleWithPermission === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Step 3: Validate start_date is not in the past
+  const startDate = new Date(props.body.start_date);
+  const now = new Date();
+  if (startDate < now) {
+    throw new HttpException("Start date cannot be in the past", 400);
+  }
+  // Step 4: Validate pay_rate and working_hours_per_week
+  if (props.body.pay_rate <= 0) {
+    throw new HttpException("Pay rate must be positive", 400);
+  }
+  if (props.body.working_hours_per_week <= 0) {
+    throw new HttpException("Working hours must be positive", 400);
+  }
+  // Step 5: Validate pay_period enum
+  const validPayPeriods = ["hourly", "daily", "weekly", "monthly"];
+  if (!validPayPeriods.includes(props.body.pay_period)) {
+    throw new HttpException("Invalid pay period", 400);
+  }
+  // Step 6: Check for existing active contract and handle within transaction
+  const result = await MyGlobal.prisma.$transaction(async (tx) => {
+    // Find existing active contract
+    const existingActiveContract = await tx.hrm_platform_contracts.findFirst({
       where: {
         hrm_platform_employee_id: props.employeeId,
         end_date: null,
+        deleted_at: null,
       },
     });
-  // Step 3: Create new contract with transaction
-  const newContract = await MyGlobal.prisma.$transaction(async (tx) => {
-    // End existing active contract if found
-    if (existingActiveContract) {
-      const newStartDate = new Date(props.body.start_date);
-      const previousEndDate = new Date(newStartDate);
-      previousEndDate.setDate(previousEndDate.getDate() - 1);
+    // If exists, end it one day before new contract starts
+    if (existingActiveContract !== null) {
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() - 1);
       await tx.hrm_platform_contracts.update({
         where: { id: existingActiveContract.id },
         data: {
-          end_date: previousEndDate,
+          end_date: endDate,
           updated_at: new Date(),
         },
       });
     }
-    // Create new contract
-    const createInput = await HrmPlatformContractCollector.collect({
+    // Create new contract using collector data directly
+    const contractData = await HrmPlatformContractCollector.collect({
       body: props.body,
     });
-    return await tx.hrm_platform_contracts.create({
-      data: {
-        ...createInput,
-        id: v4(),
-        employee: { connect: { id: props.employeeId } },
-      },
+    const created = await tx.hrm_platform_contracts.create({
+      data: contractData,
       ...HrmPlatformContractTransformer.select(),
     });
+    return created;
   });
-  // Step 4: Transform and return
-  return await HrmPlatformContractTransformer.transform(newContract);
+  // Step 7: Transform and return
+  return await HrmPlatformContractTransformer.transform(result);
 }

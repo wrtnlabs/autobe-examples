@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmsMemberEmailVerification } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsMemberEmailVerification";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace HrmsMemberEmailVerificationTransformer {
@@ -14,17 +16,13 @@ export namespace HrmsMemberEmailVerificationTransformer {
     return {
       select: {
         id: true,
-        member: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.hrms_membersFindManyArgs,
         token: true,
         expires_at: true,
         used_at: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        member: true,
       },
     } satisfies Prisma.hrms_member_email_verificationsFindManyArgs;
   }

@@ -9,6 +9,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditLikeMemberTransformer } from "../transformers/RedditLikeMemberTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -32,43 +33,34 @@ export async function postRedditLikeAuthMemberJoin(props: {
   if (existingUsername) {
     throw new HttpException("Username already taken", 409);
   }
+  const now = new Date();
+  const memberId = v4() as string & tags.Format<"uuid">;
   // Hash password
   const passwordHash = await PasswordUtil.hash(props.body.password);
   // Create member record
   const member = await MyGlobal.prisma.reddit_like_members.create({
     data: {
-      id: v4(),
+      id: memberId,
       email: props.body.email,
       username: props.body.username,
       password_hash: passwordHash,
       email_verified: false,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
     },
-    select: {
-      id: true,
-      email: true,
-      username: true,
-      email_verified: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-    },
+    ...RedditLikeMemberTransformer.select(),
   });
-  // Calculate token expiration
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const now = new Date().toISOString();
-  // Generate session ID first
-  const sessionId = v4();
-  // Generate JWT tokens with session ID
+  const sessionId = v4() as string & tags.Format<"uuid">;
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // Generate JWT tokens
   const accessToken = jwt.sign(
     {
       type: "member",
-      id: member.id,
+      id: memberId,
       session_id: sessionId,
-      created_at: now,
+      created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -76,45 +68,43 @@ export async function postRedditLikeAuthMemberJoin(props: {
   const refreshToken = jwt.sign(
     {
       type: "member",
-      id: member.id,
+      id: memberId,
       session_id: sessionId,
       tokenType: "refresh",
-      created_at: now,
+      created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
+  // Hash token values for storage
+  const accessTokenHash = await PasswordUtil.hash(accessToken);
+  const refreshTokenHash = await PasswordUtil.hash(refreshToken);
   // Create session record
   await MyGlobal.prisma.reddit_like_member_sessions.create({
     data: {
       id: sessionId,
-      reddit_like_member_id: member.id,
-      access_token_hash: accessToken,
-      refresh_token_hash: refreshToken,
+      reddit_like_member_id: memberId,
+      access_token_hash: accessTokenHash,
+      refresh_token_hash: refreshTokenHash,
       ip: props.ip,
       href: "",
       referrer: "",
       user_agent: "",
-      created_at: new Date(),
+      created_at: now,
       expires_at: accessExpires,
       refresh_expires_at: refreshExpires,
     },
   });
-  // Build and return authorized member response
+  const token: IAuthorizationToken = {
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: accessExpires.toISOString() as string &
+      tags.Format<"date-time">,
+    refreshable_until: refreshExpires.toISOString() as string &
+      tags.Format<"date-time">,
+  };
   return {
-    id: member.id,
-    email: member.email,
-    username: member.username,
-    emailVerified: member.email_verified,
-    createdAt: member.created_at.toISOString(),
-    updatedAt: member.updated_at.toISOString(),
-    deletedAt:
-      member.deleted_at === null ? null : member.deleted_at.toISOString(),
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
-    },
+    ...(await RedditLikeMemberTransformer.transform(member)),
+    token,
   } satisfies IRedditLikeMember.IAuthorized;
 }

@@ -16,107 +16,88 @@ export async function deleteHrmPlatformMemberProjectsProjectIdTasksTaskId(props:
   projectId: string & tags.Format<"uuid">;
   taskId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify member exists and is active
-  const memberRecord = await MyGlobal.prisma.hrm_platform_members.findFirst({
-    where: {
-      id: props.member.id,
-      deleted_at: null,
+  // Resolve member to employee record to check project membership and role
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+      where: {
+        user_id: props.member.id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        role_id: true,
+      },
+    });
+  // Check if user is project lead for this project
+  const projectMembership =
+    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
+      where: {
+        hrm_platform_employee_id: employee.id,
+        hrm_platform_project_id: props.projectId,
+        deleted_at: null,
+      },
+    });
+  // Get employee's role to check for project:manage permission
+  const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
+    where: { id: employee.role_id },
+    select: {
+      id: true,
+      rolePermissions: {
+        select: { permission: true },
+      },
     },
   });
-  if (!memberRecord) {
-    throw new HttpException("Member not found or deactivated", 404);
+  // Check permission: project:manage OR project-lead role
+  const hasProjectManagePermission = role?.rolePermissions.some(
+    (p: { permission: string }) => p.permission === "project:manage",
+  );
+  const isProjectLead = projectMembership?.role === "project-lead";
+  if (!hasProjectManagePermission && !isProjectLead) {
+    throw new HttpException(
+      "Forbidden: Requires project:manage permission or project-lead role",
+      403,
+    );
   }
-  // Verify task exists and belongs to the specified project
+  // Verify task exists, belongs to project, and is not already deleted
   const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
     where: { id: props.taskId },
     select: {
       id: true,
       hrm_platform_project_id: true,
-      parent_id: true,
+      deleted_at: true,
     },
   });
-  // Verify task belongs to the specified project
   if (task.hrm_platform_project_id !== props.projectId) {
-    throw new HttpException(
-      "Task does not belong to the specified project",
-      404,
-    );
+    throw new HttpException("Task does not belong to specified project", 400);
   }
-  // Check if user is project lead in this project
-  const projectMembership =
-    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
-      where: {
-        hrm_platform_project_id: props.projectId,
-        hrm_platform_employee_id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        role: true,
-      },
-    });
-  // Check if user has project:manage permission through their employee role
-  let hasProjectManagePermission = false;
-  if (!projectMembership || projectMembership.role !== "project-lead") {
-    const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-      where: {
-        id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        role_id: true,
-      },
-    });
-    if (employee?.role_id) {
-      const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
-        where: { id: employee.role_id },
-        select: {
-          permissions: {
-            select: {
-              permission: true,
-            },
-          },
-        },
-      });
-      hasProjectManagePermission =
-        role?.permissions.some((p) => p.permission === "project:manage") ??
-        false;
-    }
+  if (task.deleted_at !== null) {
+    throw new HttpException("Task is already deleted", 400);
   }
-  // Authorization check: must be project lead OR have project:manage permission
-  const isProjectLead = projectMembership?.role === "project-lead";
-  if (!isProjectLead && !hasProjectManagePermission) {
-    throw new HttpException(
-      "Forbidden: User lacks permission to delete this task",
-      403,
-    );
-  }
-  // Soft delete the task
+  // Soft delete task (cascade handles subtasks via DB onDelete: Cascade)
   await MyGlobal.prisma.hrm_platform_tasks.update({
     where: { id: props.taskId },
     data: {
-      deleted_at: toISOStringSafe(new Date()),
+      deleted_at: new Date(),
     },
   });
-  // Cascade soft delete to all child tasks (subtasks)
-  const childTasks = await MyGlobal.prisma.hrm_platform_tasks.findMany({
-    where: {
-      parent_id: props.taskId,
-      deleted_at: null,
+  // Get organization ID from project for activity log
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
+    {
+      where: { id: props.projectId },
+      select: { organization_id: true },
     },
-    select: {
-      id: true,
+  );
+  // Record deletion in activity log
+  await MyGlobal.prisma.hrm_platform_activity_logs.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      organization_id: project.organization_id,
+      member_id: props.member.id,
+      action_type: "task.deleted",
+      target_entity_type: "task",
+      target_entity_id: props.taskId,
+      created_at: new Date(),
+      updated_at: new Date(),
     },
   });
-  if (childTasks.length > 0) {
-    await MyGlobal.prisma.hrm_platform_tasks.updateMany({
-      where: {
-        id: {
-          in: childTasks.map((child) => child.id),
-        },
-      },
-      data: {
-        deleted_at: toISOStringSafe(new Date()),
-      },
-    });
-  }
 }

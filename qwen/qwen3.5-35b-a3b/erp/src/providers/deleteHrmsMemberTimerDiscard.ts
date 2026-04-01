@@ -14,7 +14,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function deleteHrmsMemberTimerDiscard(props: {
   member: MemberPayload;
 }): Promise<void> {
-  // Step 1: Get the organization member record (active membership)
+  // Step 1: Find the organization member record for this member
   const organizationMember =
     await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
@@ -23,9 +23,9 @@ export async function deleteHrmsMemberTimerDiscard(props: {
       },
     });
   if (organizationMember === null) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException("Not an employee", 403);
   }
-  // Step 2: Get the employee linked to this organization member
+  // Step 2: Find the employee record linked to this organization member
   const employee = await MyGlobal.prisma.hrms_employees.findFirst({
     where: {
       organization_member_id: organizationMember.id,
@@ -33,24 +33,22 @@ export async function deleteHrmsMemberTimerDiscard(props: {
     },
   });
   if (employee === null) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException("Not an employee", 403);
   }
-  // Step 3: Find the active timer for this employee
-  // Only one active timer allowed per employee (unique constraint on hrms_employee_id)
-  const activeTimer = await MyGlobal.prisma.hrms_timers.findFirst({
+  // Step 3: Find active timer for this employee
+  const timer = await MyGlobal.prisma.hrms_timers.findFirst({
     where: {
       hrms_employee_id: employee.id,
       deleted_at: null,
     },
   });
-  if (activeTimer === null) {
-    throw new HttpException("Not Found", 404);
+  if (timer === null) {
+    throw new HttpException("No active timer found", 404);
   }
-  // Step 4: Delete the timer without creating any timelog
-  // This is irreversible and leaves no audit trail
+  // Step 4: Delete the timer (discard without creating timelog)
   await MyGlobal.prisma.hrms_timers.delete({
     where: {
-      id: activeTimer.id,
+      id: timer.id,
     },
   });
 }

@@ -21,31 +21,66 @@ export async function postEcommerceMallSellerProductsProductIdVariants(props: {
   productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductVariant.ICreate;
 }): Promise<IEcommerceMallProductVariant> {
-  // 1. Validate product exists and seller owns it
-  const product =
-    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
-      where: { id: props.productId },
-      select: { id: true, seller_id: true },
-    });
-  if (product.seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
+  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
+    where: {
+      id: props.productId,
+      seller: {
+        id: props.seller.id,
+      },
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+  if (product === null) {
+    throw new HttpException("Product not found or not accessible", 404);
   }
-  // 2. Validate SKU is unique
   const existingVariant =
     await MyGlobal.prisma.ecommerce_mall_product_variants.findUnique({
-      where: { sku: props.body.sku },
+      where: {
+        sku: props.body.sku,
+      },
     });
   if (existingVariant !== null) {
-    throw new HttpException("SKU already exists", 409);
+    throw new HttpException("SKU code must be unique across all variants", 409);
   }
-  // 3-4. Create variant using collector
+  if (props.body.base_price <= 0) {
+    throw new HttpException("base_price must be a positive number", 400);
+  }
+  if (props.body.stock_quantity < 0) {
+    throw new HttpException("stock_quantity must be non-negative", 400);
+  }
+  if (props.body.sale_price !== undefined && props.body.sale_price !== null) {
+    if (props.body.sale_price <= 0) {
+      throw new HttpException(
+        "sale_price must be a positive number if provided",
+        400,
+      );
+    }
+  }
+  if (props.body.status !== undefined && props.body.status !== null) {
+    if (
+      props.body.status !== "active" &&
+      props.body.status !== "inactive" &&
+      props.body.status !== "discontinued"
+    ) {
+      throw new HttpException(
+        "status must be one of: active, inactive, discontinued",
+        400,
+      );
+    }
+  }
   const created = await MyGlobal.prisma.ecommerce_mall_product_variants.create({
     data: await EcommerceMallProductVariantCollector.collect({
       body: props.body,
-      ecommerceMallProducts: { id: product.id },
+      ecommerceMallProducts: {
+        id: props.productId,
+      } satisfies IEntity,
+      ecommerceMallSellers: { id: props.seller.id } satisfies IEntity,
     }),
     ...EcommerceMallProductVariantTransformer.select(),
   });
-  // 5-6. Transform and return
   return await EcommerceMallProductVariantTransformer.transform(created);
 }

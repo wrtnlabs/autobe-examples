@@ -7,15 +7,14 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteRedditLikeMemberCommunitiesCommunityIdSubscriptions(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the active subscription for this member and community
   const subscription =
     await MyGlobal.prisma.reddit_like_community_subscriptions.findFirst({
       where: {
@@ -23,19 +22,17 @@ export async function deleteRedditLikeMemberCommunitiesCommunityIdSubscriptions(
         reddit_like_community_id: props.communityId,
         deleted_at: null,
       },
-      select: {
-        id: true,
-      },
     });
-  // Return 404 if no active subscription exists
   if (subscription === null) {
-    throw new HttpException("Subscription not found", 404);
+    throw new HttpException("Not Found", 404);
   }
-  // Soft-delete the subscription by setting deleted_at
   await MyGlobal.prisma.reddit_like_community_subscriptions.update({
-    where: { id: subscription.id },
+    where: {
+      id: subscription.id,
+    },
     data: {
       deleted_at: new Date(),
+      updated_at: new Date(),
     },
   });
 }

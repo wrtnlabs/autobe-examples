@@ -1,6 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
+import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProjectMember";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
@@ -23,16 +25,21 @@ export async function putHrmPlatformMemberProjectsProjectIdMembersMembershipId(p
   membershipId: string & tags.Format<"uuid">;
   body: IHrmPlatformProjectMember.IUpdate;
 }): Promise<IHrmPlatformProjectMember> {
-  // Validate membership exists, belongs to project, and is not deleted
   const membership =
     await MyGlobal.prisma.hrm_platform_project_members.findUniqueOrThrow({
-      where: {
-        id: props.membershipId,
-        hrm_platform_project_id: props.projectId,
-        deleted_at: null,
+      where: { id: props.membershipId },
+      select: {
+        id: true,
+        hrm_platform_project_id: true,
+        deleted_at: true,
       },
     });
-  // Update the membership with new role if provided
+  if (membership.deleted_at !== null) {
+    throw new HttpException("Membership not found", 404);
+  }
+  if (membership.hrm_platform_project_id !== props.projectId) {
+    throw new HttpException("Project ID mismatch", 400);
+  }
   await MyGlobal.prisma.hrm_platform_project_members.update({
     where: { id: props.membershipId },
     data: {
@@ -40,7 +47,6 @@ export async function putHrmPlatformMemberProjectsProjectIdMembersMembershipId(p
       updated_at: new Date(),
     },
   });
-  // Fetch updated record with relations
   const updated =
     await MyGlobal.prisma.hrm_platform_project_members.findUniqueOrThrow({
       where: { id: props.membershipId },

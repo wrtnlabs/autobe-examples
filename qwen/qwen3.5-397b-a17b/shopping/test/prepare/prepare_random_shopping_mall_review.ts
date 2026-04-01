@@ -9,6 +9,9 @@ export function prepare_random_shopping_mall_review(
   input?: DeepPartial<IShoppingMallReview.ICreate>,
 ): IShoppingMallReview.ICreate {
   return {
+    product_id:
+      input?.product_id ?? typia.random<string & tags.Format<"uuid">>(),
+    order_id: input?.order_id ?? typia.random<string & tags.Format<"uuid">>(),
     rating:
       input?.rating ??
       typia.random<

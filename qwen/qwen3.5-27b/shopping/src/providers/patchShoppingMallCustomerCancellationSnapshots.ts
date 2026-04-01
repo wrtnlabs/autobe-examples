@@ -22,17 +22,18 @@ export async function patchShoppingMallCustomerCancellationSnapshots(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  // Build cancellation request filter separately
   const cancellationRequestFilter: Prisma.shopping_mall_cancellation_requestsWhereInput =
     {
       shopping_mall_customer_id: props.customer.id,
     };
-  if (props.body.cancellationRequestId) {
+  if (props.body.cancellationRequestId !== undefined) {
     cancellationRequestFilter.id = props.body.cancellationRequestId;
   }
-  if (props.body.status) {
+  if (props.body.status !== undefined) {
     cancellationRequestFilter.status = props.body.status;
   }
-  if (props.body.orderId) {
+  if (props.body.orderId !== undefined) {
     cancellationRequestFilter.orderItem = {
       shopping_mall_order_id: props.body.orderId,
     };
@@ -40,26 +41,25 @@ export async function patchShoppingMallCustomerCancellationSnapshots(props: {
   const whereInput: Prisma.shopping_mall_cancellation_snapshotsWhereInput = {
     cancellationRequest: cancellationRequestFilter,
   };
-  if (props.body.dateRange) {
-    const dateConditions: Prisma.DateTimeFilter = {};
-    if (props.body.dateRange.from) {
-      dateConditions.gte = new Date(props.body.dateRange.from);
+  if (props.body.dateRange !== undefined) {
+    whereInput.created_at = {};
+    if (props.body.dateRange.from !== undefined) {
+      whereInput.created_at.gte = new Date(props.body.dateRange.from);
     }
-    if (props.body.dateRange.to) {
-      dateConditions.lte = new Date(props.body.dateRange.to);
+    if (props.body.dateRange.to !== undefined) {
+      whereInput.created_at.lte = new Date(props.body.dateRange.to);
     }
-    whereInput.created_at = dateConditions;
   }
-  const orderByInput: Prisma.shopping_mall_cancellation_snapshotsOrderByWithRelationInput =
-    props.body.sortBy
-      ? { [props.body.sortBy]: props.body.sortOrder ?? "desc" }
-      : { created_at: "desc" };
   const data =
     await MyGlobal.prisma.shopping_mall_cancellation_snapshots.findMany({
       where: whereInput,
       skip,
       take: limit,
-      orderBy: orderByInput,
+      orderBy: (props.body.sortBy
+        ? { [props.body.sortBy]: props.body.sortOrder ?? "desc" }
+        : {
+            created_at: "desc",
+          }) satisfies Prisma.shopping_mall_cancellation_snapshotsOrderByWithRelationInput,
       ...ShoppingMallCancellationSnapshotAtSummaryTransformer.select(),
     });
   const total =
@@ -67,15 +67,15 @@ export async function patchShoppingMallCustomerCancellationSnapshots(props: {
       where: whereInput,
     });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallCancellationSnapshotAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     },
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallCancellationSnapshotAtSummaryTransformer.transform,
+    ),
   };
 }

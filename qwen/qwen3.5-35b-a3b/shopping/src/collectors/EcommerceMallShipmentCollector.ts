@@ -10,20 +10,18 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallShipmentCollector {
   export async function collect(props: {
     body: IEcommerceMallShipment.ICreate;
-    ecommerceMallSellers: IEntity; // from authorized actor
-    ecommerceMallOrderItems: IEntity; // from path parameter orderItemId (first item)
+    ecommerceMallSellers: IEntity;
   }) {
     const id: string = v4();
-    // Query first order_item to get order_id (all items belong to same order)
+    // Query first order item to derive the order
     const firstOrderItem =
       await MyGlobal.prisma.ecommerce_mall_order_items.findFirstOrThrow({
-        where: { id: props.ecommerceMallOrderItems.id },
+        where: { id: props.body.order_item_ids[0] },
       });
-    const now = new Date();
     return {
       // Scalar fields
       id,
-      carrier_name: props.body.carrier_name ?? null,
+      carrier_name: props.body.carrier_name,
       carrier_phone: props.body.carrier_phone ?? null,
       carrier_website: props.body.carrier_website ?? null,
       status: "pending",
@@ -31,31 +29,15 @@ export namespace EcommerceMallShipmentCollector {
       delivered_at: null,
       estimated_delivery_at: null,
       delivery_address: props.body.delivery_address ?? null,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       deleted_at: null,
       // BelongsTo relations
-      seller: {
-        connect: { id: props.ecommerceMallSellers.id },
-      },
-      order: {
-        connect: { id: firstOrderItem.ecommerce_mall_order_id },
-      },
-      // HasMany relations
+      order: { connect: { id: firstOrderItem.ecommerce_mall_order_id } },
+      seller: { connect: { id: props.ecommerceMallSellers.id } },
+      // HasMany relations (orderItems—order items already exist, just link them)
       orderItems: {
-        create: await ArrayUtil.asyncMap(
-          props.body.order_item_ids,
-          async (orderIdItemId: string, i: number) => ({
-            id: v4(),
-            ecommerce_mall_shipment_id: id,
-            orderItem: {
-              connect: { id: orderIdItemId },
-            },
-            shipped_quantity: 1,
-            created_at: now,
-            updated_at: now,
-          }),
-        ),
+        connect: props.body.order_item_ids.map((itemId) => ({ id: itemId })),
       },
     } satisfies Prisma.ecommerce_mall_shipmentsCreateInput;
   }

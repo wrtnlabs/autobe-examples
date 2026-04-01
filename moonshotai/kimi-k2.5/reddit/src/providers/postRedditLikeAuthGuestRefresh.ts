@@ -19,7 +19,7 @@ export async function postRedditLikeAuthGuestRefresh(props: {
   let decoded: {
     id: string;
     session_id: string;
-    type: "guest";
+    type: string;
   };
   try {
     decoded = jwt.verify(props.body.token, MyGlobal.env.JWT_SECRET_KEY, {
@@ -32,48 +32,48 @@ export async function postRedditLikeAuthGuestRefresh(props: {
   if (decoded.type !== "guest") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session exists and not expired
+  // 3. Validate session exists and active
   const session = await MyGlobal.prisma.reddit_like_guest_sessions.findFirst({
     where: {
       id: decoded.session_id,
       reddit_like_guest_id: decoded.id,
-      expired_at: {
-        gt: new Date(),
-      },
     },
   });
   if (!session) {
-    throw new HttpException("Session expired or revoked", 401);
+    throw new HttpException("Session not found or expired", 401);
   }
-  // 4. Validate guest exists and not soft-deleted
+  // 4. Validate guest not deleted
   const guest = await MyGlobal.prisma.reddit_like_guests.findUniqueOrThrow({
     where: { id: decoded.id },
   });
   if (guest.deleted_at !== null) {
     throw new HttpException("Guest account has been deleted", 403);
   }
-  // 5. Calculate new expiration times
-  const now = Date.now();
-  const accessExpiresAt = new Date(now + 60 * 60 * 1000); // 1 hour
-  const refreshExpiresAt = new Date(now + 7 * 24 * 60 * 60 * 1000); // 7 days
+  // 5. Calculate expiration times
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const createdAtISO = toISOStringSafe(now);
+  const accessExpiresISO = toISOStringSafe(accessExpires);
+  const refreshExpiresISO = toISOStringSafe(refreshExpires);
   // 6. Generate new tokens with SAME session_id
   const accessToken = jwt.sign(
     {
-      type: "guest",
+      type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: new Date().toISOString(),
+      created_at: createdAtISO,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
   const refreshToken = jwt.sign(
     {
-      type: "guest",
+      type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: new Date().toISOString(),
+      created_at: createdAtISO,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
@@ -81,20 +81,21 @@ export async function postRedditLikeAuthGuestRefresh(props: {
   // 7. Update session expiration
   await MyGlobal.prisma.reddit_like_guest_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: refreshExpiresAt },
+    data: { expired_at: refreshExpires },
   });
   // 8. Return authorized response
+  // guest.deleted_at is guaranteed to be null here due to earlier check
   return {
     id: guest.id,
     deviceFingerprint: guest.device_fingerprint,
     createdAt: toISOStringSafe(guest.created_at),
     updatedAt: toISOStringSafe(guest.updated_at),
-    deletedAt: guest.deleted_at ? toISOStringSafe(guest.deleted_at) : null,
+    deletedAt: null,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpiresAt),
-      refreshable_until: toISOStringSafe(refreshExpiresAt),
+      expired_at: accessExpiresISO,
+      refreshable_until: refreshExpiresISO,
     },
   };
 }

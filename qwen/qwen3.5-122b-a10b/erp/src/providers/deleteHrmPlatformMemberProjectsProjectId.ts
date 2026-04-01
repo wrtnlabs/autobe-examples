@@ -15,47 +15,71 @@ export async function deleteHrmPlatformMemberProjectsProjectId(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Query the project to get its organization context
-  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
-    {
-      where: { id: props.projectId },
-      select: {
-        id: true,
-        hrm_platform_organization_id: true,
-        name: true,
-        deleted_at: true,
-      },
+  // Step 1: Get the project to find its organization_id
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
+    where: { id: props.projectId },
+    select: {
+      id: true,
+      hrm_platform_organization_id: true,
+      deleted_at: true,
     },
-  );
-  // 2. Verify project is not already soft-deleted
+  });
+  if (project === null) {
+    throw new HttpException("Project not found", 404);
+  }
   if (project.deleted_at !== null) {
     throw new HttpException("Project not found", 404);
   }
-  // 3. Find the employee record for this member in the project's organization
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+  const organizationId: string & tags.Format<"uuid"> =
+    project.hrm_platform_organization_id as string & tags.Format<"uuid">;
+  // Step 2: Verify member has project:manage permission in the organization
+  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
+    {
       where: {
         hrm_platform_user_id: props.member.id,
-        hrm_platform_organization_id: project.hrm_platform_organization_id,
+        hrm_platform_organization_id: organizationId,
         deleted_at: null,
-        status: "active",
       },
-    });
-  // 4. Validate the employee's role has project:manage permission
-  const rolePermission =
-    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-      where: {
-        hrm_platform_role_id: employee.hrm_platform_role_id,
-        permission: {
-          code: "project:manage",
-          deleted_at: null,
-        },
+      select: {
+        hrm_platform_role_id: true,
       },
-    });
-  if (!rolePermission) {
+    },
+  );
+  if (memberEmployee === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // 5. Check for existing timelogs - deletion blocked if any exist
+  // Check if role has project:manage permission
+  const rolePermissions =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
+      where: {
+        hrm_platform_role_id: memberEmployee.hrm_platform_role_id,
+        deleted_at: null,
+      },
+      select: {
+        hrm_platform_permission_id: true,
+      },
+    });
+  const permissionIds = rolePermissions.map(
+    (rp) => rp.hrm_platform_permission_id,
+  );
+  if (permissionIds.length === 0) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Check if any of the permissions is project:manage
+  const projectManagePermission =
+    await MyGlobal.prisma.hrm_platform_permissions.findFirst({
+      where: {
+        id: {
+          in: permissionIds,
+        },
+        code: "project:manage",
+        deleted_at: null,
+      },
+    });
+  if (projectManagePermission === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Step 3: Check for associated timelogs
   const timelogCount = await MyGlobal.prisma.hrm_platform_timelogs.count({
     where: {
       hrm_platform_project_id: props.projectId,
@@ -65,28 +89,31 @@ export async function deleteHrmPlatformMemberProjectsProjectId(props: {
   if (timelogCount > 0) {
     throw new HttpException("Project has associated timelogs", 409);
   }
-  // 6. Execute deletion in transaction with activity log
+  // Step 4-7: Create activity log and delete project in transaction
+  const now = new Date();
+  const nowString: string & tags.Format<"date-time"> = now.toISOString();
   await MyGlobal.prisma.$transaction(async (tx) => {
-    // Delete the project (tasks and project_members cascade automatically via onDelete: Cascade)
-    await tx.hrm_platform_projects.delete({
-      where: { id: props.projectId },
-    });
-    // Record the deletion in activity log
+    // Create activity log
+    const activityLogId: string & tags.Format<"uuid"> = v4() as string &
+      tags.Format<"uuid">;
     await tx.hrm_platform_activity_logs.create({
       data: {
-        id: v4() as string & tags.Format<"uuid">,
-        organization_id: project.hrm_platform_organization_id,
+        id: activityLogId,
+        organization_id: organizationId,
         user_id: props.member.id,
         action_type: "project:deleted",
         target_entity: "project",
         target_id: props.projectId,
         details: JSON.stringify({
-          projectId: props.projectId,
-          projectName: project.name,
-          deletedAt: toISOStringSafe(new Date()),
+          deleted_by: props.member.id,
+          deleted_at: nowString,
         }),
-        created_at: toISOStringSafe(new Date()),
+        created_at: now,
       },
+    });
+    // Delete project (cascade handles tasks and project_memberships)
+    await tx.hrm_platform_projects.delete({
+      where: { id: props.projectId },
     });
   });
 }

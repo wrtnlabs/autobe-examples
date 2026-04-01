@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmTimeTrackingMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingMember";
+import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -11,14 +11,10 @@ import typia, { tags } from "typia";
 export async function authorize_member_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IHrmTimeTrackingMember.IJoin>;
+    body: IErpHrmTimeMember.IJoin;
   },
-): Promise<IHrmTimeTrackingMember.IAuthorized> {
-  const joinInput = {
-    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
-    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-  } satisfies IHrmTimeTrackingMember.IJoin;
-  return await api.functional.hrmTimeTracking.auth.member.join(connection, {
-    body: joinInput,
+): Promise<IErpHrmTimeMember.IAuthorized> {
+  return await api.functional.erpHrmTime.auth.member.join(connection, {
+    body: props.body,
   });
 }

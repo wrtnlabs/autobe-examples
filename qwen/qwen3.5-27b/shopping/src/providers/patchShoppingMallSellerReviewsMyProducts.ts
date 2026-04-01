@@ -24,13 +24,6 @@ export async function patchShoppingMallSellerReviewsMyProducts(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const created_at: Prisma.DateTimeFilter = {};
-  if (props.body.startDate !== undefined) {
-    created_at.gte = new Date(props.body.startDate);
-  }
-  if (props.body.endDate !== undefined) {
-    created_at.lte = new Date(props.body.endDate);
-  }
   const whereInput: Prisma.shopping_mall_reviewsWhereInput = {
     deleted_at: null,
     orderItem: {
@@ -38,22 +31,35 @@ export async function patchShoppingMallSellerReviewsMyProducts(props: {
       status: {
         notIn: ["cancelled", "refunded"],
       },
+      ...(props.body.productId !== undefined && {
+        product_snapshot: {
+          contains: props.body.productId,
+        },
+      }),
     },
-  };
-  if (Object.keys(created_at).length > 0) {
-    whereInput.created_at = created_at;
-  }
-  if (props.body.rating !== undefined) {
-    whereInput.rating = props.body.rating;
-  }
-  if (props.body.customerId !== undefined) {
-    whereInput.shopping_customer_id = props.body.customerId;
-  }
-  if (props.body.search !== undefined) {
-    whereInput.content = {
-      contains: props.body.search,
-    };
-  }
+    ...(props.body.rating !== undefined && {
+      rating: props.body.rating,
+    }),
+    ...(props.body.customerId !== undefined && {
+      shopping_customer_id: props.body.customerId,
+    }),
+    ...(props.body.startDate !== undefined && {
+      created_at: {
+        gte: new Date(props.body.startDate),
+      },
+    }),
+    ...(props.body.endDate !== undefined && {
+      created_at: {
+        lte: new Date(props.body.endDate),
+      },
+    }),
+    ...(props.body.search !== undefined && {
+      content: {
+        contains: props.body.search,
+        mode: "insensitive",
+      },
+    }),
+  } satisfies Prisma.shopping_mall_reviewsWhereInput;
   const data = await MyGlobal.prisma.shopping_mall_reviews.findMany({
     where: whereInput,
     skip,
@@ -74,6 +80,6 @@ export async function patchShoppingMallSellerReviewsMyProducts(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
   };
 }

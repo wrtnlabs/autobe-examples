@@ -23,56 +23,48 @@ export async function postEcommerceMallCustomerRefundRequestsOrderItemId(props: 
   orderItemId: string & tags.Format<"uuid">;
   body: IEcommerceMallRefundRequest.ICreate;
 }): Promise<IEcommerceMallRefundRequest> {
-  // Step 1: Validate order item exists and retrieve it with order relationship
   const orderItem =
     await MyGlobal.prisma.ecommerce_mall_order_items.findUniqueOrThrow({
       where: { id: props.orderItemId },
       select: {
         id: true,
-        order: {
-          select: {
-            id: true,
-            customer_id: true,
-            status: true,
-            created_at: true,
-          },
-        },
+        ecommerce_mall_order_id: true,
       },
     });
-  // Step 2: Validate order status is 'delivered'
-  if (orderItem.order.status !== "delivered") {
-    throw new HttpException(
-      "Order item must be part of a delivered order to request refund",
-      400,
-    );
+  const order = await MyGlobal.prisma.ecommerce_mall_orders.findFirstOrThrow({
+    where: { id: orderItem.ecommerce_mall_order_id },
+    select: { customer_id: true },
+  });
+  if (order.customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Step 3: Validate customer owns the order containing this order item
-  if (orderItem.order.customer_id !== props.customer.id) {
-    throw new HttpException("You do not own this order", 403);
-  }
-  // Step 4: Validate 7-day eligibility window from order creation date
-  const nowTimestamp: string & tags.Format<"date-time"> =
-    new Date().toISOString();
-  const nowTime: number = Date.parse(nowTimestamp);
-  const deliveryTime: number = orderItem.order.created_at.getTime();
-  const timeDiff: number = nowTime - deliveryTime;
-  const daysDiff: number = timeDiff / (1000 * 60 * 60 * 24);
-  if (daysDiff > 7) {
-    throw new HttpException(
-      "Refund request must be within 7 days of order delivery",
-      400,
-    );
-  }
-  // Step 5: Create refund request using collector
-  const refundRequest =
-    await MyGlobal.prisma.ecommerce_mall_refund_requests.create({
-      data: await EcommerceMallRefundRequestCollector.collect({
-        body: props.body,
-        ecommerceMallCustomers: { id: props.customer.id } as IEntity,
-        ecommerceMallOrderItems: { id: orderItem.id } as IEntity,
-      }),
-      ...EcommerceMallRefundRequestTransformer.select(),
+  const existingRefund =
+    await MyGlobal.prisma.ecommerce_mall_refund_requests.findFirst({
+      where: {
+        ecommerce_mall_order_item_id: props.orderItemId,
+        status: "processed",
+      },
+      select: { delivery_date: true },
     });
-  // Step 6: Return created refund request using transformer
-  return await EcommerceMallRefundRequestTransformer.transform(refundRequest);
+  if (!existingRefund) {
+    throw new HttpException("Order item delivery date not available", 400);
+  }
+  const deliveryDate = new Date(existingRefund.delivery_date);
+  const now = new Date();
+  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  if (now.getTime() - deliveryDate.getTime() > sevenDays) {
+    throw new HttpException("Refund request period has expired", 400);
+  }
+  const created = await MyGlobal.prisma.ecommerce_mall_refund_requests.create({
+    data: await EcommerceMallRefundRequestCollector.collect({
+      body: props.body,
+      customer: props.customer as IEntity,
+      ecommerceMallOrderItems: {
+        id: orderItem.id,
+        delivery_date: existingRefund.delivery_date,
+      },
+    }),
+    ...EcommerceMallRefundRequestTransformer.select(),
+  });
+  return await EcommerceMallRefundRequestTransformer.transform(created);
 }

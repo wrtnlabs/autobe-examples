@@ -1,6 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
+import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProjectMember";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
@@ -23,47 +25,45 @@ export async function postHrmPlatformMemberProjectsProjectIdMembers(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmPlatformProjectMember.ICreate;
 }): Promise<IHrmPlatformProjectMember> {
-  // Verify project exists and is not deleted
-  const project = await MyGlobal.prisma.hrm_platform_projects.findFirst({
-    where: {
-      id: props.projectId,
-      deleted_at: null,
+  // Validate project exists and is not soft-deleted
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
+    {
+      where: {
+        id: props.projectId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        organization_id: true,
+      },
     },
-    select: {
-      id: true,
-      organization_id: true,
-    },
-  });
-  if (!project) {
-    throw new HttpException("Project not found", 404);
-  }
-  // Validate employee exists, belongs to same organization as project, and is active
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      id: props.body.hrm_platform_employee_id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      organization_id: true,
-      status: true,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Employee not found", 404);
-  }
-  // Verify employee belongs to same organization as project
-  if (employee.organization_id !== project.organization_id) {
+  );
+  // Validate employee exists, is active, and belongs to same organization
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
+      where: {
+        id: props.body.hrm_platform_employee_id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        organization_id: true,
+        status: true,
+      },
+    });
+  if (employee.status !== "active") {
     throw new HttpException(
-      "Employee does not belong to your organization",
+      "Employee must be active to be assigned to a project",
       400,
     );
   }
-  // Verify employee is active
-  if (employee.status !== "active") {
-    throw new HttpException("Employee is not active", 400);
+  if (employee.organization_id !== project.organization_id) {
+    throw new HttpException(
+      "Employee must belong to the same organization as the project",
+      403,
+    );
   }
-  // Check for existing membership (duplicate assignment)
+  // Check for duplicate membership (unique constraint)
   const existingMembership =
     await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
@@ -74,11 +74,11 @@ export async function postHrmPlatformMemberProjectsProjectIdMembers(props: {
     });
   if (existingMembership) {
     throw new HttpException(
-      "Employee is already assigned to this project",
+      "Employee is already a member of this project",
       409,
     );
   }
-  // Create project membership using collector
+  // Create the membership record using collector
   const created = await MyGlobal.prisma.hrm_platform_project_members.create({
     data: await HrmPlatformProjectMemberCollector.collect({
       body: props.body,
@@ -86,6 +86,6 @@ export async function postHrmPlatformMemberProjectsProjectIdMembers(props: {
     }),
     ...HrmPlatformProjectMemberTransformer.select(),
   });
-  // Transform and return the response
+  // Transform and return the created record
   return await HrmPlatformProjectMemberTransformer.transform(created);
 }

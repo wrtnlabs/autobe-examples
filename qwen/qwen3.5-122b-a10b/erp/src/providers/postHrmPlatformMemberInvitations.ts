@@ -21,48 +21,46 @@ export async function postHrmPlatformMemberInvitations(props: {
   member: MemberPayload;
   body: IHrmPlatformEmployee.ICreate;
 }): Promise<IHrmPlatformEmployee> {
-  // Get organization from member's employee record
-  const memberEmployeeRecord =
-    await MyGlobal.prisma.hrm_platform_employees.findFirst({
+  // Get member's current organization from their employee record
+  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
+    {
       where: {
         hrm_platform_user_id: props.member.id,
         deleted_at: null,
       },
       select: {
         hrm_platform_organization_id: true,
-      },
-    });
-  if (!memberEmployeeRecord) {
-    throw new HttpException("Organization not found", 404);
-  }
-  const organizationId = memberEmployeeRecord.hrm_platform_organization_id;
-  // Verify employee:manage permission by checking role permissions
-  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
-    {
-      where: {
-        hrm_platform_user_id: props.member.id,
-        hrm_platform_organization_id: organizationId,
-        deleted_at: null,
-      },
-      select: {
-        role: {
-          select: {
-            permissions: {
-              select: {
-                permission: {
-                  select: { code: true },
-                },
-              },
-            },
-          },
-        },
+        hrm_platform_role_id: true,
       },
     },
   );
-  const hasEmployeeManagePermission = memberEmployee?.role.permissions.some(
-    (rp) => rp.permission.code === "employee:manage",
+  if (!memberEmployee) {
+    throw new HttpException("Member not found in any organization", 403);
+  }
+  const organizationId: string & tags.Format<"uuid"> =
+    memberEmployee.hrm_platform_organization_id as string & tags.Format<"uuid">;
+  // Verify member has employee:manage permission
+  const rolePermissions =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
+      where: {
+        hrm_platform_role_id: memberEmployee.hrm_platform_role_id,
+      },
+      select: {
+        hrm_platform_permission_id: true,
+      },
+    });
+  const permissionIds = rolePermissions.map(
+    (rp) => rp.hrm_platform_permission_id,
   );
-  if (!hasEmployeeManagePermission) {
+  const hasEmployeeManage =
+    await MyGlobal.prisma.hrm_platform_permissions.findFirst({
+      where: {
+        id: { in: permissionIds },
+        code: "employee:manage",
+        deleted_at: null,
+      },
+    });
+  if (!hasEmployeeManage) {
     throw new HttpException(
       "Forbidden: employee:manage permission required",
       403,
@@ -79,7 +77,7 @@ export async function postHrmPlatformMemberInvitations(props: {
   if (!role) {
     throw new HttpException("Role not found in organization", 400);
   }
-  // Validate department if provided
+  // Validate departmentId if provided
   if (props.body.hrm_platform_department_id) {
     const department = await MyGlobal.prisma.hrm_platform_departments.findFirst(
       {
@@ -94,135 +92,75 @@ export async function postHrmPlatformMemberInvitations(props: {
       throw new HttpException("Department not found in organization", 400);
     }
   }
-  // Check if member exists by email
-  let userId: string & tags.Format<"uuid">;
-  if (props.body.email) {
-    const memberRecord = await MyGlobal.prisma.hrm_platform_members.findFirst({
-      where: {
-        email: props.body.email,
-        deleted_at: null,
-      },
-    });
-    if (!memberRecord) {
-      // Email not registered - create pending invitation via activity log
-      await MyGlobal.prisma.hrm_platform_activity_logs.create({
-        data: {
-          id: v4() as string & tags.Format<"uuid">,
-          organization_id: organizationId,
-          user_id: props.member.id,
-          action_type: "employee.invitation.pending",
-          target_entity: "employee",
-          details: JSON.stringify({
-            email: props.body.email,
-            organization_id: organizationId,
-            role_id: props.body.hrm_platform_role_id,
-            department_id: props.body.hrm_platform_department_id,
-            position: props.body.position,
-            employment_type: props.body.employment_type,
-            status: props.body.status,
-          }),
-          created_at: new Date(),
-        },
-      });
-      throw new HttpException("Pending invitation created", 202);
-    }
-    userId = memberRecord.id as string & tags.Format<"uuid">;
-  } else if (props.body.hrm_platform_user_id) {
-    const existingMember = await MyGlobal.prisma.hrm_platform_members.findFirst(
-      {
+  // Validate employmentType
+  const validEmploymentTypes: Array<
+    "full-time" | "part-time" | "contractor" | "intern"
+  > = ["full-time", "part-time", "contractor", "intern"];
+  if (!validEmploymentTypes.includes(props.body.employment_type as any)) {
+    throw new HttpException("Invalid employment type", 400);
+  }
+  // Validate status
+  const validStatuses: Array<"active" | "deactivated"> = [
+    "active",
+    "deactivated",
+  ];
+  if (!validStatuses.includes(props.body.status as any)) {
+    throw new HttpException("Invalid status", 400);
+  }
+  // Query member by email
+  if (!props.body.email) {
+    throw new HttpException("Email is required for invitation", 400);
+  }
+  const existingMember = await MyGlobal.prisma.hrm_platform_members.findFirst({
+    where: {
+      email: props.body.email,
+      deleted_at: null,
+    },
+  });
+  if (existingMember) {
+    // User exists - check for existing employee record
+    const existingEmployee =
+      await MyGlobal.prisma.hrm_platform_employees.findFirst({
         where: {
-          id: props.body.hrm_platform_user_id,
+          hrm_platform_organization_id: organizationId,
+          hrm_platform_user_id: existingMember.id,
           deleted_at: null,
         },
-      },
-    );
-    if (!existingMember) {
-      throw new HttpException("User not found", 404);
+      });
+    if (existingEmployee) {
+      throw new HttpException("Employee already exists", 409);
     }
-    userId = existingMember.id as string & tags.Format<"uuid">;
+    // Create employee record
+    const employeeData = await HrmPlatformEmployeeCollector.collect({
+      body: props.body,
+      user: { id: existingMember.id } as IEntity,
+      hrmPlatformOrganizations: { id: organizationId } as IEntity,
+    });
+    const created = await MyGlobal.prisma.hrm_platform_employees.create({
+      data: employeeData,
+      ...HrmPlatformEmployeeTransformer.select(),
+    });
+    // Create activity log
+    await MyGlobal.prisma.hrm_platform_activity_logs.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        user_id: props.member.id,
+        organization_id: organizationId,
+        action_type: "employee:invited",
+        target_entity: "employee",
+        target_id: created.id,
+        details: JSON.stringify({ email: props.body.email }),
+        created_at: new Date(),
+      },
+    });
+    return await HrmPlatformEmployeeTransformer.transform(created);
   } else {
+    // User does not exist - cannot create employee without user
+    // For invitation flow, we would need a separate invitation system
+    // For now, return error indicating user must register first
     throw new HttpException(
-      "Either email or hrm_platform_user_id must be provided",
+      "User with this email does not exist. Please have them register first.",
       400,
     );
   }
-  // Check for existing employee record
-  const existingEmployee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirst({
-      where: {
-        hrm_platform_organization_id: organizationId,
-        hrm_platform_user_id: userId,
-        deleted_at: null,
-      },
-    });
-  if (existingEmployee) {
-    throw new HttpException(
-      "Employee already exists in this organization",
-      409,
-    );
-  }
-  // Check for pending invitation by querying activity logs
-  if (props.body.email) {
-    const pendingInvitations =
-      await MyGlobal.prisma.hrm_platform_activity_logs.findMany({
-        where: {
-          action_type: "employee.invitation.pending",
-          organization_id: organizationId,
-        },
-      });
-    const hasPending = pendingInvitations.some((log) => {
-      try {
-        const detail = JSON.parse(log.details ?? "{}");
-        return detail.email === props.body.email;
-      } catch {
-        return false;
-      }
-    });
-    if (hasPending) {
-      throw new HttpException(
-        "Pending invitation already exists for this email",
-        409,
-      );
-    }
-  }
-  // Create employee record using collector
-  const employeeData = await HrmPlatformEmployeeCollector.collect({
-    body: props.body,
-    hrmPlatformOrganizations: {
-      id: organizationId,
-    } as IEntity,
-  });
-  // Override user connection with resolved userId
-  const createData: Prisma.hrm_platform_employeesCreateInput = {
-    ...employeeData,
-    user: { connect: { id: userId } },
-    organization: { connect: { id: organizationId } },
-  };
-  const createdEmployee = await MyGlobal.prisma.hrm_platform_employees.create({
-    data: createData,
-    ...HrmPlatformEmployeeTransformer.select(),
-  });
-  // Create activity log for employee creation
-  await MyGlobal.prisma.hrm_platform_activity_logs.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      organization_id: organizationId,
-      user_id: props.member.id,
-      action_type: "employee.invitation.created",
-      target_entity: "employee",
-      target_id: createdEmployee.id,
-      details: JSON.stringify({
-        employee_id: createdEmployee.id,
-        user_id: userId,
-        organization_id: organizationId,
-        role_id: props.body.hrm_platform_role_id,
-        department_id: props.body.hrm_platform_department_id,
-        position: props.body.position,
-        employment_type: props.body.employment_type,
-        status: props.body.status,
-      }),
-      created_at: new Date(),
-    },
-  });
-  return await HrmPlatformEmployeeTransformer.transform(createdEmployee);
 }

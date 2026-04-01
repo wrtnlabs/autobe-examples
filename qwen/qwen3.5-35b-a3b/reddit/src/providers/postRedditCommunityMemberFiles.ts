@@ -24,15 +24,28 @@ export async function postRedditCommunityMemberFiles(props: {
   member: MemberPayload;
   body: IRedditCommunityFile.ICreate;
 }): Promise<IRedditCommunityFile> {
-  const fileId: string & tags.Format<"uuid"> = v4();
-  const created: Prisma.reddit_community_filesGetPayload<
-    ReturnType<typeof RedditCommunityFileTransformer.select>
-  > = await MyGlobal.prisma.reddit_community_files.create({
+  const { member, body } = props;
+  // Validate file type enum
+  const fileType: "avatar" | "post" | "community_icon" = typia.assert<
+    "avatar" | "post" | "community_icon"
+  >(body.file_type);
+  // Validate owner_id is a valid UUID
+  const ownerId: string & tags.Format<"uuid"> = typia.assert<
+    string & tags.Format<"uuid">
+  >(body.owner_id);
+  // Create file record using collector
+  const created = await MyGlobal.prisma.reddit_community_files.create({
     data: await RedditCommunityFileCollector.collect({
-      body: props.body,
-      owner_id: props.member.id,
+      body: {
+        file_type: fileType,
+        owner_id: ownerId,
+        file_uri: body.file_uri,
+      },
+      redditCommunityMembers: {} as any,
+      redditCommunityMemberSessions: {} as any,
     }),
     ...RedditCommunityFileTransformer.select(),
   });
+  // Transform and return
   return await RedditCommunityFileTransformer.transform(created);
 }

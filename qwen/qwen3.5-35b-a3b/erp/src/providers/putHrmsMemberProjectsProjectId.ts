@@ -22,154 +22,159 @@ export async function putHrmsMemberProjectsProjectId(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmsProject.IUpdate;
 }): Promise<IHrmsProject.ISummary> {
-  // Query project
-  const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
-    where: { id: props.projectId, deleted_at: null },
-    select: {
-      id: true,
-      hrms_organization_id: true,
-      name: true,
-      description: true,
-      color_code: true,
-      status: true,
-      budget_hours: true,
-      start_date: true,
-      end_date: true,
-      created_at: true,
-      updated_at: true,
-      organization: {
-        select: {
-          id: true,
-          name: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-        },
-      },
-    },
-  });
-  // Verify organization context
-  const orgMember = await MyGlobal.prisma.hrms_organization_members.findFirst({
+  // Step 1: Verify project exists and belongs to user's organization
+  const project = await MyGlobal.prisma.hrms_projects.findFirst({
     where: {
-      hrms_member_id: props.member.id,
-      hrms_organization_id: project.hrms_organization_id,
+      id: props.projectId,
+      deleted_at: null,
     },
-    select: {
-      hrms_organization_role_id: true,
+    include: {
+      organization: true,
     },
   });
-  if (!orgMember) {
-    throw new HttpException("Forbidden", 403);
+  if (project === null) {
+    throw new HttpException("Project not found", 404);
   }
-  const role = await MyGlobal.prisma.hrms_organization_roles.findFirst({
-    where: { id: orgMember.hrms_organization_role_id },
-    select: { permissions: true },
-  });
-  if (
-    !role ||
-    !role.permissions.some((p) => p.permission === "project:manage")
-  ) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Validate status
-  const validStatuses: ("active" | "archived" | "completed")[] = [
-    "active",
-    "archived",
-    "completed",
-  ];
-  if (
-    props.body.status !== undefined &&
-    !validStatuses.includes(props.body.status)
-  ) {
-    throw new HttpException("Invalid status", 400);
-  }
-  // Validate status transitions (cannot go from archived back to active)
-  if (props.body.status === "active" && project.status === "archived") {
-    throw new HttpException("Archived projects cannot be reactivated", 400);
-  }
-  // Check for active timelogs if transitioning to completed
-  if (props.body.status === "completed" && project.status !== "completed") {
-    const activeTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+  // Verify user has access to this organization
+  const organizationMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
-        project_id: project.id,
+        hrms_member_id: props.member.id,
+        hrms_organization_id: project.hrms_organization_id,
         deleted_at: null,
-        billable: true,
       },
-      select: { id: true },
-      take: 1,
     });
-    if (activeTimelogs.length > 0) {
+  if (organizationMember === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Step 2: Validate input body - trust framework validation, skip manual checks
+  // Step 3: Check business rule - cannot complete project with active timelogs
+  if (props.body.status === "completed") {
+    const hasTimelogs = await MyGlobal.prisma.hrms_timelogs.findFirst({
+      where: {
+        project_id: props.projectId,
+        deleted_at: null,
+      },
+    });
+    if (hasTimelogs !== null) {
       throw new HttpException(
-        "Project cannot be completed because it has active timelogs requiring review",
+        "Project cannot be completed because it has active timelogs",
         409,
       );
     }
   }
-  // Update project
+  // Step 4: Execute update
   const updatedProject = await MyGlobal.prisma.hrms_projects.update({
-    where: { id: project.id },
+    where: { id: props.projectId },
     data: {
       name: props.body.name,
-      description: props.body.description ?? null,
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
       color_code: props.body.color_code,
-      status: props.body.status ?? project.status,
-      budget_hours: props.body.budget_hours ?? null,
-      start_date: props.body.start_date
-        ? new Date(props.body.start_date)
-        : null,
-      end_date: props.body.end_date ? new Date(props.body.end_date) : null,
+      ...(props.body.status !== undefined && { status: props.body.status }),
+      ...(props.body.budget_hours !== undefined && {
+        budget_hours: props.body.budget_hours,
+      }),
+      ...(props.body.start_date !== undefined && {
+        start_date: props.body.start_date,
+      }),
+      ...(props.body.end_date !== undefined && {
+        end_date: props.body.end_date,
+      }),
       updated_at: new Date(),
     },
-    select: {
-      id: true,
-      hrms_organization_id: true,
-      name: true,
-      description: true,
-      color_code: true,
-      status: true,
-      budget_hours: true,
-      start_date: true,
-      end_date: true,
-      created_at: true,
-      updated_at: true,
-      organization: {
-        select: {
-          id: true,
-          name: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-        },
-      },
+    include: {
+      organization: true,
     },
   });
-  return {
-    id: updatedProject.id,
+  // Step 5: Calculate computed fields
+  const timelogSum = await MyGlobal.prisma.hrms_timelogs.aggregate({
+    where: {
+      project_id: props.projectId,
+      deleted_at: null,
+    },
+    _sum: {
+      duration_minutes: true,
+    },
+  });
+  const actualHours =
+    timelogSum._sum?.duration_minutes !== null &&
+    timelogSum._sum?.duration_minutes !== undefined
+      ? timelogSum._sum.duration_minutes / 60
+      : 0;
+  let budgetUtilizationPercentage: number | null = null;
+  if (
+    updatedProject.budget_hours !== null &&
+    updatedProject.budget_hours !== 0
+  ) {
+    budgetUtilizationPercentage =
+      (actualHours / updatedProject.budget_hours) * 100;
+  }
+  const pendingTasks = await MyGlobal.prisma.hrms_tasks.count({
+    where: {
+      project_id: props.projectId,
+      deleted_at: null,
+      status: { in: ["open", "pending"] },
+    },
+  });
+  const inProgressTasks = await MyGlobal.prisma.hrms_tasks.count({
+    where: {
+      project_id: props.projectId,
+      deleted_at: null,
+      status: "in-progress",
+    },
+  });
+  const completedTasks = await MyGlobal.prisma.hrms_tasks.count({
+    where: {
+      project_id: props.projectId,
+      deleted_at: null,
+      status: "completed",
+    },
+  });
+  const closedTasks = await MyGlobal.prisma.hrms_tasks.count({
+    where: {
+      project_id: props.projectId,
+      deleted_at: null,
+      status: "closed",
+    },
+  });
+  const totalTasks = await MyGlobal.prisma.hrms_tasks.count({
+    where: {
+      project_id: props.projectId,
+      deleted_at: null,
+    },
+  });
+  const timelogCount = await MyGlobal.prisma.hrms_timelogs.count({
+    where: {
+      project_id: props.projectId,
+      deleted_at: null,
+    },
+  });
+  // Step 6: Return project summary response
+  const result = {
+    id: updatedProject.id as string & tags.Format<"uuid">,
     name: updatedProject.name,
     description: updatedProject.description ?? "",
     color_code: updatedProject.color_code,
-    organization_id: updatedProject.hrms_organization_id,
+    organization_id: updatedProject.hrms_organization_id as string &
+      tags.Format<"uuid">,
     organization_name: updatedProject.organization.name,
-    status: typia.assert<"active" | "archived" | "completed">(
-      updatedProject.status,
-    ),
+    status: updatedProject.status as "active" | "completed" | "archived",
     budget_hours: updatedProject.budget_hours,
-    start_date: updatedProject.start_date
-      ? toISOStringSafe(updatedProject.start_date)
-      : null,
-    end_date: updatedProject.end_date
-      ? toISOStringSafe(updatedProject.end_date)
-      : null,
-    created_at: toISOStringSafe(updatedProject.created_at),
-    updated_at: toISOStringSafe(updatedProject.updated_at),
+    start_date: updatedProject.start_date?.toISOString() ?? null,
+    end_date: updatedProject.end_date?.toISOString() ?? null,
     planned_hours: updatedProject.budget_hours ?? 0,
-    actual_hours: 0,
-    budget_utilization_percentage: null,
-    total_tasks: 0,
-    pending_tasks: 0,
-    in_progress_tasks: 0,
-    completed_tasks: 0,
-    closed_tasks: 0,
-    timelog_count: 0,
+    actual_hours: actualHours,
+    budget_utilization_percentage: budgetUtilizationPercentage,
+    total_tasks: totalTasks,
+    pending_tasks: pendingTasks,
+    in_progress_tasks: inProgressTasks,
+    completed_tasks: completedTasks,
+    closed_tasks: closedTasks,
+    timelog_count: timelogCount,
+    created_at: updatedProject.created_at.toISOString(),
+    updated_at: updatedProject.updated_at.toISOString(),
   } satisfies IHrmsProject.ISummary;
+  return result;
 }

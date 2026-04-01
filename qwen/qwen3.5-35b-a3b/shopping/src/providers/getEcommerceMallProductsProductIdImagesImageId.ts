@@ -18,11 +18,20 @@ export async function getEcommerceMallProductsProductIdImagesImageId(props: {
 }): Promise<IEcommerceMallProductImage> {
   const image =
     await MyGlobal.prisma.ecommerce_mall_product_images.findUniqueOrThrow({
-      where: {
-        id: props.imageId,
-        product_id: props.productId,
+      where: { id: props.imageId },
+      select: {
+        id: true,
+        product: { select: { id: true } },
+        image_url: true,
+        display_order: true,
+        alt_text: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
       },
-      ...EcommerceMallProductImageTransformer.select(),
     });
+  if (image.product.id !== props.productId) {
+    throw new HttpException("Image does not belong to specified product", 404);
+  }
   return await EcommerceMallProductImageTransformer.transform(image);
 }

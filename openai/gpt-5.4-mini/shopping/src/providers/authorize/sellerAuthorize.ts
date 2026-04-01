@@ -11,15 +11,18 @@ export async function sellerAuthorize(request: {
   try {
     payload = jwtAuthorize({ request }) as SellerPayload;
   } catch {
-    throw new UnauthorizedException("Invalid authorization token");
+    throw new UnauthorizedException("Invalid or missing authorization token");
   }
 
   if (payload.type !== "seller") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
-    where: { id: payload.id },
+  const seller = await MyGlobal.prisma.mall_platform_sellers.findFirst({
+    where: {
+      id: payload.id,
+      deleted_at: null,
+    },
   });
 
   if (seller === null) {

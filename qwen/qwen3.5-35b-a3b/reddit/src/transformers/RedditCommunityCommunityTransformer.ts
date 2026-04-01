@@ -4,8 +4,10 @@ import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
@@ -24,15 +26,57 @@ export namespace RedditCommunityCommunityTransformer {
         updated_at: true,
         deleted_at: true,
         owner: RedditCommunityMemberAtSummaryTransformer.select(),
-        subscriptions: true,
-        moderators: true,
-        bans: true,
-        posts: true,
-        reports: true,
-        homeFeedCaches: true,
-        icon: true,
-        iconFiles: true,
-        systemLogs: true,
+        subscriptions: {
+          select: {
+            id: true,
+            member: true,
+            created_at: true,
+          },
+        },
+        moderators: {
+          select: {
+            id: true,
+            created_at: true,
+          },
+        },
+        bans: {
+          select: {
+            id: true,
+            created_at: true,
+          },
+        },
+        posts: {
+          select: {
+            id: true,
+            title: true,
+            created_at: true,
+          },
+        },
+        reports: {
+          select: {
+            id: true,
+            reason: true,
+            status: true,
+          },
+        },
+        homeFeedCaches: {
+          select: {
+            id: true,
+            created_at: true,
+          },
+        },
+        iconFiles: {
+          select: {
+            id: true,
+            file_id: true,
+          },
+        },
+        systemLogs: {
+          select: {
+            id: true,
+            created_at: true,
+          },
+        },
       },
     } satisfies Prisma.reddit_community_communitiesFindManyArgs;
   }
@@ -44,9 +88,9 @@ export namespace RedditCommunityCommunityTransformer {
       name: input.name,
       description: input.description ?? undefined,
       subscriber_count: input.subscriber_count,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       owner: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.owner,
       ),

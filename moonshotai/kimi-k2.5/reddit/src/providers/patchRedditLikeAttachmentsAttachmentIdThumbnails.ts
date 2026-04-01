@@ -10,6 +10,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditLikeAttachmentThumbnailAtSummaryTransformer } from "../transformers/RedditLikeAttachmentThumbnailAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,7 +22,7 @@ export async function patchRedditLikeAttachmentsAttachmentIdThumbnails(props: {
   await MyGlobal.prisma.reddit_like_attachments.findUniqueOrThrow({
     where: { id: props.attachmentId },
   });
-  // Build where clause with optional filters
+  // Build where clause with filters
   const whereInput = {
     reddit_like_attachment_id: props.attachmentId,
     ...(props.body.width !== null && { width: props.body.width }),
@@ -33,34 +34,26 @@ export async function patchRedditLikeAttachmentsAttachmentIdThumbnails(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Query thumbnails
-  const thumbnails =
-    await MyGlobal.prisma.reddit_like_attachment_thumbnails.findMany({
+  // Query thumbnails with pagination
+  const data = await MyGlobal.prisma.reddit_like_attachment_thumbnails.findMany(
+    {
       where: whereInput,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
-    });
-  // Get total count
+      ...RedditLikeAttachmentThumbnailAtSummaryTransformer.select(),
+    },
+  );
+  // Count total records
   const total = await MyGlobal.prisma.reddit_like_attachment_thumbnails.count({
     where: whereInput,
   });
-  // Map to DTO format
-  const data: IRedditLikeAttachmentThumbnail.ISummary[] = thumbnails.map(
-    (thumbnail) => ({
-      id: thumbnail.id as string & tags.Format<"uuid">,
-      width: thumbnail.width,
-      height: thumbnail.height,
-      quality: thumbnail.quality,
-      format: thumbnail.format,
-      storagePath: thumbnail.storage_path,
-      fileSize: thumbnail.file_size,
-      createdAt: thumbnail.created_at.toISOString() as string &
-        tags.Format<"date-time">,
-    }),
-  );
+  // Transform and return paginated response
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditLikeAttachmentThumbnailAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,

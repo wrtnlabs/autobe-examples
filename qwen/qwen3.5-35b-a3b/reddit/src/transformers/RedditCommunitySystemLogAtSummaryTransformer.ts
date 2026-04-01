@@ -4,10 +4,11 @@ import { IRedditCommunitySystemLog } from "@ORGANIZATION/PROJECT-api/lib/structu
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
 export namespace RedditCommunitySystemLogAtSummaryTransformer {
   export type Payload = Prisma.reddit_community_system_logsGetPayload<
@@ -24,13 +25,13 @@ export namespace RedditCommunitySystemLogAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        actor: RedditCommunityMemberAtSummaryTransformer.select(),
+        actor_id: true,
         targetPost: true,
         targetComment: true,
         targetCommunity: true,
         targetReport: true,
       },
-    } satisfies Prisma.reddit_community_system_logsFindManyArgs;
+    } as Prisma.reddit_community_system_logsFindManyArgs;
   }
   export async function transform(
     input: Payload,
@@ -39,12 +40,10 @@ export namespace RedditCommunitySystemLogAtSummaryTransformer {
       id: input.id,
       activityType: input.activity_type,
       actionPerformed: input.action_performed,
-      actor: input.actor
-        ? await RedditCommunityMemberAtSummaryTransformer.transform(input.actor)
-        : null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
+      actor: null,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+    } satisfies IRedditCommunitySystemLog.ISummary;
   }
 }

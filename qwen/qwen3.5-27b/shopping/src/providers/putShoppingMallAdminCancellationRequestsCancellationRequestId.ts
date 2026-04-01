@@ -21,20 +21,27 @@ export async function putShoppingMallAdminCancellationRequestsCancellationReques
   cancellationRequestId: string & tags.Format<"uuid">;
   body: IShoppingMallCancellationRequest.IUpdate;
 }): Promise<IShoppingMallCancellationRequest> {
-  // Step 1: Find the cancellation request
+  // Step 1: Find the cancellation request (must exist and be pending)
   const cancellationRequest =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow(
       {
-        where: { id: props.cancellationRequestId },
+        where: {
+          id: props.cancellationRequestId,
+          deleted_at: null,
+        },
         select: {
           id: true,
           shopping_mall_order_item_id: true,
-          status: true,
+          shopping_mall_customer_id: true,
+          shopping_mall_seller_id: true,
           reason: true,
+          status: true,
           rejection_reason: true,
           requested_at: true,
           responded_at: true,
-          shopping_mall_seller_id: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
         },
       },
     );
@@ -45,14 +52,37 @@ export async function putShoppingMallAdminCancellationRequestsCancellationReques
       400,
     );
   }
-  // Step 3: Create cancellation snapshot BEFORE updating
+  // Step 3: Validate rejection_reason is provided when status is 'rejected'
+  if (
+    props.body.status === "rejected" &&
+    props.body.rejection_reason === undefined
+  ) {
+    throw new HttpException(
+      "Rejection reason is required when rejecting a cancellation request",
+      400,
+    );
+  }
+  // Step 4: Get the order item to check its status
+  const orderItem =
+    await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
+      where: {
+        id: cancellationRequest.shopping_mall_order_item_id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+  // Step 5: Create cancellation snapshot BEFORE updating
   const snapshotData = {
     previous_state: {
       status: cancellationRequest.status,
       reason: cancellationRequest.reason,
       requested_at: cancellationRequest.requested_at.toISOString(),
+      seller_id: cancellationRequest.shopping_mall_seller_id,
+      rejection_reason: cancellationRequest.rejection_reason,
       responded_at: cancellationRequest.responded_at?.toISOString() ?? null,
-      rejection_reason: cancellationRequest.rejection_reason ?? null,
     },
     new_state: {
       status: props.body.status,
@@ -63,41 +93,37 @@ export async function putShoppingMallAdminCancellationRequestsCancellationReques
   };
   await MyGlobal.prisma.shopping_mall_cancellation_snapshots.create({
     data: {
-      id: v4(),
+      id: v4() as string & tags.Format<"uuid">,
       shopping_mall_cancellation_request_id: props.cancellationRequestId,
       snapshot_data: JSON.stringify(snapshotData),
       created_at: new Date(),
     },
   });
-  // Step 4: Update cancellation request
-  const now = new Date();
-  await MyGlobal.prisma.shopping_mall_cancellation_requests.update({
-    where: { id: props.cancellationRequestId },
-    data: {
-      status: props.body.status,
-      rejection_reason: props.body.rejection_reason ?? null,
-      shopping_mall_seller_id: props.admin.id,
-      responded_at: now,
-      updated_at: now,
-    },
-  });
-  // Step 5: If approved, update order item status to 'cancelled'
+  // Step 6: Update the cancellation request
+  const updatedCancellationRequest =
+    await MyGlobal.prisma.shopping_mall_cancellation_requests.update({
+      where: { id: props.cancellationRequestId },
+      data: {
+        status: props.body.status,
+        rejection_reason: props.body.rejection_reason ?? null,
+        shopping_mall_seller_id: props.admin.id,
+        responded_at: new Date(),
+        updated_at: new Date(),
+      },
+      ...ShoppingMallCancellationRequestTransformer.select(),
+    });
+  // Step 7: If approved, update order item status to 'cancelled'
   if (props.body.status === "approved") {
     await MyGlobal.prisma.shopping_mall_order_items.update({
-      where: { id: cancellationRequest.shopping_mall_order_item_id },
+      where: { id: orderItem.id },
       data: {
         status: "cancelled",
         updated_at: new Date(),
       },
     });
   }
-  // Step 6 & 7: Fetch and transform updated cancellation request
-  const updated =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow(
-      {
-        where: { id: props.cancellationRequestId },
-        ...ShoppingMallCancellationRequestTransformer.select(),
-      },
-    );
-  return await ShoppingMallCancellationRequestTransformer.transform(updated);
+  // Step 8: Return the updated cancellation request
+  return await ShoppingMallCancellationRequestTransformer.transform(
+    updatedCancellationRequest,
+  );
 }

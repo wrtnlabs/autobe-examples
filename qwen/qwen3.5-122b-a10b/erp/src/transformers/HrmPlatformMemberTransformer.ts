@@ -26,8 +26,8 @@ export namespace HrmPlatformMemberTransformer {
     return {
       id: input.id,
       displayName: input.display_name,
-      avatarImage: input.avatar_image ?? undefined,
-      phoneNumber: input.phone_number ?? undefined,
+      avatarImage: input.avatar_image ?? null,
+      phoneNumber: input.phone_number ?? null,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
     };

@@ -12,16 +12,25 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
+  const member = await MyGlobal.prisma.hrms_members.findFirst({
+    where: {
+      id: payload.id,
+      deleted_at: null,
+    },
+  });
+
+  if (member === null) {
+    throw new ForbiddenException("You're not enrolled");
+  }
+
   const session = await MyGlobal.prisma.hrms_member_sessions.findFirst({
     where: {
-      hrms_member_id: payload.id,
       id: payload.session_id,
-      expired_at: { gt: new Date() },
     },
   });
 
   if (session === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("Session expired");
   }
 
   return payload;

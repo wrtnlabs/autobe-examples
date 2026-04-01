@@ -10,6 +10,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { HrmsOrganizationRoleCollector } from "../collectors/HrmsOrganizationRoleCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { HrmsOrganizationRoleTransformer } from "../transformers/HrmsOrganizationRoleTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -20,68 +21,54 @@ export async function postHrmsMemberOrganizationsOrganizationIdRoles(props: {
   organizationId: string & tags.Format<"uuid">;
   body: IHrmsOrganizationRole.ICreate;
 }): Promise<IHrmsOrganizationRole> {
-  const organizationMember =
-    await MyGlobal.prisma.hrms_organization_members.findUniqueOrThrow({
-      where: {
-        hrms_organization_id_hrms_member_id: {
-          hrms_organization_id: props.organizationId,
-          hrms_member_id: props.member.id,
-        },
+  // 1. Validate caller is organization owner
+  const memberRole = await MyGlobal.prisma.hrms_organization_members.findFirst({
+    where: {
+      hrms_member_id: props.member.id,
+      hrms_organization_id: props.organizationId,
+      organizationRole: {
+        name: "Owner",
+        is_builtin: true,
       },
-      select: { hrms_organization_role_id: true, id: true },
-    });
-  const memberRole =
-    await MyGlobal.prisma.hrms_organization_roles.findUniqueOrThrow({
-      where: { id: organizationMember.hrms_organization_role_id },
-      select: { is_builtin: true, name: true },
-    });
-  if (memberRole.is_builtin === false || memberRole.name !== "Owner") {
+    },
+    include: {
+      organizationRole: true,
+    },
+  });
+  if (
+    !memberRole ||
+    memberRole.organizationRole.name !== "Owner" ||
+    !memberRole.organizationRole.is_builtin
+  ) {
     throw new HttpException("Forbidden", 403);
   }
+  // 2. Check role name uniqueness within organization
   const existingRole = await MyGlobal.prisma.hrms_organization_roles.findFirst({
     where: {
       organization_id: props.organizationId,
       name: props.body.name,
     },
   });
-  if (existingRole !== null) {
-    throw new HttpException(
-      "Role name already exists in this organization",
-      400,
-    );
+  if (existingRole) {
+    throw new HttpException("Role name already exists", 409);
   }
-  const role = await MyGlobal.prisma.$transaction(async (tx) => {
-    const id = v4();
-    const createdRole = await tx.hrms_organization_roles.create({
-      data: {
-        id,
-        organization_id: props.organizationId,
-        name: props.body.name,
-        is_builtin: false,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
+  // 3. Create role with permissions in transaction
+  const createdRole = await MyGlobal.prisma.$transaction(async (tx) => {
+    const collectorResult = await HrmsOrganizationRoleCollector.collect({
+      body: props.body,
+      hrmsOrganizations: { id: props.organizationId } as IEntity,
     });
-    if (
-      props.body.permissions !== undefined &&
-      props.body.permissions.length > 0
-    ) {
-      await tx.hrms_organization_role_permissions.createMany({
-        data: props.body.permissions.map((permission, i) => ({
-          id: v4(),
-          hrms_organization_role_id: id,
-          permission,
-          created_at: new Date(),
-          updated_at: new Date(),
-        })),
-      });
-    }
-    return createdRole;
+    const role = await tx.hrms_organization_roles.create({
+      data: collectorResult,
+    });
+    return role;
   });
-  const roleWithPermissions =
+  // 4. Fetch the created role with all relations using transformer select
+  const fullRole =
     await MyGlobal.prisma.hrms_organization_roles.findUniqueOrThrow({
-      where: { id: role.id },
+      where: { id: createdRole.id },
       ...HrmsOrganizationRoleTransformer.select(),
     });
-  return await HrmsOrganizationRoleTransformer.transform(roleWithPermissions);
+  // 5. Transform and return
+  return await HrmsOrganizationRoleTransformer.transform(fullRole);
 }

@@ -15,90 +15,75 @@ export async function deleteHrmsMemberTimelogsTimelogId(props: {
   member: MemberPayload;
   timelogId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Find the timelog
+  // 1. Lookup timelog by id
   const timelog = await MyGlobal.prisma.hrms_timelogs.findUnique({
     where: { id: props.timelogId },
-    select: {
-      id: true,
-      employee_id: true,
-      date: true,
-      deleted_at: true,
-    },
   });
-  if (timelog === null || timelog.deleted_at !== null) {
+  if (timelog === null) {
     throw new HttpException("Timelog not found", 404);
   }
-  // Step 2: Get employee to check active status
+  // 2. Check if timelog is already deleted (soft delete)
+  if (timelog.deleted_at !== null) {
+    throw new HttpException("Timelog already deleted", 404);
+  }
+  // 3. Retrieve employee record to check active status
   const employee = await MyGlobal.prisma.hrms_employees.findUnique({
     where: { id: timelog.employee_id },
-    select: { id: true, status: true },
   });
   if (employee === null || employee.status !== "active") {
-    throw new HttpException("Timelog not found", 404);
+    throw new HttpException("Employee is deactivated", 404);
   }
-  // Step 3: Check ownership
+  // 4. Check timelog ownership
   const isOwner = timelog.employee_id === props.member.id;
-  // Step 4: Check permission override if not owner
-  if (!isOwner) {
-    const organizationMember =
-      await MyGlobal.prisma.hrms_organization_members.findFirst({
-        where: {
-          hrms_member_id: props.member.id,
-          deleted_at: null,
+  // 5. Verify time:manage permission if not owner
+  // Need to get all organization memberships for this member and check permissions
+  const memberRoles = await MyGlobal.prisma.hrms_organization_members.findMany({
+    where: {
+      hrms_member_id: props.member.id,
+      deleted_at: null,
+    },
+    include: {
+      organizationRole: {
+        include: {
+          permissions: {
+            select: {
+              permission: true,
+            },
+          },
         },
-        select: {
-          hrms_organization_role_id: true,
-        },
-      });
-    if (organizationMember === null) {
-      throw new HttpException("You're not enrolled", 403);
-    }
-    const role = await MyGlobal.prisma.hrms_organization_roles.findFirst({
-      where: {
-        id: organizationMember.hrms_organization_role_id,
       },
-      select: {
-        id: true,
-      },
-    });
-    if (role === null) {
-      throw new HttpException("Forbidden", 403);
-    }
+    },
+  });
+  const hasManagePermission = memberRoles.some((membership) =>
+    membership.organizationRole?.permissions.some(
+      (perm: { permission: string }) => perm.permission === "time:manage",
+    ),
+  );
+  if (!isOwner && !hasManagePermission) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Step 5: Check timesheet lock by finding timesheets for the employee that are submitted or approved
-  // A timelog belongs to a timesheet if it was created during that timesheet's week
-  const timesheets = await MyGlobal.prisma.hrms_timesheets.findMany({
+  // 6. Query timesheets to find any containing this timelog
+  // Get all timesheets with status submitted or approved for this employee
+  const timesheetsWithTimelog = await MyGlobal.prisma.hrms_timesheets.findMany({
     where: {
       hrms_employee_id: timelog.employee_id,
-      status: { in: ["submitted", "approved"] },
-    },
-    select: {
-      id: true,
-      week_start_date: true,
-      week_end_date: true,
+      status: {
+        in: ["submitted", "approved"],
+      },
     },
   });
-  const timelogDateOnly = new Date(timelog.date);
-  timelogDateOnly.setHours(0, 0, 0, 0);
-  const hasTimelogInTimesheet = timesheets.some((ts) => {
-    const tsStartDate = new Date(ts.week_start_date);
-    tsStartDate.setHours(0, 0, 0, 0);
-    const tsEndDate = new Date(ts.week_end_date);
-    tsEndDate.setHours(23, 59, 59, 999);
-    return timelogDateOnly >= tsStartDate && timelogDateOnly <= tsEndDate;
-  });
-  if (hasTimelogInTimesheet) {
+  if (timesheetsWithTimelog.length > 0) {
+    const foundTimesheet = timesheetsWithTimelog[0];
     throw new HttpException(
-      "Cannot delete timelog in submitted or approved timesheet",
+      `Timelog is part of a ${foundTimesheet.status} timesheet`,
       409,
     );
   }
-  // Step 6: Soft delete
+  // 7. Execute soft delete
   await MyGlobal.prisma.hrms_timelogs.update({
     where: { id: props.timelogId },
     data: {
-      deleted_at: new Date(),
+      deleted_at: toISOStringSafe(new Date()),
     },
   });
-  // Step 7: Return 204 No Content (void return type)
 }

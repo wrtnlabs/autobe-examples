@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditLikePostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikePostTextContent";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace RedditLikePostTextContentTransformer {
@@ -14,15 +16,11 @@ export namespace RedditLikePostTextContentTransformer {
     return {
       select: {
         id: true,
+        post_id: true,
         body: true,
         excerpt: true,
         created_at: true,
         updated_at: true,
-        post: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.reddit_like_postsFindManyArgs,
       },
     } satisfies Prisma.reddit_like_post_text_contentsFindManyArgs;
   }
@@ -31,7 +29,7 @@ export namespace RedditLikePostTextContentTransformer {
   ): Promise<IRedditLikePostTextContent> {
     return {
       id: input.id,
-      post_id: input.post.id,
+      post_id: input.post_id,
       body: input.body,
       excerpt: input.excerpt,
       created_at: input.created_at.toISOString(),

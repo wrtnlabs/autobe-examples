@@ -15,46 +15,31 @@ export async function deleteShoppingMallAdminAdminRefundRequestsRefundRequestId(
   admin: AdminPayload;
   refundRequestId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  if (props.admin.type !== "admin") {
-    throw new HttpException("Forbidden", 403);
-  }
+  // Admin authorization is enforced by the route decorator/guard.
   await MyGlobal.prisma.$transaction(async (tx) => {
     const refundRequest = await tx.shopping_mall_refund_requests.findFirst({
-      where: {
-        id: props.refundRequestId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        status: true,
-      },
+      where: { id: props.refundRequestId, deleted_at: null },
+      select: { id: true, status: true },
     });
     if (refundRequest === null) {
       throw new HttpException("Refund request not found", 404);
     }
-    // Erasure is allowed only while the request is still in a non-final state.
-    // (Finalized outcomes must remain traceable through snapshots.)
-    if (refundRequest.status !== "pending") {
-      throw new HttpException(
-        "Refund request cannot be erased in its current status",
-        400,
-      );
-    }
-    const snapshotExists = await tx.shopping_mall_snapshots.findFirst({
+    // Snapshot integrity: never erase if an immutable snapshot for this refund request exists.
+    const hasImmutableSnapshot = await tx.shopping_mall_snapshots.findFirst({
       where: {
-        source_refund_request_id: props.refundRequestId,
+        source_refund_request_id: refundRequest.id,
         deleted_at: null,
       },
       select: { id: true },
     });
-    if (snapshotExists !== null) {
+    if (hasImmutableSnapshot !== null) {
       throw new HttpException(
-        "Refund request erase blocked by existing snapshot history",
-        409,
+        "Cannot erase refund request after immutable decision snapshot was created",
+        400,
       );
     }
     await tx.shopping_mall_refund_requests.delete({
-      where: { id: props.refundRequestId },
+      where: { id: refundRequest.id },
     });
   });
 }

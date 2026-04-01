@@ -18,21 +18,14 @@ export async function deleteShoppingMallMemberAddressesAddressId(props: {
   await MyGlobal.prisma.$transaction(async (tx) => {
     const address = await tx.shopping_mall_addresses.findUnique({
       where: { id: props.addressId },
-      select: {
-        id: true,
-        shopping_mall_customer_id: true,
-        deleted_at: true,
-        is_default: true,
-      },
+      select: { id: true, shopping_mall_customer_id: true },
     });
-    if (address === null || address.deleted_at !== null) {
+    if (address === null) {
       throw new HttpException("Address not found", 404);
     }
     if (address.shopping_mall_customer_id !== props.member.id) {
       throw new HttpException("Forbidden", 403);
     }
-    await tx.shopping_mall_addresses.delete({
-      where: { id: props.addressId },
-    });
+    await tx.shopping_mall_addresses.delete({ where: { id: props.addressId } });
   });
 }

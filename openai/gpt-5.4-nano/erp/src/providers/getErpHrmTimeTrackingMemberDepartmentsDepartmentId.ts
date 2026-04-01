@@ -20,8 +20,7 @@ export async function getErpHrmTimeTrackingMemberDepartmentsDepartmentId(props: 
   const department =
     await MyGlobal.prisma.erp_hrm_time_tracking_departments.findFirstOrThrow({
       where: { id: props.departmentId, deleted_at: null },
+      ...ErpHrmTimeTrackingDepartmentTransformer.select(),
     });
-  return await ErpHrmTimeTrackingDepartmentTransformer.transform(
-    department as any,
-  );
+  return await ErpHrmTimeTrackingDepartmentTransformer.transform(department);
 }

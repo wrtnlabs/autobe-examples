@@ -10,7 +10,8 @@ export function prepare_random_hrm_platform_timesheet(
 ): IHrmPlatformTimesheet.ICreate {
   return {
     week_start_date:
-      input?.week_start_date ??
-      typia.random<string & tags.Format<"date-time">>(),
+      input?.week_start_date ?? typia.random<string & tags.Format<"date">>(),
+    week_end_date:
+      input?.week_end_date ?? typia.random<string & tags.Format<"date">>(),
   };
 }

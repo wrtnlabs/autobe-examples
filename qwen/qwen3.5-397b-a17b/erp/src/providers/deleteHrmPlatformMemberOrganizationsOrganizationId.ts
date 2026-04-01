@@ -15,20 +15,42 @@ export async function deleteHrmPlatformMemberOrganizationsOrganizationId(props: 
   member: MemberPayload;
   organizationId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Find organization and verify it exists and is not deleted
+  // Verify organization exists and is not already deleted
   const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
+    await MyGlobal.prisma.hrm_platform_organizations.findUnique({
       where: {
         id: props.organizationId,
         deleted_at: null,
       },
     });
-  // Step 2: Verify the requesting member is the organization owner
-  if (organization.owner_id !== props.member.id) {
+  if (!organization) {
+    throw new HttpException("Not Found", 404);
+  }
+  // Find the Owner role for this organization
+  const ownerRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
+    where: {
+      organization_id: props.organizationId,
+      name: "Owner",
+      is_builtin: true,
+      deleted_at: null,
+    },
+  });
+  if (!ownerRole) {
+    throw new HttpException("Not Found", 404);
+  }
+  // Verify the member is the owner (has employee record with Owner role)
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      organization_id: props.organizationId,
+      user_id: props.member.id,
+      role_id: ownerRole.id,
+      deleted_at: null,
+    },
+  });
+  if (!employee) {
     throw new HttpException("Forbidden", 403);
   }
-  // Step 3: Check for pending timesheets (draft or submitted status)
-  // Need to find all employees in this organization, then check their timesheets
+  // Check for pending timesheets (draft or submitted status)
   const pendingTimesheets =
     await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
       where: {
@@ -41,14 +63,14 @@ export async function deleteHrmPlatformMemberOrganizationsOrganizationId(props: 
         deleted_at: null,
       },
     });
-  if (pendingTimesheets !== null) {
+  if (pendingTimesheets) {
     throw new HttpException(
-      "Cannot delete organization: pending timesheets must be resolved (approved or rejected) first",
-      400,
+      "Conflict: Pending timesheets must be resolved before deletion",
+      409,
     );
   }
-  // Step 4: Check for active employee contracts (end_date is null or in the future)
-  const activeContracts =
+  // Check for active employee contracts (end_date is null or in the future)
+  const activeContract =
     await MyGlobal.prisma.hrm_platform_employee_contracts.findFirst({
       where: {
         employee: {
@@ -58,19 +80,68 @@ export async function deleteHrmPlatformMemberOrganizationsOrganizationId(props: 
         deleted_at: null,
       },
     });
-  if (activeContracts !== null) {
+  if (activeContract) {
     throw new HttpException(
-      "Cannot delete organization: active employee contracts must be ended first",
-      400,
+      "Conflict: Active employee contracts must be ended before deletion",
+      409,
     );
   }
-  // Step 5: Soft delete the organization (cascade deletion handled by database)
-  await MyGlobal.prisma.hrm_platform_organizations.update({
-    where: {
-      id: props.organizationId,
-    },
-    data: {
-      deleted_at: new Date(),
-    },
+  // Perform cascade deletion in transaction
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    // Delete all projects (cascades to tasks, project_members, timelogs)
+    await tx.hrm_platform_projects.deleteMany({
+      where: {
+        organization_id: props.organizationId,
+      },
+    });
+    // Delete all timesheets
+    await tx.hrm_platform_timesheets.deleteMany({
+      where: {
+        employee: {
+          organization_id: props.organizationId,
+        },
+      },
+    });
+    // Delete all employee contracts
+    await tx.hrm_platform_employee_contracts.deleteMany({
+      where: {
+        employee: {
+          organization_id: props.organizationId,
+        },
+      },
+    });
+    // Delete all employees (cascades timelogs, timesheets)
+    await tx.hrm_platform_employees.deleteMany({
+      where: {
+        organization_id: props.organizationId,
+      },
+    });
+    // Delete all departments
+    await tx.hrm_platform_departments.deleteMany({
+      where: {
+        organization_id: props.organizationId,
+      },
+    });
+    // Delete all roles (custom and built-in)
+    await tx.hrm_platform_roles.deleteMany({
+      where: {
+        organization_id: props.organizationId,
+      },
+    });
+    // Delete all invitations
+    await tx.hrm_platform_invitations.deleteMany({
+      where: {
+        organization_id: props.organizationId,
+      },
+    });
+    // Soft delete the organization
+    await tx.hrm_platform_organizations.update({
+      where: {
+        id: props.organizationId,
+      },
+      data: {
+        deleted_at: new Date(),
+      },
+    });
   });
 }

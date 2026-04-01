@@ -16,14 +16,16 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getShoppingMallMemberAddressesDefault(props: {
   member: MemberPayload;
 }): Promise<IShoppingMallAddress> {
-  const address =
-    await MyGlobal.prisma.shopping_mall_addresses.findFirstOrThrow({
-      where: {
-        shopping_mall_customer_id: props.member.id,
-        is_default: true,
-        deleted_at: null,
-      },
-      ...ShoppingMallAddressTransformer.select(),
-    });
+  const address = await MyGlobal.prisma.shopping_mall_addresses.findFirst({
+    where: {
+      shopping_mall_customer_id: props.member.id,
+      is_default: true,
+      deleted_at: null,
+    },
+    ...ShoppingMallAddressTransformer.select(),
+  });
+  if (address === null) {
+    throw new HttpException("Default address not found", 404);
+  }
   return await ShoppingMallAddressTransformer.transform(address);
 }

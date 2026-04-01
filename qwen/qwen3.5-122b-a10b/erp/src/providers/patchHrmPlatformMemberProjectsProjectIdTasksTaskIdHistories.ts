@@ -21,84 +21,84 @@ export async function patchHrmPlatformMemberProjectsProjectIdTasksTaskIdHistorie
   taskId: string & tags.Format<"uuid">;
   body: IHrmPlatformTaskHistory.IRequest;
 }): Promise<IPageIHrmPlatformTaskHistory.ISummary> {
-  // Validate pagination parameters
-  const page = typia.assert<number & tags.Type<"int32"> & tags.Minimum<1>>(
-    props.body.page ?? 1,
-  );
-  const limit = typia.assert<
-    number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>
-  >(props.body.limit ?? 100);
-  const skip = (page - 1) * limit;
-  // Verify project exists
+  // Validate project exists
   const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
     where: { id: props.projectId },
-    select: { id: true },
   });
   if (project === null) {
     throw new HttpException("Project not found", 404);
   }
-  // Verify task exists and belongs to the project
+  // Validate task exists and belongs to project
   const task = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
     where: { id: props.taskId },
-    select: { id: true, hrm_platform_projects_id: true },
   });
-  if (task === null) {
+  if (task === null || task.hrm_platform_projects_id !== props.projectId) {
     throw new HttpException("Task not found", 404);
   }
-  if (task.hrm_platform_projects_id !== props.projectId) {
-    throw new HttpException(
-      "Task does not belong to the specified project",
-      404,
-    );
+  // Get employee IDs for this member
+  const employees = await MyGlobal.prisma.hrm_platform_employees.findMany({
+    where: { hrm_platform_user_id: props.member.id, deleted_at: null },
+    select: { id: true },
+  });
+  const employeeIds = employees.map((e) => e.id);
+  // Check project membership
+  if (employeeIds.length === 0) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Verify member has project membership (member or project-lead role)
-  const projectMembership =
+  const membership =
     await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
         hrm_platform_project_id: props.projectId,
-        employee: {
-          hrm_platform_user_id: props.member.id,
+        hrm_platform_employee_id: {
+          in: employeeIds,
         },
         deleted_at: null,
       },
-      select: { role: true },
     });
-  if (projectMembership === null) {
+  if (membership === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Build where condition for filtering
+  // Build where clause
   const whereInput: Prisma.hrm_platform_task_historiesWhereInput = {
     hrm_platform_task_id: props.taskId,
     deleted_at: null,
-    ...(props.body.changed_at_from !== undefined && {
-      changed_at: {
-        gte: new Date(props.body.changed_at_from),
-      },
-    }),
-    ...(props.body.changed_at_to !== undefined && {
-      changed_at: {
-        lte: new Date(props.body.changed_at_to),
-      },
-    }),
-    ...(props.body.hrm_platform_member_id !== undefined && {
-      hrm_platform_member_id: props.body.hrm_platform_member_id,
-    }),
   };
-  // Build orderBy condition
+  if (
+    props.body.changed_at_from !== undefined ||
+    props.body.changed_at_to !== undefined
+  ) {
+    whereInput.changed_at = {};
+    if (props.body.changed_at_from !== undefined) {
+      whereInput.changed_at.gte = new Date(props.body.changed_at_from);
+    }
+    if (props.body.changed_at_to !== undefined) {
+      whereInput.changed_at.lte = new Date(props.body.changed_at_to);
+    }
+  }
+  if (props.body.hrm_platform_member_id !== undefined) {
+    whereInput.hrm_platform_member_id = props.body.hrm_platform_member_id;
+  }
+  // Build orderBy clause
   const sortField = props.body.sort_by ?? "changed_at";
-  const orderDirection = props.body.order ?? "desc";
+  const sortOrder = props.body.order ?? "desc";
   const orderByInput: Prisma.hrm_platform_task_historiesOrderByWithRelationInput =
     {
-      [sortField]: orderDirection,
+      [sortField]: sortOrder,
     };
-  // Fetch paginated records
-  const histories = await MyGlobal.prisma.hrm_platform_task_histories.findMany({
+  // Pagination
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  // Fetch records
+  const records = await MyGlobal.prisma.hrm_platform_task_histories.findMany({
     where: whereInput,
     orderBy: orderByInput,
     skip,
     take: limit,
     select: {
       id: true,
+      hrm_platform_task_id: true,
+      hrm_platform_member_id: true,
       changed_at: true,
       old_status: true,
       new_status: true,
@@ -113,31 +113,39 @@ export async function patchHrmPlatformMemberProjectsProjectIdTasksTaskIdHistorie
       },
     },
   });
-  // Fetch total count
+  // Count total
   const total = await MyGlobal.prisma.hrm_platform_task_histories.count({
     where: whereInput,
   });
-  // Transform to DTO
-  const data = await ArrayUtil.asyncMap(histories, async (record) => ({
-    id: record.id,
-    changed_at: toISOStringSafe(record.changed_at),
-    old_status: record.old_status,
-    new_status: record.new_status,
-    member: {
-      id: record.member.id,
-      email: record.member.email,
-      display_name: record.member.display_name,
-      avatar_image: record.member.avatar_image,
-      phone_number: record.member.phone_number ?? undefined,
-    },
-  }));
-  return {
+  // Transform results
+  const data = await ArrayUtil.asyncMap(records, async (record) => {
+    const result: IHrmPlatformTaskHistory.ISummary = {
+      id: record.id,
+      changed_at: toISOStringSafe(record.changed_at) as string &
+        tags.Format<"date-time">,
+      old_status: record.old_status,
+      new_status: record.new_status,
+      member: {
+        id: record.member.id,
+        email: record.member.email,
+        display_name: record.member.display_name,
+        avatar_image: record.member.avatar_image as
+          | (string & tags.Format<"url">)
+          | null
+          | undefined,
+        phone_number: record.member.phone_number ?? undefined,
+      } satisfies IHrmPlatformMember.ISummary,
+    } satisfies IHrmPlatformTaskHistory.ISummary;
+    return result;
+  });
+  const response: IPageIHrmPlatformTaskHistory.ISummary = {
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
     data: data,
-  };
+  } satisfies IPageIHrmPlatformTaskHistory.ISummary;
+  return response;
 }

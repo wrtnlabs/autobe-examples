@@ -10,6 +10,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditLikeOwnerAtSummaryTransformer } from "../transformers/RedditLikeOwnerAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,70 +18,70 @@ export async function patchRedditLikeOwners(props: {
   body: IRedditLikeOwner.IRequest;
 }): Promise<IPageIRedditLikeOwner.ISummary> {
   const body = props.body;
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 100;
+  // Parse page and limit with sensible defaults
+  const page = body.page && body.page > 0 ? body.page : 1;
+  const limit =
+    body.limit && body.limit > 0 && body.limit <= 100 ? body.limit : 20;
   const skip = (page - 1) * limit;
-  // Build where conditions
-  const where: Prisma.reddit_like_ownersWhereInput = {
+  // Build where clause for filtering
+  const whereInput: Prisma.reddit_like_ownersWhereInput = {
     deleted_at: null,
+    ...(body.isActive !== undefined && { is_active: body.isActive }),
     ...(body.search && {
       OR: [
-        { username: { contains: body.search, mode: "insensitive" as const } },
-        { email: { contains: body.search, mode: "insensitive" as const } },
-        {
-          display_name: { contains: body.search, mode: "insensitive" as const },
-        },
+        { username: { contains: body.search, mode: "insensitive" } },
+        { email: { contains: body.search, mode: "insensitive" } },
+        { display_name: { contains: body.search, mode: "insensitive" } },
       ],
     }),
-    ...(body.isActive !== undefined && { is_active: body.isActive }),
-    ...(body.createdAtFrom !== undefined && body.createdAtTo !== undefined
-      ? { created_at: { gte: body.createdAtFrom, lte: body.createdAtTo } }
-      : body.createdAtFrom !== undefined
-        ? { created_at: { gte: body.createdAtFrom } }
-        : body.createdAtTo !== undefined
-          ? { created_at: { lte: body.createdAtTo } }
-          : {}),
   };
-  // Parse sort
-  const orderBy: Prisma.reddit_like_ownersOrderByWithRelationInput = (() => {
-    if (!body.sort) {
-      return { created_at: "desc" };
+  // Handle created_at date range filtering
+  if (body.createdAtFrom !== undefined || body.createdAtTo !== undefined) {
+    whereInput.created_at = {
+      ...(body.createdAtFrom !== undefined && { gte: body.createdAtFrom }),
+      ...(body.createdAtTo !== undefined && { lte: body.createdAtTo }),
+    };
+  }
+  // Parse sort parameter (e.g., 'created_at:desc', 'username:asc')
+  let orderByInput: Prisma.reddit_like_ownersOrderByWithRelationInput = {
+    created_at: "desc",
+  };
+  if (body.sort) {
+    const [field, direction] = body.sort.split(":") as [
+      string,
+      "asc" | "desc" | undefined,
+    ];
+    const sortDirection = direction === "asc" ? "asc" : "desc";
+    if (field === "created_at") {
+      orderByInput = { created_at: sortDirection };
+    } else if (field === "username") {
+      orderByInput = { username: sortDirection };
+    } else if (field === "email") {
+      orderByInput = { email: sortDirection };
     }
-    const [field, direction] = body.sort.split(":");
-    const dir = direction === "asc" ? "asc" : "desc";
-    if (field === "created_at") return { created_at: dir };
-    if (field === "username") return { username: dir };
-    if (field === "email") return { email: dir };
-    return { created_at: "desc" };
-  })();
+  }
+  // Query owner records with pagination
   const data = await MyGlobal.prisma.reddit_like_owners.findMany({
-    where,
-    skip,
+    where: whereInput,
+    ...(body.cursor ? { cursor: { id: body.cursor }, skip: 1 } : { skip }),
     take: limit,
-    orderBy,
-    select: {
-      id: true,
-      username: true,
-      display_name: true,
-      email: true,
-      is_active: true,
-    },
+    orderBy: orderByInput,
+    ...RedditLikeOwnerAtSummaryTransformer.select(),
   });
-  const total = await MyGlobal.prisma.reddit_like_owners.count({ where });
+  // Get total count for pagination metadata
+  const total = await MyGlobal.prisma.reddit_like_owners.count({
+    where: whereInput,
+  });
+  // Transform database records to DTOs
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    RedditLikeOwnerAtSummaryTransformer.transform,
+  );
   return {
-    data: data.map(
-      (owner) =>
-        ({
-          id: owner.id as string & tags.Format<"uuid">,
-          username: owner.username,
-          displayName: owner.display_name,
-          email: owner.email as string & tags.Format<"email">,
-          isActive: owner.is_active,
-        }) satisfies IRedditLikeOwner.ISummary,
-    ),
+    data: transformedData,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,

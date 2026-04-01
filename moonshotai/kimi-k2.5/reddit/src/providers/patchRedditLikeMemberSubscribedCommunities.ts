@@ -13,19 +13,19 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeCommunitySubscriptionAtSummaryTransformer } from "../transformers/RedditLikeCommunitySubscriptionAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditLikeMemberSubscribedCommunities(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   body: IRedditLikeCommunitySubscription.IRequest;
 }): Promise<IPageIRedditLikeCommunitySubscription.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const where = {
+  const whereInput = {
     reddit_like_member_id: props.member.id,
     deleted_at: null,
     community: {
@@ -38,34 +38,33 @@ export async function patchRedditLikeMemberSubscribedCommunities(props: {
       }),
     },
   } satisfies Prisma.reddit_like_community_subscriptionsWhereInput;
-  const orderBy = (
-    props.body.sort === "created_at"
-      ? { created_at: "asc" as const }
-      : props.body.sort === "-created_at"
-        ? { created_at: "desc" as const }
-        : props.body.sort === "name"
-          ? { community: { name: "asc" as const } }
-          : props.body.sort === "-name"
-            ? { community: { name: "desc" as const } }
-            : { created_at: "desc" as const }
+  const orderByInput = (
+    props.body.sort === "name"
+      ? { community: { name: "asc" as const } }
+      : props.body.sort === "-name"
+        ? { community: { name: "desc" as const } }
+        : props.body.sort === "-created_at"
+          ? { created_at: "desc" as const }
+          : { created_at: "asc" as const }
   ) satisfies Prisma.reddit_like_community_subscriptionsOrderByWithRelationInput;
-  const subscriptions =
+  const data =
     await MyGlobal.prisma.reddit_like_community_subscriptions.findMany({
-      where,
+      where: whereInput,
       skip,
       take: limit,
-      orderBy,
+      orderBy: orderByInput,
       ...RedditLikeCommunitySubscriptionAtSummaryTransformer.select(),
     });
   const total = await MyGlobal.prisma.reddit_like_community_subscriptions.count(
-    { where },
-  );
-  const data = await ArrayUtil.asyncMap(
-    subscriptions,
-    RedditLikeCommunitySubscriptionAtSummaryTransformer.transform,
+    {
+      where: whereInput,
+    },
   );
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditLikeCommunitySubscriptionAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,

@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IRedditLikeAttachmentReference } from "../../../../api/structures/IRedditLikeAttachmentReference";
-import { AdminAuth } from "../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { deleteRedditLikeMemberAttachmentReferencesReferenceId } from "../../../../providers/deleteRedditLikeMemberAttachmentReferencesReferenceId";
 import { postRedditLikeMemberAttachmentReferences } from "../../../../providers/postRedditLikeMemberAttachmentReferences";
 
@@ -59,8 +59,8 @@ export class RedditlikeMemberAttachment_referencesController {
    */
   @TypedRoute.Post()
   public async create(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedBody()
     body: IRedditLikeAttachmentReference.ICreate,
   ): Promise<IRedditLikeAttachmentReference> {
@@ -93,8 +93,8 @@ export class RedditlikeMemberAttachment_referencesController {
    */
   @TypedRoute.Delete(":referenceId")
   public async erase(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("referenceId")
     referenceId: string & tags.Format<"uuid">,
   ): Promise<void> {

@@ -22,15 +22,12 @@ export async function getRedditLikePostsPostIdSnapshotsSnapshotId(props: {
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikePostSnapshot> {
   const snapshot =
-    await MyGlobal.prisma.reddit_like_post_snapshots.findUniqueOrThrow({
-      where: { id: props.snapshotId },
+    await MyGlobal.prisma.reddit_like_post_snapshots.findFirstOrThrow({
+      where: {
+        id: props.snapshotId,
+        reddit_like_post_id: props.postId,
+      },
       ...RedditLikePostSnapshotTransformer.select(),
     });
-  if (snapshot.post.id !== props.postId) {
-    throw new HttpException(
-      "Snapshot does not belong to the specified post",
-      404,
-    );
-  }
   return await RedditLikePostSnapshotTransformer.transform(snapshot);
 }

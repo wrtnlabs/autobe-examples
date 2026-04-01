@@ -16,40 +16,12 @@ export async function getShoppingMallMemberCancellationRequestsCancellationReque
   cancellationRequestId: string & tags.Format<"uuid">;
 }): Promise<void> {
   const cancellationRequest =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.findFirstOrThrow({
-      where: {
-        id: props.cancellationRequestId,
-        deleted_at: null,
+    await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow(
+      {
+        where: { id: props.cancellationRequestId },
       },
-      select: {
-        id: true,
-        deleted_at: true,
-        shopping_mall_order_item_id: true,
-        reason: true,
-        requested_at: true,
-        status: true,
-        seller_decisioned_at: true,
-        seller_response_reason: true,
-        created_at: true,
-        updated_at: true,
-        orderItem: {
-          select: {
-            id: true,
-            shopping_mall_order_id: true,
-            seller_snapshot_id: true,
-            order: {
-              select: {
-                shopping_customer_id: true,
-              },
-            },
-          },
-        },
-      },
-    });
-  if (
-    cancellationRequest.orderItem.order.shopping_customer_id !== props.member.id
-  ) {
+    );
+  if (cancellationRequest.deleted_at !== null) {
     throw new HttpException("Forbidden", 403);
   }
-  return;
 }

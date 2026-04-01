@@ -27,18 +27,23 @@ export async function postRedditLikeGuestAttachmentsAttachmentIdAccess(props: {
     await MyGlobal.prisma.reddit_like_attachment_access_logs.create({
       data: {
         id: v4(),
-        reddit_like_attachment_id: props.attachmentId,
-        actor_id: null,
-        actor_type: props.guest.type,
         access_type: props.body.access_type,
+        actor_type: "guest",
         ip_address: props.body.ip_address ?? null,
         user_agent: props.body.user_agent ?? null,
         referer: props.body.referer ?? null,
         created_at: new Date(),
         updated_at: new Date(),
         deleted_at: null,
+        attachment: { connect: { id: props.attachmentId } },
+        actor: { connect: { id: props.guest.id } },
       },
+    });
+  // Fetch with proper selection and transform
+  const record =
+    await MyGlobal.prisma.reddit_like_attachment_access_logs.findUniqueOrThrow({
+      where: { id: created.id },
       ...RedditLikeAttachmentAccessLogTransformer.select(),
     });
-  return await RedditLikeAttachmentAccessLogTransformer.transform(created);
+  return await RedditLikeAttachmentAccessLogTransformer.transform(record);
 }

@@ -4,8 +4,10 @@ import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structure
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
 
@@ -40,19 +42,9 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallOrderItem.ISummary> {
-    // Compute status based on cancellation and refund requests
-    const hasAllCancelled =
-      input.cancellationRequests.length > 0 &&
-      input.cancellationRequests.every((cr) => cr.status === "approved");
-    const hasAllRefunded =
-      input.refundRequests.length > 0 &&
-      input.refundRequests.every((rr) => rr.status === "approved");
-    const hasAnyCancelled = input.cancellationRequests.some(
-      (cr) => cr.status === "approved",
-    );
-    const hasAnyRefunded = input.refundRequests.some(
-      (rr) => rr.status === "approved",
-    );
+    const cancellationRequests = input.cancellationRequests || [];
+    const refundRequests = input.refundRequests || [];
+    // Compute status based on cancellation and refund states
     let status:
       | "paid"
       | "shipped"
@@ -60,18 +52,31 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
       | "cancelled"
       | "refunded"
       | "partially_completed";
-    if (hasAllCancelled) {
+    const hasAnyCancellation = cancellationRequests.length > 0;
+    const allCancelled =
+      hasAnyCancellation &&
+      cancellationRequests.every((r) => r.status === "cancelled");
+    const hasAnyRefund = refundRequests.length > 0;
+    const allRefunded =
+      hasAnyRefund && refundRequests.every((r) => r.status === "approved");
+    if (allCancelled) {
       status = "cancelled";
-    } else if (hasAllRefunded) {
+    } else if (allRefunded) {
       status = "refunded";
-    } else if (hasAnyCancelled || hasAnyRefunded) {
+    } else if (hasAnyCancellation && !allCancelled) {
       status = "partially_completed";
-    } else if (input.order.status === "delivered") {
-      status = "delivered";
-    } else if (input.order.status === "shipped") {
-      status = "shipped";
+    } else if (hasAnyRefund && !allRefunded) {
+      status = "partially_completed";
     } else {
-      status = "paid";
+      // Check if order is delivered or shipped based on parent order status
+      const orderStatus = input.order.status;
+      if (orderStatus === "delivered") {
+        status = "delivered";
+      } else if (orderStatus === "shipped") {
+        status = "shipped";
+      } else {
+        status = "paid";
+      }
     }
     return {
       id: input.id,
@@ -79,9 +84,9 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
       productSku: input.product_sku,
       variantName: input.variant_name,
       quantity: input.quantity,
-      unitPrice: input.unit_price,
-      totalPrice: input.total_price,
-      status: status,
+      unitPrice: Number(input.unit_price),
+      totalPrice: Number(input.total_price),
+      status,
       order: await EcommerceMallOrderAtSummaryTransformer.transform(
         input.order,
       ),

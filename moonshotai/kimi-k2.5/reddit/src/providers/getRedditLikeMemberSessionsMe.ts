@@ -14,12 +14,12 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getRedditLikeMemberSessionsMe(props: {
-  member: AdminPayload;
+  member: MemberPayload;
 }): Promise<IRedditLikeMemberSession> {
   const session =
     await MyGlobal.prisma.reddit_like_member_sessions.findUniqueOrThrow({
@@ -44,17 +44,16 @@ export async function getRedditLikeMemberSessionsMe(props: {
         },
       },
     });
-  const actor: IRedditLikeMember.ISummary = {
-    id: session.member.id,
-    email: session.member.email,
-    username: session.member.username,
-    emailVerified: session.member.email_verified,
-    createdAt: toISOStringSafe(session.member.created_at),
-  };
   return {
     id: session.id,
     actorType: "member",
-    actor,
+    actor: {
+      id: session.member.id,
+      email: session.member.email,
+      username: session.member.username,
+      emailVerified: session.member.email_verified,
+      createdAt: toISOStringSafe(session.member.created_at),
+    } satisfies IRedditLikeMember.ISummary,
     ip: session.ip,
     href: session.href,
     referrer: session.referrer,

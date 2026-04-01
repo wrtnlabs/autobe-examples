@@ -11,6 +11,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { ShoppingMallCategoryAtSummaryTransformer } from "../transformers/ShoppingMallCategoryAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,13 +19,8 @@ export async function patchShoppingMallAdminCategories(props: {
   admin: AdminPayload;
   body: IShoppingMallCategory.IRequest;
 }): Promise<IPageIShoppingMallCategory.ISummary> {
-  const page = typia.assert<number & tags.Type<"int32"> & tags.Minimum<1>>(
-    props.body.page ?? 1,
-  );
-  const limit = typia.assert<
-    number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>
-  >(props.body.limit ?? 100);
-  const skip = (page - 1) * limit;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const where = {
     deleted_at: null,
     ...(props.body.visibility !== undefined && {
@@ -32,91 +28,49 @@ export async function patchShoppingMallAdminCategories(props: {
     }),
     ...(props.body.slug !== undefined && { slug: props.body.slug }),
     ...(props.body.name !== undefined && { name: props.body.name }),
+    ...(props.body.search !== undefined && {
+      OR: [
+        { name: { contains: props.body.search, mode: "insensitive" as const } },
+        {
+          description: {
+            contains: props.body.search,
+            mode: "insensitive" as const,
+          },
+        },
+      ],
+    }),
     ...(props.body.parent_category_id !== undefined && {
       parent_category_id: props.body.parent_category_id,
     }),
-    ...(props.body.search !== undefined &&
-      props.body.search !== "" && {
-        OR: [
-          {
-            name: { contains: props.body.search, mode: "insensitive" },
-          },
-          {
-            description: { contains: props.body.search, mode: "insensitive" },
-          },
-        ],
-      }),
   } satisfies Prisma.shopping_mall_categoriesWhereInput;
-  const orderBy = (
-    props.body.sortBy === "created_at"
-      ? { created_at: props.body.sortDirection === "desc" ? "desc" : "asc" }
-      : props.body.sortBy === "updated_at"
-        ? { updated_at: props.body.sortDirection === "desc" ? "desc" : "asc" }
-        : props.body.sortBy === "display_order"
-          ? {
-              display_order:
-                props.body.sortDirection === "desc" ? "desc" : "asc",
-            }
-          : { display_order: "asc" }
-  ) satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput;
-  const data = await MyGlobal.prisma.shopping_mall_categories.findMany({
-    where,
-    skip,
-    take: limit,
-    orderBy,
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      slug: true,
-      visibility: true,
-      display_order: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      parent_category_id: true,
-    },
-  });
-  const records = typia.assert<number & tags.Type<"int32"> & tags.Minimum<0>>(
-    await MyGlobal.prisma.shopping_mall_categories.count({ where }),
-  );
-  const pages = typia.assert<number & tags.Type<"int32"> & tags.Minimum<0>>(
-    records === 0 ? 0 : Math.ceil(records / limit),
-  );
+  const orderBy = (() => {
+    const direction = props.body.sortDirection ?? "asc";
+    const column = props.body.sortBy ?? "display_order";
+    if (column === "display_order") return { display_order: direction };
+    if (column === "created_at") return { created_at: direction };
+    return { updated_at: direction };
+  })() satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput;
+  const skip = (page - 1) * limit;
+  const [rows, total] = await Promise.all([
+    MyGlobal.prisma.shopping_mall_categories.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
+      ...ShoppingMallCategoryAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.shopping_mall_categories.count({ where }),
+  ]);
   return {
+    data: await ArrayUtil.asyncMap(
+      rows,
+      ShoppingMallCategoryAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit,
-      records,
-      pages,
+      records: total,
+      pages: Math.ceil(total / limit),
     },
-    data: data.map((c) => {
-      const deleted_at =
-        c.deleted_at === null ? null : c.deleted_at.toISOString();
-      return typia.assert<IShoppingMallCategory.ISummary>({
-        id: typia.assert<string & tags.Format<"uuid">>(c.id),
-        name: c.name,
-        description: c.description,
-        slug: c.slug,
-        visibility: c.visibility,
-        display_order: typia.assert<number & tags.Type<"int32">>(
-          c.display_order,
-        ),
-        created_at: typia.assert<string & tags.Format<"date-time">>(
-          c.created_at.toISOString(),
-        ),
-        updated_at: typia.assert<string & tags.Format<"date-time">>(
-          c.updated_at.toISOString(),
-        ),
-        deleted_at:
-          deleted_at === null
-            ? null
-            : typia.assert<string & tags.Format<"date-time">>(deleted_at),
-        parent_category_id:
-          c.parent_category_id === null
-            ? null
-            : typia.assert<string & tags.Format<"uuid">>(c.parent_category_id),
-      });
-    }),
-  };
+  } satisfies IPageIShoppingMallCategory.ISummary;
 }

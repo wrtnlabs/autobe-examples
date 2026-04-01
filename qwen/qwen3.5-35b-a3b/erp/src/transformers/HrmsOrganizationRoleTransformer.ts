@@ -4,8 +4,10 @@ import { IHrmsOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrm
 import { IHrmsOrganizationRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsOrganizationRole";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsOrganizationAtSummaryTransformer } from "./HrmsOrganizationAtSummaryTransformer";
 
@@ -22,8 +24,12 @@ export namespace HrmsOrganizationRoleTransformer {
         created_at: true,
         updated_at: true,
         organization: HrmsOrganizationAtSummaryTransformer.select(),
+        permissions: {
+          select: {
+            permission: true,
+          },
+        } satisfies Prisma.hrms_organization_role_permissionsFindManyArgs,
         organizationMembers: true,
-        permissions: true,
         employees: true,
       },
     } satisfies Prisma.hrms_organization_rolesFindManyArgs;
@@ -35,15 +41,12 @@ export namespace HrmsOrganizationRoleTransformer {
       id: input.id,
       name: input.name,
       is_builtin: input.is_builtin,
-      permissions: await ArrayUtil.asyncMap(
-        input.permissions,
-        async (p) => await p.permission,
-      ),
+      permissions: input.permissions.map((p) => p.permission),
       organization: await HrmsOrganizationAtSummaryTransformer.transform(
         input.organization,
       ),
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
-    } satisfies IHrmsOrganizationRole;
+    };
   }
 }

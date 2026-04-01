@@ -1,10 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
-import { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
@@ -16,34 +13,24 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
-import { ShoppingMallShipmentTransformer } from "../transformers/ShoppingMallShipmentTransformer";
+import { ShoppingMallShipmentAtInvertTransformer } from "../transformers/ShoppingMallShipmentAtInvertTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallSellerShipmentsShipmentId(props: {
   seller: SellerPayload;
   shipmentId: string & tags.Format<"uuid">;
-}): Promise<IShoppingMallShipment> {
+}): Promise<IShoppingMallShipment.IInvert> {
   const shipment =
     await MyGlobal.prisma.shopping_mall_shipments.findUniqueOrThrow({
-      where: {
-        id: props.shipmentId,
-        deleted_at: null,
-      },
-      ...ShoppingMallShipmentTransformer.select(),
+      where: { id: props.shipmentId },
+      ...ShoppingMallShipmentAtInvertTransformer.select(),
     });
-  const shipmentItemCount =
-    await MyGlobal.prisma.shopping_mall_shipment_items.count({
-      where: {
-        shipment_id: props.shipmentId,
-        orderItem: {
-          shopping_mall_seller_id: props.seller.id,
-          deleted_at: null,
-        },
-      },
-    });
-  if (shipmentItemCount === 0) {
+  if (shipment.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
+  }
+  if (shipment.seller.id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return await ShoppingMallShipmentTransformer.transform(shipment);
+  return await ShoppingMallShipmentAtInvertTransformer.transform(shipment);
 }

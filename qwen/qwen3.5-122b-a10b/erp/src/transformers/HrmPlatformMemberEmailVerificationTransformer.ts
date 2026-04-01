@@ -13,20 +13,6 @@ export namespace HrmPlatformMemberEmailVerificationTransformer {
     Prisma.hrm_platform_member_email_verificationsGetPayload<
       ReturnType<typeof select>
     >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        token: true,
-        expires_at: true,
-        verified_at: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        member: HrmPlatformMemberAtSummaryTransformer.select(),
-      },
-    } satisfies Prisma.hrm_platform_member_email_verificationsFindManyArgs;
-  }
   export async function transform(
     input: Payload,
   ): Promise<IHrmPlatformMemberEmailVerification> {
@@ -43,5 +29,19 @@ export namespace HrmPlatformMemberEmailVerificationTransformer {
         input.member,
       ),
     };
+  }
+  export function select() {
+    return {
+      select: {
+        id: true,
+        token: true,
+        expires_at: true,
+        verified_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        member: HrmPlatformMemberAtSummaryTransformer.select(),
+      },
+    } satisfies Prisma.hrm_platform_member_email_verificationsFindManyArgs;
   }
 }

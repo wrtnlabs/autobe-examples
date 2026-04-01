@@ -17,107 +17,118 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchHrmPlatformMemberProjects(props: {
-  member: MemberPayload;
+  member: {
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "member";
+  };
   body: IHrmPlatformProject.IRequest;
 }): Promise<IPageIHrmPlatformProject.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const member = await MyGlobal.prisma.hrm_platform_members.findUnique({
-    where: { id: props.member.id },
-    include: {
-      employees: {
-        where: { deleted_at: null },
-        include: {
-          organization: true,
-        },
-      },
+  const employees = await MyGlobal.prisma.hrm_platform_employees.findMany({
+    where: {
+      hrm_platform_user_id: props.member.id,
+      deleted_at: null,
     },
+    select: { hrm_platform_organization_id: true },
   });
-  if (!member || member.employees.length === 0) {
-    throw new HttpException("Member not found", 404);
+  if (employees.length === 0) {
+    throw new HttpException("No organization context found", 403);
   }
-  const organizationId = member.employees[0].hrm_platform_organization_id;
+  const organizationIds = employees.map((e) => e.hrm_platform_organization_id);
   const whereInput: Prisma.hrm_platform_projectsWhereInput = {
-    hrm_platform_organization_id: organizationId,
     deleted_at: null,
-  };
-  if (props.body.search !== undefined && props.body.search !== "") {
-    whereInput.OR = [
-      {
-        name: {
-          contains: props.body.search,
-          mode: "insensitive",
+    hrm_platform_organization_id: {
+      in: organizationIds,
+    },
+    ...(props.body.search && {
+      OR: [
+        {
+          name: {
+            contains: props.body.search,
+            mode: "insensitive",
+          },
         },
-      },
-      {
-        description: {
-          contains: props.body.search,
-          mode: "insensitive",
+        {
+          description: {
+            contains: props.body.search,
+            mode: "insensitive",
+          },
         },
-      },
-    ];
-  }
-  if (props.body.status !== undefined && props.body.status !== "") {
-    whereInput.status = props.body.status;
-  }
-  if (props.body.start_date_from !== undefined) {
-    whereInput.start_date = {
-      gte: new Date(props.body.start_date_from),
-    };
-  }
-  if (props.body.start_date_to !== undefined) {
-    whereInput.start_date = Object.assign(whereInput.start_date || {}, {
-      lte: new Date(props.body.start_date_to),
-    });
-  }
-  if (props.body.end_date_from !== undefined) {
-    whereInput.end_date = {
-      gte: new Date(props.body.end_date_from),
-    };
-  }
-  if (props.body.end_date_to !== undefined) {
-    whereInput.end_date = Object.assign(whereInput.end_date || {}, {
-      lte: new Date(props.body.end_date_to),
-    });
-  }
-  if (props.body.budget_hours_min !== undefined) {
-    whereInput.budget_hours = {
-      gte: props.body.budget_hours_min,
-    };
-  }
-  if (props.body.budget_hours_max !== undefined) {
-    whereInput.budget_hours = Object.assign(whereInput.budget_hours || {}, {
-      lte: props.body.budget_hours_max,
-    });
-  }
-  const orderByInput: Prisma.hrm_platform_projectsOrderByWithRelationInput =
-    props.body.sort_by !== undefined && props.body.sort_by !== ""
-      ? props.body.sort_order === "asc"
-        ? { [props.body.sort_by]: "asc" }
-        : { [props.body.sort_by]: "desc" }
-      : { created_at: "desc" };
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_projects.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      ...HrmPlatformProjectAtSummaryTransformer.select(),
+      ],
     }),
-    MyGlobal.prisma.hrm_platform_projects.count({ where: whereInput }),
-  ]);
-  const projects = await ArrayUtil.asyncMap(
-    data,
-    HrmPlatformProjectAtSummaryTransformer.transform,
-  );
+    ...(props.body.status && { status: props.body.status }),
+    ...(props.body.start_date_from && {
+      start_date: {
+        gte: new Date(props.body.start_date_from),
+      },
+    }),
+    ...(props.body.start_date_to && {
+      start_date: {
+        lte: new Date(props.body.start_date_to),
+      },
+    }),
+    ...(props.body.end_date_from && {
+      end_date: {
+        gte: new Date(props.body.end_date_from),
+      },
+    }),
+    ...(props.body.end_date_to && {
+      end_date: {
+        lte: new Date(props.body.end_date_to),
+      },
+    }),
+    ...(props.body.budget_hours_min !== undefined && {
+      budget_hours: {
+        gte: props.body.budget_hours_min,
+      },
+    }),
+    ...(props.body.budget_hours_max !== undefined && {
+      budget_hours: {
+        lte: props.body.budget_hours_max,
+      },
+    }),
+  };
+  const validSortColumns = [
+    "name",
+    "status",
+    "created_at",
+    "start_date",
+    "end_date",
+  ] as const;
+  const sortColumn =
+    props.body.sort_by &&
+    validSortColumns.includes(
+      props.body.sort_by as (typeof validSortColumns)[number],
+    )
+      ? props.body.sort_by
+      : "created_at";
+  const sortOrder = props.body.sort_order === "asc" ? "asc" : "desc";
+  const orderByInput: Prisma.hrm_platform_projectsOrderByWithRelationInput = {
+    [sortColumn]: sortOrder,
+  };
+  const projects = await MyGlobal.prisma.hrm_platform_projects.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: orderByInput,
+    ...HrmPlatformProjectAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.hrm_platform_projects.count({
+    where: whereInput,
+  });
   return {
+    data: await ArrayUtil.asyncMap(
+      projects,
+      HrmPlatformProjectAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data: projects,
-  } satisfies IPageIHrmPlatformProject.ISummary;
+    },
+  };
 }

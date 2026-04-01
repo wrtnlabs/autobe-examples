@@ -22,11 +22,11 @@ export async function getShoppingMallAdminOrdersOrderId(props: {
   orderId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallOrder> {
   const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
-    where: { id: props.orderId },
+    where: {
+      id: props.orderId,
+      deleted_at: null,
+    },
     ...ShoppingMallOrderTransformer.select(),
   });
-  if (order.deleted_at !== null) {
-    throw new HttpException("Order not found", 404);
-  }
   return await ShoppingMallOrderTransformer.transform(order);
 }

@@ -2,8 +2,10 @@ import { IEcommerceMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallCancellationRequestSnapshotAtSummaryTransformer {
@@ -21,26 +23,22 @@ export namespace EcommerceMallCancellationRequestSnapshotAtSummaryTransformer {
         action: true,
         created_at: true,
         updated_at: true,
-        cancellationRequest: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_cancellation_requestsFindManyArgs,
+        cancellation_request_id: true,
       },
-    } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsFindManyArgs;
+    };
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallCancellationRequestSnapshot.ISummary> {
     return {
       id: input.id,
+      cancellationRequestId: input.cancellation_request_id,
       actorType: input.actor_type,
       statusBefore: input.status_before ?? null,
       statusAfter: input.status_after ?? null,
       action: input.action,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      cancellationRequestId: input.cancellationRequest.id,
-    };
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+    } satisfies IEcommerceMallCancellationRequestSnapshot.ISummary;
   }
 }

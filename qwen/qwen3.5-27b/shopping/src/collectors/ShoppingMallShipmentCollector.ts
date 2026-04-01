@@ -29,8 +29,10 @@ export namespace ShoppingMallShipmentCollector {
           props.body.order_item_ids,
           async (orderItemId) => ({
             id: v4(),
-            orderItem: { connect: { id: orderItemId } },
+            shopping_mall_order_item_id: orderItemId,
+            shopping_mall_shipment_id: id,
             created_at: new Date(),
+            orderItem: { connect: { id: orderItemId } },
           }),
         ),
       },

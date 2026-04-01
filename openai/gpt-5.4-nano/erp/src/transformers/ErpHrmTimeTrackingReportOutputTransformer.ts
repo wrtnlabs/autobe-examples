@@ -6,8 +6,10 @@ import { IErpHrmTimeTrackingReportOutput } from "@ORGANIZATION/PROJECT-api/lib/s
 import { IErpHrmTimeTrackingTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTask";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "./ErpHrmTimeTrackingMemberAtSummaryTransformer";
 import { ErpHrmTimeTrackingProjectAtSummaryTransformer } from "./ErpHrmTimeTrackingProjectAtSummaryTransformer";
@@ -38,7 +40,9 @@ export namespace ErpHrmTimeTrackingReportOutputTransformer {
         weekStartDate:
           ErpHrmTimeTrackingReportDefinitionDimensionAtSummaryTransformer.select(),
         outputMetrics: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         },
       },
     } satisfies Prisma.erp_hrm_time_tracking_report_outputsFindManyArgs;

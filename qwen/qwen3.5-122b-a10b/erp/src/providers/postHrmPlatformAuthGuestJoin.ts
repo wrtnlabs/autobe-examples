@@ -16,17 +16,18 @@ export async function postHrmPlatformAuthGuestJoin(props: {
   ip: string;
   body: IHrmPlatformGuest.IJoin;
 }): Promise<IHrmPlatformGuest.IAuthorized> {
-  // 1. Check duplicate email
+  // 1. Check email uniqueness
   const existing = await MyGlobal.prisma.hrm_platform_guests.findFirst({
-    where: { email: props.body.email, deleted_at: null },
+    where: { email: props.body.email },
   });
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Create guest record with hashed password
-  const guestId = v4() as string & tags.Format<"uuid">;
+  // 2. Hash password
   const passwordHash = await PasswordUtil.hash(props.body.password);
-  const now = new Date().toISOString() as string & tags.Format<"date-time">;
+  // 3. Create guest record
+  const now = new Date();
+  const guestId: string & tags.Format<"uuid"> = v4();
   const guest = await MyGlobal.prisma.hrm_platform_guests.create({
     data: {
       id: guestId,
@@ -37,8 +38,8 @@ export async function postHrmPlatformAuthGuestJoin(props: {
       deleted_at: null,
     },
   });
-  // 3. Create guest session
-  const sessionId = v4() as string & tags.Format<"uuid">;
+  // 4. Create session record
+  const sessionId: string & tags.Format<"uuid"> = v4();
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.hrm_platform_guest_sessions.create({
@@ -47,21 +48,19 @@ export async function postHrmPlatformAuthGuestJoin(props: {
       hrm_platform_guest_id: guest.id,
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
-      referrer: props.body.referrer ?? null,
-      created_at: new Date().toISOString() as string & tags.Format<"date-time">,
-      expired_at: accessExpires.toISOString() as string &
-        tags.Format<"date-time">,
+      referrer: props.body.referrer,
+      created_at: now,
+      expired_at: accessExpires,
     },
   });
-  // 4. Generate JWT tokens
+  // 5. Generate JWT tokens
   const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "guest",
         id: guest.id,
         session_id: session.id,
-        created_at: new Date().toISOString() as string &
-          tags.Format<"date-time">,
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -72,18 +71,15 @@ export async function postHrmPlatformAuthGuestJoin(props: {
         id: guest.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: new Date().toISOString() as string &
-          tags.Format<"date-time">,
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires.toISOString() as string &
-      tags.Format<"date-time">,
-    refreshable_until: refreshExpires.toISOString() as string &
-      tags.Format<"date-time">,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
-  // 5. Return IAuthorized
+  // 6. Return IAuthorized
   return {
     id: guest.id,
     token,

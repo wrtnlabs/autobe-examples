@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -15,63 +15,67 @@ import { authorize_seller_refresh } from "../../../authorize/authorize_seller_re
 export async function test_api_seller_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  const sellerJoinConnection: api.IConnection = { host: connection.host };
-  const sellerCredentials = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: typia.random<string & tags.Format<"password">>() as string &
-      tags.MinLength<1> &
-      tags.Format<"password">,
-  } satisfies IShoppingMallSeller.IJoin;
-  const joined = await authorize_seller_join(sellerJoinConnection, {
-    body: sellerCredentials,
+  const joinConnection: api.IConnection = { host: connection.host };
+  const email = typia.random<string & tags.Format<"email">>();
+  const password = typia.random<string & tags.Format<"password">>();
+  const joined = await authorize_seller_join(joinConnection, {
+    body: {
+      email,
+      password,
+      href: "https://example.com/register",
+      referrer: "https://example.com/landing",
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    } satisfies IMallPlatformSeller.IJoin,
   });
   typia.assert(joined);
-  const sellerLoginConnection: api.IConnection = { host: connection.host };
-  const loggedIn = await authorize_seller_login(sellerLoginConnection, {
+  TestValidator.equals("joined seller email", joined.email, email);
+  TestValidator.equals(
+    "joined seller rejection reason",
+    joined.rejectionReason,
+    null,
+  );
+  TestValidator.equals("joined seller deletedAt", joined.deletedAt, null);
+  const loginConnection: api.IConnection = { host: connection.host };
+  const loggedIn = await authorize_seller_login(loginConnection, {
     body: {
-      email: sellerCredentials.email,
-      password: sellerCredentials.password,
-    } satisfies IShoppingMallSeller.ILogin,
+      email,
+      password,
+    } satisfies IMallPlatformSeller.ILogin,
   });
   typia.assert(loggedIn);
+  TestValidator.equals("login seller id", loggedIn.id, joined.id);
+  TestValidator.equals("login seller email", loggedIn.email, email);
   TestValidator.equals(
-    "seller email should match login input",
-    loggedIn.email,
-    sellerCredentials.email,
+    "login seller rejection reason",
+    loggedIn.rejectionReason,
+    null,
   );
-  TestValidator.equals(
-    "seller id should remain the same",
-    loggedIn.id,
-    joined.id,
-  );
-  TestValidator.equals(
-    "seller approval status should be stable",
-    loggedIn.approvalStatus,
-    joined.approvalStatus,
-  );
-  TestValidator.equals(
-    "seller account status should be stable",
-    loggedIn.accountStatus,
-    joined.accountStatus,
-  );
+  TestValidator.equals("login seller deletedAt", loggedIn.deletedAt, null);
   TestValidator.predicate(
-    "authorization access token should be issued",
+    "login should issue access token",
     loggedIn.token.access.length > 0,
   );
   TestValidator.predicate(
-    "authorization refresh token should be issued",
+    "login should issue refresh token",
     loggedIn.token.refresh.length > 0,
   );
   TestValidator.predicate(
-    "access token expiration should be provided",
+    "login should issue access expiration",
     loggedIn.token.expired_at.length > 0,
   );
   TestValidator.predicate(
-    "refresh token expiration should be provided",
+    "login should issue refreshable-until expiration",
     loggedIn.token.refreshable_until.length > 0,
   );
-  TestValidator.predicate(
-    "authenticated session payload should be usable",
-    loggedIn.token.access !== loggedIn.token.refresh,
+  const authorizedConnection: api.IConnection = {
+    host: connection.host,
+    headers: {
+      Authorization: loggedIn.token.access,
+    },
+  };
+  TestValidator.equals(
+    "authorization header propagated",
+    authorizedConnection.headers?.Authorization,
+    loggedIn.token.access,
   );
 }

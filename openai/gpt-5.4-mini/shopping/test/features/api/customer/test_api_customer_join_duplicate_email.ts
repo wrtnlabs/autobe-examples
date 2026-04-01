@@ -1,8 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -16,42 +15,47 @@ import { authorize_customer_refresh } from "../../../authorize/authorize_custome
 export async function test_api_customer_join_duplicate_email(
   connection: api.IConnection,
 ): Promise<void> {
-  const firstJoinConnection: api.IConnection = { host: connection.host };
   const email = typia.random<string & tags.Format<"email">>();
-  const password = "Password1234!";
-  const firstAuthorized = await authorize_customer_join(firstJoinConnection, {
+  const password1 = RandomGenerator.alphaNumeric(16);
+  const password2 = RandomGenerator.alphaNumeric(16);
+  const firstConnection: api.IConnection = { host: connection.host };
+  const first = await authorize_customer_join(firstConnection, {
     body: {
       email,
-      password,
-      href: "https://example.com/register",
-      referrer: "https://example.com/landing",
-      ip: "127.0.0.1",
-    } satisfies IShoppingMallCustomer.IJoin,
+      password: password1,
+    } satisfies IMallPlatformCustomer.IJoin,
   });
-  typia.assert(firstAuthorized);
-  const duplicateConnection: api.IConnection = { host: connection.host };
+  typia.assert(first);
+  const firstSnapshot = {
+    id: first.id,
+    email: first.email,
+    status: first.status,
+    createdAt: first.createdAt,
+    updatedAt: first.updatedAt,
+    deletedAt: first.deletedAt,
+    token: {
+      access: first.token.access,
+      refresh: first.token.refresh,
+      expired_at: first.token.expired_at,
+      refreshable_until: first.token.refreshable_until,
+    },
+  } satisfies IMallPlatformCustomer.IAuthorized;
+  const secondConnection: api.IConnection = { host: connection.host };
   await TestValidator.error(
     "duplicate customer email should be rejected",
     async () => {
-      await authorize_customer_join(duplicateConnection, {
+      await authorize_customer_join(secondConnection, {
         body: {
           email,
-          password: "DifferentPassword1234!",
-          href: "https://example.com/register",
-          referrer: "https://example.com/landing",
-          ip: "127.0.0.1",
-        } satisfies IShoppingMallCustomer.IJoin,
+          password: password2,
+        } satisfies IMallPlatformCustomer.IJoin,
       });
     },
   );
   TestValidator.equals(
-    "original customer email remains unchanged",
-    firstAuthorized.email,
-    email,
+    "original registration remains unchanged",
+    first,
+    firstSnapshot,
   );
-  TestValidator.predicate(
-    "original authorization token exists",
-    firstAuthorized.token.access.length > 0 &&
-      firstAuthorized.token.refresh.length > 0,
-  );
+  TestValidator.equals("original email preserved", first.email, email);
 }

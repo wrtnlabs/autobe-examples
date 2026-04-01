@@ -20,7 +20,11 @@ export namespace ShoppingMallSnapshotPartyCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      snapshot: { connect: { id: props.snapshot.id } },
+      snapshot: {
+        connect: {
+          id: props.snapshot.id,
+        },
+      },
     } satisfies Prisma.shopping_mall_snapshot_partiesCreateInput;
   }
 }

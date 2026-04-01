@@ -21,125 +21,111 @@ export async function putErpHrmTimeTrackingMemberProjectsProjectIdTasksTaskId(pr
   taskId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingTask.IUpdate;
 }): Promise<IErpHrmTimeTrackingTask> {
-  const project =
-    await MyGlobal.prisma.erp_hrm_time_tracking_projects.findUniqueOrThrow({
-      where: { id: props.projectId },
-      select: {
-        id: true,
-        erp_hrm_time_tracking_organization_id: true,
-        status: true,
-      },
-    });
-  const task =
-    await MyGlobal.prisma.erp_hrm_time_tracking_tasks.findUniqueOrThrow({
-      where: { id: props.taskId },
-      select: {
-        id: true,
-        erp_hrm_time_tracking_project_id: true,
-        parent_task_id: true,
-        assigned_employee_id: true,
-        deleted_at: true,
-        title: true,
-        description: true,
-        status: true,
-        priority: true,
-        estimated_hours: true,
-        due_date: true,
-        updated_at: true,
-        created_at: true,
-      },
-    });
-  if (task.deleted_at !== null) {
-    throw new HttpException("Task is deleted", 404);
-  }
-  if (task.erp_hrm_time_tracking_project_id !== props.projectId) {
-    throw new HttpException("Invalid task target", 404);
-  }
   const callerMembership =
     await MyGlobal.prisma.erp_hrm_time_tracking_project_memberships.findFirst({
       where: {
-        deleted_at: null,
         project_id: props.projectId,
         employee_id: props.member.id,
+        deleted_at: null,
       },
-      select: { membership_role: true },
+      select: { id: true, membership_role: true },
     });
-  if (!callerMembership) {
+  if (callerMembership === null) {
     throw new HttpException("Forbidden", 403);
   }
-  if (callerMembership.membership_role !== "project-lead") {
+  const canEdit = callerMembership.membership_role === "project-lead";
+  if (!canEdit) {
     throw new HttpException("Forbidden", 403);
+  }
+  const task = await MyGlobal.prisma.erp_hrm_time_tracking_tasks.findFirst({
+    where: {
+      id: props.taskId,
+      erp_hrm_time_tracking_project_id: props.projectId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      erp_hrm_time_tracking_project_id: true,
+      parent_task_id: true,
+      assigned_employee_id: true,
+      title: true,
+      description: true,
+      status: true,
+      priority: true,
+      estimated_hours: true,
+      due_date: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
+  });
+  if (task === null) {
+    throw new HttpException("Not Found", 404);
   }
   if (props.body.parent_task_id !== undefined) {
     if (props.body.parent_task_id !== null) {
       const parent =
-        await MyGlobal.prisma.erp_hrm_time_tracking_tasks.findUniqueOrThrow({
-          where: { id: props.body.parent_task_id },
-          select: {
-            id: true,
-            erp_hrm_time_tracking_project_id: true,
-            parent_task_id: true,
-            deleted_at: true,
+        await MyGlobal.prisma.erp_hrm_time_tracking_tasks.findFirst({
+          where: {
+            id: props.body.parent_task_id,
+            erp_hrm_time_tracking_project_id: props.projectId,
+            deleted_at: null,
           },
+          select: { id: true },
         });
-      if (parent.deleted_at !== null) {
-        throw new HttpException("Invalid parent task", 400);
-      }
-      if (parent.erp_hrm_time_tracking_project_id !== props.projectId) {
-        throw new HttpException("Invalid parent task", 400);
-      }
-      if (parent.parent_task_id !== null) {
-        throw new HttpException("One-level nesting only", 400);
+      if (parent === null) {
+        throw new HttpException("Bad Request", 400);
       }
     }
   }
   if (props.body.assigned_employee_id !== undefined) {
     if (props.body.assigned_employee_id !== null) {
-      const membership =
+      const assigneeMembership =
         await MyGlobal.prisma.erp_hrm_time_tracking_project_memberships.findFirst(
           {
             where: {
-              deleted_at: null,
               project_id: props.projectId,
               employee_id: props.body.assigned_employee_id,
+              deleted_at: null,
             },
             select: { id: true },
           },
         );
-      if (!membership) {
-        throw new HttpException(
-          "Assignee must be an active project member",
-          400,
-        );
+      if (assigneeMembership === null) {
+        throw new HttpException("Bad Request", 400);
       }
     }
   }
-  await MyGlobal.prisma.erp_hrm_time_tracking_tasks.update({
-    where: { id: props.taskId },
-    data: {
-      updated_at: new Date(),
-      ...(props.body.title !== undefined && { title: props.body.title }),
-      ...(props.body.description !== undefined && {
-        description: props.body.description,
-      }),
-      ...(props.body.status !== undefined && { status: props.body.status }),
-      ...(props.body.priority !== undefined && {
-        priority: props.body.priority,
-      }),
-      ...(props.body.estimated_hours !== undefined && {
-        estimated_hours: props.body.estimated_hours,
-      }),
-      ...(props.body.due_date !== undefined && {
-        due_date:
-          props.body.due_date !== null ? new Date(props.body.due_date) : null,
-      }),
-      ...(props.body.parent_task_id !== undefined && {
-        parent_task_id: props.body.parent_task_id,
-      }),
-      ...(props.body.assigned_employee_id !== undefined && {
-        assigned_employee_id: props.body.assigned_employee_id,
-      }),
-    },
+  const updatedAt = toISOStringSafe(new Date());
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.erp_hrm_time_tracking_tasks.update({
+      where: {
+        id: props.taskId,
+      },
+      data: {
+        ...(props.body.title !== undefined && { title: props.body.title }),
+        ...(props.body.description !== undefined && {
+          description: props.body.description,
+        }),
+        ...(props.body.status !== undefined && { status: props.body.status }),
+        ...(props.body.priority !== undefined && {
+          priority: props.body.priority,
+        }),
+        ...(props.body.estimated_hours !== undefined && {
+          estimated_hours: props.body.estimated_hours,
+        }),
+        ...(props.body.due_date !== undefined && {
+          due_date: props.body.due_date,
+        }),
+        ...(props.body.parent_task_id !== undefined && {
+          parent_task_id: props.body.parent_task_id,
+        }),
+        ...(props.body.assigned_employee_id !== undefined && {
+          assigned_employee_id: props.body.assigned_employee_id,
+        }),
+        updated_at: updatedAt,
+      },
+    });
   });
   const updated =
     await MyGlobal.prisma.erp_hrm_time_tracking_tasks.findUniqueOrThrow({

@@ -1,0 +1,315 @@
+/// Temporary guest accounts identified by device fingerprint for anonymous
+/// browsing access.
+///
+/// Guest actors represent unauthenticated visitors who can browse content
+/// without registration. Each guest is identified by a unique device
+/// fingerprint, enabling session tracking and temporary access management.
+/// Guest accounts are ephemeral and do not have persistent credentials like
+/// email or password.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique device identifier for guest session tracking and access control.
+  device_fingerprint String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for guest account deactivation.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_community_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+}
+
+/// Temporary session tokens for guest access with expiration tracking. Each
+/// session belongs to exactly one guest and tracks browsing context
+/// including IP address, current page, and referrer for security and
+/// analytics purposes.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the guest account. {@link reddit_community_guests.id}.
+  reddit_community_guest_id String
+  
+  /// IP address of the guest session for security tracking.
+  ip String
+  
+  /// Current page URL the guest is viewing.
+  href String
+  
+  /// Referrer URL that brought the guest to the current page.
+  referrer String
+  
+  /// Timestamp when the session was created.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and becomes invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest reddit_community_guests @relation(fields: [reddit_community_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_guest_id, created_at], map: "reddit_community_guest_sessions_reddit_community_guest_5d5f834a")
+}
+
+/// Registered member accounts with email/password credentials and unique
+/// username for authentication.
+///
+/// This table stores the core identity and authentication data for members.
+/// Email serves as the primary login identifier and must be unique. Password
+/// is stored as a secure hash. Username is a user-chosen unique identifier
+/// for public display and mention purposes.
+///
+/// Profile information (display name, bio, avatar) is stored in {@link
+/// reddit_community_user_profiles} to separate authentication concerns from
+/// public profile data. Sessions are tracked in {@link
+/// reddit_community_member_sessions}. Password recovery uses {@link
+/// reddit_community_member_password_resets}. Email verification uses {@link
+/// reddit_community_member_email_verifications}.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Email address for login and account communication. Must be unique.
+  email String
+  
+  /// Bcrypt or argon2 hashed password for authentication.
+  password_hash String
+  
+  /// Unique username chosen by the member for public display and mentions.
+  username String
+  
+  /// Account creation timestamp.
+  created_at DateTime
+  
+  /// Last account update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means account is active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_community_member_sessions[]
+  passwordResets reddit_community_member_password_resets[]
+  emailVerifications reddit_community_member_email_verifications[]
+  ownedCommunities reddit_community_communities[]
+  subscriptions reddit_community_subscriptions[]
+  moderatedCommunities reddit_community_moderators[] @relation("reddit_community_moderators_of_member_id")
+  addedModerators reddit_community_moderators[] @relation("reddit_community_moderators_of_added_by_id")
+  communityBans reddit_community_bans[] @relation("reddit_community_bans_of_reddit_community_member_id")
+  issuedBans reddit_community_bans[] @relation("reddit_community_bans_of_banned_by_id")
+  posts reddit_community_posts[]
+  postSnapshots reddit_community_post_snapshots[]
+  comments reddit_community_comments[]
+  commentReports reddit_community_comment_reports[]
+  postVotes reddit_community_post_votes[]
+  commentVotes reddit_community_comment_votes[]
+  profile reddit_community_user_profiles?
+  karmaHistories reddit_community_user_karma_histories[] @relation("reddit_community_user_karma_histories_of_user_id")
+  votedKarmaHistories reddit_community_user_karma_histories[] @relation("reddit_community_user_karma_histories_of_voter_id")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+}
+
+/// JWT session tokens with access and refresh token support for member
+/// authentication. Tracks client session metadata including IP address,
+/// current page, and referrer for security auditing. Each session belongs to
+/// exactly one member and has an expiration timestamp for automatic session
+/// invalidation.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// JWT access token for API authentication.
+  access_token String
+  
+  /// JWT refresh token for obtaining new access tokens.
+  refresh_token String
+  
+  /// Client IP address at session creation.
+  ip String
+  
+  /// Current page URL at session creation.
+  href String
+  
+  /// Referring page URL at session creation.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp for automatic invalidation.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([refresh_token])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_member_sessions_reddit_community_memb_ebf18d50")
+}
+
+/// Password reset tokens with expiration for secure password recovery flow.
+///
+/// Tracks password reset requests initiated by members. Each token is
+/// single-use and expires after a configured time period. Used for audit
+/// trail of password recovery attempts and security monitoring.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member requesting password reset. {@link
+  /// reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Unique password reset token sent to member's email.
+  token String
+  
+  /// Token expiration timestamp after which reset is invalid.
+  expires_at DateTime
+  
+  /// Timestamp when token was used for password reset, null if unused.
+  used_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_member_password_resets_reddit_communi_3f73aed7")
+  @@index([expires_at])
+}
+
+/// Email verification tokens for new member registration confirmation.
+/// Stores unique verification codes sent to user email addresses during
+/// registration. Token is consumed when user clicks verification link,
+/// setting verified_at timestamp. Expired tokens prevent stale verification
+/// attempts.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Unique verification token sent to user email.
+  token String
+  
+  /// Token expiration timestamp for security.
+  expires_at DateTime
+  
+  /// Timestamp when email was verified (null if pending).
+  verified_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for record retention.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_member_email_verifications_reddit_com_09eb0a1e")
+  @@index([expires_at])
+}

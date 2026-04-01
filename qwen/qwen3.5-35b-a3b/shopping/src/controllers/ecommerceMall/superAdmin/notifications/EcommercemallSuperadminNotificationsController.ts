@@ -5,7 +5,7 @@ import typia, { tags } from "typia";
 import { IEcommerceMallNotification } from "../../../../api/structures/IEcommerceMallNotification";
 import { IPageIEcommerceMallNotification } from "../../../../api/structures/IPageIEcommerceMallNotification";
 import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
 import { deleteEcommerceMallSuperAdminNotificationsNotificationId } from "../../../../providers/deleteEcommerceMallSuperAdminNotificationsNotificationId";
 import { getEcommerceMallSuperAdminNotificationsNotificationId } from "../../../../providers/getEcommerceMallSuperAdminNotificationsNotificationId";
 import { patchEcommerceMallSuperAdminNotifications } from "../../../../providers/patchEcommerceMallSuperAdminNotifications";
@@ -62,7 +62,7 @@ export class EcommercemallSuperadminNotificationsController {
   @TypedRoute.Post()
   public async create(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IEcommerceMallNotification.ICreate,
   ): Promise<IEcommerceMallNotification> {
@@ -128,7 +128,7 @@ export class EcommercemallSuperadminNotificationsController {
   @TypedRoute.Patch()
   public async index(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IEcommerceMallNotification.IRequest,
   ): Promise<IPageIEcommerceMallNotification.ISummary> {
@@ -175,7 +175,7 @@ export class EcommercemallSuperadminNotificationsController {
   @TypedRoute.Get(":notificationId")
   public async at(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedParam("notificationId")
     notificationId: string & tags.Format<"uuid">,
   ): Promise<IEcommerceMallNotification> {
@@ -230,7 +230,7 @@ export class EcommercemallSuperadminNotificationsController {
   @TypedRoute.Put(":notificationId")
   public async update(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedParam("notificationId")
     notificationId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -289,7 +289,7 @@ export class EcommercemallSuperadminNotificationsController {
   @TypedRoute.Delete(":notificationId")
   public async erase(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedParam("notificationId")
     notificationId: string & tags.Format<"uuid">,
   ): Promise<void> {

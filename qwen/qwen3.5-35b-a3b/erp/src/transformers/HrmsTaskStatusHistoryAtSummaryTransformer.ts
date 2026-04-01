@@ -4,8 +4,10 @@ import { IHrmsTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsTask";
 import { IHrmsTaskStatusHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsTaskStatusHistory";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsMemberAtSummaryTransformer } from "./HrmsMemberAtSummaryTransformer";
 
@@ -26,6 +28,8 @@ export namespace HrmsTaskStatusHistoryAtSummaryTransformer {
         task: {
           select: {
             id: true,
+            hrms_project_id: true,
+            title: true,
           },
         } satisfies Prisma.hrms_tasksFindManyArgs,
       },
@@ -40,13 +44,16 @@ export namespace HrmsTaskStatusHistoryAtSummaryTransformer {
       new_status: input.new_status,
       member: await HrmsMemberAtSummaryTransformer.transform(input.member),
       task: {
-        project_id: input.task.id,
-        project_name: "",
-        task_count: 0,
+        project_id: input.task.hrms_project_id,
+        project_name: input.task.title,
+        task_count: 1,
       } satisfies IHrmsTask.ISummary,
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: toISOStringSafe(input.deleted_at ?? new Date()),
+      deleted_at:
+        input.deleted_at !== null && input.deleted_at !== undefined
+          ? toISOStringSafe(input.deleted_at)
+          : null,
     };
   }
 }

@@ -17,6 +17,7 @@ export async function getEcommerceMallCustomerNotificationsNotificationId(props:
   customer: CustomerPayload;
   notificationId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallNotification> {
+  // Query the notification ensuring it exists and is not soft-deleted
   const notification =
     await MyGlobal.prisma.ecommerce_mall_notifications.findUniqueOrThrow({
       where: {
@@ -25,23 +26,32 @@ export async function getEcommerceMallCustomerNotificationsNotificationId(props:
       },
       ...EcommerceMallNotificationTransformer.select(),
     });
-  const hasAccess =
+  // Verify customer has access to this notification
+  // Check if there's a reference in the customer notification reference table
+  const customerReference =
     await MyGlobal.prisma.ecommerce_mall_notification_of_customers.findFirst({
       where: {
-        ecommerce_mall_notification_id: notification.id,
-        ecommerce_mall_customer_id: props.customer.id,
+        notification: {
+          id: props.notificationId,
+        },
+        customer: {
+          id: props.customer.id,
+        },
       },
     });
-  if (hasAccess === null) {
-    const recipientCount =
-      await MyGlobal.prisma.ecommerce_mall_notification_recipients.count({
+  // If no direct reference, check the recipients junction table
+  if (!customerReference) {
+    const recipient =
+      await MyGlobal.prisma.ecommerce_mall_notification_recipients.findFirst({
         where: {
-          notification_id: notification.id,
-          recipient_type: "customer",
+          notification: {
+            id: props.notificationId,
+          },
           recipient_id: props.customer.id,
+          recipient_type: "customer",
         },
       });
-    if (recipientCount === 0) {
+    if (!recipient) {
       throw new HttpException("Notification not found", 404);
     }
   }

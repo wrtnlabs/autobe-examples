@@ -20,6 +20,16 @@ export async function getShoppingMallSellerSellerApprovalRequestsRequestIdSnapsh
   requestId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallSellerApprovalSnapshot> {
+  // Validate that the requesting seller has administrator privileges
+  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+    where: {
+      id: props.seller.id,
+    },
+  });
+  if (admin === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Query the snapshot with transformer's select to get nested sellerApprovalRequest
   const snapshot =
     await MyGlobal.prisma.shopping_mall_seller_approval_snapshots.findUniqueOrThrow(
       {
@@ -30,6 +40,7 @@ export async function getShoppingMallSellerSellerApprovalRequestsRequestIdSnapsh
         ...ShoppingMallSellerApprovalSnapshotTransformer.select(),
       },
     );
+  // Transform and return the snapshot
   return await ShoppingMallSellerApprovalSnapshotTransformer.transform(
     snapshot,
   );

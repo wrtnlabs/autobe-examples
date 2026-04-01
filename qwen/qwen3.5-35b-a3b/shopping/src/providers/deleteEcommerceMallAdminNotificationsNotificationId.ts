@@ -16,10 +16,12 @@ export async function deleteEcommerceMallAdminNotificationsNotificationId(props:
   notificationId: string & tags.Format<"uuid">;
 }): Promise<void> {
   const notification =
-    await MyGlobal.prisma.ecommerce_mall_notifications.findUniqueOrThrow({
+    await MyGlobal.prisma.ecommerce_mall_notifications.findUnique({
       where: { id: props.notificationId },
-      select: { id: true, deleted_at: true },
     });
+  if (notification === null) {
+    throw new HttpException("Notification not found", 404);
+  }
   if (notification.deleted_at !== null) {
     throw new HttpException("Notification already deleted", 409);
   }

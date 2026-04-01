@@ -9,35 +9,31 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeVoteTransformer } from "../transformers/RedditLikeVoteTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getRedditLikeMemberCommentsCommentIdMyVote(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   commentId: string & tags.Format<"uuid">;
-}): Promise<IRedditLikeVote> {
+}): Promise<IRedditLikeVote | null> {
   // Verify comment exists
   await MyGlobal.prisma.reddit_like_comments.findUniqueOrThrow({
     where: { id: props.commentId },
   });
-  // Query vote through reddit_like_comment_votes join table
-  const commentVote = await MyGlobal.prisma.reddit_like_comment_votes.findFirst(
-    {
-      where: {
+  // Find the member's vote on this comment through the polymorphic relationship
+  const vote = await MyGlobal.prisma.reddit_like_votes.findFirst({
+    where: {
+      member_id: props.member.id,
+      commentVote: {
         comment_id: props.commentId,
-        vote: {
-          member_id: props.member.id,
-        },
-      },
-      select: {
-        vote: RedditLikeVoteTransformer.select(),
       },
     },
-  );
-  if (commentVote === null) {
-    throw new HttpException("Vote not found", 404);
+    ...RedditLikeVoteTransformer.select(),
+  });
+  if (vote === null) {
+    return null;
   }
-  return await RedditLikeVoteTransformer.transform(commentVote.vote);
+  return await RedditLikeVoteTransformer.transform(vote);
 }

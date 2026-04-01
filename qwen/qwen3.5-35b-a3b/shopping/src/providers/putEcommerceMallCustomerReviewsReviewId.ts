@@ -23,7 +23,7 @@ export async function putEcommerceMallCustomerReviewsReviewId(props: {
   reviewId: string & tags.Format<"uuid">;
   body: IEcommerceMallReview.IUpdate;
 }): Promise<IEcommerceMallReview> {
-  // Step 1: Fetch review with customer_id for ownership verification
+  // Fetch review by ID
   const review = await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow(
     {
       where: { id: props.reviewId },
@@ -42,15 +42,15 @@ export async function putEcommerceMallCustomerReviewsReviewId(props: {
       },
     },
   );
-  // Step 2: Verify customer owns the review
+  // Verify ownership
   if (review.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Step 3: Check review is not soft-deleted
+  // Check if review is soft-deleted
   if (review.deleted_at !== null) {
-    throw new HttpException("Cannot update deleted review", 400);
+    throw new HttpException("Review is already deleted", 400);
   }
-  // Step 4: Validate rating if provided
+  // Validate rating if provided
   if (props.body.rating !== undefined) {
     if (
       !Number.isInteger(props.body.rating) ||
@@ -60,7 +60,8 @@ export async function putEcommerceMallCustomerReviewsReviewId(props: {
       throw new HttpException("Rating must be an integer between 1 and 5", 400);
     }
   }
-  // Step 5: Create snapshot before update
+  // Create snapshot before update
+  const snapshotId = v4();
   const oldData = {
     id: review.id,
     customer_id: review.customer_id,
@@ -73,43 +74,60 @@ export async function putEcommerceMallCustomerReviewsReviewId(props: {
     created_at: toISOStringSafe(review.created_at),
     updated_at: toISOStringSafe(review.updated_at),
     deleted_at:
-      review.deleted_at === null ? null : toISOStringSafe(review.deleted_at),
+      review.deleted_at !== null ? toISOStringSafe(review.deleted_at) : null,
   };
+  // Build new_data with updated values
   const newData = {
-    ...oldData,
+    id: review.id,
+    customer_id: review.customer_id,
+    product_id: review.product_id,
+    order_id: review.order_id,
     rating: props.body.rating ?? review.rating,
     title: props.body.title ?? review.title,
     body: props.body.body ?? review.body,
+    is_verified_purchase: review.is_verified_purchase,
+    created_at: toISOStringSafe(review.created_at),
+    updated_at: toISOStringSafe(new Date()),
+    deleted_at:
+      review.deleted_at !== null ? toISOStringSafe(review.deleted_at) : null,
   };
   await MyGlobal.prisma.ecommerce_mall_review_snapshots.create({
     data: {
-      id: v4(),
+      id: snapshotId,
+      ecommerce_mall_review_id: review.id,
+      customer_id: props.customer.id,
+      changed_by_type: "customer",
+      changed_by_id: props.customer.id,
       snapshot_type: "modified",
       old_data: JSON.stringify(oldData),
       new_data: JSON.stringify(newData),
-      changed_by_type: "customer",
-      changed_by_id: props.customer.id,
       created_at: new Date(),
-      review: { connect: { id: props.reviewId } },
-      customer: { connect: { id: props.customer.id } },
     },
   });
-  // Step 6: Execute update with conditional fields
+  // Build update data with only provided fields
+  const updateData: Prisma.ecommerce_mall_reviewsUpdateInput = {
+    updated_at: new Date(),
+  };
+  if (props.body.rating !== undefined) {
+    updateData.rating = props.body.rating;
+  }
+  if (props.body.title !== undefined) {
+    updateData.title = props.body.title ?? null;
+  }
+  if (props.body.body !== undefined) {
+    updateData.body = props.body.body;
+  }
+  // Execute update
   await MyGlobal.prisma.ecommerce_mall_reviews.update({
     where: { id: props.reviewId },
-    data: {
-      ...(props.body.rating !== undefined && { rating: props.body.rating }),
-      ...(props.body.title !== undefined && { title: props.body.title }),
-      ...(props.body.body !== undefined && { body: props.body.body }),
-      updated_at: new Date(),
-    },
+    data: updateData,
   });
-  // Step 7: Query updated review with relations
-  const updated =
+  // Fetch updated review with full data
+  const updatedReview =
     await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow({
       where: { id: props.reviewId },
       ...EcommerceMallReviewTransformer.select(),
     });
-  // Step 8: Transform and return
-  return await EcommerceMallReviewTransformer.transform(updated);
+  // Transform and return
+  return await EcommerceMallReviewTransformer.transform(updatedReview);
 }

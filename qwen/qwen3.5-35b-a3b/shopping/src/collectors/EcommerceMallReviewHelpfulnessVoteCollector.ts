@@ -12,7 +12,6 @@ export namespace EcommerceMallReviewHelpfulnessVoteCollector {
     body: IEcommerceMallReviewHelpfulnessVote.ICreate;
     ecommerceMallReviews: IEntity; // from path parameter reviewId
     ecommerceMallCustomers: IEntity; // from authorized actor
-    ecommerceMallCustomerSessions: IEntity; // from authorized session
   }) {
     const id: string = v4();
     return {

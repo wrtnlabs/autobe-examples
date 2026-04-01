@@ -1,10 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallProductSnapshot";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -23,76 +22,50 @@ export async function patchShoppingMallSellerProductsProductIdSnapshots(props: {
   productId: string & tags.Format<"uuid">;
   body: IShoppingMallProductSnapshot.IRequest;
 }): Promise<IPageIShoppingMallProductSnapshot.ISummary> {
-  await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
-    where: {
-      id: props.productId,
-      shopping_seller_id: props.seller.id,
-      deleted_at: null,
-    },
-  });
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
+    where: {
+      id: props.productId,
+      seller_id: props.seller.id,
+      deleted_at: null,
+    },
+  });
   const whereInput = {
     shopping_mall_product_id: props.productId,
-    ...(props.body.snapshotAtFrom && {
-      snapshot_at: {
-        gte: new Date(props.body.snapshotAtFrom),
-      },
-    }),
-    ...(props.body.snapshotAtTo && {
-      snapshot_at: {
-        lte: new Date(props.body.snapshotAtTo),
-      },
-    }),
-    ...(props.body.name && {
-      name: {
-        contains: props.body.name,
-      },
-    }),
+    ...(props.body.created_at_from || props.body.created_at_to
+      ? {
+          created_at: {
+            ...(props.body.created_at_from && {
+              gte: props.body.created_at_from,
+            }),
+            ...(props.body.created_at_to && { lte: props.body.created_at_to }),
+          },
+        }
+      : {}),
   } satisfies Prisma.shopping_mall_product_snapshotsWhereInput;
-  const orderByInput = (() => {
-    if (!props.body.sort) {
-      return { snapshot_at: "desc" as const };
-    }
-    const [field, direction] = props.body.sort.split(",");
-    if (field === "snapshot_at") {
-      return {
-        snapshot_at: direction === "asc" ? ("asc" as const) : ("desc" as const),
-      };
-    }
-    if (field === "created_at") {
-      return {
-        created_at: direction === "asc" ? ("asc" as const) : ("desc" as const),
-      };
-    }
-    if (field === "name") {
-      return {
-        name: direction === "asc" ? ("asc" as const) : ("desc" as const),
-      };
-    }
-    return { snapshot_at: "desc" as const };
-  })() satisfies Prisma.shopping_mall_product_snapshotsOrderByWithRelationInput;
   const data = await MyGlobal.prisma.shopping_mall_product_snapshots.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
+    orderBy: { created_at: "desc" },
     ...ShoppingMallProductSnapshotAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.shopping_mall_product_snapshots.count({
     where: whereInput,
   });
   return {
+    data: await Promise.all(
+      data.map((item) =>
+        ShoppingMallProductSnapshotAtSummaryTransformer.transform(item),
+      ),
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallProductSnapshotAtSummaryTransformer.transform,
-    ),
   };
 }

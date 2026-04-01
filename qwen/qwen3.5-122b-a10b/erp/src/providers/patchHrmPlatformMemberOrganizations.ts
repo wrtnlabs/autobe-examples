@@ -18,15 +18,10 @@ export async function patchHrmPlatformMemberOrganizations(props: {
   member: MemberPayload;
   body: IHrmPlatformOrganization.IRequest;
 }): Promise<IPageIHrmPlatformOrganization.ISummary> {
-  // Extract pagination parameters with defaults
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Extract sorting parameters with defaults
-  const sortBy = props.body.sort_by ?? "created_at";
-  const sortOrder = props.body.sort_order ?? "asc";
-  // Build where clause: organizations where member has employee record
-  const whereInput = {
+  const whereInput: Prisma.hrm_platform_organizationsWhereInput = {
     deleted_at: null,
     employees: {
       some: {
@@ -41,63 +36,54 @@ export async function patchHrmPlatformMemberOrganizations(props: {
       },
     }),
   } satisfies Prisma.hrm_platform_organizationsWhereInput;
-  // Build orderBy clause
-  const orderByInput = {
-    [sortBy]: sortOrder,
-  } satisfies Prisma.hrm_platform_organizationsOrderByWithRelationInput;
-  // Fetch paginated organizations
-  const organizations =
-    await MyGlobal.prisma.hrm_platform_organizations.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        logo_url: true,
-        currency: true,
-        timezone: true,
-        fiscal_start_month: true,
-        created_at: true,
-        updated_at: true,
-      } satisfies Prisma.hrm_platform_organizationsSelect,
-    });
-  // Count total for pagination metadata
+  const orderByInput: Prisma.hrm_platform_organizationsOrderByWithRelationInput =
+    props.body.sort_by === "name"
+      ? { name: props.body.sort_order ?? "asc" }
+      : props.body.sort_by === "timezone"
+        ? { timezone: props.body.sort_order ?? "asc" }
+        : { created_at: props.body.sort_order ?? "desc" };
+  const data = await MyGlobal.prisma.hrm_platform_organizations.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: orderByInput,
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      logo_url: true,
+      currency: true,
+      timezone: true,
+      fiscal_start_month: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
+  });
   const total = await MyGlobal.prisma.hrm_platform_organizations.count({
     where: whereInput,
   });
-  // Transform to ISummary format with proper date conversion
-  const data = organizations.map(
-    (org) =>
-      ({
-        id: org.id as string & tags.Format<"uuid">,
-        name: org.name,
-        description: org.description ?? null,
-        logo_url: org.logo_url as
-          | (string & tags.Format<"url">)
-          | null
-          | undefined,
-        currency: org.currency,
-        timezone: org.timezone,
-        fiscal_start_month: org.fiscal_start_month as number &
-          tags.Type<"int32"> &
-          tags.Minimum<1> &
-          tags.Maximum<12>,
-        created_at: toISOStringSafe(org.created_at) as string &
-          tags.Format<"date-time">,
-        updated_at: toISOStringSafe(org.updated_at) as string &
-          tags.Format<"date-time">,
-      }) satisfies IHrmPlatformOrganization.ISummary,
-  );
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      async (org) =>
+        ({
+          id: org.id,
+          name: org.name,
+          description: org.description ?? undefined,
+          logo_url: org.logo_url ?? undefined,
+          currency: org.currency,
+          timezone: org.timezone,
+          fiscal_start_month: org.fiscal_start_month,
+          created_at: toISOStringSafe(org.created_at),
+          updated_at: toISOStringSafe(org.updated_at),
+        }) satisfies IHrmPlatformOrganization.ISummary,
+    ),
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data,
   } satisfies IPageIHrmPlatformOrganization.ISummary;
 }

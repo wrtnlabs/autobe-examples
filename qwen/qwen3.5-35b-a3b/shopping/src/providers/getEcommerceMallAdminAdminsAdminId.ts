@@ -17,9 +17,9 @@ export async function getEcommerceMallAdminAdminsAdminId(props: {
   admin: AdminPayload;
   adminId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallAdmin> {
-  const result = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
+  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
     where: { id: props.adminId },
     ...EcommerceMallAdminTransformer.select(),
   });
-  return await EcommerceMallAdminTransformer.transform(result);
+  return await EcommerceMallAdminTransformer.transform(admin);
 }

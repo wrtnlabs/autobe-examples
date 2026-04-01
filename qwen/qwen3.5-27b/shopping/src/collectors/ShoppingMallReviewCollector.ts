@@ -12,9 +12,8 @@ export namespace ShoppingMallReviewCollector {
     body: IShoppingMallReview.ICreate;
     shoppingMallCustomers: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       rating: props.body.rating,
       content: props.body.content ?? null,
       created_at: new Date(),

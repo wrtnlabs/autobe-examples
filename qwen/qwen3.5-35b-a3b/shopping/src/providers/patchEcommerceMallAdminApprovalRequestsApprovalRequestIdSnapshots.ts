@@ -20,13 +20,16 @@ export async function patchEcommerceMallAdminApprovalRequestsApprovalRequestIdSn
   approvalRequestId: string & tags.Format<"uuid">;
   body: IEcommerceMallSellerApprovalSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallSellerApprovalSnapshot.ISummary> {
-  // Validate approvalRequestId exists in ecommerce_mall_seller_approval_requests
-  await MyGlobal.prisma.ecommerce_mall_seller_approval_requests.findUniqueOrThrow(
+  // Validate approval request exists
+  await MyGlobal.prisma.ecommerce_mall_seller_approval_requests.findFirstOrThrow(
     {
-      where: { id: props.approvalRequestId },
+      where: {
+        id: props.approvalRequestId,
+        deleted_at: null,
+      },
     },
   );
-  // Build search filters from request body
+  // Build where clause for filters
   const whereInput: Prisma.ecommerce_mall_seller_approval_snapshotsWhereInput =
     {
       ecommerce_mall_seller_approval_request_id: props.approvalRequestId,
@@ -39,35 +42,38 @@ export async function patchEcommerceMallAdminApprovalRequestsApprovalRequestIdSn
       ...(props.body.actor_type !== undefined && {
         actor_type: props.body.actor_type,
       }),
-      ...(props.body.rejection_reason_exists !== undefined && {
-        rejection_reason: props.body.rejection_reason_exists
-          ? { not: null }
-          : { equals: null },
-      }),
+      ...(props.body.rejection_reason_exists !== undefined
+        ? {
+            rejection_reason: props.body.rejection_reason_exists
+              ? { not: null }
+              : null,
+          }
+        : {}),
       ...(props.body.start_time !== undefined && {
-        created_at: {
-          gte: new Date(props.body.start_time),
-        },
+        created_at: { gte: new Date(props.body.start_time) },
       }),
       ...(props.body.end_time !== undefined && {
-        created_at: {
-          lte: new Date(props.body.end_time),
-        },
+        created_at: { lte: new Date(props.body.end_time) },
       }),
-    } satisfies Prisma.ecommerce_mall_seller_approval_snapshotsWhereInput;
-  // Build sort input from request body
-  const orderByInput = (
-    props.body.sort_by === "from_status"
-      ? [{ from_status: props.body.sort === "asc" ? "asc" : "desc" }]
-      : props.body.sort_by === "to_status"
-        ? [{ to_status: props.body.sort === "asc" ? "asc" : "desc" }]
-        : [{ created_at: props.body.sort === "asc" ? "asc" : "desc" }]
-  ) satisfies Prisma.ecommerce_mall_seller_approval_snapshotsOrderByWithRelationInput[];
-  // Calculate pagination
+    };
+  // Build orderBy input
+  const orderByInput: Prisma.ecommerce_mall_seller_approval_snapshotsOrderByWithRelationInput[] =
+    props.body.sort === "asc"
+      ? props.body.sort_by === "from_status"
+        ? [{ from_status: "asc" as const }]
+        : props.body.sort_by === "to_status"
+          ? [{ to_status: "asc" as const }]
+          : [{ created_at: "asc" as const }]
+      : props.body.sort_by === "from_status"
+        ? [{ from_status: "desc" as const }]
+        : props.body.sort_by === "to_status"
+          ? [{ to_status: "desc" as const }]
+          : [{ created_at: "desc" as const }];
+  // Pagination
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = Math.min(props.body.limit ?? 100, 100);
   const skip = (page - 1) * limit;
-  // Fetch paginated data with transformer select
+  // Query snapshots
   const data =
     await MyGlobal.prisma.ecommerce_mall_seller_approval_snapshots.findMany({
       where: whereInput,
@@ -76,12 +82,11 @@ export async function patchEcommerceMallAdminApprovalRequestsApprovalRequestIdSn
       take: limit,
       ...EcommerceMallSellerApprovalSnapshotAtSummaryTransformer.select(),
     });
-  // Fetch total count for pagination metadata
+  // Count total
   const total =
     await MyGlobal.prisma.ecommerce_mall_seller_approval_snapshots.count({
       where: whereInput,
     });
-  // Transform data and return paginated response
   return {
     data: await ArrayUtil.asyncMap(
       data,
@@ -89,9 +94,9 @@ export async function patchEcommerceMallAdminApprovalRequestsApprovalRequestIdSn
     ),
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

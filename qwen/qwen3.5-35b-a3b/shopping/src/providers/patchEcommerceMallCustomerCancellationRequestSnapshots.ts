@@ -22,67 +22,44 @@ export async function patchEcommerceMallCustomerCancellationRequestSnapshots(pro
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Get customer's cancellation request IDs for data isolation
-  const customerCancellationRequests =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findMany({
-      where: {
-        customer_id: props.customer.id,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
-  const cancellationRequestIds = customerCancellationRequests.map(
-    (cr) => cr.id,
-  );
-  // Build WHERE clause for snapshot filtering
-  const whereInput: Prisma.ecommerce_mall_cancellation_request_snapshotsWhereInput =
+  const where: Prisma.ecommerce_mall_cancellation_request_snapshotsWhereInput =
     {
-      // Date range filters
-      ...(props.body.created_at_from && {
-        created_at: {
-          gte: new Date(props.body.created_at_from),
-        },
-      }),
-      ...(props.body.created_at_to && {
-        created_at: {
-          lte: new Date(props.body.created_at_to),
-        },
-      }),
-      // Exact match filters
-      ...(props.body.actor_type !== undefined && {
-        actor_type: props.body.actor_type,
-      }),
-      ...(props.body.status_before !== undefined && {
-        status_before: props.body.status_before,
-      }),
-      ...(props.body.status_after !== undefined && {
-        status_after: props.body.status_after,
-      }),
-      ...(props.body.action !== undefined && { action: props.body.action }),
       ...(props.body.cancellation_request_id && {
         cancellation_request_id: props.body.cancellation_request_id,
       }),
-      // Customer isolation - only snapshots for customer's own cancellation requests
-      cancellation_request_id: {
-        in: cancellationRequestIds,
+      ...(props.body.actor_type && {
+        actor_type: props.body.actor_type,
+      }),
+      ...(props.body.status_before && {
+        status_before: props.body.status_before,
+      }),
+      ...(props.body.status_after && {
+        status_after: props.body.status_after,
+      }),
+      ...(props.body.action && {
+        action: props.body.action,
+      }),
+      created_at: {
+        ...(props.body.created_at_from && {
+          gte: new Date(props.body.created_at_from),
+        }),
+        ...(props.body.created_at_to && {
+          lte: new Date(props.body.created_at_to),
+        }),
       },
-    } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsWhereInput;
-  // Query paginated snapshots with transformer select
-  const data =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findMany(
-      {
-        where: whereInput,
-        skip,
-        take: limit,
-        orderBy: { created_at: "desc" },
-        ...EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.select(),
-      },
-    );
-  // Count total records for pagination metadata
-  const total =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.count({
-      where: whereInput,
-    });
+    };
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { created_at: "desc" },
+      ...EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.count({
+      where,
+    }),
+  ]);
   return {
     data: await ArrayUtil.asyncMap(
       data,
@@ -94,5 +71,5 @@ export async function patchEcommerceMallCustomerCancellationRequestSnapshots(pro
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIEcommerceMallCancellationRequestSnapshot.ISummary;
 }

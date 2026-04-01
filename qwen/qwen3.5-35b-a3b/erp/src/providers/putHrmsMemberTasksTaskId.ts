@@ -17,110 +17,47 @@ export async function putHrmsMemberTasksTaskId(props: {
   taskId: string & tags.Format<"uuid">;
   body: IHrmsTask.IUpdate;
 }): Promise<IHrmsTask> {
-  // Fetch task with project info to validate permissions
+  // 1. Validate task exists and is not soft-deleted
   const task = await MyGlobal.prisma.hrms_tasks.findUniqueOrThrow({
-    where: { id: props.taskId },
-    select: {
-      id: true,
-      hrms_project_id: true,
-      title: true,
-      description: true,
-      status: true,
-      priority: true,
-      estimated_hours: true,
-      due_date: true,
-      billable: true,
-      hrms_employee_id: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
+    where: {
+      id: props.taskId,
+      deleted_at: null,
+    },
+    include: {
       project: {
+        include: {
+          organization: {
+            select: {
+              id: true,
+              owner_id: true,
+            },
+          },
+        },
+      },
+      assignedEmployee: {
         select: {
           id: true,
-          hrms_organization_id: true,
+          organization_member_id: true,
         },
       },
     },
   });
-  if (task.deleted_at !== null) {
-    throw new HttpException("Task not found", 404);
-  }
-  // Fetch project to validate user permissions
-  const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
-    where: { id: task.hrms_project_id },
-    select: {
-      id: true,
-      hrms_organization_id: true,
-    },
-  });
-  // Get member's employee record to check project membership
-  const employee = await MyGlobal.prisma.hrms_employees.findFirst({
-    where: {
-      organization_member_id: { equals: props.member.id },
-    },
-  });
-  if (employee === null) {
-    throw new HttpException("Member is not an employee", 404);
-  }
-  // Check if user is project lead
-  const projectMembership =
+  // 2. Check if member has project:manage permission or is project lead
+  const memberProjectRole =
     await MyGlobal.prisma.hrms_project_members.findFirst({
       where: {
-        employee_id: employee.id,
-        project_id: project.id,
-        status: "active",
+        project_id: task.hrms_project_id,
+        employee_id: task.assignedEmployee?.id,
+        deleted_at: null,
       },
     });
-  const isProjectLead = projectMembership?.role === "project-lead";
-  // User must be project lead to update tasks in project
-  // In production, also check for organization-level project:manage permission
-  if (!isProjectLead) {
+  // Check if member is project owner or is a project lead
+  const isProjectOwner = task.project.organization.owner_id === props.member.id;
+  const isProjectLead = memberProjectRole?.status === "active";
+  if (!isProjectOwner && !isProjectLead) {
     throw new HttpException("Forbidden", 403);
   }
-  // Validate assigned employee if provided
-  if (
-    props.body.hrms_employee_id !== undefined &&
-    props.body.hrms_employee_id !== null
-  ) {
-    const targetEmployee = await MyGlobal.prisma.hrms_employees.findUnique({
-      where: { id: props.body.hrms_employee_id },
-    });
-    if (targetEmployee === null) {
-      throw new HttpException("Employee not found", 404);
-    }
-    const targetEmployeeMembership =
-      await MyGlobal.prisma.hrms_project_members.findFirst({
-        where: {
-          employee_id: targetEmployee.id,
-          project_id: project.id,
-          status: "active",
-        },
-      });
-    if (targetEmployeeMembership === null) {
-      throw new HttpException("Employee must be a project member", 400);
-    }
-  }
-  // Validate status
-  const validStatuses = ["open", "in-progress", "completed", "closed"] as const;
-  if (props.body.status !== undefined && props.body.status !== null) {
-    const isStatusValid = validStatuses.some((s) => props.body.status === s);
-    if (!isStatusValid) {
-      throw new HttpException("Invalid status", 400);
-    }
-  }
-  // Validate priority
-  const validPriorities = ["low", "medium", "high", "urgent"] as const;
-  if (props.body.priority !== undefined && props.body.priority !== null) {
-    const isPriorityValid = validPriorities.some(
-      (p) => props.body.priority === p,
-    );
-    if (!isPriorityValid) {
-      throw new HttpException("Invalid priority", 400);
-    }
-  }
-  // Capture old status for history if changing
-  const oldStatus = task.status;
-  // Update task
+  // 3. Update task
   await MyGlobal.prisma.hrms_tasks.update({
     where: { id: props.taskId },
     data: {
@@ -135,29 +72,23 @@ export async function putHrmsMemberTasksTaskId(props: {
         estimated_hours: props.body.estimated_hours,
       }),
       ...(props.body.due_date !== undefined && {
-        due_date: props.body.due_date,
+        due_date: props.body.due_date ? new Date(props.body.due_date) : null,
       }),
       ...(props.body.billable !== undefined && {
         billable: props.body.billable,
       }),
-      ...(props.body.hrms_employee_id !== undefined && {
-        hrms_employee_id: props.body.hrms_employee_id,
-      }),
+      hrms_employee_id: props.body.hrms_employee_id ?? null,
       updated_at: new Date(),
     },
   });
-  // Insert status history if status changed
-  if (
-    props.body.status !== undefined &&
-    props.body.status !== null &&
-    props.body.status !== oldStatus
-  ) {
+  // 4. If status changed, create history record
+  if (props.body.status !== undefined && props.body.status !== task.status) {
     await MyGlobal.prisma.hrms_task_status_histories.create({
       data: {
         id: v4(),
         hrms_task_id: props.taskId,
         hrms_member_id: props.member.id,
-        old_status: oldStatus,
+        old_status: task.status,
         new_status: props.body.status,
         created_at: new Date(),
         updated_at: new Date(),
@@ -165,30 +96,66 @@ export async function putHrmsMemberTasksTaskId(props: {
       },
     });
   }
-  // Fetch updated task
-  const updatedTask = await MyGlobal.prisma.hrms_tasks.findUniqueOrThrow({
-    where: { id: props.taskId },
-    select: {
-      id: true,
-      hrms_project_id: true,
-      title: true,
-      description: true,
-      status: true,
-      priority: true,
-      estimated_hours: true,
-      due_date: true,
-      billable: true,
-      hrms_employee_id: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
+  // 5. Fetch project analytics data for response
+  const organizationId = task.project.organization.id;
+  // Get analytics for all projects
+  const analyticsData = await MyGlobal.prisma.hrms_tasks.groupBy({
+    by: ["hrms_project_id"],
+    where: { hrms_project_id: task.hrms_project_id },
+    _count: { id: true },
+  });
+  const analytics = await ArrayUtil.asyncMap(analyticsData, async (item) => {
+    const project = await MyGlobal.prisma.hrms_projects.findUnique({
+      where: { id: item.hrms_project_id },
+      select: { name: true },
+    });
+    if (!project) {
+      return null;
+    }
+    return {
+      project_id: item.hrms_project_id,
+      project_name: project.name,
+      task_count: item._count?.id ?? 0,
+    } satisfies IHrmsTask.ISummary;
+  });
+  const validAnalytics = analytics.filter(
+    (a): a is IHrmsTask.ISummary => a !== null,
+  );
+  // Get total projects count
+  const totalProjects = await MyGlobal.prisma.hrms_projects.count({
+    where: {
+      hrms_organization_id: organizationId,
+      deleted_at: null,
     },
   });
-  // Build response object with task analytics
+  // Get total budget hours
+  const budgetHoursResult = await MyGlobal.prisma.hrms_projects.aggregate({
+    where: {
+      hrms_organization_id: organizationId,
+      deleted_at: null,
+    },
+    _sum: { budget_hours: true },
+  });
+  const totalBudgetHours = budgetHoursResult._sum.budget_hours ?? null;
+  // Get total logged hours
+  const loggedHoursResult = await MyGlobal.prisma.hrms_timelogs.aggregate({
+    where: {
+      project: {
+        hrms_organization_id: organizationId,
+        deleted_at: null,
+      },
+    },
+    _sum: { duration_minutes: true },
+  });
+  // Convert duration (minutes) to hours
+  const totalLoggedHours = loggedHoursResult._sum?.duration_minutes
+    ? Math.round((loggedHoursResult._sum.duration_minutes / 60) * 100) / 100
+    : null;
+  // 6. Return IHrmsTask analytics response
   return {
-    analytics: [],
-    total_projects: 0,
-    total_budget_hours: null,
-    total_logged_hours: null,
+    analytics: validAnalytics,
+    total_projects: totalProjects,
+    total_budget_hours: totalBudgetHours,
+    total_logged_hours: totalLoggedHours,
   } satisfies IHrmsTask;
 }

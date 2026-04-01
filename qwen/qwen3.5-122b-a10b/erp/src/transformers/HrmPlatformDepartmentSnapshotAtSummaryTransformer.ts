@@ -23,12 +23,12 @@ export namespace HrmPlatformDepartmentSnapshotAtSummaryTransformer {
           select: {
             id: true,
           },
-        } satisfies Prisma.hrm_platform_departmentsFindManyArgs,
+        },
         parentDepartment: {
           select: {
             id: true,
           },
-        } satisfies Prisma.hrm_platform_departmentsFindManyArgs,
+        },
       },
     } satisfies Prisma.hrm_platform_department_snapshotsFindManyArgs;
   }
@@ -40,7 +40,7 @@ export namespace HrmPlatformDepartmentSnapshotAtSummaryTransformer {
       hrm_platform_department_id: input.department.id,
       parent_department_id: input.parentDepartment?.id ?? null,
       name: input.name,
-      description: input.description,
+      description: input.description ?? null,
       created_at: input.created_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
     };

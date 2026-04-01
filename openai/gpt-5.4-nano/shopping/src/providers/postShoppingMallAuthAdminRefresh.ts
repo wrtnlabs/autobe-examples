@@ -15,36 +15,47 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallAuthAdminRefresh(props: {
   body: IShoppingMallAdmin.IRefresh;
 }): Promise<IShoppingMallAdmin.IAuthorized> {
-  const { refreshToken } = props.body;
-  let decoded: {
-    type: "admin";
-    id: string;
-    session_id: string;
-  };
+  const nowIso = typia.assert<string & tags.Format<"date-time">>(
+    toISOStringSafe(new Date()),
+  );
+  let decoded: any;
   try {
-    decoded = jwt.verify(refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as any;
+    });
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  if (decoded.type !== "admin") throw new HttpException("Forbidden", 403);
-  const nowIso = toISOStringSafe(new Date());
-  await MyGlobal.prisma.shopping_mall_admin_sessions.findFirstOrThrow({
+  if (typeof decoded !== "object" || decoded === null) {
+    throw new HttpException("Invalid refresh token", 401);
+  }
+  const payload = decoded as {
+    type?: unknown;
+    id?: unknown;
+    session_id?: unknown;
+  };
+  if (payload.type !== "admin") {
+    throw new HttpException("Invalid token type", 403);
+  }
+  if (
+    typeof payload.id !== "string" ||
+    typeof payload.session_id !== "string"
+  ) {
+    throw new HttpException("Invalid refresh token", 401);
+  }
+  const session = await MyGlobal.prisma.shopping_mall_admin_sessions.findFirst({
     where: {
-      id: decoded.session_id,
-      shopping_mall_admin_id: decoded.id,
+      id: payload.session_id,
+      shopping_mall_admin_id: payload.id,
       deleted_at: null,
-      expired_at: { gt: nowIso },
-    },
-    select: {
-      id: true,
-      shopping_mall_admin_id: true,
-      expired_at: true,
+      expired_at: { gt: new Date() },
     },
   });
+  if (!session) {
+    throw new HttpException("Session expired or revoked", 401);
+  }
   const admin = await MyGlobal.prisma.shopping_mall_admins.findUniqueOrThrow({
-    where: { id: decoded.id },
+    where: { id: payload.id },
     select: {
       id: true,
       email: true,
@@ -53,47 +64,60 @@ export async function postShoppingMallAuthAdminRefresh(props: {
       deleted_at: true,
     },
   });
-  if (admin.deleted_at !== null) throw new HttpException("Forbidden", 403);
-  const createdAtIso = toISOStringSafe(new Date());
-  const accessExpIso = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshableIso = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  if (admin.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+  const accessExpiresIso = typia.assert<string & tags.Format<"date-time">>(
+    toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000)),
   );
-  const access = jwt.sign(
+  const refreshExpiresIso = typia.assert<string & tags.Format<"date-time">>(
+    toISOStringSafe(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+  );
+  const accessToken = jwt.sign(
     {
       type: "admin",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: createdAtIso,
+      id: payload.id,
+      session_id: payload.session_id,
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { issuer: "autobe", expiresIn: "1h" },
+    { expiresIn: "1h", issuer: "autobe" },
   );
-  const refresh = jwt.sign(
+  const refreshToken = jwt.sign(
     {
       type: "admin",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: createdAtIso,
+      id: payload.id,
+      session_id: payload.session_id,
+      tokenType: "refresh",
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { issuer: "autobe", expiresIn: "7d" },
+    { expiresIn: "7d", issuer: "autobe" },
   );
   await MyGlobal.prisma.shopping_mall_admin_sessions.update({
-    where: { id: decoded.session_id },
-    data: { expired_at: refreshableIso, updated_at: nowIso },
+    where: { id: payload.session_id },
+    data: { expired_at: new Date(refreshExpiresIso) },
   });
   return {
-    id: admin.id,
-    email: admin.email,
-    created_at: toISOStringSafe(admin.created_at),
-    updated_at: toISOStringSafe(admin.updated_at),
-    deleted_at: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    id: payload.id as string & tags.Format<"uuid">,
+    email: admin.email as string & tags.Format<"email">,
+    created_at: typia.assert<string & tags.Format<"date-time">>(
+      toISOStringSafe(admin.created_at),
+    ),
+    updated_at: typia.assert<string & tags.Format<"date-time">>(
+      toISOStringSafe(admin.updated_at),
+    ),
+    deleted_at:
+      admin.deleted_at === null
+        ? null
+        : typia.assert<string & tags.Format<"date-time">>(
+            toISOStringSafe(admin.deleted_at),
+          ),
     token: {
-      access,
-      refresh,
-      expired_at: accessExpIso,
-      refreshable_until: refreshableIso,
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpiresIso,
+      refreshable_until: refreshExpiresIso,
     },
   };
 }

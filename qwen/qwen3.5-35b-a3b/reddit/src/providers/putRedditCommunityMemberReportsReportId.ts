@@ -12,7 +12,8 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { RedditCommunityReportTransformer } from "../transformers/RedditCommunityReportTransformer";
+import { RedditCommunityCommunityAtSummaryTransformer } from "../transformers/RedditCommunityCommunityAtSummaryTransformer";
+import { RedditCommunityMemberAtSummaryTransformer } from "../transformers/RedditCommunityMemberAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,84 +22,128 @@ export async function putRedditCommunityMemberReportsReportId(props: {
   reportId: string & tags.Format<"uuid">;
   body: IRedditCommunityReport.IUpdate;
 }): Promise<IRedditCommunityReport> {
-  // Validate update is provided
+  // Validate that status is provided
   if (props.body.status === undefined) {
-    throw new HttpException("Status update is required", 400);
+    throw new HttpException("Status is required", 400);
   }
-  // Validate status value
-  const statusValue: "approved" | "dismissed" = props.body.status;
-  // Query existing report
+  // Get the report and verify it exists and is pending
   const report =
-    await MyGlobal.prisma.reddit_community_reports.findFirstOrThrow({
-      where: {
-        id: props.reportId,
-      },
+    await MyGlobal.prisma.reddit_community_reports.findUniqueOrThrow({
+      where: { id: props.reportId },
       select: {
         id: true,
+        reporter_id: true,
         community_id: true,
-        status: true,
         target_type: true,
         target_id: true,
+        reason: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
       },
     });
-  // Validate current status is pending
+  // Validate status is pending
   if (report.status !== "pending") {
-    throw new HttpException("Report must be pending", 400);
+    throw new HttpException("Report is not pending", 400);
   }
-  // Verify moderator authorization
-  const moderatorCheck =
-    await MyGlobal.prisma.reddit_community_moderators.findFirst({
+  // Verify the member is a moderator of the community
+  const moderator = await MyGlobal.prisma.reddit_community_moderators.findFirst(
+    {
       where: {
-        community: { id: report.community_id },
+        reddit_community_community_id: report.community_id,
         reddit_community_moderator_id: props.member.id,
         deleted_at: null,
       },
-    });
-  if (!moderatorCheck) {
+    },
+  );
+  if (moderator === null) {
     throw new HttpException("Forbidden", 403);
   }
   // Execute transaction
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Update report
+  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
+    // Update report status
     const updatedReport = await tx.reddit_community_reports.update({
       where: { id: props.reportId },
       data: {
-        status: statusValue,
+        status: props.body.status,
         updated_at: new Date(),
       },
+      select: {
+        id: true,
+        reporter_id: true,
+        community_id: true,
+        target_type: true,
+        target_id: true,
+        reason: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
     });
-    // Create audit record
+    // Create audit action record
+    const now = new Date();
     await tx.reddit_community_report_actions.create({
       data: {
         id: v4(),
-        report: { connect: { id: props.reportId } },
-        moderator: { connect: { id: props.member.id } },
-        action_type: statusValue,
+        reddit_community_report_id: props.reportId,
+        moderator_id: moderator.id,
+        action_type: props.body.status as string,
         notes: props.body.notes ?? null,
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
       },
     });
-    // Handle content deletion
-    if (statusValue === "approved") {
-      if (report.target_type === "post") {
+    // Handle content deletion based on status and target type
+    if (props.body.status === "approved") {
+      if (updatedReport.target_type === "post") {
+        // Hard delete post (cascade deletes post_texts, post_links, post_files)
         await tx.reddit_community_posts.delete({
-          where: { id: report.target_id },
+          where: { id: updatedReport.target_id },
         });
-      } else if (report.target_type === "comment") {
+      } else if (updatedReport.target_type === "comment") {
+        // Soft delete comment
         await tx.reddit_community_comments.update({
-          where: { id: report.target_id },
-          data: { deleted_at: new Date() },
+          where: { id: updatedReport.target_id },
+          data: {
+            deleted_at: now,
+            updated_at: now,
+          },
         });
       }
     }
     return updatedReport;
   });
-  // Query with relations for response
-  const finalReport =
-    await MyGlobal.prisma.reddit_community_reports.findUniqueOrThrow({
-      where: { id: props.reportId },
-      ...RedditCommunityReportTransformer.select(),
-    });
-  return await RedditCommunityReportTransformer.transform(finalReport);
+  // Load reporter and community relations for complete response
+  const [reporter, community] = await Promise.all([
+    MyGlobal.prisma.reddit_community_members.findUnique({
+      where: { id: updated.reporter_id },
+      select: RedditCommunityMemberAtSummaryTransformer.select().select,
+    }),
+    MyGlobal.prisma.reddit_community_communities.findUnique({
+      where: { id: updated.community_id },
+      select: RedditCommunityCommunityAtSummaryTransformer.select().select,
+    }),
+  ]);
+  if (reporter === null || community === null) {
+    throw new HttpException("Related data not found", 500);
+  }
+  const [transformedReporter, transformedCommunity] = await Promise.all([
+    RedditCommunityMemberAtSummaryTransformer.transform(reporter),
+    RedditCommunityCommunityAtSummaryTransformer.transform(community),
+  ]);
+  return {
+    id: updated.id,
+    reporter: transformedReporter,
+    community: transformedCommunity,
+    target_type: updated.target_type as "post" | "comment",
+    target_id: updated.target_id,
+    reason: updated.reason,
+    status: updated.status as "pending" | "approved" | "dismissed",
+    created_at: toISOStringSafe(updated.created_at),
+    updated_at: toISOStringSafe(updated.updated_at),
+    deleted_at: updated.deleted_at ? toISOStringSafe(updated.deleted_at) : null,
+  } satisfies IRedditCommunityReport;
 }

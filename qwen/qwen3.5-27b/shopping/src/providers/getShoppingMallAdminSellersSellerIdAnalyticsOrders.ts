@@ -19,84 +19,65 @@ export async function getShoppingMallAdminSellersSellerIdAnalyticsOrders(props: 
   admin: AdminPayload;
   sellerId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallSellerOrderAnalytic> {
-  // Calculate aggregates using Prisma's aggregate features
-  const aggregates = await MyGlobal.prisma.shopping_mall_order_items.aggregate({
+  // Query order items for the seller (excluding soft-deleted)
+  const orderItems = await MyGlobal.prisma.shopping_mall_order_items.findMany({
     where: {
       shopping_mall_seller_id: props.sellerId,
       deleted_at: null,
     },
-    _count: {
+    select: {
       shopping_mall_order_id: true,
-    },
-    _sum: {
       quantity: true,
       price: true,
+      status: true,
     },
   });
-  // Get distinct order count
-  const distinctOrders =
-    await MyGlobal.prisma.shopping_mall_order_items.groupBy({
-      by: ["shopping_mall_order_id"],
-      where: {
-        shopping_mall_seller_id: props.sellerId,
-        deleted_at: null,
-      },
-      _count: {
-        shopping_mall_order_id: true,
-      },
-    });
-  const totalOrderCount = distinctOrders.length;
-  const totalItemsSold = aggregates._sum?.quantity ?? 0;
-  const totalRevenue =
-    aggregates._sum?.quantity && aggregates._sum?.price
-      ? aggregates._sum.quantity * aggregates._sum.price
-      : 0;
-  // Calculate status breakdown using groupBy
-  const statusGroups = await MyGlobal.prisma.shopping_mall_order_items.groupBy({
-    by: ["status"],
-    where: {
-      shopping_mall_seller_id: props.sellerId,
-      deleted_at: null,
-    },
-    _count: true,
-  });
-  const statusBreakdown = {
-    paid: statusGroups.find((g) => g.status === "paid")?._count ?? 0,
-    shipped: statusGroups.find((g) => g.status === "shipped")?._count ?? 0,
-    delivered: statusGroups.find((g) => g.status === "delivered")?._count ?? 0,
-    cancelled: statusGroups.find((g) => g.status === "cancelled")?._count ?? 0,
-    refunded: statusGroups.find((g) => g.status === "refunded")?._count ?? 0,
-  } satisfies IShoppingMallSellerOrderAnalytic["status_breakdown"];
-  // Calculate average order value
-  const averageOrderValue =
-    totalOrderCount > 0 ? totalRevenue / totalOrderCount : null;
-  // Get recent orders - query orders that have items from this seller
+  // Calculate aggregates
+  const total_order_count = new Set(
+    orderItems.map((item) => item.shopping_mall_order_id),
+  ).size;
+  const total_items_sold = orderItems.reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  );
+  const total_revenue = orderItems.reduce(
+    (sum, item) => sum + item.quantity * item.price,
+    0,
+  );
+  // Status breakdown
+  const status_breakdown = {
+    paid: orderItems.filter((item) => item.status === "paid").length,
+    shipped: orderItems.filter((item) => item.status === "shipped").length,
+    delivered: orderItems.filter((item) => item.status === "delivered").length,
+    cancelled: orderItems.filter((item) => item.status === "cancelled").length,
+    refunded: orderItems.filter((item) => item.status === "refunded").length,
+  };
+  // Average order value
+  const average_order_value =
+    total_order_count > 0 ? total_revenue / total_order_count : null;
+  // Get recent orders (last 10)
+  const distinctOrderIds = Array.from(
+    new Set(orderItems.map((item) => item.shopping_mall_order_id)),
+  );
   const recentOrders = await MyGlobal.prisma.shopping_mall_orders.findMany({
     where: {
+      id: { in: distinctOrderIds },
       deleted_at: null,
-      orderItems: {
-        some: {
-          shopping_mall_seller_id: props.sellerId,
-          deleted_at: null,
-        },
-      },
     },
-    orderBy: {
-      created_at: "desc",
-    },
+    orderBy: { created_at: "desc" },
     take: 10,
     ...ShoppingMallOrderAtSummaryTransformer.select(),
   });
-  const transformedRecentOrders = await ArrayUtil.asyncMap(
+  const recent_orders = await ArrayUtil.asyncMap(
     recentOrders,
     ShoppingMallOrderAtSummaryTransformer.transform,
   );
   return {
-    total_order_count: totalOrderCount,
-    total_items_sold: totalItemsSold,
-    total_revenue: totalRevenue,
-    status_breakdown: statusBreakdown,
-    average_order_value: averageOrderValue,
-    recent_orders: transformedRecentOrders,
-  } satisfies IShoppingMallSellerOrderAnalytic;
+    total_order_count,
+    total_items_sold,
+    total_revenue,
+    status_breakdown,
+    average_order_value,
+    recent_orders,
+  };
 }

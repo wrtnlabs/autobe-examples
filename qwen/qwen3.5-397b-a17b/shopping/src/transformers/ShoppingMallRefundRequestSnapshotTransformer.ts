@@ -1,21 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
-import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
-import { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
 import { IShoppingMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequestSnapshot";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
-import { ShoppingMallOrderItemAtSummaryTransformer } from "./ShoppingMallOrderItemAtSummaryTransformer";
-import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallRefundRequestSnapshotTransformer {
   export type Payload = Prisma.shopping_mall_refund_request_snapshotsGetPayload<
@@ -25,17 +16,16 @@ export namespace ShoppingMallRefundRequestSnapshotTransformer {
     return {
       select: {
         id: true,
+        refundRequest: {
+          select: {
+            id: true,
+          },
+        },
         reason: true,
         status: true,
-        delivered_at: true,
-        requested_at: true,
+        seller_response: true,
         responded_at: true,
-        snapshot_at: true,
         created_at: true,
-        refundRequest: { select: { id: true } },
-        orderItem: ShoppingMallOrderItemAtSummaryTransformer.select(),
-        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
-        respondedBySeller: ShoppingMallSellerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_refund_request_snapshotsFindManyArgs;
   }
@@ -44,28 +34,12 @@ export namespace ShoppingMallRefundRequestSnapshotTransformer {
   ): Promise<IShoppingMallRefundRequestSnapshot> {
     return {
       id: input.id,
+      shopping_mall_refund_request_id: input.refundRequest.id,
       reason: input.reason,
-      status: typia.assert<"PENDING" | "APPROVED" | "REJECTED">(input.status),
-      delivered_at: input.delivered_at
-        ? toISOStringSafe(input.delivered_at)
-        : null,
-      requested_at: toISOStringSafe(input.requested_at),
-      responded_at: input.responded_at
-        ? toISOStringSafe(input.responded_at)
-        : null,
-      snapshot_at: toISOStringSafe(input.snapshot_at),
-      created_at: toISOStringSafe(input.created_at),
-      orderItem: await ShoppingMallOrderItemAtSummaryTransformer.transform(
-        input.orderItem,
-      ),
-      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      respondedBySeller: input.respondedBySeller
-        ? await ShoppingMallSellerAtSummaryTransformer.transform(
-            input.respondedBySeller,
-          )
-        : null,
+      status: input.status,
+      seller_response: input.seller_response ?? null,
+      responded_at: input.responded_at?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

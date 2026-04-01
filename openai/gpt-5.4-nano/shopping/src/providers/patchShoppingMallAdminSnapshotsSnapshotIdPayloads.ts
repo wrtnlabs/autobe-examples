@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { ShoppingMallSnapshotPayloadTransformer } from "../transformers/ShoppingMallSnapshotPayloadTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,34 +18,15 @@ export async function patchShoppingMallAdminSnapshotsSnapshotIdPayloads(props: {
   snapshotId: string & tags.Format<"uuid">;
   body: IShoppingMallSnapshotPayload.IUpdate;
 }): Promise<IShoppingMallSnapshotPayload> {
-  const snapshot = await MyGlobal.prisma.shopping_mall_snapshots.findUnique({
-    where: { id: props.snapshotId },
-    select: {
-      id: true,
-      deleted_at: true,
-      created_at: true,
-      updated_at: true,
-      reason: true,
-      source_type: true,
-      source_entity_id: true,
-      source_seller_id: true,
-      source_order_id: true,
-      source_order_item_id: true,
-      source_review_id: true,
-      source_cancellation_request_id: true,
-      source_refund_request_id: true,
-    },
-  });
-  if (snapshot === null) {
-    throw new HttpException("Not Found", 404);
-  }
+  const snapshot =
+    await MyGlobal.prisma.shopping_mall_snapshots.findUniqueOrThrow({
+      where: { id: props.snapshotId },
+      select: { id: true, deleted_at: true },
+    });
   if (snapshot.deleted_at !== null) {
-    throw new HttpException("Snapshot is not available", 400);
+    throw new HttpException("Snapshot is deleted", 400);
   }
-  if (props.body.payload.trim().length === 0) {
-    throw new HttpException("payload is required", 400);
-  }
-  const canView =
+  const visibility =
     await MyGlobal.prisma.shopping_mall_snapshot_parties.findFirst({
       where: {
         shopping_mall_snapshot_id: props.snapshotId,
@@ -55,34 +37,29 @@ export async function patchShoppingMallAdminSnapshotsSnapshotIdPayloads(props: {
       },
       select: { id: true },
     });
-  if (canView === null) {
+  if (visibility === null) {
     throw new HttpException("Forbidden", 403);
   }
+  if (props.body.payload.trim().length === 0) {
+    throw new HttpException("Payload must not be empty", 400);
+  }
   const updated = await MyGlobal.prisma.$transaction(async (tx) => {
-    const now = new Date();
-    return tx.shopping_mall_snapshot_payloads.upsert({
+    await tx.shopping_mall_snapshot_payloads.upsert({
       where: { shopping_mall_snapshot_id: props.snapshotId },
-      update: {
-        payload: props.body.payload,
-        updated_at: now,
-      },
+      update: { payload: props.body.payload },
       create: {
-        id: typia.assert<string & tags.Format<"uuid">>(v4()),
+        id: v4() as string & tags.Format<"uuid">,
         shopping_mall_snapshot_id: props.snapshotId,
         payload: props.body.payload,
-        created_at: now,
-        updated_at: now,
         deleted_at: null,
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     });
+    return await tx.shopping_mall_snapshot_payloads.findUniqueOrThrow({
+      where: { shopping_mall_snapshot_id: props.snapshotId },
+      ...ShoppingMallSnapshotPayloadTransformer.select(),
+    });
   });
-  return {
-    id: updated.id,
-    shopping_mall_snapshot_id: updated.shopping_mall_snapshot_id,
-    payload: updated.payload,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at:
-      updated.deleted_at === null ? null : toISOStringSafe(updated.deleted_at),
-  };
+  return await ShoppingMallSnapshotPayloadTransformer.transform(updated);
 }

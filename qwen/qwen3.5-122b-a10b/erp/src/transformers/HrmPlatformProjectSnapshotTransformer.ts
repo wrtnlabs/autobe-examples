@@ -39,7 +39,8 @@ export namespace HrmPlatformProjectSnapshotTransformer {
       description: input.description ?? null,
       color_code: input.color_code,
       status: input.status,
-      budget_hours: input.budget_hours ?? null,
+      budget_hours:
+        input.budget_hours !== null ? Number(input.budget_hours) : null,
       start_date: input.start_date?.toISOString() ?? null,
       end_date: input.end_date?.toISOString() ?? null,
       created_at: input.created_at.toISOString(),

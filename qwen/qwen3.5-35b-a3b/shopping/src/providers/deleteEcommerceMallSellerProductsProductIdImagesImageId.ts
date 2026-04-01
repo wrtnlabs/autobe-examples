@@ -16,97 +16,78 @@ export async function deleteEcommerceMallSellerProductsProductIdImagesImageId(pr
   productId: string & tags.Format<"uuid">;
   imageId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Validate imageId exists and belongs to the product first
-  const existingImage =
-    await MyGlobal.prisma.ecommerce_mall_product_images.findFirst({
-      where: {
-        id: props.imageId,
-        product_id: props.productId,
-        deleted_at: null,
-      },
-      select: { id: true, display_order: true },
-    });
-  if (existingImage === null) {
-    throw new HttpException("Image not found", 404);
-  }
-  // Validate product exists and belongs to the seller
   const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
     where: {
       id: props.productId,
       deleted_at: null,
-      seller_id: props.seller.id,
     },
-    select: { id: true },
   });
   if (product === null) {
     throw new HttpException("Product not found", 404);
   }
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Step 1: If this is the main thumbnail (display_order = 0), promote next image
-    if (existingImage.display_order === 0) {
-      const nextImage = await tx.ecommerce_mall_product_images.findFirst({
-        where: {
-          product_id: props.productId,
-          display_order: { gt: 0 },
-          deleted_at: null,
-        },
-        orderBy: { display_order: "asc" },
-      });
-      if (nextImage !== null) {
-        // Update next image to become new thumbnail
-        await tx.ecommerce_mall_product_images.update({
-          where: { id: nextImage.id },
-          data: { display_order: 0 },
-        });
-        // Recalculate display_order for remaining images
-        await tx.ecommerce_mall_product_images.updateMany({
-          where: {
-            product_id: props.productId,
-            display_order: { gt: nextImage.display_order },
-            deleted_at: null,
-          },
-          data: { display_order: { decrement: 1 } },
-        });
-      }
-    } else {
-      // Image is not main thumbnail - just decrement higher order values
-      await tx.ecommerce_mall_product_images.updateMany({
-        where: {
-          product_id: props.productId,
-          display_order: { gt: existingImage.display_order },
-          deleted_at: null,
-        },
-        data: { display_order: { decrement: 1 } },
-      });
+  const image = await MyGlobal.prisma.ecommerce_mall_product_images.findFirst({
+    where: {
+      id: props.imageId,
+      product_id: props.productId,
+      deleted_at: null,
+    },
+  });
+  if (image === null) {
+    throw new HttpException("Image not found", 404);
+  }
+  // Get all remaining images before deletion to properly reorder them
+  const remainingImages =
+    await MyGlobal.prisma.ecommerce_mall_product_images.findMany({
+      where: {
+        product_id: props.productId,
+        id: { not: props.imageId },
+        deleted_at: null,
+      },
+      orderBy: { display_order: "asc" },
+    });
+  // If deleting the main thumbnail (display_order 0), promote next image to display_order 0
+  if (image.display_order === 0 && remainingImages.length > 0) {
+    await MyGlobal.prisma.ecommerce_mall_product_images.update({
+      where: { id: remainingImages[0].id },
+      data: { display_order: 0 },
+    });
+  }
+  // Recalculate display_order for all remaining images to maintain sequential order
+  for (const [index, remainingImage] of remainingImages.entries()) {
+    if (image.display_order === 0 && index === 0) {
+      // First remaining image already set to 0 above
+      continue;
     }
-    // Step 2: Soft delete the image
-    await tx.ecommerce_mall_product_images.update({
-      where: { id: props.imageId },
-      data: { deleted_at: new Date() },
+    const newDisplayOrderValue =
+      image.display_order === 0
+        ? remainingImages.slice(1).indexOf(remainingImage) + 1
+        : remainingImages.findIndex((r) => r.id === remainingImage.id) + 1;
+    await MyGlobal.prisma.ecommerce_mall_product_images.update({
+      where: { id: remainingImage.id },
+      data: { display_order: newDisplayOrderValue },
     });
-    // Step 3: Log the activity
-    const activityLog = await tx.ecommerce_mall_activity_logs.create({
-      data: {
-        id: v4(),
-        actor_type: "seller",
-        entity_type: "product_image",
-        entity_id: props.imageId,
-        action_type: "delete",
-        action_description: `Seller deleted product image ${props.imageId}`,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
-    // Step 4: Create seller reference for the activity log
-    await tx.ecommerce_mall_activity_log_of_sellers.create({
-      data: {
-        id: v4(),
-        ecommerce_mall_activity_log_id: activityLog.id,
-        ecommerce_mall_seller_id: props.seller.id,
-        ecommerce_mall_seller_session_id: props.seller.session_id,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
+  }
+  // Soft delete the target image by setting deleted_at timestamp
+  const deletionTimestamp = new Date().toISOString();
+  await MyGlobal.prisma.ecommerce_mall_product_images.update({
+    where: { id: props.imageId },
+    data: { deleted_at: deletionTimestamp },
+  });
+  // Log the deletion in activity logs
+  const activityLogTimestamp = new Date().toISOString();
+  await MyGlobal.prisma.ecommerce_mall_activity_logs.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      actor_type: "seller",
+      entity_type: "product_image",
+      entity_id: props.imageId,
+      action_type: "deleted",
+      action_description: `Product image deleted by seller ${props.seller.id}`,
+      ip_address: null,
+      user_agent: null,
+      created_at: activityLogTimestamp,
+      updated_at: activityLogTimestamp,
+      deleted_at: null,
+    },
   });
 }

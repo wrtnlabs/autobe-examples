@@ -2,8 +2,10 @@ import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallProductImageTransformer {
@@ -14,14 +16,13 @@ export namespace EcommerceMallProductImageTransformer {
     return {
       select: {
         id: true,
-        product_id: true,
+        product: { select: { id: true } },
         image_url: true,
         display_order: true,
         alt_text: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        product: true,
       },
     } satisfies Prisma.ecommerce_mall_product_imagesFindManyArgs;
   }
@@ -30,13 +31,13 @@ export namespace EcommerceMallProductImageTransformer {
   ): Promise<IEcommerceMallProductImage> {
     return {
       id: input.id,
-      product_id: input.product_id,
+      product_id: input.product.id,
       image_url: input.image_url,
       display_order: input.display_order,
-      alt_text: input.alt_text ?? null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      alt_text: input.alt_text,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

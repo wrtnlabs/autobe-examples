@@ -28,23 +28,11 @@ export async function getShoppingMallSellerRefundRequestsRefundRequestIdSnapshot
       },
       ...ShoppingMallRefundSnapshotTransformer.select(),
     });
-  const refundRequest =
-    await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
-      where: {
-        id: props.refundRequestId,
-      },
-      select: {
-        shopping_mall_order_item_id: true,
-      },
-    });
+  const orderItemId = snapshot.refundRequest.orderItem.id;
   const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
-      where: {
-        id: refundRequest.shopping_mall_order_item_id,
-      },
-      select: {
-        shopping_mall_seller_id: true,
-      },
+      where: { id: orderItemId },
+      select: { shopping_mall_seller_id: true },
     });
   if (orderItem.shopping_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);

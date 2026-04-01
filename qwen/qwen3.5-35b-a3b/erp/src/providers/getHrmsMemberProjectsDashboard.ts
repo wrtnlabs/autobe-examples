@@ -20,31 +20,21 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getHrmsMemberProjectsDashboard(props: {
   member: MemberPayload;
 }): Promise<IHrmsProject> {
-  const memberMembership =
-    await MyGlobal.prisma.hrms_organization_members.findFirst({
-      where: {
-        hrms_member_id: props.member.id,
-        deleted_at: null,
-      },
-      include: {
-        employees: {
-          where: {
-            deleted_at: null,
-          },
-          take: 1,
-        },
-        organization: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
-  if (!memberMembership || memberMembership.employees.length === 0) {
+  const member = await MyGlobal.prisma.hrms_members.findFirst({
+    where: { id: props.member.id, deleted_at: null },
+  });
+  if (!member) {
+    throw new HttpException("Member not found", 404);
+  }
+  const employee = await MyGlobal.prisma.hrms_employees.findFirst({
+    where: {
+      organization_member_id: member.id,
+      deleted_at: null,
+    },
+  });
+  if (!employee) {
     throw new HttpException("Employee record not found", 404);
   }
-  const employee = memberMembership.employees[0];
   const projectMemberships =
     await MyGlobal.prisma.hrms_project_members.findMany({
       where: {
@@ -55,173 +45,279 @@ export async function getHrmsMemberProjectsDashboard(props: {
       include: {
         project: true,
       },
-      orderBy: {
-        created_at: "desc",
-      },
+      orderBy: { created_at: "desc" },
     });
-  const projectIds = projectMemberships
-    .map((m) => m.project.id)
-    .filter((id): id is string => id !== undefined);
-  const projects = await MyGlobal.prisma.hrms_projects.findMany({
+  const organizationIds = Array.from(
+    new Set(
+      projectMemberships
+        .map((pm) => pm.project)
+        .filter((p) => p !== null && p !== undefined)
+        .map((p) => p!.hrms_organization_id),
+    ),
+  );
+  const organizations = await MyGlobal.prisma.hrms_organizations.findMany({
     where: {
-      id: {
-        in: projectIds,
-      },
+      id: { in: organizationIds },
+    },
+  });
+  const organizationMap = new Map(
+    organizations.map((org) => [org.id, org.name]),
+  );
+  const projectIds = projectMemberships
+    .filter((pm) => pm.project !== null && pm.project !== undefined)
+    .map((pm) => pm.project_id);
+  const tasks = await MyGlobal.prisma.hrms_tasks.findMany({
+    where: {
+      hrms_employee_id: employee.id,
+      hrms_project_id: { in: projectIds },
       deleted_at: null,
     },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      color_code: true,
-      hrms_organization_id: true,
-      status: true,
-      budget_hours: true,
-      start_date: true,
-      end_date: true,
-      created_at: true,
-      updated_at: true,
+    include: {
+      project: true,
     },
   });
-  const projectMap = new Map(projects.map((p) => [p.id, p]));
-  const organizationsSet = new Set(
-    projectMemberships
-      .map((m) => m.project.hrms_organization_id)
-      .filter((id): id is string => id !== undefined),
+  const taskCounts = new Map<
+    string,
+    {
+      total: number;
+      open: number;
+      inProgress: number;
+      completed: number;
+      closed: number;
+    }
+  >();
+  tasks.forEach((task) => {
+    if (!taskCounts.has(task.hrms_project_id)) {
+      taskCounts.set(task.hrms_project_id, {
+        total: 0,
+        open: 0,
+        inProgress: 0,
+        completed: 0,
+        closed: 0,
+      });
+    }
+    const counts = taskCounts.get(task.hrms_project_id)!;
+    counts.total += 1;
+    switch (task.status) {
+      case "open":
+      case "pending":
+        counts.open += 1;
+        break;
+      case "in-progress":
+        counts.inProgress += 1;
+        break;
+      case "completed":
+        counts.completed += 1;
+        break;
+      case "closed":
+        counts.closed += 1;
+        break;
+    }
+  });
+  const todayStart = toISOStringSafe(new Date(new Date().setHours(0, 0, 0, 0)));
+  const todayEnd = toISOStringSafe(
+    new Date(new Date().setHours(23, 59, 59, 999)),
   );
-  const organizationData = await MyGlobal.prisma.hrms_organizations.findMany({
+  const weekStart = toISOStringSafe(
+    new Date(new Date().setDate(new Date().getDate() - new Date().getDay())),
+  );
+  const todayTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
     where: {
-      id: {
-        in: Array.from(organizationsSet),
-      },
-    },
-    select: {
-      id: true,
-      name: true,
+      employee_id: employee.id,
+      date: { gte: todayStart, lte: todayEnd },
+      deleted_at: null,
     },
   });
-  const organizationByName = new Map(
-    organizationData.map((org) => [org.id, org.name]),
-  );
-  const projectsSummary: IHrmsProject.ISummary[] = await ArrayUtil.asyncMap(
-    projectMemberships,
-    async (membership) => {
-      const project = projectMap.get(membership.project.id);
-      if (!project) {
-        return null!;
-      }
-      const [allTimelogs, allTasks] = await Promise.all([
-        MyGlobal.prisma.hrms_timelogs.findMany({
-          where: {
-            project_id: project.id,
-            employee_id: employee.id,
-            deleted_at: null,
-          },
-        }),
-        MyGlobal.prisma.hrms_tasks.findMany({
-          where: {
-            hrms_project_id: project.id,
-            deleted_at: null,
-          },
-        }),
-      ]);
-      const totalMinutes = allTimelogs.reduce(
-        (sum, t) => sum + (t.duration_minutes || 0),
-        0,
-      );
-      const actualHours = totalMinutes / 60;
-      let budgetUtilizationPercentage: number | null = null;
-      if (project.budget_hours !== null && project.budget_hours > 0) {
-        budgetUtilizationPercentage = Number(
-          ((actualHours / project.budget_hours) * 100).toFixed(1),
-        );
-      }
-      const taskCounts = allTasks.reduce(
-        (
-          acc,
-          task: {
-            status: string;
-          },
-        ) => {
-          acc.total_tasks++;
-          if (task.status === "open" || task.status === "pending") {
-            acc.pending_tasks++;
-          } else if (task.status === "in-progress") {
-            acc.in_progress_tasks++;
-          } else if (task.status === "completed") {
-            acc.completed_tasks++;
-          } else if (task.status === "closed") {
-            acc.closed_tasks++;
-          }
-          return acc;
+  const weekTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+    where: {
+      employee_id: employee.id,
+      date: { gte: weekStart },
+      deleted_at: null,
+    },
+  });
+  const hoursToday =
+    todayTimelogs.reduce((sum, log) => sum + log.duration_minutes, 0) / 60;
+  const hoursThisWeek =
+    weekTimelogs.reduce((sum, log) => sum + log.duration_minutes, 0) / 60;
+  const activeTimer = await MyGlobal.prisma.hrms_timers.findFirst({
+    where: {
+      employee: { id: employee.id },
+      deleted_at: null,
+    },
+    include: {
+      employee: true,
+      project: true,
+      task: true,
+    },
+  });
+  const pendingTimesheetsCount = await MyGlobal.prisma.hrms_timesheets.count({
+    where: {
+      employee: { id: employee.id },
+      status: "submitted",
+    },
+  });
+  const projectSummaries = await Promise.all(
+    projectMemberships.map(async (pm) => {
+      const project = pm.project;
+      if (!project) return null;
+      const timelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+        where: {
+          project_id: project.id,
+          deleted_at: null,
         },
-        {
-          total_tasks: 0,
-          pending_tasks: 0,
-          in_progress_tasks: 0,
-          completed_tasks: 0,
-          closed_tasks: 0,
-        },
-      );
-      const timelogCount = allTimelogs.length;
-      const organizationName =
-        organizationByName.get(project.hrms_organization_id) ?? "";
+      });
+      const actualHours =
+        timelogs.reduce((sum, log) => sum + log.duration_minutes, 0) / 60;
+      const budgetHours = project.budget_hours;
+      const budgetUtilizationPercent =
+        budgetHours !== null && budgetHours > 0
+          ? Number(((actualHours / budgetHours) * 100).toFixed(1))
+          : 0;
+      const taskCount = taskCounts.get(project.id);
       return {
-        id: project.id as string & tags.Format<"uuid">,
+        id: project.id,
         name: project.name,
         description: project.description ?? "",
         color_code: project.color_code,
-        organization_id: project.hrms_organization_id as string &
-          tags.Format<"uuid">,
-        organization_name: organizationName,
+        organization_id: project.hrms_organization_id,
+        organization_name:
+          organizationMap.get(project.hrms_organization_id) ?? "",
         status: project.status as "active" | "completed" | "archived",
         budget_hours: project.budget_hours,
-        start_date:
-          project.start_date !== null && project.start_date !== undefined
-            ? toISOStringSafe(project.start_date)
-            : null,
-        end_date:
-          project.end_date !== null && project.end_date !== undefined
-            ? toISOStringSafe(project.end_date)
-            : null,
-        planned_hours: project.budget_hours || 0,
+        start_date: project.start_date
+          ? toISOStringSafe(project.start_date)
+          : null,
+        end_date: project.end_date ? toISOStringSafe(project.end_date) : null,
+        planned_hours: project.budget_hours ?? 0,
         actual_hours: actualHours,
-        budget_utilization_percentage: budgetUtilizationPercentage,
-        total_tasks: taskCounts.total_tasks as number & tags.Type<"int32">,
-        pending_tasks: taskCounts.pending_tasks as number & tags.Type<"int32">,
-        in_progress_tasks: taskCounts.in_progress_tasks as number &
-          tags.Type<"int32">,
-        completed_tasks: taskCounts.completed_tasks as number &
-          tags.Type<"int32">,
-        closed_tasks: taskCounts.closed_tasks as number & tags.Type<"int32">,
-        timelog_count: timelogCount as number & tags.Type<"int32">,
-        created_at:
-          project.created_at !== null && project.created_at !== undefined
-            ? toISOStringSafe(project.created_at)
-            : toISOStringSafe(new Date()),
-        updated_at:
-          project.updated_at !== null && project.updated_at !== undefined
-            ? toISOStringSafe(project.updated_at)
-            : toISOStringSafe(new Date()),
+        budget_utilization_percentage: budgetUtilizationPercent,
+        total_tasks: taskCount?.total ?? 0,
+        pending_tasks: (taskCount?.open ?? 0) + (taskCount?.inProgress ?? 0),
+        in_progress_tasks: taskCount?.inProgress ?? 0,
+        completed_tasks: taskCount?.completed ?? 0,
+        closed_tasks: taskCount?.closed ?? 0,
+        timelog_count: timelogs.length,
+        created_at: toISOStringSafe(project.created_at),
+        updated_at: toISOStringSafe(project.updated_at),
       } satisfies IHrmsProject.ISummary;
-    },
+    }),
+  ).then((summaries) =>
+    summaries.filter((p): p is IHrmsProject.ISummary => p !== null),
   );
+  const recentTimelogs = todayTimelogs.slice(0, 5).map((log) => ({
+    group_id: log.employee_id,
+    group_name: employee.display_name,
+    total_hours: log.duration_minutes / 60,
+    billable_hours: log.billable ? log.duration_minutes / 60 : 0,
+    non_billable_hours: !log.billable ? log.duration_minutes / 60 : 0,
+  })) satisfies IHrmsTimelog.ISummary[];
+  const assignedTasks = Array.from(
+    new Set(tasks.map((t) => t.hrms_project_id)),
+  ).map((projectId) => {
+    const project = projectMemberships.find(
+      (pm) => pm.project_id === projectId,
+    )?.project;
+    return {
+      project_id: projectId,
+      project_name: project?.name ?? "",
+      task_count: taskCounts.get(projectId)?.total ?? 0,
+    } satisfies IHrmsTask.ISummary;
+  });
+  const budgetAlerts: IHrmsProject.ISummary[] = projectSummaries.filter(
+    (p): p is IHrmsProject.ISummary => p !== null,
+  );
+  const topEmployees: IHrmsTopEmployee.ISummary[] = [];
   return {
-    dashboard_type: "personal" as const,
+    dashboard_type: "personal",
     generation_timestamp: toISOStringSafe(new Date()),
-    hours_today: undefined,
-    hours_this_week: undefined,
-    active_timer: undefined,
-    recent_timelogs: undefined,
-    pending_timesheets_count: undefined,
-    assigned_tasks: undefined,
-    active_employee_count: undefined,
-    total_hours_this_week: undefined,
-    budget_alerts: projectsSummary.filter(
-      (p) =>
-        p.budget_utilization_percentage !== null &&
-        p.budget_utilization_percentage! > 80,
-    ),
-    top_employees: undefined,
+    hours_today: hoursToday,
+    hours_this_week: hoursThisWeek,
+    active_timer: activeTimer?.project
+      ? {
+          id: activeTimer.id,
+          start_at: toISOStringSafe(activeTimer.start_at),
+          description: activeTimer.description ?? undefined,
+          created_at: toISOStringSafe(activeTimer.created_at),
+          updated_at: toISOStringSafe(activeTimer.updated_at),
+          deleted_at: null,
+          employee: {
+            id: activeTimer.employee.id,
+            display_name: activeTimer.employee.display_name,
+            position: activeTimer.employee.position ?? undefined,
+            department_id: activeTimer.employee.department_id!,
+            status: activeTimer.employee.status,
+            total_hours_logged: 0,
+            timelog_count: 0,
+            timesheets_submitted: 0,
+            timesheets_approved: 0,
+            timesheets_pending: 0,
+          } satisfies IHrmsEmployee.ISummary,
+          project: {
+            id: activeTimer.project.id,
+            organization_id: activeTimer.project.hrms_organization_id,
+            name: activeTimer.project.name,
+            description: activeTimer.project.description ?? "",
+            color_code: activeTimer.project.color_code,
+            status: activeTimer.project.status as
+              | "active"
+              | "completed"
+              | "archived",
+            budget_hours: activeTimer.project.budget_hours,
+            start_date: activeTimer.project.start_date
+              ? toISOStringSafe(activeTimer.project.start_date)
+              : null,
+            end_date: activeTimer.project.end_date
+              ? toISOStringSafe(activeTimer.project.end_date)
+              : null,
+            organization_name:
+              organizationMap.get(activeTimer.project.hrms_organization_id) ??
+              "",
+            planned_hours: activeTimer.project.budget_hours ?? 0,
+            actual_hours: 0,
+            budget_utilization_percentage: 0,
+            total_tasks: 0,
+            pending_tasks: 0,
+            in_progress_tasks: 0,
+            completed_tasks: 0,
+            closed_tasks: 0,
+            timelog_count: 0,
+            created_at: toISOStringSafe(activeTimer.project.created_at),
+            updated_at: toISOStringSafe(activeTimer.project.updated_at),
+          } satisfies IHrmsProject.ISummary,
+          task: activeTimer.task
+            ? {
+                id: activeTimer.task.id,
+                project_id: activeTimer.task.hrms_project_id,
+                title: activeTimer.task.title,
+                description: activeTimer.task.description ?? undefined,
+                status: activeTimer.task.status as
+                  | "open"
+                  | "pending"
+                  | "in-progress"
+                  | "completed"
+                  | "closed",
+                priority: activeTimer.task.priority as
+                  | "low"
+                  | "medium"
+                  | "high",
+                due_date: activeTimer.task.due_date
+                  ? toISOStringSafe(activeTimer.task.due_date)
+                  : null,
+                created_at: toISOStringSafe(activeTimer.task.created_at),
+                updated_at: toISOStringSafe(activeTimer.task.updated_at),
+                deleted_at: activeTimer.task.deleted_at
+                  ? toISOStringSafe(activeTimer.task.deleted_at)
+                  : null,
+              }
+            : null,
+        }
+      : null,
+    recent_timelogs: recentTimelogs,
+    pending_timesheets_count: pendingTimesheetsCount,
+    assigned_tasks: assignedTasks,
+    active_employee_count: null,
+    total_hours_this_week: hoursThisWeek,
+    budget_alerts: budgetAlerts,
+    top_employees: topEmployees,
   } satisfies IHrmsProject;
 }

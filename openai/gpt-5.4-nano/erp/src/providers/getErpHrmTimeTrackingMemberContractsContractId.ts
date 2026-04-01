@@ -17,11 +17,18 @@ export async function getErpHrmTimeTrackingMemberContractsContractId(props: {
   member: MemberPayload;
   contractId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingContract> {
-  const member = props.member;
   const contract =
-    await MyGlobal.prisma.erp_hrm_time_tracking_contracts.findUniqueOrThrow({
-      where: { id: props.contractId },
+    await MyGlobal.prisma.erp_hrm_time_tracking_contracts.findFirstOrThrow({
+      where: {
+        id: props.contractId,
+        deleted_at: null,
+      },
       ...ErpHrmTimeTrackingContractTransformer.select(),
     });
+  // Organization scoping without permission schema: prevent cross-user leakage by restricting
+  // access to the acting employee's own contract only.
+  if (contract.erp_hrm_time_tracking_employee_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await ErpHrmTimeTrackingContractTransformer.transform(contract);
 }

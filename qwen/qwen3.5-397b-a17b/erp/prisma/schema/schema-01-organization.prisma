@@ -1,0 +1,115 @@
+/// Core multi-tenancy entity representing independent organizational
+/// workspaces. Each organization owns its employees, departments, projects,
+/// and all business data. Contains organization settings including name,
+/// description, logo image, currency, timezone, and fiscal year start month
+/// configuration.
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization name for display and identification.
+  name String
+  
+  /// Optional description of the organization's purpose or business.
+  description String?
+  
+  /// URL to the organization's logo image.
+  logo String?
+  
+  /// ISO 4217 currency code (e.g., USD, EUR, KRW) for financial displays.
+  currency String
+  
+  /// IANA timezone identifier (e.g., America/New_York, Asia/Seoul) for
+  /// date/time displays.
+  timezone String
+  
+  /// Fiscal year start month (1-12) for financial reporting periods.
+  fiscal_start_month Int
+  
+  /// Timestamp when the organization was created.
+  created_at DateTime
+  
+  /// Timestamp when the organization was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the organization was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  departments hrm_platform_departments[]
+  employees hrm_platform_employees[]
+  roles hrm_platform_roles[]
+  invitations hrm_platform_invitations[]
+  projects hrm_platform_projects[]
+  activityLogs hrm_platform_activity_logs[]
+}
+
+/// Organizational departments providing structural hierarchy within an
+/// organization. Each department has a name, optional description, and
+/// optional parent department for one-level nesting. Departments enable
+/// employee categorization and organizational reporting. All departments
+/// belong to exactly one {@link hrm_platform_organizations} for data
+/// isolation.
+///
+/// @namespace Organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization's {@link hrm_platform_organizations.id}.
+  organization_id String
+  
+  /// Parent department's {@link hrm_platform_departments.id} for one-level
+  /// hierarchy. Null for top-level departments.
+  parent_department_id String?
+  
+  /// Department name for identification and display.
+  name String
+  
+  /// Optional department description explaining purpose or scope.
+  description String?
+  
+  /// Timestamp when department was created.
+  created_at DateTime
+  
+  /// Timestamp when department was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when department was soft deleted. Null for active departments.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  parentDepartment hrm_platform_departments? @relation("recursive", fields: [parent_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childDepartments hrm_platform_departments[] @relation("recursive")
+  employees hrm_platform_employees[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_department_id])
+  @@unique([organization_id, name])
+  // spellchecker: ignore-next-line
+  @@index([organization_id, parent_department_id], map: "hrm_platform_departments_organization_id_parent_depart_3d35fce6")
+}

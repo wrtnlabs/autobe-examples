@@ -12,7 +12,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditCommunitySystemLogAtSummaryTransformer } from "../transformers/RedditCommunitySystemLogAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,74 +19,90 @@ export async function patchRedditCommunitySystemLogs(props: {
   body: IRedditCommunitySystemLog.IRequest;
 }): Promise<IPageIRedditCommunitySystemLog.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = props.body.limit ?? 50;
   const skip = (page - 1) * limit;
-  const whereConditions: Prisma.reddit_community_system_logsWhereInput = {
-    deleted_at: props.body.exclude_deleted === false ? undefined : null,
+  const whereInput: Prisma.reddit_community_system_logsWhereInput = {
+    deleted_at: props.body.exclude_deleted ? null : undefined,
+    ...(props.body.created_at_start && {
+      created_at: { gte: props.body.created_at_start },
+    }),
+    ...(props.body.created_at_end && {
+      created_at: { lte: props.body.created_at_end },
+    }),
+    ...(props.body.activity_type && {
+      activity_type: props.body.activity_type,
+    }),
+    ...(props.body.action_performed && {
+      action_performed: props.body.action_performed,
+    }),
+    ...(props.body.target_type && { target_type: props.body.target_type }),
+    ...(props.body.actor_id && { actor_id: props.body.actor_id }),
+    ...(props.body.target_post_id && {
+      target_post_id: props.body.target_post_id,
+    }),
+    ...(props.body.target_comment_id && {
+      target_comment_id: props.body.target_comment_id,
+    }),
+    ...(props.body.target_community_id && {
+      target_community_id: props.body.target_community_id,
+    }),
+    ...(props.body.target_report_id && {
+      target_report_id: props.body.target_report_id,
+    }),
   };
-  if (props.body.activity_type) {
-    whereConditions.activity_type = props.body.activity_type;
-  }
-  if (props.body.action_performed) {
-    whereConditions.action_performed = props.body.action_performed;
-  }
-  if (props.body.target_type) {
-    whereConditions.target_type = props.body.target_type;
-  }
-  if (props.body.actor_id) {
-    whereConditions.actor_id = props.body.actor_id;
-  }
-  if (props.body.target_post_id) {
-    whereConditions.target_post_id = props.body.target_post_id;
-  }
-  if (props.body.target_comment_id) {
-    whereConditions.target_comment_id = props.body.target_comment_id;
-  }
-  if (props.body.target_community_id) {
-    whereConditions.target_community_id = props.body.target_community_id;
-  }
-  if (props.body.target_report_id) {
-    whereConditions.target_report_id = props.body.target_report_id;
-  }
-  if (props.body.created_at_start && props.body.created_at_end) {
-    whereConditions.created_at = {
-      gte: new Date(props.body.created_at_start),
-      lte: new Date(props.body.created_at_end),
-    };
-  } else if (props.body.created_at_start) {
-    whereConditions.created_at = {
-      gte: new Date(props.body.created_at_start),
-    };
-  } else if (props.body.created_at_end) {
-    whereConditions.created_at = {
-      lte: new Date(props.body.created_at_end),
-    };
-  }
-  const orderBy: Prisma.reddit_community_system_logsOrderByWithRelationInput =
-    props.body.order === "asc" ? { created_at: "asc" } : { created_at: "desc" };
+  const orderByInput = (
+    props.body.order === "asc"
+      ? { created_at: "asc" as const }
+      : { created_at: "desc" as const }
+  ) satisfies Prisma.reddit_community_system_logsOrderByWithRelationInput;
   const [data, total] = await Promise.all([
     MyGlobal.prisma.reddit_community_system_logs.findMany({
-      where: whereConditions,
-      orderBy,
+      where: whereInput,
+      orderBy: orderByInput,
       skip,
       take: limit,
-      ...RedditCommunitySystemLogAtSummaryTransformer.select(),
+      select: {
+        id: true,
+        activity_type: true,
+        action_performed: true,
+        actor_id: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
     }),
-    MyGlobal.prisma.reddit_community_system_logs.count({
-      where: whereConditions,
-    }),
+    MyGlobal.prisma.reddit_community_system_logs.count({ where: whereInput }),
   ]);
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    RedditCommunitySystemLogAtSummaryTransformer.transform,
-  );
+  const mappedData = await ArrayUtil.asyncMap(data, async (log) => {
+    return {
+      id: log.id as string & tags.Format<"uuid">,
+      activityType: log.activity_type,
+      actionPerformed: log.action_performed,
+      actor: log.actor_id
+        ? ({
+            id: log.actor_id as string & tags.Format<"uuid">,
+            username: "",
+            created_at: "",
+            profile: undefined as
+              | IRedditCommunityUserProfile.ISummary
+              | undefined,
+            karma: undefined,
+          } satisfies IRedditCommunityMember.ISummary)
+        : null,
+      createdAt: toISOStringSafe(log.created_at) as string &
+        tags.Format<"date-time">,
+      updatedAt: toISOStringSafe(log.updated_at) as string &
+        tags.Format<"date-time">,
+      deletedAt: log.deleted_at ? toISOStringSafe(log.deleted_at) : null,
+    } satisfies IRedditCommunitySystemLog.ISummary;
+  });
   return {
+    data: mappedData,
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformedData,
   } satisfies IPageIRedditCommunitySystemLog.ISummary;
 }

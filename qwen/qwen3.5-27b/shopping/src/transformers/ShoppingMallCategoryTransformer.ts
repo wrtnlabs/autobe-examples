@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCategoryAtSummaryTransformer } from "./ShoppingMallCategoryAtSummaryTransformer";
 
@@ -19,6 +21,7 @@ export namespace ShoppingMallCategoryTransformer {
         description: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
         parent: ShoppingMallCategoryAtSummaryTransformer.select(),
         subcategories: ShoppingMallCategoryAtSummaryTransformer.select(),
       },
@@ -30,16 +33,17 @@ export namespace ShoppingMallCategoryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description,
+      description: input.description ?? null,
       parent: input.parent
         ? await ShoppingMallCategoryAtSummaryTransformer.transform(input.parent)
-        : null,
+        : undefined,
       subcategories: await ArrayUtil.asyncMap(
         input.subcategories,
-        ShoppingMallCategoryAtSummaryTransformer.transform,
+        async (item) =>
+          ShoppingMallCategoryAtSummaryTransformer.transform(item),
       ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
     };
   }
 }

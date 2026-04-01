@@ -5,8 +5,10 @@ import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityFileAtSummaryTransformer } from "./RedditCommunityFileAtSummaryTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
@@ -32,13 +34,13 @@ export namespace RedditCommunityFileOfUserTransformer {
   ): Promise<IRedditCommunityFileOfUser> {
     return {
       id: input.id,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       file: await RedditCommunityFileAtSummaryTransformer.transform(input.file),
       member: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.member,
       ),
-    } satisfies IRedditCommunityFileOfUser;
+    };
   }
 }

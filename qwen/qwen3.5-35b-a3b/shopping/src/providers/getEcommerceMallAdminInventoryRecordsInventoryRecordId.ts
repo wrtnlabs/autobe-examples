@@ -28,10 +28,7 @@ export async function getEcommerceMallAdminInventoryRecordsInventoryRecordId(pro
 }): Promise<IEcommerceMallInventoryRecord> {
   const record =
     await MyGlobal.prisma.ecommerce_mall_inventory_records.findUniqueOrThrow({
-      where: {
-        id: props.inventoryRecordId,
-        deleted_at: null,
-      },
+      where: { id: props.inventoryRecordId },
       ...EcommerceMallInventoryRecordTransformer.select(),
     });
   return await EcommerceMallInventoryRecordTransformer.transform(record);

@@ -25,7 +25,7 @@ export async function postHrmPlatformMemberTimesheetsTimesheetIdApprove(props: {
   member: MemberPayload;
   timesheetId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTimesheet> {
-  // Step 1: Find and validate the timesheet exists
+  // Find the timesheet and verify it exists
   const timesheet =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
       where: { id: props.timesheetId },
@@ -34,32 +34,62 @@ export async function postHrmPlatformMemberTimesheetsTimesheetIdApprove(props: {
         status: true,
         hrm_platform_employee_id: true,
         hrm_platform_member_id: true,
+        week_start_date: true,
+        week_end_date: true,
+        submitted_at: true,
         reviewed_at: true,
+        rejection_reason: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        employee: {
+          select: {
+            hrm_platform_organization_id: true,
+          },
+        },
       },
     });
-  // Step 2: Verify status is 'submitted' - only submitted timesheets can be approved
+  // Verify timesheet is in submitted status - only submitted timesheets can be approved
   if (timesheet.status !== "submitted") {
+    throw new HttpException("Timesheet is not in submitted status", 400);
+  }
+  // Verify the member belongs to the same organization as the employee
+  // This ensures organization-scoped access control
+  const member = await MyGlobal.prisma.hrm_platform_members.findFirst({
+    where: {
+      id: props.member.id,
+      deleted_at: null,
+      employees: {
+        some: {
+          hrm_platform_organization_id:
+            timesheet.employee.hrm_platform_organization_id,
+          deleted_at: null,
+        },
+      },
+    },
+  });
+  if (!member) {
     throw new HttpException(
-      `Timesheet is not in submitted status (current: ${timesheet.status})`,
-      400,
+      "You do not have permission to approve this timesheet",
+      403,
     );
   }
-  // Step 3: Update the timesheet to approved status
+  // Update the timesheet with reviewer information and approved status
   await MyGlobal.prisma.hrm_platform_timesheets.update({
     where: { id: props.timesheetId },
     data: {
-      status: "approved",
       hrm_platform_member_id: props.member.id,
       reviewed_at: new Date(),
+      status: "approved",
       updated_at: new Date(),
     },
   });
-  // Step 4: Query the updated timesheet with all required relations
+  // Query the updated timesheet with full select including employee, reviewer, and timelogs
   const updated =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
       where: { id: props.timesheetId },
       ...HrmPlatformTimesheetTransformer.select(),
     });
-  // Step 5: Transform to DTO and return
+  // Transform and return the approved timesheet
   return await HrmPlatformTimesheetTransformer.transform(updated);
 }

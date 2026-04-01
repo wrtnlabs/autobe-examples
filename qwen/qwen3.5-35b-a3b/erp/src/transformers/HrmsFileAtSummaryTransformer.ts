@@ -4,8 +4,10 @@ import { IHrmsMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsMembe
 import { IHrmsOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsMemberAtSummaryTransformer } from "./HrmsMemberAtSummaryTransformer";
 import { HrmsOrganizationAtSummaryTransformer } from "./HrmsOrganizationAtSummaryTransformer";
@@ -36,20 +38,20 @@ export namespace HrmsFileAtSummaryTransformer {
     return {
       id: input.id,
       filename: input.filename,
-      storage_path: input.storage_path ?? undefined,
-      mime_type: input.mime_type,
       file_size: input.file_size,
+      mime_type: input.mime_type,
       file_category: input.file_category,
       validation_status: input.validation_status,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at?.toISOString() ?? undefined,
-      deleted_at: input.deleted_at?.toISOString() ?? null,
       organization: await HrmsOrganizationAtSummaryTransformer.transform(
         input.organization,
       ),
       owner: input.owner
         ? await HrmsMemberAtSummaryTransformer.transform(input.owner)
         : undefined,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString() ?? undefined,
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      storage_path: input.storage_path ?? undefined,
     };
   }
 }

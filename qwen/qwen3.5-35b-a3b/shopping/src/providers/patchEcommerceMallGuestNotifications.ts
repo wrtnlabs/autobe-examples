@@ -20,47 +20,79 @@ export async function patchEcommerceMallGuestNotifications(props: {
   body: IEcommerceMallNotification.IRequest;
 }): Promise<IPageIEcommerceMallNotification.ISummary> {
   const page = props.body.page ?? 1;
-  const per_page = props.body.per_page ?? 100;
-  const limit = props.body.limit ?? 100;
-  const effectiveLimit = per_page < limit ? per_page : limit;
-  const skip = (page - 1) * effectiveLimit;
+  const limit = props.body.limit ?? props.body.per_page ?? 100;
+  const skip = (page - 1) * limit;
+  // Build where clause for guest notifications with session scoping
   const whereInput: Prisma.ecommerce_mall_notificationsWhereInput = {
     deleted_at: null,
-    status: props.body.read_status ?? undefined,
-    type: props.body.type ?? undefined,
-    ...(props.body.actor_type === "guest"
+    guestReference: {
+      is: {
+        guest_id: props.guest.id,
+        guest_session_id: props.guest.session_id,
+      },
+    },
+    recipients: {
+      some: {
+        recipient_type: "guest",
+        recipient_id: props.guest.id,
+        deleted_at: null,
+      },
+    },
+    ...(props.body.type !== undefined && {
+      type: props.body.type,
+    }),
+    ...(props.body.read_status !== undefined && {
+      recipients: {
+        some: {
+          recipient_type: "guest",
+          recipient_id: props.guest.id,
+          read_status: props.body.read_status,
+          deleted_at: null,
+        },
+      },
+    }),
+    ...(props.body.created_at_from !== undefined && {
+      created_at: {
+        gte: new Date(props.body.created_at_from),
+      },
+    }),
+    ...(props.body.created_at_to !== undefined && {
+      created_at: {
+        lte: new Date(props.body.created_at_to),
+      },
+    }),
+    ...(props.body.search !== undefined && props.body.search.length > 0
       ? {
-          guestNotifications: {
-            some: {
-              guest_id: props.guest.id,
-            },
+          body: {
+            contains: props.body.search,
+            mode: "insensitive",
           },
         }
       : {}),
-    ...(props.body.search
-      ? {
-          OR: [
-            { title: { contains: props.body.search } },
-            { body: { contains: props.body.search } },
-          ],
-        }
-      : {}),
-  };
-  const orderByInput = (
-    props.body.sort === "title"
-      ? { title: props.body.order === "asc" ? "asc" : "desc" }
-      : { created_at: props.body.order === "asc" ? "asc" : "desc" }
-  ) satisfies Prisma.ecommerce_mall_notificationsOrderByWithRelationInput;
+  } satisfies Prisma.ecommerce_mall_notificationsWhereInput;
+  // Build order by clause based on sort and order parameters
+  const sortField = props.body.sort ?? "created_at";
+  const sortOrder = props.body.order ?? "desc";
+  let orderByInput: Prisma.ecommerce_mall_notificationsOrderByWithRelationInput[] =
+    [];
+  if (sortField === "created_at") {
+    orderByInput = [{ created_at: sortOrder as "asc" | "desc" }];
+  } else if (sortField === "title") {
+    orderByInput = [{ title: sortOrder as "asc" | "desc" }];
+  }
+  // Query notifications
   const data = await MyGlobal.prisma.ecommerce_mall_notifications.findMany({
     where: whereInput,
     orderBy: orderByInput,
     skip,
-    take: effectiveLimit,
+    take: limit > 0 ? limit : 100,
     ...EcommerceMallNotificationAtSummaryTransformer.select(),
   });
+  // Query total count
   const total = await MyGlobal.prisma.ecommerce_mall_notifications.count({
     where: whereInput,
   });
+  // Transform and return
   return {
     data: await ArrayUtil.asyncMap(
       data,
@@ -68,9 +100,9 @@ export async function patchEcommerceMallGuestNotifications(props: {
     ),
     pagination: {
       current: page,
-      limit: effectiveLimit,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / effectiveLimit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

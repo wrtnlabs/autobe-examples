@@ -1,15 +1,13 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCloneComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneComment";
-import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import type { IRedditCloneKarmaScore } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneKarmaScore";
-import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
-import type { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
-import type { IRedditClonePostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostImage";
-import type { IRedditClonePostLink } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostLink";
-import type { IRedditClonePostText } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostText";
-import type { IRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneSubscription";
+import type { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
+import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
+import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
+import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
+import type { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
+import type { IRedditCommunityPostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostImage";
+import type { IRedditCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunitySubscription";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -19,112 +17,130 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_reddit_clone_communities_create } from "../../../generate/generate_random_reddit_clone_communities_create";
-import { generate_random_reddit_clone_member_posts_comments_create } from "../../../generate/generate_random_reddit_clone_member_posts_comments_create";
-import { generate_random_reddit_clone_member_posts_create } from "../../../generate/generate_random_reddit_clone_member_posts_create";
-import { generate_random_reddit_clone_member_subscriptions_create } from "../../../generate/generate_random_reddit_clone_member_subscriptions_create";
-import { prepare_random_reddit_clone_comment } from "../../../prepare/prepare_random_reddit_clone_comment";
-import { prepare_random_reddit_clone_community } from "../../../prepare/prepare_random_reddit_clone_community";
-import { prepare_random_reddit_clone_post } from "../../../prepare/prepare_random_reddit_clone_post";
-import { prepare_random_reddit_clone_post_image } from "../../../prepare/prepare_random_reddit_clone_post_image";
-import { prepare_random_reddit_clone_post_link } from "../../../prepare/prepare_random_reddit_clone_post_link";
-import { prepare_random_reddit_clone_post_text } from "../../../prepare/prepare_random_reddit_clone_post_text";
-import { prepare_random_reddit_clone_subscription } from "../../../prepare/prepare_random_reddit_clone_subscription";
+import { generate_random_reddit_community_member_communities_create } from "../../../generate/generate_random_reddit_community_member_communities_create";
+import { generate_random_reddit_community_member_posts_comments_create } from "../../../generate/generate_random_reddit_community_member_posts_comments_create";
+import { prepare_random_reddit_community_comment } from "../../../prepare/prepare_random_reddit_community_comment";
+import { prepare_random_reddit_community_community } from "../../../prepare/prepare_random_reddit_community_community";
 
+/**
+ * Test creating nested reply comments by specifying parent comment ID.
+ * 1. Member registers and authenticates
+ * 2. Creates community and subscribes to it
+ * 3. Creates a post in the community
+ * 4. Creates top-level comment on the post
+ * 5. Creates reply comment referencing first comment as parent
+ * 6. Validates reply has correct parent_comment_id and parent field
+ * 7. Creates third-level reply to verify unlimited nesting depth
+ * 8. Validates nested structure is properly maintained throughout
+ */
 export async function test_api_comment_reply_to_parent_comment(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create community
-  const community = await generate_random_reddit_clone_communities_create(
-    connection,
-    {},
-  );
-  typia.assert(community);
-  // 2. Authenticate as member via join
+  // 1. Member registration
   const memberConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_member_join(memberConnection, {});
-  typia.assert(authorized);
-  // 3. Subscribe to the community
-  const subscription =
-    await generate_random_reddit_clone_member_subscriptions_create(
+  await authorize_member_join(memberConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "TestPassword123!",
+      username: RandomGenerator.name(1),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    } satisfies IRedditCommunityMember.IJoin,
+  });
+  // 2. Create community
+  const community =
+    await generate_random_reddit_community_member_communities_create(
       memberConnection,
-      {
-        body: { community_id: community.id },
-      },
+      { body: {} },
+    );
+  typia.assert(community);
+  // 3. Subscribe to community
+  const subscription =
+    await api.functional.redditCommunity.member.communities.subscription.create(
+      memberConnection,
+      { communityName: community.name },
     );
   typia.assert(subscription);
-  // 4. Create a post
-  const post = await generate_random_reddit_clone_member_posts_create(
+  // 4. Create text post
+  const post = await api.functional.redditCommunity.member.posts.create(
     memberConnection,
     {
       body: {
-        community_id: community.id,
-        post_type: "TEXT",
         title: RandomGenerator.paragraph({ sentences: 1 }),
-        text: { body: RandomGenerator.content({ paragraphs: 2 }) },
-      },
+        post_type: "text",
+        text_content: RandomGenerator.content({ paragraphs: 2 }),
+      } satisfies IRedditCommunityPost.ICreate,
     },
   );
   typia.assert(post);
-  // 5. Create a top-level comment (parent comment)
-  const parentComment =
-    await generate_random_reddit_clone_member_posts_comments_create(
+  // 5. Create top-level comment
+  const topLevelComment =
+    await generate_random_reddit_community_member_posts_comments_create(
       memberConnection,
       {
         params: { postId: post.id },
         body: {
-          body: RandomGenerator.paragraph({ sentences: 3 }),
-          parent_comment_id: null,
-        },
+          content: RandomGenerator.paragraph({ sentences: 2 }),
+        } satisfies IRedditCommunityComment.ICreate,
       },
     );
-  typia.assert(parentComment);
-  // 6. Create a reply comment with parent_comment_id referencing the first comment
+  typia.assert(topLevelComment);
+  // 6. Create reply comment (second level)
   const replyComment =
-    await generate_random_reddit_clone_member_posts_comments_create(
+    await generate_random_reddit_community_member_posts_comments_create(
       memberConnection,
       {
         params: { postId: post.id },
         body: {
-          body: RandomGenerator.paragraph({ sentences: 2 }),
-          parent_comment_id: parentComment.id,
-        },
+          content: RandomGenerator.paragraph({ sentences: 2 }),
+          parent_comment_id: topLevelComment.id,
+        } satisfies IRedditCommunityComment.ICreate,
       },
     );
   typia.assert(replyComment);
-  // 7. Validate the reply comment structure
+  // 7. Validate reply has correct parent reference
   TestValidator.equals(
-    "reply has correct parent",
-    replyComment.parent?.id,
-    parentComment.id,
+    "reply parent_comment_id matches",
+    replyComment.parentComment?.id,
+    topLevelComment.id,
   );
   TestValidator.equals(
-    "both comments share same post",
-    replyComment.post.id,
-    parentComment.post.id,
+    "reply parent content matches",
+    replyComment.parentComment?.content,
+    topLevelComment.content,
   );
   TestValidator.equals(
-    "reply post_id matches original post",
-    replyComment.post.id,
-    post.id,
+    "reply parent author matches",
+    replyComment.parentComment?.author.id,
+    topLevelComment.author.id,
   );
+  // 8. Create third-level reply to test unlimited nesting
+  const thirdLevelReply =
+    await generate_random_reddit_community_member_posts_comments_create(
+      memberConnection,
+      {
+        params: { postId: post.id },
+        body: {
+          content: RandomGenerator.paragraph({ sentences: 1 }),
+          parent_comment_id: replyComment.id,
+        } satisfies IRedditCommunityComment.ICreate,
+      },
+    );
+  typia.assert(thirdLevelReply);
+  // 9. Validate third-level reply structure
   TestValidator.equals(
-    "parent comment has no parent",
-    parentComment.parent,
-    null,
+    "third-level parent_comment_id matches",
+    thirdLevelReply.parentComment?.id,
+    replyComment.id,
   );
   TestValidator.predicate(
-    "reply has parent reference",
-    replyComment.parent !== null,
+    "nested structure maintained",
+    thirdLevelReply.parentComment !== null &&
+      thirdLevelReply.parentComment !== undefined,
   );
   TestValidator.equals(
-    "reply is in parent's children",
-    parentComment.children.length,
-    1,
-  );
-  TestValidator.equals(
-    "first child is the reply comment",
-    parentComment.children[0].id,
-    replyComment.id,
+    "third-level parent content matches",
+    thirdLevelReply.parentComment?.content,
+    replyComment.content,
   );
 }

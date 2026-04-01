@@ -18,6 +18,7 @@ export async function putShoppingMallAdminCustomersCustomerIdBan(props: {
   customerId: string & tags.Format<"uuid">;
   body: IShoppingMallCustomer.IBan;
 }): Promise<IShoppingMallCustomer.ISummary> {
+  // Find the customer by ID (throws 404 if not found)
   const customer =
     await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
       where: {
@@ -28,9 +29,11 @@ export async function putShoppingMallAdminCustomersCustomerIdBan(props: {
         status: true,
       },
     });
+  // Check if customer is already banned
   if (customer.status === "banned") {
     throw new HttpException("Customer is already banned", 400);
   }
+  // Update customer status to banned
   const updated = await MyGlobal.prisma.shopping_mall_customers.update({
     where: {
       id: props.customerId,
@@ -41,5 +44,6 @@ export async function putShoppingMallAdminCustomersCustomerIdBan(props: {
     },
     ...ShoppingMallCustomerAtSummaryTransformer.select(),
   });
+  // Transform and return the updated customer summary
   return await ShoppingMallCustomerAtSummaryTransformer.transform(updated);
 }

@@ -23,11 +23,9 @@ export async function getEcommerceMallAdminCategoriesCategoryIdSnapshotsSnapshot
     await MyGlobal.prisma.ecommerce_mall_category_snapshots.findUniqueOrThrow({
       where: {
         id: props.snapshotId,
+        snapshot_id: props.categoryId,
       },
       ...EcommerceMallCategorySnapshotTransformer.select(),
     });
-  if (snapshot.snapshot_id !== props.categoryId) {
-    throw new HttpException("Not Found", 404);
-  }
   return await EcommerceMallCategorySnapshotTransformer.transform(snapshot);
 }

@@ -1,9 +1,9 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import type { IRedditCloneKarmaScore } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneKarmaScore";
-import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
+import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
+import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -13,94 +13,87 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_reddit_clone_communities_create } from "../../../generate/generate_random_reddit_clone_communities_create";
-import { prepare_random_reddit_clone_community } from "../../../prepare/prepare_random_reddit_clone_community";
+import { generate_random_reddit_community_member_communities_create } from "../../../generate/generate_random_reddit_community_member_communities_create";
+import { prepare_random_reddit_community_community } from "../../../prepare/prepare_random_reddit_community_community";
 
 export async function test_api_community_update_by_owner(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as member who will own the community
+  // 1. Register a new member who will own the community
   const memberConnection: api.IConnection = { host: connection.host };
   const memberAuth = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       username: RandomGenerator.name(1),
-      display_name: RandomGenerator.name(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
       ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IRedditCloneMember.IJoin,
+    } satisfies IRedditCommunityMember.IJoin,
   });
   typia.assert(memberAuth);
-  // 2. Create initial community
-  const initialCommunity =
-    await generate_random_reddit_clone_communities_create(memberConnection, {
-      body: {
-        name: RandomGenerator.paragraph({ sentences: 1 }),
-        description: RandomGenerator.content({ paragraphs: 2 }),
-        icon: typia.random<string & tags.MaxLength<80000>>(),
+  // 2. Create a community with initial name and description
+  const initialDescription = RandomGenerator.paragraph({ sentences: 3 });
+  const community =
+    await generate_random_reddit_community_member_communities_create(
+      memberConnection,
+      {
+        body: {
+          name: RandomGenerator.name(2),
+          description: initialDescription,
+        } satisfies IRedditCommunityCommunity.ICreate,
       },
-    });
-  typia.assert(initialCommunity);
-  // Store initial values for comparison
-  const initialCreatedAt = initialCommunity.created_at;
-  const initialSubscriberCount = initialCommunity.subscriber_count;
-  const initialOwnerId = initialCommunity.owner.id;
-  const initialUpdatedAt = initialCommunity.updated_at;
-  // 3. Update community with new values
-  const updatedName = RandomGenerator.paragraph({ sentences: 1 });
-  const updatedDescription = RandomGenerator.content({ paragraphs: 2 });
-  const updatedIcon = typia.random<string & tags.Format<"uri">>();
-  const updatedCommunity = await api.functional.redditClone.communities.update(
-    memberConnection,
-    {
-      communityId: initialCommunity.id,
-      body: {
-        name: updatedName,
-        description: updatedDescription,
-        icon: updatedIcon,
-      } satisfies IRedditCloneCommunity.IUpdate,
-    },
-  );
+    );
+  typia.assert(community);
+  // Store original updated_at for comparison
+  const originalUpdatedAt = community.updated_at;
+  // 3. Update the community description
+  const updatedDescription = RandomGenerator.paragraph({ sentences: 5 });
+  const updatedCommunity =
+    await api.functional.redditCommunity.member.communities.update(
+      memberConnection,
+      {
+        communityName: community.name,
+        body: {
+          description: updatedDescription,
+        } satisfies IRedditCommunityCommunity.IUpdate,
+      },
+    );
   typia.assert(updatedCommunity);
-  // 4. Verify updated values are reflected
-  TestValidator.equals("name updated", updatedCommunity.name, updatedName);
+  // 4. Verify the response contains the updated description
   TestValidator.equals(
     "description updated",
     updatedCommunity.description,
     updatedDescription,
   );
-  TestValidator.equals("icon updated", updatedCommunity.icon, updatedIcon);
-  // 5. Verify updated_at timestamp has been refreshed
-  TestValidator.predicate(
-    "updated_at refreshed",
-    updatedCommunity.updated_at > initialUpdatedAt,
+  // 5. Verify the updated_at timestamp has changed from the original
+  TestValidator.notEquals(
+    "updated_at changed",
+    updatedCommunity.updated_at,
+    originalUpdatedAt,
   );
-  // 6. Verify system-managed fields remain unchanged
+  TestValidator.predicate("updated_at is later than original", () => {
+    return (
+      new Date(updatedCommunity.updated_at).getTime() >
+      new Date(originalUpdatedAt).getTime()
+    );
+  });
+  // 6. Verify all other community fields remain unchanged
+  TestValidator.equals("name unchanged", updatedCommunity.name, community.name);
   TestValidator.equals(
-    "created_at unchanged",
-    updatedCommunity.created_at,
-    initialCreatedAt,
+    "owner unchanged",
+    updatedCommunity.owner.id,
+    community.owner.id,
+  );
+  TestValidator.equals(
+    "owner username unchanged",
+    updatedCommunity.owner.username,
+    community.owner.username,
   );
   TestValidator.equals(
     "subscriber_count unchanged",
     updatedCommunity.subscriber_count,
-    initialSubscriberCount,
+    community.subscriber_count,
   );
-  TestValidator.equals(
-    "owner unchanged",
-    updatedCommunity.owner.id,
-    initialOwnerId,
-  );
-  TestValidator.equals(
-    "id unchanged",
-    updatedCommunity.id,
-    initialCommunity.id,
-  );
-  TestValidator.equals(
-    "deleted_at unchanged",
-    updatedCommunity.deleted_at,
-    initialCommunity.deleted_at,
-  );
+  TestValidator.equals("id unchanged", updatedCommunity.id, community.id);
 }

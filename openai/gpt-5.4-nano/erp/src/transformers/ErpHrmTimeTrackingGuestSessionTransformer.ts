@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingGuestSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingGuestSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingGuestSessionTransformer {
@@ -19,7 +21,11 @@ export namespace ErpHrmTimeTrackingGuestSessionTransformer {
         referrer: true,
         created_at: true,
         expired_at: true,
-        erp_hrm_time_tracking_guest_id: true,
+        guest: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.erp_hrm_time_tracking_guest_sessionsFindManyArgs;
   }
@@ -28,7 +34,7 @@ export namespace ErpHrmTimeTrackingGuestSessionTransformer {
   ): Promise<IErpHrmTimeTrackingGuestSession> {
     return {
       id: input.id,
-      guestId: input.erp_hrm_time_tracking_guest_id,
+      guestId: input.guest.id,
       ip: input.ip,
       href: input.href,
       referrer: input.referrer,

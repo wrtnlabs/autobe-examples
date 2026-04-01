@@ -17,49 +17,10 @@ export async function putShoppingMallAdminCategoriesCategoryId(props: {
   categoryId: string & tags.Format<"uuid">;
   body: IShoppingMallCategory.IUpdate;
 }): Promise<IShoppingMallCategory> {
-  const isAdmin = props.admin.type === "admin";
-  if (!isAdmin) {
+  if (props.admin.type !== "admin") {
     throw new HttpException("Forbidden", 403);
   }
-  const now = new Date();
-  const session = await MyGlobal.prisma.shopping_mall_admin_sessions.findFirst({
-    where: {
-      id: props.admin.session_id,
-      shopping_mall_admin_id: props.admin.id,
-      deleted_at: null,
-      expired_at: { gt: now },
-      admin: {
-        id: props.admin.id,
-        deleted_at: null,
-      },
-    },
-    select: { id: true },
-  });
-  if (session === null) {
-    throw new HttpException("You're not enrolled", 403);
-  }
-  const patch = {
-    ...(props.body.name !== undefined ? { name: props.body.name } : {}),
-    ...(props.body.description !== undefined
-      ? { description: props.body.description }
-      : {}),
-  } satisfies Prisma.shopping_mall_categoriesUpdateInput;
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.shopping_mall_categories.findUniqueOrThrow({
-      where: { id: props.categoryId },
-      select: {
-        id: true,
-      },
-    });
-    await tx.shopping_mall_categories.update({
-      where: { id: props.categoryId },
-      data: {
-        ...patch,
-        updated_at: now,
-      },
-    });
-  });
-  const updated =
+  const existing =
     await MyGlobal.prisma.shopping_mall_categories.findUniqueOrThrow({
       where: { id: props.categoryId },
       select: {
@@ -75,17 +36,44 @@ export async function putShoppingMallAdminCategoriesCategoryId(props: {
         deleted_at: true,
       },
     });
-  return {
-    id: updated.id,
-    parent_category_id: updated.parent_category_id,
-    name: updated.name,
-    description: updated.description,
-    slug: updated.slug,
-    visibility: updated.visibility,
-    display_order: updated.display_order as unknown as number &
-      tags.Type<"int32">,
-    created_at: updated.created_at.toISOString(),
-    updated_at: updated.updated_at.toISOString(),
-    deleted_at: updated.deleted_at?.toISOString() ?? null,
-  };
+  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.shopping_mall_categories.update({
+      where: { id: props.categoryId },
+      data: {
+        name: props.body.name ?? existing.name,
+        description: props.body.description ?? existing.description,
+        updated_at: new Date(),
+      },
+    });
+    const reloaded = await tx.shopping_mall_categories.findUniqueOrThrow({
+      where: { id: props.categoryId },
+      select: {
+        id: true,
+        parent_category_id: true,
+        name: true,
+        description: true,
+        slug: true,
+        visibility: true,
+        display_order: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
+    });
+    return {
+      id: reloaded.id,
+      parent_category_id: reloaded.parent_category_id,
+      name: reloaded.name,
+      description: reloaded.description,
+      slug: reloaded.slug,
+      visibility: reloaded.visibility,
+      display_order: reloaded.display_order,
+      created_at: toISOStringSafe(reloaded.created_at),
+      updated_at: toISOStringSafe(reloaded.updated_at),
+      deleted_at: reloaded.deleted_at
+        ? toISOStringSafe(reloaded.deleted_at)
+        : null,
+    } satisfies IShoppingMallCategory;
+  });
+  return updated;
 }

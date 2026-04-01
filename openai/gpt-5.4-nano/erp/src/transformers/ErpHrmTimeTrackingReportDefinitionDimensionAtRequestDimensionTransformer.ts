@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingReportDefinitionDimension } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingReportDefinitionDimension";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingReportDefinitionDimensionAtRequestDimensionTransformer {
@@ -21,8 +23,16 @@ export namespace ErpHrmTimeTrackingReportDefinitionDimensionAtRequestDimensionTr
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        reportDefinition: true,
-        reportOutputs: true,
+        reportDefinition: {
+          select: {
+            id: true,
+          },
+        },
+        reportOutputs: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.erp_hrm_time_tracking_report_definition_dimensionsFindManyArgs;
   }
@@ -30,9 +40,10 @@ export namespace ErpHrmTimeTrackingReportDefinitionDimensionAtRequestDimensionTr
     input: Payload,
   ): Promise<IErpHrmTimeTrackingReportDefinitionDimension.IRequestDimension> {
     return {
-      dimension_key: Boolean(input.dimension_key),
-      dimension_label: Boolean(input.dimension_label),
-      sort_order: input.sort_order !== 0,
+      dimension_key: input.dimension_key !== ("" as typeof input.dimension_key),
+      dimension_label:
+        input.dimension_label !== ("" as typeof input.dimension_label),
+      sort_order: input.sort_order !== (0 as typeof input.sort_order),
     };
   }
 }

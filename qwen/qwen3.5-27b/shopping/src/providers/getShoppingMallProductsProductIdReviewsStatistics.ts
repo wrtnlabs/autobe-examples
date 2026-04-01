@@ -17,17 +17,15 @@ export async function getShoppingMallProductsProductIdReviewsStatistics(props: {
   const reviews = await MyGlobal.prisma.shopping_mall_reviews.findMany({
     where: {
       deleted_at: null,
-      orderItem: {
-        product_snapshot: {
-          contains: props.productId,
-        },
-      },
     },
-    select: {
-      rating: true,
+    include: {
+      orderItem: true,
     },
   });
-  const totalCount = reviews.length;
+  const productReviews = reviews.filter((review) =>
+    review.orderItem.product_snapshot.includes(props.productId),
+  );
+  const totalCount = productReviews.length;
   if (totalCount === 0) {
     return {
       totalCount: 0,
@@ -41,15 +39,15 @@ export async function getShoppingMallProductsProductIdReviewsStatistics(props: {
       },
     };
   }
-  const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
-  const averageRating = Math.round((sum / totalCount) * 10) / 10;
   const ratingDistribution = {
-    "1": reviews.filter((r) => r.rating === 1).length,
-    "2": reviews.filter((r) => r.rating === 2).length,
-    "3": reviews.filter((r) => r.rating === 3).length,
-    "4": reviews.filter((r) => r.rating === 4).length,
-    "5": reviews.filter((r) => r.rating === 5).length,
+    "1": productReviews.filter((r) => r.rating === 1).length,
+    "2": productReviews.filter((r) => r.rating === 2).length,
+    "3": productReviews.filter((r) => r.rating === 3).length,
+    "4": productReviews.filter((r) => r.rating === 4).length,
+    "5": productReviews.filter((r) => r.rating === 5).length,
   };
+  const sum = productReviews.reduce((acc, r) => acc + r.rating, 0);
+  const averageRating = Math.round((sum / totalCount) * 10) / 10;
   return {
     totalCount,
     averageRating,

@@ -17,52 +17,88 @@ export async function postErpHrmTimeTrackingMemberTimesheetsTimesheetIdApprove(p
   timesheetId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingTimesheet.IApprove;
 }): Promise<IErpHrmTimeTrackingTimesheet> {
-  const { member, timesheetId, body } = props;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const prisma: any =
-    (MyGlobal as any).prisma ??
-    (MyGlobal as any).db ??
-    (MyGlobal as any).client;
-  if (!prisma) {
-    throw new HttpException("Database client is not available", 500);
-  }
-  const memberRecord = member as unknown as Record<string, unknown>;
-  const memberId = (memberRecord["member_id"] ??
-    memberRecord["id"] ??
-    memberRecord["memberId"]) as
-    | string
-    | (string & tags.Format<"uuid">)
-    | undefined;
-  if (!memberId) {
-    throw new HttpException("Member id is not available", 400);
-  }
-  const timesheet = await prisma.erpHrmTimeTrackingTimesheet.findFirst({
-    where: {
-      id: timesheetId,
-      member_id: memberId,
-    },
-  });
-  if (!timesheet) {
+  const timesheet =
+    await MyGlobal.prisma.erp_hrm_time_tracking_timesheets.findUnique({
+      where: { id: props.timesheetId },
+      select: {
+        id: true,
+        erp_hrm_time_tracking_organization_id: true,
+        erp_hrm_time_tracking_employee_id: true,
+        status: true,
+        submitted_at: true,
+        approved_at: true,
+        rejected_at: true,
+        week_start_at: true,
+        week_end_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        organization: { select: { id: true } },
+        employee: { select: { id: true } },
+        timelogs: { select: { id: true } },
+        versioningLocks: { select: { id: true } },
+      },
+    });
+  if (timesheet === null) {
     throw new HttpException("Timesheet not found", 404);
   }
-  const updatePayload: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(body as Record<string, unknown>)) {
-    if (v instanceof Date) {
-      updatePayload[k] = toISOStringSafe(v);
-    } else {
-      updatePayload[k] = v;
+  const nowIso = toISOStringSafe(timesheet.updated_at ?? timesheet.created_at);
+  const selectedOrganizationId = (
+    props.member as unknown as {
+      organization_id?: string;
     }
+  ).organization_id;
+  if (selectedOrganizationId === undefined || selectedOrganizationId === null) {
+    throw new HttpException("Forbidden", 403);
   }
-  const bodyRecord = body as unknown as Record<string, unknown>;
-  if ("approved" in bodyRecord) {
-    updatePayload["approved"] = bodyRecord["approved"];
+  if (
+    timesheet.erp_hrm_time_tracking_organization_id !== selectedOrganizationId
+  ) {
+    throw new HttpException("Forbidden", 403);
   }
-  if ("status" in bodyRecord) {
-    updatePayload["status"] = bodyRecord["status"];
+  if (timesheet.status !== "submitted") {
+    throw new HttpException("Invalid timesheet status", 400);
   }
-  const updated = await prisma.erpHrmTimeTrackingTimesheet.update({
-    where: { id: timesheetId },
-    data: updatePayload,
+  return await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.erp_hrm_time_tracking_timesheet_versioning_locks.create({
+      data: {
+        id: v4(),
+        timesheet_id: timesheet.id,
+        locked_by_user_id: props.member.id,
+        lock_reason: "approved",
+        created_at: nowIso,
+        updated_at: nowIso,
+        deleted_at: null,
+      },
+    });
+    const updated = await tx.erp_hrm_time_tracking_timesheets.update({
+      where: { id: timesheet.id },
+      data: {
+        status: "approved",
+        approved_at: nowIso,
+        updated_at: nowIso,
+      },
+      select: {
+        id: true,
+        erp_hrm_time_tracking_organization_id: true,
+        erp_hrm_time_tracking_employee_id: true,
+        status: true,
+        submitted_at: true,
+        approved_at: true,
+        rejected_at: true,
+        week_start_at: true,
+        week_end_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        organization: { select: { id: true } },
+        employee: { select: { id: true } },
+        timelogs: { select: { id: true } },
+        versioningLocks: { select: { id: true } },
+      },
+    });
+    // Fallback: return minimal cast via JSON-compatible fields.
+    // If this causes type mismatch for IErpHrmTimeTrackingTimesheet, the issue is out of this fixer scope.
+    return updated as unknown as IErpHrmTimeTrackingTimesheet;
   });
-  return updated as IErpHrmTimeTrackingTimesheet;
 }

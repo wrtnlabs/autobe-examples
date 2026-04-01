@@ -6,14 +6,14 @@ AI Model | Success | Score | FCSR | Status
 :--------|---------|------:|-----:|:------:
 [`anthropic/claude-sonnet-4.6`](#anthropicclaude-sonnet-46) | 4 | 100 | 82% | 🟢
 [`openai/gpt-5.4`](#openaigpt-54) | 4 | 100 | 80% | 🟢
+[`openai/gpt-5.4-nano`](#openaigpt-54-nano) | 4 | 100 | 80% | 🟢
+[`qwen/qwen3.5-122b-a10b`](#qwenqwen35-122b-a10b) | 4 | 100 | 84% | 🟢
+[`qwen/qwen3.5-397b-a17b`](#qwenqwen35-397b-a17b) | 4 | 100 | 86% | 🟢
 [`z-ai/glm-5`](#z-aiglm-5) | 4 | 100 | 88% | 🟢
-[`moonshotai/kimi-k2.5`](#moonshotaikimi-k25) | 2 | 99.87 | 58% | 🟡
-[`qwen/qwen3.5-27b`](#qwenqwen35-27b) | 2 | 99.86 | 82% | 🟡
-[`openai/gpt-5.4-nano`](#openaigpt-54-nano) | 2 | 99.86 | 80% | 🟡
-[`qwen/qwen3.5-122b-a10b`](#qwenqwen35-122b-a10b) | 3 | 99.62 | 84% | 🟢
-[`qwen/qwen3.5-397b-a17b`](#qwenqwen35-397b-a17b) | 1 | 99.57 | 88% | 🟡
-[`openai/gpt-5.4-mini`](#openaigpt-54-mini) | 2 | 99.2 | 86% | 🟡
-[`qwen/qwen3.5-35b-a3b`](#qwenqwen35-35b-a3b) | 1 | 99.1 | 76% | 🟡
+[`moonshotai/kimi-k2.5`](#moonshotaikimi-k25) | 3 | 99.96 | 58% | 🟢
+[`qwen/qwen3.5-27b`](#qwenqwen35-27b) | 3 | 99.93 | 82% | 🟢
+[`openai/gpt-5.4-mini`](#openaigpt-54-mini) | 2 | 99.73 | 81% | 🟡
+[`qwen/qwen3.5-35b-a3b`](#qwenqwen35-35b-a3b) | 1 | 99.22 | 73% | 🟡
 [`qwen/qwen3-coder-next`](#qwenqwen3-coder-next) | 1 | 99.02 | 66% | 🟡
 [`minimax/minimax-m2.7`](#minimaxminimax-m27) | 1 | 98.01 | 78% | 🟡
 [`deepseek/deepseek-v3.2`](#deepseekdeepseek-v32) | 1 | 65.86 | 72% | 🟡
@@ -178,6 +178,237 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Realize | `functions`: 223 | 18.80M | 22m 25s | 78%
 
 
+## `openai/gpt-5.4-nano`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./openai/gpt-5.4-nano/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./openai/gpt-5.4-nano/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`shopping`](./openai/gpt-5.4-nano/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`erp`](./openai/gpt-5.4-nano/erp/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+
+### `openai/gpt-5.4-nano` - `todo`
+
+- Source Code: [`openai/gpt-5.4-nano/todo`](./openai/gpt-5.4-nano/todo/)
+- Score: 100
+- Elapsed Time: 32m 8s
+- Token Usage: 38.41M
+- Function Calling Success Rate: 79.65%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 2.12M | 11m 48s | 95%
+🟢 Database | `namespaces`: 3, `models`: 11 | 758.0K | 42s | 86%
+🟢 Interface | `operations`: 35, `schemas`: 42 | 25.22M | 6m 41s | 66%
+🟢 Test | `functions`: 94 | 6.76M | 7m 35s | 95%
+🟢 Realize | `functions`: 53 | 3.55M | 5m 19s | 87%
+
+
+### `openai/gpt-5.4-nano` - `reddit`
+
+- Source Code: [`openai/gpt-5.4-nano/reddit`](./openai/gpt-5.4-nano/reddit/)
+- Score: 100
+- Elapsed Time: 1h 41m 44s
+- Token Usage: 123.02M
+- Function Calling Success Rate: 82.10%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 6 | 1.36M | 7m 27s | 97%
+🟢 Database | `namespaces`: 7, `models`: 23 | 1.70M | 1m 22s | 91%
+🟢 Interface | `operations`: 126, `schemas`: 98 | 70.97M | 22m 6s | 66%
+🟢 Test | `functions`: 369 | 34.64M | 43m 26s | 96%
+🟢 Realize | `functions`: 174 | 14.36M | 27m 21s | 88%
+
+
+### `openai/gpt-5.4-nano` - `shopping`
+
+- Source Code: [`openai/gpt-5.4-nano/shopping`](./openai/gpt-5.4-nano/shopping/)
+- Score: 100
+- Elapsed Time: 2h 46m 6s
+- Token Usage: 203.46M
+- Function Calling Success Rate: 80.72%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 6 | 3.19M | 45m 22s | 98%
+🟢 Database | `namespaces`: 7, `models`: 35 | 2.85M | 1m 56s | 87%
+🟢 Interface | `operations`: 185, `schemas`: 159 | 122.62M | 31m 48s | 64%
+🟢 Test | `functions`: 575 | 53.61M | 1h 3m 20s | 97%
+🟢 Realize | `functions`: 264 | 21.20M | 23m 37s | 86%
+
+
+### `openai/gpt-5.4-nano` - `erp`
+
+- Source Code: [`openai/gpt-5.4-nano/erp`](./openai/gpt-5.4-nano/erp/)
+- Score: 100
+- Elapsed Time: 2h 13m 46s
+- Token Usage: 149.24M
+- Function Calling Success Rate: 78.53%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 2.16M | 17m 18s | 98%
+🟢 Database | `namespaces`: 7, `models`: 26 | 2.13M | 1m 54s | 92%
+🟢 Interface | `operations`: 122, `schemas`: 131 | 91.12M | 39m 59s | 63%
+🟢 Test | `functions`: 362 | 32.73M | 39m 34s | 96%
+🟢 Realize | `functions`: 186 | 21.11M | 34m 58s | 82%
+
+
+## `qwen/qwen3.5-122b-a10b`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./qwen/qwen3.5-122b-a10b/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./qwen/qwen3.5-122b-a10b/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`shopping`](./qwen/qwen3.5-122b-a10b/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`erp`](./qwen/qwen3.5-122b-a10b/erp/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+
+### `qwen/qwen3.5-122b-a10b` - `todo`
+
+- Source Code: [`qwen/qwen3.5-122b-a10b/todo`](./qwen/qwen3.5-122b-a10b/todo/)
+- Score: 100
+- Elapsed Time: 1h 18m 29s
+- Token Usage: 18.08M
+- Function Calling Success Rate: 88.05%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 377.8K | 4m 1s | 100%
+🟢 Database | `namespaces`: 2, `models`: 7 | 1.25M | 34m 2s | 97%
+🟢 Interface | `operations`: 14, `schemas`: 28 | 11.65M | 23m 40s | 80%
+🟢 Test | `functions`: 44 | 2.90M | 7m 36s | 95%
+🟢 Realize | `functions`: 24 | 1.90M | 9m 8s | 86%
+
+
+### `qwen/qwen3.5-122b-a10b` - `reddit`
+
+- Source Code: [`qwen/qwen3.5-122b-a10b/reddit`](./qwen/qwen3.5-122b-a10b/reddit/)
+- Score: 100
+- Elapsed Time: 3h 40m 14s
+- Token Usage: 108.77M
+- Function Calling Success Rate: 83.63%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 1.33M | 23m 50s | 94%
+🟢 Database | `namespaces`: 6, `models`: 21 | 2.71M | 15m 59s | 95%
+🟢 Interface | `operations`: 62, `schemas`: 80 | 67.76M | 1h 47m 8s | 69%
+🟢 Test | `functions`: 183 | 25.28M | 36m 44s | 97%
+🟢 Realize | `functions`: 98 | 11.70M | 36m 32s | 89%
+
+
+### `qwen/qwen3.5-122b-a10b` - `shopping`
+
+- Source Code: [`qwen/qwen3.5-122b-a10b/shopping`](./qwen/qwen3.5-122b-a10b/shopping/)
+- Score: 100
+- Elapsed Time: 4h 55m 40s
+- Token Usage: 285.94M
+- Function Calling Success Rate: 86.08%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 3, `documents`: 6 | 3.83M | 47m 7s | 86%
+🟢 Database | `namespaces`: 10, `models`: 30 | 5.01M | 8m 15s | 97%
+🟢 Interface | `operations`: 148, `schemas`: 155 | 160.24M | 1h 52m 35s | 74%
+🟢 Test | `functions`: 429 | 84.24M | 1h 13m 44s | 97%
+🟢 Realize | `functions`: 207 | 32.63M | 53m 57s | 90%
+
+
+### `qwen/qwen3.5-122b-a10b` - `erp`
+
+- Source Code: [`qwen/qwen3.5-122b-a10b/erp`](./qwen/qwen3.5-122b-a10b/erp/)
+- Score: 100
+- Elapsed Time: 3h 10m 27s
+- Token Usage: 117.53M
+- Function Calling Success Rate: 80.72%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 1.86M | 25m 2s | 99%
+🟢 Database | `namespaces`: 7, `models`: 27 | 2.55M | 5m 3s | 97%
+🟢 Interface | `operations`: 101, `schemas`: 135 | 89.90M | 1h 31m 11s | 70%
+🟢 Test | `functions`: 34 | 6.61M | 10m 15s | 96%
+🟢 Realize | `functions`: 156 | 16.61M | 58m 53s | 91%
+
+
+## `qwen/qwen3.5-397b-a17b`
+
+Project | Score | Analyze | Prisma | Interface | Test | Realize
+:-------|------:|:-------:|:------:|:----------|:----:|:-------:
+[`todo`](./qwen/qwen3.5-397b-a17b/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`reddit`](./qwen/qwen3.5-397b-a17b/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`shopping`](./qwen/qwen3.5-397b-a17b/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+[`erp`](./qwen/qwen3.5-397b-a17b/erp/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
+
+### `qwen/qwen3.5-397b-a17b` - `todo`
+
+- Source Code: [`qwen/qwen3.5-397b-a17b/todo`](./qwen/qwen3.5-397b-a17b/todo/)
+- Score: 100
+- Elapsed Time: 1h 8m 53s
+- Token Usage: 15.11M
+- Function Calling Success Rate: 89.51%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 735.5K | 19m 36s | 100%
+🟢 Database | `namespaces`: 2, `models`: 9 | 448.5K | 3m 21s | 100%
+🟢 Interface | `operations`: 19, `schemas`: 27 | 8.80M | 30m 9s | 80%
+🟢 Test | `functions`: 56 | 3.72M | 8m 59s | 95%
+🟢 Realize | `functions`: 29 | 1.40M | 6m 47s | 91%
+
+
+### `qwen/qwen3.5-397b-a17b` - `reddit`
+
+- Source Code: [`qwen/qwen3.5-397b-a17b/reddit`](./qwen/qwen3.5-397b-a17b/reddit/)
+- Score: 100
+- Elapsed Time: 2h 42m 33s
+- Token Usage: 68.51M
+- Function Calling Success Rate: 88.73%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 1.36M | 39m 11s | 97%
+🟢 Database | `namespaces`: 6, `models`: 21 | 1.32M | 7m 58s | 98%
+🟢 Interface | `operations`: 87, `schemas`: 85 | 36.64M | 47m 1s | 84%
+🟢 Test | `functions`: 239 | 20.05M | 28m 44s | 94%
+🟢 Realize | `functions`: 129 | 9.14M | 39m 37s | 85%
+
+
+### `qwen/qwen3.5-397b-a17b` - `shopping`
+
+- Source Code: [`qwen/qwen3.5-397b-a17b/shopping`](./qwen/qwen3.5-397b-a17b/shopping/)
+- Score: 100
+- Elapsed Time: 4h 33m 10s
+- Token Usage: 241.46M
+- Function Calling Success Rate: 85.96%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 4, `documents`: 6 | 2.39M | 34m 38s | 100%
+🟢 Database | `namespaces`: 14, `models`: 58 | 4.31M | 34m 33s | 99%
+🟢 Interface | `operations`: 210, `schemas`: 226 | 124.20M | 1h 24m 6s | 78%
+🟢 Test | `functions`: 627 | 82.60M | 1h 13m 44s | 93%
+🟢 Realize | `functions`: 313 | 27.95M | 46m 7s | 83%
+
+
+### `qwen/qwen3.5-397b-a17b` - `erp`
+
+- Source Code: [`qwen/qwen3.5-397b-a17b/erp`](./qwen/qwen3.5-397b-a17b/erp/)
+- Score: 100
+- Elapsed Time: 3h 4m 41s
+- Token Usage: 92.42M
+- Function Calling Success Rate: 85.72%
+
+Phase | Generated | Token Usage | Elapsed Time | FCSR
+:-----|:----------|------------:|-------------:|------:
+🟢 Analyze | `actors`: 2, `documents`: 6 | 1.99M | 47m 46s | 98%
+🟢 Database | `namespaces`: 6, `models`: 21 | 1.38M | 7m 8s | 100%
+🟢 Interface | `operations`: 84, `schemas`: 108 | 50.24M | 54m 58s | 78%
+🟢 Test | `functions`: 266 | 25.30M | 36m 47s | 91%
+🟢 Realize | `functions`: 128 | 13.52M | 38m 0s | 87%
+
+
 ## `z-ai/glm-5`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
@@ -260,7 +491,7 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
 [`todo`](./moonshotai/kimi-k2.5/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`reddit`](./moonshotai/kimi-k2.5/reddit/) | 99.64 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`reddit`](./moonshotai/kimi-k2.5/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`shopping`](./moonshotai/kimi-k2.5/shopping/) | 99.82 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
 [`erp`](./moonshotai/kimi-k2.5/erp/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 
@@ -284,10 +515,10 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ### `moonshotai/kimi-k2.5` - `reddit`
 
 - Source Code: [`moonshotai/kimi-k2.5/reddit`](./moonshotai/kimi-k2.5/reddit/)
-- Score: 99.64
-- Elapsed Time: 4h 59m 1s
-- Token Usage: 111.82M
-- Function Calling Success Rate: 64.99%
+- Score: 100
+- Elapsed Time: 8h 47m 16s
+- Token Usage: 117.52M
+- Function Calling Success Rate: 67.12%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
@@ -295,7 +526,7 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Database | `namespaces`: 7, `models`: 35 | 2.78M | 16m 11s | 96%
 🟢 Interface | `operations`: 119, `schemas`: 118 | 63.79M | 1h 44m 54s | 81%
 🟢 Test | `functions`: 346 | 31.84M | 1h 12m 2s | 50%
-🟡 Realize | `functions`: 169, `errors`: 1 | 12.66M | 1h 23m 45s | 62%
+🟢 Realize | `functions`: 169 | 18.35M | 5h 12m 0s | 75%
 
 
 ### `moonshotai/kimi-k2.5` - `shopping`
@@ -338,7 +569,7 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
 [`todo`](./qwen/qwen3.5-27b/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`reddit`](./qwen/qwen3.5-27b/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`shopping`](./qwen/qwen3.5-27b/shopping/) | 99.73 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`shopping`](./qwen/qwen3.5-27b/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`erp`](./qwen/qwen3.5-27b/erp/) | 99.71 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
 
 ### `qwen/qwen3.5-27b` - `todo`
@@ -378,10 +609,10 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ### `qwen/qwen3.5-27b` - `shopping`
 
 - Source Code: [`qwen/qwen3.5-27b/shopping`](./qwen/qwen3.5-27b/shopping/)
-- Score: 99.73
-- Elapsed Time: 8h 8m 3s
-- Token Usage: 229.42M
-- Function Calling Success Rate: 84.89%
+- Score: 100
+- Elapsed Time: 7h 46m 30s
+- Token Usage: 224.62M
+- Function Calling Success Rate: 85.62%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
@@ -389,7 +620,7 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Database | `namespaces`: 10, `models`: 30 | 4.97M | 19m 34s | 88%
 🟢 Interface | `operations`: 171, `schemas`: 174 | 125.27M | 2h 35m 33s | 84%
 🟢 Test | `functions`: 476 | 60.66M | 1h 36m 59s | 93%
-🟡 Realize | `functions`: 225, `errors`: 1 | 33.77M | 1h 56m 33s | 71%
+🟢 Realize | `functions`: 225 | 28.97M | 1h 35m 0s | 73%
 
 
 ### `qwen/qwen3.5-27b` - `erp`
@@ -409,245 +640,14 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟡 Realize | `functions`: 208, `errors`: 1 | 27.68M | 2h 13m 10s | 76%
 
 
-## `openai/gpt-5.4-nano`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./openai/gpt-5.4-nano/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`reddit`](./openai/gpt-5.4-nano/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`shopping`](./openai/gpt-5.4-nano/shopping/) | 99.77 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-[`erp`](./openai/gpt-5.4-nano/erp/) | 99.68 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-
-### `openai/gpt-5.4-nano` - `todo`
-
-- Source Code: [`openai/gpt-5.4-nano/todo`](./openai/gpt-5.4-nano/todo/)
-- Score: 100
-- Elapsed Time: 32m 8s
-- Token Usage: 38.41M
-- Function Calling Success Rate: 79.65%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 2.12M | 11m 48s | 95%
-🟢 Database | `namespaces`: 3, `models`: 11 | 758.0K | 42s | 86%
-🟢 Interface | `operations`: 35, `schemas`: 42 | 25.22M | 6m 41s | 66%
-🟢 Test | `functions`: 94 | 6.76M | 7m 35s | 95%
-🟢 Realize | `functions`: 53 | 3.55M | 5m 19s | 87%
-
-
-### `openai/gpt-5.4-nano` - `reddit`
-
-- Source Code: [`openai/gpt-5.4-nano/reddit`](./openai/gpt-5.4-nano/reddit/)
-- Score: 100
-- Elapsed Time: 1h 41m 44s
-- Token Usage: 123.02M
-- Function Calling Success Rate: 82.10%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 6 | 1.36M | 7m 27s | 97%
-🟢 Database | `namespaces`: 7, `models`: 23 | 1.70M | 1m 22s | 91%
-🟢 Interface | `operations`: 126, `schemas`: 98 | 70.97M | 22m 6s | 66%
-🟢 Test | `functions`: 369 | 34.64M | 43m 26s | 96%
-🟢 Realize | `functions`: 174 | 14.36M | 27m 21s | 88%
-
-
-### `openai/gpt-5.4-nano` - `shopping`
-
-- Source Code: [`openai/gpt-5.4-nano/shopping`](./openai/gpt-5.4-nano/shopping/)
-- Score: 99.77
-- Elapsed Time: 2h 54m 31s
-- Token Usage: 205.00M
-- Function Calling Success Rate: 80.69%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 6 | 3.19M | 45m 22s | 98%
-🟢 Database | `namespaces`: 7, `models`: 35 | 2.85M | 1m 56s | 87%
-🟢 Interface | `operations`: 185, `schemas`: 159 | 122.62M | 31m 48s | 64%
-🟢 Test | `functions`: 575 | 53.61M | 1h 3m 20s | 97%
-🟡 Realize | `functions`: 263, `errors`: 1 | 22.74M | 32m 3s | 86%
-
-
-### `openai/gpt-5.4-nano` - `erp`
-
-- Source Code: [`openai/gpt-5.4-nano/erp`](./openai/gpt-5.4-nano/erp/)
-- Score: 99.68
-- Elapsed Time: 2h 23m 7s
-- Token Usage: 147.33M
-- Function Calling Success Rate: 78.26%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 2.16M | 17m 18s | 98%
-🟢 Database | `namespaces`: 7, `models`: 26 | 2.13M | 1m 54s | 92%
-🟢 Interface | `operations`: 122, `schemas`: 131 | 91.12M | 39m 59s | 63%
-🟢 Test | `functions`: 362 | 32.73M | 39m 34s | 96%
-🟡 Realize | `functions`: 186, `errors`: 1 | 19.19M | 44m 19s | 81%
-
-
-## `qwen/qwen3.5-122b-a10b`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./qwen/qwen3.5-122b-a10b/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`reddit`](./qwen/qwen3.5-122b-a10b/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`shopping`](./qwen/qwen3.5-122b-a10b/shopping/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`erp`](./qwen/qwen3.5-122b-a10b/erp/) | 98.47 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-
-### `qwen/qwen3.5-122b-a10b` - `todo`
-
-- Source Code: [`qwen/qwen3.5-122b-a10b/todo`](./qwen/qwen3.5-122b-a10b/todo/)
-- Score: 100
-- Elapsed Time: 1h 18m 29s
-- Token Usage: 18.08M
-- Function Calling Success Rate: 88.05%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 377.8K | 4m 1s | 100%
-🟢 Database | `namespaces`: 2, `models`: 7 | 1.25M | 34m 2s | 97%
-🟢 Interface | `operations`: 14, `schemas`: 28 | 11.65M | 23m 40s | 80%
-🟢 Test | `functions`: 44 | 2.90M | 7m 36s | 95%
-🟢 Realize | `functions`: 24 | 1.90M | 9m 8s | 86%
-
-
-### `qwen/qwen3.5-122b-a10b` - `reddit`
-
-- Source Code: [`qwen/qwen3.5-122b-a10b/reddit`](./qwen/qwen3.5-122b-a10b/reddit/)
-- Score: 100
-- Elapsed Time: 3h 40m 14s
-- Token Usage: 108.77M
-- Function Calling Success Rate: 83.63%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 1.33M | 23m 50s | 94%
-🟢 Database | `namespaces`: 6, `models`: 21 | 2.71M | 15m 59s | 95%
-🟢 Interface | `operations`: 62, `schemas`: 80 | 67.76M | 1h 47m 8s | 69%
-🟢 Test | `functions`: 183 | 25.28M | 36m 44s | 97%
-🟢 Realize | `functions`: 98 | 11.70M | 36m 32s | 89%
-
-
-### `qwen/qwen3.5-122b-a10b` - `shopping`
-
-- Source Code: [`qwen/qwen3.5-122b-a10b/shopping`](./qwen/qwen3.5-122b-a10b/shopping/)
-- Score: 100
-- Elapsed Time: 4h 55m 40s
-- Token Usage: 285.94M
-- Function Calling Success Rate: 86.08%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 6 | 3.83M | 47m 7s | 86%
-🟢 Database | `namespaces`: 10, `models`: 30 | 5.01M | 8m 15s | 97%
-🟢 Interface | `operations`: 148, `schemas`: 155 | 160.24M | 1h 52m 35s | 74%
-🟢 Test | `functions`: 429 | 84.24M | 1h 13m 44s | 97%
-🟢 Realize | `functions`: 207 | 32.63M | 53m 57s | 90%
-
-
-### `qwen/qwen3.5-122b-a10b` - `erp`
-
-- Source Code: [`qwen/qwen3.5-122b-a10b/erp`](./qwen/qwen3.5-122b-a10b/erp/)
-- Score: 98.47
-- Elapsed Time: 3h 17m 10s
-- Token Usage: 124.76M
-- Function Calling Success Rate: 80.86%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 1.86M | 25m 2s | 99%
-🟢 Database | `namespaces`: 7, `models`: 27 | 2.55M | 5m 3s | 97%
-🟢 Interface | `operations`: 101, `schemas`: 135 | 89.90M | 1h 31m 11s | 70%
-🟢 Test | `functions`: 34 | 6.61M | 10m 15s | 96%
-🟡 Realize | `functions`: 157, `errors`: 4 | 23.84M | 1h 5m 37s | 91%
-
-
-## `qwen/qwen3.5-397b-a17b`
-
-Project | Score | Analyze | Prisma | Interface | Test | Realize
-:-------|------:|:-------:|:------:|:----------|:----:|:-------:
-[`todo`](./qwen/qwen3.5-397b-a17b/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`reddit`](./qwen/qwen3.5-397b-a17b/reddit/) | 98.95 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-[`shopping`](./qwen/qwen3.5-397b-a17b/shopping/) | 99.76 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-[`erp`](./qwen/qwen3.5-397b-a17b/erp/) | 99.56 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-
-### `qwen/qwen3.5-397b-a17b` - `todo`
-
-- Source Code: [`qwen/qwen3.5-397b-a17b/todo`](./qwen/qwen3.5-397b-a17b/todo/)
-- Score: 100
-- Elapsed Time: 53m 50s
-- Token Usage: 18.39M
-- Function Calling Success Rate: 91.82%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 419.9K | 9m 56s | 100%
-🟢 Database | `namespaces`: 2, `models`: 8 | 686.1K | 3m 45s | 92%
-🟢 Interface | `operations`: 19, `schemas`: 27 | 11.66M | 19m 25s | 87%
-🟢 Test | `functions`: 55 | 3.80M | 10m 1s | 98%
-🟢 Realize | `functions`: 29 | 1.82M | 10m 42s | 87%
-
-
-### `qwen/qwen3.5-397b-a17b` - `reddit`
-
-- Source Code: [`qwen/qwen3.5-397b-a17b/reddit`](./qwen/qwen3.5-397b-a17b/reddit/)
-- Score: 98.95
-- Elapsed Time: 2h 57m 13s
-- Token Usage: 81.50M
-- Function Calling Success Rate: 91.49%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 1.09M | 27m 2s | 99%
-🟢 Database | `namespaces`: 10, `models`: 24 | 2.56M | 26m 31s | 96%
-🟢 Interface | `operations`: 70, `schemas`: 86 | 46.20M | 50m 53s | 87%
-🟢 Test | `functions`: 228 | 19.14M | 29m 22s | 97%
-🟡 Realize | `functions`: 114, `errors`: 2 | 12.51M | 43m 24s | 86%
-
-
-### `qwen/qwen3.5-397b-a17b` - `shopping`
-
-- Source Code: [`qwen/qwen3.5-397b-a17b/shopping`](./qwen/qwen3.5-397b-a17b/shopping/)
-- Score: 99.76
-- Elapsed Time: 4h 48m 38s
-- Token Usage: 229.80M
-- Function Calling Success Rate: 86.95%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 4, `documents`: 6 | 2.31M | 38m 31s | 100%
-🟢 Database | `namespaces`: 11, `models`: 38 | 4.36M | 8m 12s | 93%
-🟢 Interface | `operations`: 174, `schemas`: 172 | 133.90M | 1h 46m 26s | 78%
-🟢 Test | `functions`: 464 | 63.19M | 1h 33m 55s | 94%
-🟡 Realize | `functions`: 248, `errors`: 1 | 26.04M | 41m 33s | 88%
-
-
-### `qwen/qwen3.5-397b-a17b` - `erp`
-
-- Source Code: [`qwen/qwen3.5-397b-a17b/erp`](./qwen/qwen3.5-397b-a17b/erp/)
-- Score: 99.56
-- Elapsed Time: 3h 1m 32s
-- Token Usage: 121.41M
-- Function Calling Success Rate: 87.46%
-
-Phase | Generated | Token Usage | Elapsed Time | FCSR
-:-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 1.14M | 28m 31s | 100%
-🟢 Database | `namespaces`: 7, `models`: 20 | 2.07M | 24m 47s | 98%
-🟢 Interface | `operations`: 89, `schemas`: 129 | 78.31M | 42m 31s | 79%
-🟢 Test | `functions`: 204 | 23.70M | 55m 28s | 96%
-🟡 Realize | `functions`: 137, `errors`: 1 | 16.18M | 30m 12s | 91%
-
-
 ## `openai/gpt-5.4-mini`
 
 Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
 [`todo`](./openai/gpt-5.4-mini/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`reddit`](./openai/gpt-5.4-mini/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`shopping`](./openai/gpt-5.4-mini/shopping/) | 99.01 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-[`erp`](./openai/gpt-5.4-mini/erp/) | 97.79 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`shopping`](./openai/gpt-5.4-mini/shopping/) | 99.63 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`erp`](./openai/gpt-5.4-mini/erp/) | 99.28 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
 
 ### `openai/gpt-5.4-mini` - `todo`
 
@@ -686,35 +686,35 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ### `openai/gpt-5.4-mini` - `shopping`
 
 - Source Code: [`openai/gpt-5.4-mini/shopping`](./openai/gpt-5.4-mini/shopping/)
-- Score: 99.01
-- Elapsed Time: 1h 30m 28s
-- Token Usage: 182.74M
-- Function Calling Success Rate: 84.20%
+- Score: 99.63
+- Elapsed Time: 2h 1m 19s
+- Token Usage: 223.96M
+- Function Calling Success Rate: 79.44%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 3, `documents`: 6 | 2.54M | 11m 34s | 98%
-🟢 Database | `namespaces`: 10, `models`: 44 | 3.56M | 1m 32s | 96%
-🟢 Interface | `operations`: 164, `schemas`: 165 | 107.68M | 14m 32s | 69%
-🟢 Test | `functions`: 482 | 46.28M | 38m 42s | 97%
-🟡 Realize | `functions`: 242, `errors`: 4 | 22.68M | 24m 6s | 89%
+🟢 Analyze | `actors`: 3, `documents`: 6 | 2.13M | 13m 55s | 98%
+🟢 Database | `namespaces`: 17, `models`: 44 | 3.16M | 1m 44s | 91%
+🟢 Interface | `operations`: 235, `schemas`: 208 | 119.98M | 19m 45s | 60%
+🟢 Test | `functions`: 719 | 67.62M | 1h 3m 33s | 98%
+🟡 Realize | `functions`: 328, `errors`: 2 | 31.08M | 22m 20s | 92%
 
 
 ### `openai/gpt-5.4-mini` - `erp`
 
 - Source Code: [`openai/gpt-5.4-mini/erp`](./openai/gpt-5.4-mini/erp/)
-- Score: 97.79
-- Elapsed Time: 1h 14m 15s
-- Token Usage: 122.13M
-- Function Calling Success Rate: 85.16%
+- Score: 99.28
+- Elapsed Time: 1h 37m 15s
+- Token Usage: 106.32M
+- Function Calling Success Rate: 77.88%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
-🟢 Analyze | `actors`: 2, `documents`: 6 | 1.84M | 7m 19s | 100%
-🟢 Database | `namespaces`: 6, `models`: 25 | 2.08M | 1m 27s | 94%
-🟢 Interface | `operations`: 111, `schemas`: 129 | 73.49M | 16m 1s | 73%
-🟢 Test | `functions`: 317 | 26.61M | 24m 29s | 96%
-🟡 Realize | `functions`: 163, `errors`: 6 | 18.11M | 24m 57s | 90%
+🟢 Analyze | `actors`: 2, `documents`: 6 | 1.53M | 15m 30s | 97%
+🟢 Database | `namespaces`: 9, `models`: 29 | 1.61M | 1m 15s | 97%
+🟢 Interface | `operations`: 108, `schemas`: 128 | 63.86M | 25m 37s | 59%
+🟢 Test | `functions`: 348 | 27.92M | 29m 5s | 98%
+🟡 Realize | `functions`: 167, `errors`: 2 | 11.40M | 25m 46s | 89%
 
 
 ## `qwen/qwen3.5-35b-a3b`
@@ -722,9 +722,9 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
 [`todo`](./qwen/qwen3.5-35b-a3b/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`reddit`](./qwen/qwen3.5-35b-a3b/reddit/) | 99.1 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-[`shopping`](./qwen/qwen3.5-35b-a3b/shopping/) | 99.15 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
-[`erp`](./qwen/qwen3.5-35b-a3b/erp/) | 98.16 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`reddit`](./qwen/qwen3.5-35b-a3b/reddit/) | 99.55 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`shopping`](./qwen/qwen3.5-35b-a3b/shopping/) | 99.16 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`erp`](./qwen/qwen3.5-35b-a3b/erp/) | 98.15 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
 
 ### `qwen/qwen3.5-35b-a3b` - `todo`
 
@@ -746,10 +746,10 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ### `qwen/qwen3.5-35b-a3b` - `reddit`
 
 - Source Code: [`qwen/qwen3.5-35b-a3b/reddit`](./qwen/qwen3.5-35b-a3b/reddit/)
-- Score: 99.1
-- Elapsed Time: 3h 47m 40s
-- Token Usage: 152.98M
-- Function Calling Success Rate: 75.09%
+- Score: 99.55
+- Elapsed Time: 4h 41m 11s
+- Token Usage: 154.68M
+- Function Calling Success Rate: 71.60%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
@@ -757,16 +757,16 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Database | `namespaces`: 10, `models`: 43 | 5.09M | 7m 34s | 80%
 🟢 Interface | `operations`: 82, `schemas`: 117 | 85.60M | 1h 36m 16s | 67%
 🟢 Test | `functions`: 219 | 34.79M | 34m 4s | 83%
-🟡 Realize | `functions`: 133, `errors`: 2 | 26.20M | 1h 19m 45s | 72%
+🟡 Realize | `functions`: 132, `errors`: 1 | 27.90M | 2h 13m 16s | 61%
 
 
 ### `qwen/qwen3.5-35b-a3b` - `shopping`
 
 - Source Code: [`qwen/qwen3.5-35b-a3b/shopping`](./qwen/qwen3.5-35b-a3b/shopping/)
-- Score: 99.15
-- Elapsed Time: 5h 50m 40s
-- Token Usage: 331.05M
-- Function Calling Success Rate: 77.07%
+- Score: 99.16
+- Elapsed Time: 6h 36m 18s
+- Token Usage: 324.38M
+- Function Calling Success Rate: 74.24%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
@@ -774,16 +774,16 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Database | `namespaces`: 14, `models`: 68 | 9.34M | 27m 14s | 81%
 🟢 Interface | `operations`: 196, `schemas`: 217 | 182.49M | 2h 8m 12s | 69%
 🟢 Test | `functions`: 462 | 86.27M | 1h 30m 14s | 83%
-🟡 Realize | `functions`: 284, `errors`: 4 | 50.06M | 1h 24m 39s | 77%
+🟡 Realize | `functions`: 287, `errors`: 4 | 43.39M | 2h 10m 17s | 65%
 
 
 ### `qwen/qwen3.5-35b-a3b` - `erp`
 
 - Source Code: [`qwen/qwen3.5-35b-a3b/erp`](./qwen/qwen3.5-35b-a3b/erp/)
-- Score: 98.16
-- Elapsed Time: 3h 38m 13s
-- Token Usage: 245.44M
-- Function Calling Success Rate: 74.76%
+- Score: 98.15
+- Elapsed Time: 5h 0m 39s
+- Token Usage: 244.36M
+- Function Calling Success Rate: 71.93%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
@@ -791,7 +791,7 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Database | `namespaces`: 8, `models`: 23 | 3.07M | 4m 6s | 76%
 🟢 Interface | `operations`: 119, `schemas`: 131 | 113.24M | 57m 15s | 67%
 🟢 Test | `functions`: 327 | 82.98M | 1h 27m 1s | 79%
-🟡 Realize | `functions`: 163, `errors`: 5 | 44.23M | 57m 54s | 75%
+🟡 Realize | `functions`: 162, `errors`: 5 | 43.15M | 2h 20m 20s | 64%
 
 
 ## `qwen/qwen3-coder-next`

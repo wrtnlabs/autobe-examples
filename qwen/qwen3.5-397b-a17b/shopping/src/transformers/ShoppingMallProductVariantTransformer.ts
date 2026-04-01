@@ -1,18 +1,16 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
-import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
+import { IShoppingMallProductOptionDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionDefinition";
+import { IShoppingMallProductOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionValue";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
-import { ShoppingMallProductVariantOptionTransformer } from "./ShoppingMallProductVariantOptionTransformer";
+import { ShoppingMallProductOptionValueAtSummaryTransformer } from "./ShoppingMallProductOptionValueAtSummaryTransformer";
 
 export namespace ShoppingMallProductVariantTransformer {
   export type Payload = Prisma.shopping_mall_product_variantsGetPayload<
@@ -23,30 +21,50 @@ export namespace ShoppingMallProductVariantTransformer {
       select: {
         id: true,
         sku_code: true,
-        price: true,
-        stock_quantity: true,
+        price_override: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        product: ShoppingMallProductAtSummaryTransformer.select(),
-        options: ShoppingMallProductVariantOptionTransformer.select(),
+        product: {
+          select: {
+            base_price: true,
+            variants: {
+              select: {
+                price_override: true,
+              },
+            } satisfies Prisma.shopping_mall_product_variantsFindManyArgs,
+          },
+        } satisfies Prisma.shopping_mall_productsFindManyArgs,
+        variantOptions:
+          ShoppingMallProductOptionValueAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_product_variantsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallProductVariant> {
+    const prices = input.product.variants
+      .map((v) => v.price_override)
+      .filter((p): p is number => p !== null);
+    const minPrice =
+      prices.length > 0
+        ? Math.min(...prices)
+        : Number(input.product.base_price);
+    const maxPrice =
+      prices.length > 0
+        ? Math.max(...prices)
+        : Number(input.product.base_price);
     return {
       id: input.id,
       skuCode: input.sku_code,
-      price: input.price ?? undefined,
-      stockQuantity: input.stock_quantity,
-      product: await ShoppingMallProductAtSummaryTransformer.transform(
-        input.product,
-      ),
-      options: await ArrayUtil.asyncMap(
-        input.options,
-        ShoppingMallProductVariantOptionTransformer.transform,
+      priceOverride: input.price_override,
+      product: {
+        min: minPrice,
+        max: maxPrice,
+      } satisfies IShoppingMallProduct.ISummary,
+      variantOptions: await ArrayUtil.asyncMap(
+        input.variantOptions,
+        ShoppingMallProductOptionValueAtSummaryTransformer.transform,
       ),
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),

@@ -26,27 +26,25 @@ export async function getRedditLikeModeratorReportsReportId(props: {
   moderator: ModeratorPayload;
   reportId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeReport> {
-  // Fetch the report with all related data using the transformer select
-  const report = await MyGlobal.prisma.reddit_like_reports.findUnique({
+  // Find the report with all necessary relations
+  const report = await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
     where: { id: props.reportId },
     ...RedditLikeReportTransformer.select(),
   });
-  // Report not found
-  if (report === null) {
-    throw new HttpException("Report not found", 404);
-  }
   // Verify moderator has privileges for this community
-  const moderatorPrivilege =
+  const communityId =
+    (report as any).community?.id ?? (report as any).community_id;
+  const moderatorRecord =
     await MyGlobal.prisma.reddit_like_moderators.findFirst({
       where: {
         member_id: props.moderator.id,
-        community_id: report.community.id,
+        community_id: communityId,
         deleted_at: null,
-      },
-    });
-  if (moderatorPrivilege === null) {
+      } satisfies any as any,
+    } as any);
+  if (moderatorRecord === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Transform and return the report
+  // Transform and return
   return await RedditLikeReportTransformer.transform(report);
 }

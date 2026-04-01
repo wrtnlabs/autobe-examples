@@ -13,21 +13,6 @@ export namespace HrmPlatformDepartmentTransformer {
   export type Payload = Prisma.hrm_platform_departmentsGetPayload<
     ReturnType<typeof select>
   >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
-        parent: HrmPlatformDepartmentAtSummaryTransformer.select(),
-        childDepartments: HrmPlatformDepartmentAtSummaryTransformer.select(),
-      },
-    } satisfies Prisma.hrm_platform_departmentsFindManyArgs;
-  }
   export async function transform(
     input: Payload,
   ): Promise<IHrmPlatformDepartment> {
@@ -51,5 +36,24 @@ export namespace HrmPlatformDepartmentTransformer {
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
     };
+  }
+  export function select() {
+    return {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
+        parent: HrmPlatformDepartmentAtSummaryTransformer.select(),
+        childDepartments: HrmPlatformDepartmentAtSummaryTransformer.select(),
+        employees: true,
+        employeeSnapshots: true,
+        snapshots: true,
+        childSnapshots: true,
+      },
+    } satisfies Prisma.hrm_platform_departmentsFindManyArgs;
   }
 }

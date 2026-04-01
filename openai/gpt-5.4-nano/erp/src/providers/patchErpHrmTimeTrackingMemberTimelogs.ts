@@ -22,29 +22,5 @@ export async function patchErpHrmTimeTrackingMemberTimelogs(props: {
   member: MemberPayload;
   body: IErpHrmTimeTrackingTimelog.IRequest;
 }): Promise<IPageIErpHrmTimeTrackingTimelog.ISummary> {
-  const page = props.body.page;
-  const limit = props.body.limit;
-  const skip = (page - 1) * limit;
-  const orderBy =
-    props.body.sortBy === "workDate"
-      ? { work_date: props.body.sortOrder }
-      : { created_at: props.body.sortOrder };
-  const whereBase = {
-    deleted_at: null,
-    erp_hrm_time_tracking_organization_id:
-      (props.member as any).organization_id ??
-      (props.member as any).erp_hrm_time_tracking_organization_id ??
-      (props.member as any).organizationId,
-    ...(props.body.workDateFrom !== null && {
-      work_date: {
-        ...(props.body.workDateTo !== null
-          ? { lte: new Date(props.body.workDateTo as any) }
-          : {}),
-      },
-    }),
-  };
-  return {
-    pagination: { current: page, limit, records: 0, pages: 0 },
-    data: [],
-  } as any;
+  throw new HttpException("Not implemented", 501);
 }

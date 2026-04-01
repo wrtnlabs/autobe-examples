@@ -16,207 +16,187 @@ export async function patchHrmsMemberProjectsTopEmployees(props: {
   member: MemberPayload;
   body: IHrmsProjectMember.IRequest;
 }): Promise<IHrmsProjectMember.ISummary> {
-  const metric: "billable" | "total" | "billable_rate" =
-    props.body.metric ?? "billable";
-  const topN: number &
-    tags.Type<"int32"> &
-    tags.Minimum<1> &
-    tags.Maximum<100> = props.body.topN ?? 10;
-  const includeInactive: boolean = props.body.includeInactive ?? false;
-  const projectIds: (string & tags.Format<"uuid">)[] | undefined =
-    props.body.projectIds;
-  const startDate: (string & tags.Format<"date">) | undefined =
-    props.body.startDate;
-  const endDate: (string & tags.Format<"date">) | undefined =
-    props.body.endDate;
-  // Get employee's organizations
-  const organizationMembers =
-    await MyGlobal.prisma.hrms_organization_members.findMany({
-      where: {
-        hrms_member_id: props.member.id,
-      },
-      select: {
-        hrms_organization_id: true,
-      },
-    });
-  if (organizationMembers.length === 0) {
-    return {
-      id: "" as string & tags.Format<"uuid">,
-      displayName: "",
-      departmentName: "",
-      totalHours: 0,
-      billableHours: 0,
-      billableRate: 0,
-    };
-  }
-  const organizationId: string & tags.Format<"uuid"> =
-    organizationMembers[0].hrms_organization_id;
-  // Get active employees from organization
-  const employeeWhere: Prisma.hrms_employeesWhereInput = {
-    organizationMember: {
-      hrms_organization_id: organizationId,
-    },
-    deleted_at: null,
-    ...(includeInactive ? {} : { status: { not: "deactivated" } }),
-  };
-  const employees = await MyGlobal.prisma.hrms_employees.findMany({
-    where: employeeWhere,
+  const member = await MyGlobal.prisma.hrms_members.findUniqueOrThrow({
+    where: { id: props.member.id, deleted_at: null },
     select: {
       id: true,
-      display_name: true,
-      department_id: true,
+      organizationMembers: {
+        select: { hrms_organization_id: true, deleted_at: true },
+      },
     },
   });
-  if (employees.length === 0) {
-    return {
-      id: "" as string & tags.Format<"uuid">,
-      displayName: "",
-      departmentName: "",
-      totalHours: 0,
-      billableHours: 0,
-      billableRate: 0,
-    };
+  if (
+    member.organizationMembers.every(
+      (om: { hrms_organization_id: string; deleted_at: Date | null }) =>
+        om.deleted_at !== null,
+    )
+  ) {
+    throw new HttpException("No active organization membership", 403);
   }
-  const employeeIds: (string & tags.Format<"uuid">)[] = employees.map(
-    (e) => e.id,
-  );
-  // Build timelogs where clause
-  const timelogsWhere: Prisma.hrms_timelogsWhereInput = {
+  const organizationId = member.organizationMembers[0].hrms_organization_id;
+  const projectFilter: Prisma.hrms_projectsWhereInput = {
+    hrms_organization_id: organizationId,
     deleted_at: null,
-    employee_id: {
-      in: employeeIds,
+  };
+  if (props.body.projectIds && props.body.projectIds.length > 0) {
+    projectFilter.id = { in: props.body.projectIds };
+  }
+  const dateFilter: Prisma.hrms_timelogsWhereInput = {
+    deleted_at: null,
+    date: {
+      ...(props.body.startDate && {
+        gte: new Date(props.body.startDate + "T00:00:00Z"),
+      }),
+      ...(props.body.endDate && {
+        lte: new Date(props.body.endDate + "T23:59:59Z"),
+      }),
     },
   };
-  // Apply date range filter using ISO string comparisons
-  if (startDate) {
-    const startDateObj: Date = new Date(startDate + "T00:00:00Z");
-    timelogsWhere.date = {
-      gte: startDateObj,
+  const whereInput: Prisma.hrms_timelogsWhereInput = {
+    ...dateFilter,
+    project: projectFilter,
+  };
+  const includeInactive = props.body.includeInactive === true;
+  if (!includeInactive) {
+    whereInput.employee = {
+      status: "active",
     };
   }
-  if (endDate) {
-    const endDateObj: Date = new Date(endDate + "T23:59:59Z");
-    timelogsWhere.date = {
-      ...(timelogsWhere.date as
-        | Prisma.DateTimeFilter
-        | Prisma.DateTimeFilter[]
-        | undefined),
-      lte: endDateObj,
-    };
-  }
-  // Apply project filter
-  if (projectIds && projectIds.length > 0) {
-    timelogsWhere.project_id = {
-      in: projectIds,
-    };
-  }
-  // Aggregate total minutes by employee
-  const aggregations = await MyGlobal.prisma.hrms_timelogs.groupBy({
+  const timelogs = await MyGlobal.prisma.hrms_timelogs.groupBy({
     by: ["employee_id"],
-    where: timelogsWhere,
+    where: whereInput,
     _sum: {
       duration_minutes: true,
     },
-    orderBy: {
-      employee_id: "asc",
-    },
+    _count: { id: true },
   });
-  // Aggregate billable minutes by employee
-  const billableAggregations = await MyGlobal.prisma.hrms_timelogs.groupBy({
-    by: ["employee_id"],
+  const topN = props.body.topN ?? 10;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const employeeIds = timelogs.map((t) => t.employee_id);
+  const employees = await MyGlobal.prisma.hrms_employees.findMany({
     where: {
-      ...timelogsWhere,
-      billable: true,
-    },
-    _sum: {
-      duration_minutes: true,
-    },
-    orderBy: {
-      employee_id: "asc",
-    },
-  });
-  // Build metric map
-  const employeeMetrics = new Map<
-    string,
-    {
-      totalMinutes: number;
-      billableMinutes: number;
-    }
-  >();
-  for (const agg of aggregations) {
-    const empId: string & tags.Format<"uuid"> = agg.employee_id;
-    employeeMetrics.set(empId, {
-      totalMinutes: agg._sum?.duration_minutes ?? 0,
-      billableMinutes: 0,
-    });
-  }
-  for (const agg of billableAggregations) {
-    const empId: string & tags.Format<"uuid"> = agg.employee_id;
-    const existing = employeeMetrics.get(empId);
-    if (existing) {
-      existing.billableMinutes = agg._sum?.duration_minutes ?? 0;
-    }
-  }
-  // Get department names
-  const departments = await MyGlobal.prisma.hrms_departments.findMany({
-    where: {
-      organization: {
-        id: organizationId,
-      },
+      id: { in: employeeIds },
       deleted_at: null,
     },
     select: {
       id: true,
-      name: true,
+      display_name: true,
+      department: { select: { name: true } },
     },
   });
-  const departmentMap: Map<string, string> = new Map(
-    departments.map((d) => [d.id, d.name]),
-  );
-  // Build employee results with metrics
-  const results: IHrmsProjectMember.ISummary[] = [];
-  for (const employee of employees) {
-    const metrics = employeeMetrics.get(employee.id);
-    if (!metrics) continue;
-    const totalHours: number = metrics.totalMinutes / 60;
-    const billableHours: number = metrics.billableMinutes / 60;
-    const billableRate: number =
-      totalHours > 0 ? billableHours / totalHours : 0;
-    results.push({
-      id: employee.id as string & tags.Format<"uuid">,
-      displayName: employee.display_name,
-      departmentName: employee.department_id
-        ? (departmentMap.get(employee.department_id) ?? "")
-        : "",
-      totalHours,
-      billableHours,
-      billableRate,
-    });
-  }
-  // Sort by metric
-  results.sort((a, b) => {
-    switch (metric) {
-      case "billable":
-        return b.billableHours - a.billableHours;
-      case "total":
-        return b.totalHours - a.totalHours;
-      case "billable_rate":
-        return b.billableRate - a.billableRate;
-      default:
-        return b.billableHours - a.billableHours;
-    }
+  const hoursByProjectFilter: Prisma.hrms_projectsWhereInput = {
+    hrms_organization_id: organizationId,
+    deleted_at: null,
+    ...(props.body.projectIds && props.body.projectIds.length > 0
+      ? { id: { in: props.body.projectIds } }
+      : {}),
+  };
+  const hoursByProjectTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+    where: {
+      deleted_at: null,
+      ...(props.body.startDate && {
+        date: { gte: new Date(props.body.startDate + "T00:00:00Z") },
+      }),
+      ...(props.body.endDate && {
+        date: { lte: new Date(props.body.endDate + "T23:59:59Z") },
+      }),
+      project: hoursByProjectFilter,
+      ...(includeInactive ? {} : { employee: { status: "active" } }),
+    },
+    select: {
+      employee_id: true,
+      project: { select: { name: true } },
+      duration_minutes: true,
+      billable: true,
+    },
   });
-  // Apply topN limit and return top employee
-  const topEmployee = results[0];
-  if (!topEmployee) {
-    return {
-      id: "" as string & tags.Format<"uuid">,
-      displayName: "",
-      departmentName: "",
-      totalHours: 0,
-      billableHours: 0,
-      billableRate: 0,
-    };
+  const hoursByProjectMap = new Map<
+    string,
+    Map<
+      string,
+      {
+        total: number;
+        billable: number;
+      }
+    >
+  >();
+  for (const tl of hoursByProjectTimelogs) {
+    if (!hoursByProjectMap.has(tl.employee_id)) {
+      hoursByProjectMap.set(tl.employee_id, new Map());
+    }
+    const projectMap = hoursByProjectMap.get(tl.employee_id)!;
+    if (!projectMap.has(tl.project.name)) {
+      projectMap.set(tl.project.name, { total: 0, billable: 0 });
+    }
+    const projectData = projectMap.get(tl.project.name)!;
+    projectData.total += tl.duration_minutes;
+    if (tl.billable) {
+      projectData.billable += tl.duration_minutes;
+    }
   }
-  return topEmployee;
+  const metric = props.body.metric;
+  const sortedTimelogs = [...timelogs].sort((a, b) => {
+    const aTotalMinutes = a._sum.duration_minutes || 0;
+    const aBillableMinutes = 0;
+    const bTotalMinutes = b._sum.duration_minutes || 0;
+    const bBillableMinutes = 0;
+    if (metric === "billable") {
+      return bBillableMinutes - aBillableMinutes;
+    } else if (metric === "total") {
+      return bTotalMinutes - aTotalMinutes;
+    } else if (metric === "billable_rate") {
+      const aRate = aTotalMinutes > 0 ? aBillableMinutes / aTotalMinutes : 0;
+      const bRate = bTotalMinutes > 0 ? bBillableMinutes / bTotalMinutes : 0;
+      return bRate - aRate;
+    }
+    return 0;
+  });
+  const limitedTimelogs = sortedTimelogs.slice(0, topN);
+  const results = limitedTimelogs
+    .map((tl) => {
+      const totalMinutes = tl._sum.duration_minutes || 0;
+      const totalHours = totalMinutes / 60;
+      const billableMinutes = 0;
+      const billableHours = billableMinutes / 60;
+      const billableRate = totalHours > 0 ? billableHours / totalHours : 0;
+      const employee = employees.find((e) => e.id === tl.employee_id);
+      if (!employee) {
+        return null;
+      }
+      const hoursByProject =
+        props.body.projectIds && props.body.projectIds.length > 0
+          ? Array.from(
+              hoursByProjectMap.get(tl.employee_id)?.entries() || [],
+            ).map(([projectName, data]) => ({
+              projectName,
+              totalHours: data.total / 60,
+              billableHours: data.billable / 60,
+            }))
+          : undefined;
+      return {
+        id: tl.employee_id as string & tags.Format<"uuid">,
+        displayName: employee.display_name,
+        departmentName: employee.department?.name ?? "",
+        totalHours,
+        billableHours,
+        billableRate,
+        ...(props.body.projectIds && props.body.projectIds.length > 0
+          ? { hoursByProject }
+          : {}),
+      };
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null);
+  const pageNum = page ?? 1;
+  const limitNum = limit ?? 100;
+  return {
+    data: results,
+    pagination: {
+      current: pageNum,
+      limit: limitNum,
+      records: results.length,
+      pages: Math.ceil(results.length / limitNum),
+    },
+  } as unknown as IHrmsProjectMember.ISummary;
 }

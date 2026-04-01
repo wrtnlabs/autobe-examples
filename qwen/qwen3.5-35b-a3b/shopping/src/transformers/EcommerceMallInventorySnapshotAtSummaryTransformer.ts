@@ -3,8 +3,10 @@ import { IEcommerceMallInventorySnapshot } from "@ORGANIZATION/PROJECT-api/lib/s
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallInventoryRecordAtSummaryTransformer } from "./EcommerceMallInventoryRecordAtSummaryTransformer";
 
@@ -42,6 +44,6 @@ export namespace EcommerceMallInventorySnapshotAtSummaryTransformer {
       reason: input.reason ?? null,
       notes: input.notes ?? null,
       createdAt: input.created_at.toISOString(),
-    };
+    } satisfies IEcommerceMallInventorySnapshot.ISummary;
   }
 }

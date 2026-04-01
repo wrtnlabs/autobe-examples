@@ -19,5 +19,8 @@ export async function deleteShoppingMallMemberInventoryRecordsInventoryRecordId(
     where: { id: props.inventoryRecordId },
     select: { id: true },
   });
-  throw new HttpException("Inventory history entries cannot be deleted.", 403);
+  throw new HttpException(
+    "Inventory history is immutable and cannot be deleted.",
+    400,
+  );
 }

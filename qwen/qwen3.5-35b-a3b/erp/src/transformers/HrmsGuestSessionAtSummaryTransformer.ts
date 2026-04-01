@@ -3,8 +3,10 @@ import { IHrmsGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsGuest"
 import { IHrmsGuestSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsGuestSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsGuestAtSummaryTransformer } from "./HrmsGuestAtSummaryTransformer";
 
@@ -33,7 +35,7 @@ export namespace HrmsGuestSessionAtSummaryTransformer {
       guest: await HrmsGuestAtSummaryTransformer.transform(input.guest),
       ip: input.ip,
       href: input.href,
-      referrer: input.referrer,
+      referrer: input.referrer ?? null,
       created_at: input.created_at.toISOString(),
       expired_at: input.expired_at.toISOString(),
     };

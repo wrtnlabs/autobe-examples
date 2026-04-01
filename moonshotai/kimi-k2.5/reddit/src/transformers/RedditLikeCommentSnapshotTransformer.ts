@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditLikeCommentSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeCommentSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace RedditLikeCommentSnapshotTransformer {
@@ -14,14 +16,11 @@ export namespace RedditLikeCommentSnapshotTransformer {
     return {
       select: {
         id: true,
+        comment_id: true,
         body: true,
         edit_reason: true,
         created_at: true,
-        comment: {
-          select: {
-            id: true,
-          },
-        },
+        comment: { select: {} },
       },
     } satisfies Prisma.reddit_like_comment_snapshotsFindManyArgs;
   }
@@ -30,10 +29,10 @@ export namespace RedditLikeCommentSnapshotTransformer {
   ): Promise<IRedditLikeCommentSnapshot> {
     return {
       id: input.id,
-      commentId: input.comment.id,
+      commentId: input.comment_id,
       body: input.body,
       editReason: input.edit_reason ?? null,
-      createdAt: toISOStringSafe(input.created_at),
+      createdAt: input.created_at.toISOString(),
     };
   }
 }

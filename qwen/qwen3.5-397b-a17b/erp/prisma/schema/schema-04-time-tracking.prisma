@@ -1,0 +1,200 @@
+/// Individual time entry records capturing work sessions with date,
+/// duration, project, optional task, description, and billable flag. Each
+/// timelog belongs to exactly one employee and one project, optionally
+/// references a task within that project. Timelogs can be grouped into
+/// timesheets for approval workflow - when included in an approved
+/// timesheet, the timelog becomes locked (immutable).
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_timelogs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Employee who logged the time. {@link hrm_platform_employees.id}.
+  employee_id String
+  
+  /// Project the time was logged against. {@link hrm_platform_projects.id}.
+  project_id String
+  
+  /// Optional task within the project. {@link hrm_platform_tasks.id}.
+  task_id String?
+  
+  /// Timesheet this timelog belongs to, null if not yet submitted. {@link
+  /// hrm_platform_timesheets.id}.
+  timesheet_id String?
+  
+  /// Date the work was performed (date only, time component ignored).
+  date DateTime
+  
+  /// Duration of work session in minutes.
+  duration_minutes Int
+  
+  /// Optional description of what work was done.
+  description String?
+  
+  /// Whether this time is billable to client (default true).
+  billable Boolean
+  
+  /// Timestamp when this timelog was created.
+  created_at DateTime
+  
+  /// Timestamp when this timelog was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this timelog was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  project hrm_platform_projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  task hrm_platform_tasks? @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  timesheet hrm_platform_timesheets? @relation(fields: [timesheet_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([task_id])
+  @@index([timesheet_id])
+  @@index([employee_id, date])
+  @@index([project_id, date])
+  @@index([employee_id, timesheet_id])
+}
+
+/// Weekly collections of timelogs with approval workflow status (draft,
+/// submitted, approved, rejected) and review metadata.
+///
+/// Timesheets group an employee's timelogs by week (Monday to Sunday) for
+/// approval tracking. Employees create draft timesheets, submit them for
+/// approval, and users with time:approve permission can approve or reject
+/// them. Approved timesheets lock all included timelogs from editing or
+/// deletion.
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_timesheets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Employee who owns this timesheet. {@link hrm_platform_employees.id}.
+  employee_id String
+  
+  /// Employee who approved or rejected this timesheet. {@link
+  /// hrm_platform_employees.id}.
+  reviewed_by_employee_id String?
+  
+  /// Monday of the timesheet week (ISO date format YYYY-MM-DD).
+  week_start_date String
+  
+  /// Sunday of the timesheet week (ISO date format YYYY-MM-DD).
+  week_end_date String
+  
+  /// Timesheet workflow status: draft, submitted, approved, rejected.
+  status String
+  
+  /// Timestamp when timesheet was submitted for approval.
+  submitted_at DateTime?
+  
+  /// Timestamp when timesheet was approved or rejected.
+  reviewed_at DateTime?
+  
+  /// Reason provided when timesheet was rejected (required for rejected
+  /// status).
+  rejection_reason String?
+  
+  /// Timestamp when this timesheet was created.
+  created_at DateTime
+  
+  /// Timestamp when this timesheet was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this timesheet was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation("hrm_platform_timesheets_of_employee_id", fields: [employee_id], references: [id], onDelete: Cascade)
+  reviewedByEmployee hrm_platform_employees? @relation("hrm_platform_timesheets_of_reviewed_by_employee_id", fields: [reviewed_by_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  timelogs hrm_platform_timelogs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reviewed_by_employee_id])
+  @@unique([employee_id, week_start_date])
+  @@index([employee_id, status])
+  @@index([status, week_start_date])
+}
+
+/// Active timer state for real-time time tracking.
+///
+/// Each employee can have at most one running timer at a time. Timers record
+/// the start timestamp, associated project, optional task, and work
+/// description. When stopped, timers convert to timelog entries with
+/// calculated duration. Timers continue running indefinitely until
+/// explicitly stopped or discarded by the employee.
+///
+/// @namespace TimeTracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_timers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The employee who owns this timer. {@link hrm_platform_employees.id}.
+  employee_id String
+  
+  /// The project being tracked. {@link hrm_platform_projects.id}.
+  project_id String
+  
+  /// Optional task being tracked. {@link hrm_platform_tasks.id}.
+  task_id String?
+  
+  /// Timestamp when the timer was started.
+  started_at DateTime
+  
+  /// Optional description of the work being tracked.
+  description String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for record archival.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  project hrm_platform_projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  task hrm_platform_tasks? @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([project_id])
+  @@index([task_id])
+  @@unique([employee_id])
+}

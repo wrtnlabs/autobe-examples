@@ -15,91 +15,108 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postHrmsAuthGuestRefresh(props: {
   body: IHrmsGuest.IRefresh;
 }): Promise<IHrmsGuest.IAuthorized> {
-  // 1. Verify refresh token
   let decoded: {
+    type: "guest";
     id: string;
-    session_id: string;
+    session_id: string & tags.Format<"uuid">;
+    created_at: string & tags.Format<"date-time">;
   };
   try {
-    decoded = typia.assert<{
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        issuer: "autobe",
+      },
+    ) as {
+      type: "guest";
       id: string;
       session_id: string;
-    }>(
-      jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
-        issuer: "autobe",
-      } as jwt.VerifyOptions),
-    );
+      created_at: string;
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate session exists and is active
+  if (decoded.type !== "guest") {
+    throw new HttpException("Invalid token type", 401);
+  }
+  const nowIso = toISOStringSafe(new Date()) as string &
+    tags.Format<"date-time">;
   const session = await MyGlobal.prisma.hrms_guest_sessions.findFirst({
     where: {
       id: decoded.session_id,
       hrms_guest_id: decoded.id,
-      expired_at: { gt: new Date() },
+      expired_at: {
+        gt: new Date(nowIso),
+      },
     },
   });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 3. Validate guest exists and is not deleted
   const guest = await MyGlobal.prisma.hrms_guests.findUniqueOrThrow({
     where: { id: decoded.id },
   });
   if (guest.deleted_at !== null) {
-    throw new HttpException("Guest account has been deleted", 403);
+    throw new HttpException("Account has been deleted", 403);
   }
-  // 4. Calculate new expiration times
-  const accessExpiresTime: Date = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpiresTime: Date = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  );
-  // 5. Generate new tokens (SAME session_id for continuity)
-  const access: string = jwt.sign(
+  const accessExpiresIso = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  ) as string & tags.Format<"date-time">;
+  const refreshExpiresIso = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  ) as string & tags.Format<"date-time">;
+  const accessToken = jwt.sign(
     {
-      type: "guest" as const,
+      type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: new Date().toISOString(),
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" } as jwt.SignOptions,
+    { expiresIn: "1h", issuer: "autobe" },
   );
-  const refresh: string = jwt.sign(
+  const refreshToken = jwt.sign(
     {
-      type: "guest" as const,
+      type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh" as const,
-      created_at: new Date().toISOString(),
+      created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" } as jwt.SignOptions,
+    { expiresIn: "7d", issuer: "autobe" },
   );
-  // 6. Update session expiration timestamp
   await MyGlobal.prisma.hrms_guest_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: refreshExpiresTime },
+    data: {
+      expired_at: new Date(refreshExpiresIso),
+      ip: props.body.href,
+      href: props.body.href,
+      referrer: props.body.referrer,
+    },
   });
-  // 7. Build authorization token
-  const token: IAuthorizationToken = {
-    access: access,
-    refresh: refresh,
-    expired_at: toISOStringSafe(accessExpiresTime),
-    refreshable_until: toISOStringSafe(refreshExpiresTime),
-  };
-  // 8. Return new token pair with guest info
-  return {
+  const response: IHrmsGuest.IAuthorized = {
     id: guest.id as string & tags.Format<"uuid">,
     device_fingerprint: guest.device_fingerprint,
     ip_address: guest.ip_address,
     user_agent: guest.user_agent,
-    created_at: toISOStringSafe(guest.created_at),
-    updated_at: toISOStringSafe(guest.updated_at),
-    access: access,
-    refresh: refresh,
-    expired_at: toISOStringSafe(accessExpiresTime),
-    token: token,
-  } satisfies IHrmsGuest.IAuthorized;
+    created_at: toISOStringSafe(guest.created_at) as string &
+      tags.Format<"date-time">,
+    updated_at: toISOStringSafe(guest.updated_at) as string &
+      tags.Format<"date-time">,
+    deleted_at: guest.deleted_at
+      ? (toISOStringSafe(guest.deleted_at) as string & tags.Format<"date-time">)
+      : undefined,
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: accessExpiresIso as string & tags.Format<"date-time">,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpiresIso as string & tags.Format<"date-time">,
+      refreshable_until: refreshExpiresIso as string & tags.Format<"date-time">,
+    },
+  };
+  return response;
 }

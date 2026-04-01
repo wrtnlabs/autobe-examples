@@ -20,6 +20,10 @@ export namespace HrmPlatformEmployeeTransformer {
     return {
       select: {
         id: true,
+        hrm_platform_user_id: true,
+        hrm_platform_organization_id: true,
+        hrm_platform_role_id: true,
+        hrm_platform_department_id: true,
         position: true,
         employment_type: true,
         status: true,
@@ -27,9 +31,6 @@ export namespace HrmPlatformEmployeeTransformer {
         updated_at: true,
         deleted_at: true,
         user: HrmPlatformMemberAtSummaryTransformer.select(),
-        organization: {
-          select: { id: true },
-        } satisfies Prisma.hrm_platform_organizationsFindManyArgs,
         role: HrmPlatformRoleAtSummaryTransformer.select(),
         department: HrmPlatformDepartmentAtSummaryTransformer.select(),
       },
@@ -40,18 +41,20 @@ export namespace HrmPlatformEmployeeTransformer {
   ): Promise<IHrmPlatformEmployee> {
     return {
       id: input.id,
-      userId: input.user.id,
-      organizationId: input.organization.id,
-      roleId: input.role.id,
-      departmentId: input.department?.id ?? null,
-      position: input.position ?? undefined,
-      employmentType: typia.assert<
-        "full-time" | "part-time" | "contractor" | "intern"
-      >(input.employment_type),
-      status: typia.assert<"active" | "deactivated">(input.status),
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      userId: input.hrm_platform_user_id,
+      organizationId: input.hrm_platform_organization_id,
+      roleId: input.hrm_platform_role_id,
+      departmentId: input.hrm_platform_department_id ?? null,
+      position: input.position ?? null,
+      employmentType: input.employment_type as
+        | "full-time"
+        | "part-time"
+        | "contractor"
+        | "intern",
+      status: input.status as "active" | "deactivated",
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
       user: await HrmPlatformMemberAtSummaryTransformer.transform(input.user),
       role: await HrmPlatformRoleAtSummaryTransformer.transform(input.role),
       department: input.department

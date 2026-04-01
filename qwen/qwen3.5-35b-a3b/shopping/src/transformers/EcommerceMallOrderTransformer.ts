@@ -6,8 +6,10 @@ import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallAddressAtSummaryTransformer } from "./EcommerceMallAddressAtSummaryTransformer";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
@@ -30,11 +32,11 @@ export namespace EcommerceMallOrderTransformer {
         deleted_at: true,
         customer: EcommerceMallCustomerAtSummaryTransformer.select(),
         shippingAddress: EcommerceMallAddressAtSummaryTransformer.select(),
-        inventoryRecords: true,
+        inventoryRecords: { select: {} },
         orderItems: EcommerceMallOrderItemAtSummaryTransformer.select(),
-        snapshots: true,
+        snapshots: { select: {} },
         shipments: EcommerceMallShipmentAtSummaryTransformer.select(),
-        reviews: true,
+        reviews: { select: {} },
       },
     } satisfies Prisma.ecommerce_mall_ordersFindManyArgs;
   }
@@ -60,9 +62,9 @@ export namespace EcommerceMallOrderTransformer {
         input.shipments,
         EcommerceMallShipmentAtSummaryTransformer.transform,
       ),
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

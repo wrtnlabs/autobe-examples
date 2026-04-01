@@ -7,8 +7,10 @@ import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
@@ -52,7 +54,7 @@ export namespace EcommerceMallReviewTransformer {
         input.order,
       ),
       rating: input.rating,
-      title: input.title,
+      title: input.title ?? null,
       body: input.body,
       is_verified_purchase: input.is_verified_purchase,
       created_at: input.created_at.toISOString(),

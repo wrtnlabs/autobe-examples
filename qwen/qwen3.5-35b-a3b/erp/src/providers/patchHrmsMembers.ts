@@ -20,86 +20,112 @@ export async function patchHrmsMembers(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.hrms_membersWhereInput = {
-    deleted_at:
-      props.body.status === "deleted"
-        ? { not: null }
-        : props.body.status === "active"
-          ? null
-          : undefined,
-    ...(props.body.hrms_organization_id && {
-      organizationMembers: {
-        some: {
-          hrms_organization_id: props.body.hrms_organization_id,
-        },
-      },
-    }),
-    ...(props.body.search && {
-      OR: [
-        { email: { contains: props.body.search, mode: "insensitive" } },
-        { display_name: { contains: props.body.search, mode: "insensitive" } },
-        { phone_number: { contains: props.body.search, mode: "insensitive" } },
-      ],
-    }),
-    ...(props.body.created_startDate && {
-      created_at: { gte: new Date(props.body.created_startDate) },
-    }),
-    ...(props.body.created_endDate && {
-      created_at: { lte: new Date(props.body.created_endDate) },
-    }),
-    ...(props.body.updated_startDate && {
-      updated_at: { gte: new Date(props.body.updated_startDate) },
-    }),
-    ...(props.body.updated_endDate && {
-      updated_at: { lte: new Date(props.body.updated_endDate) },
-    }),
-  } satisfies Prisma.hrms_membersWhereInput;
+  const search = props.body.search;
+  const organizationId = props.body.hrms_organization_id;
+  const status = props.body.status;
+  const createdStartDate = props.body.created_startDate;
+  const createdEndDate = props.body.created_endDate;
+  const updatedStartDate = props.body.updated_startDate;
+  const updatedEndDate = props.body.updated_endDate;
   const sortBy = props.body.sortBy ?? "created_at";
   const sortOrder = props.body.sortOrder ?? "desc";
-  const orderByInput: Prisma.hrms_membersOrderByWithRelationInput[] =
-    sortBy === "email"
-      ? [
+  const searchWhere = search
+    ? {
+        OR: [
           {
-            email: sortOrder === "asc" ? "asc" : "desc",
-          },
-        ]
-      : sortBy === "display_name"
-        ? [
-            {
-              display_name: sortOrder === "asc" ? "asc" : "desc",
+            email: {
+              contains: search,
+              mode: "insensitive" as Prisma.QueryMode,
             },
-          ]
+          },
+          {
+            display_name: {
+              contains: search,
+              mode: "insensitive" as Prisma.QueryMode,
+            },
+          },
+          {
+            phone_number: {
+              contains: search,
+              mode: "insensitive" as Prisma.QueryMode,
+            },
+          },
+        ],
+      }
+    : {};
+  const organizationWhere = organizationId
+    ? {
+        organizationMembers: {
+          some: { hrms_organization_id: organizationId },
+        },
+      }
+    : {};
+  const statusWhere = status
+    ? status === "active"
+      ? { deleted_at: null }
+      : { deleted_at: { not: null } }
+    : { deleted_at: null };
+  const createdWhere =
+    createdStartDate || createdEndDate
+      ? {
+          AND: [
+            ...(createdStartDate
+              ? [{ created_at: { gte: new Date(createdStartDate) } }]
+              : []),
+            ...(createdEndDate
+              ? [{ created_at: { lte: new Date(createdEndDate) } }]
+              : []),
+          ],
+        }
+      : {};
+  const updatedWhere =
+    updatedStartDate || updatedEndDate
+      ? {
+          AND: [
+            ...(updatedStartDate
+              ? [{ updated_at: { gte: new Date(updatedStartDate) } }]
+              : []),
+            ...(updatedEndDate
+              ? [{ updated_at: { lte: new Date(updatedEndDate) } }]
+              : []),
+          ],
+        }
+      : {};
+  const whereInput: Prisma.hrms_membersWhereInput = {
+    ...searchWhere,
+    ...organizationWhere,
+    ...statusWhere,
+    ...createdWhere,
+    ...updatedWhere,
+  };
+  const orderByInput: Prisma.hrms_membersOrderByWithRelationInput =
+    sortBy === "email"
+      ? { email: sortOrder }
+      : sortBy === "display_name"
+        ? { display_name: sortOrder }
         : sortBy === "updated_at"
-          ? [
-              {
-                updated_at: sortOrder === "asc" ? "asc" : "desc",
-              },
-            ]
-          : [
-              {
-                created_at: sortOrder === "asc" ? "asc" : "desc",
-              },
-            ];
-  const data = await MyGlobal.prisma.hrms_members.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...HrmsMemberAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.hrms_members.count({
-    where: whereInput,
-  });
+          ? { updated_at: sortOrder }
+          : { created_at: sortOrder };
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.hrms_members.findMany({
+      where: whereInput,
+      orderBy: orderByInput,
+      skip,
+      take: limit,
+      ...HrmsMemberAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.hrms_members.count({ where: whereInput }),
+  ]);
   return {
+    pagination: {
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       data,
       HrmsMemberAtSummaryTransformer.transform,
     ),
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIHrmsMember.ISummary;
 }

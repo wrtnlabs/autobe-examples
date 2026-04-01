@@ -23,6 +23,8 @@ export namespace EcommerceMallPlatformConfigurationCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      values:
+        [] as Prisma.ecommerce_mall_platform_configuration_valuesCreateNestedManyWithoutConfigurationInput,
     } satisfies Prisma.ecommerce_mall_platform_configurationsCreateInput;
   }
 }

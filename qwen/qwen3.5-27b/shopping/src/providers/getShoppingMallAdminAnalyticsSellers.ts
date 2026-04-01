@@ -19,11 +19,7 @@ export async function getShoppingMallAdminAnalyticsSellers(props: {
     where: {
       deleted_at: null,
     },
-    select: {
-      id: true,
-      shop_name: true,
-      approval_status: true,
-      created_at: true,
+    include: {
       approvalRequests: {
         where: {
           deleted_at: null,
@@ -32,16 +28,19 @@ export async function getShoppingMallAdminAnalyticsSellers(props: {
           created_at: "desc",
         },
         take: 1,
-        select: {
-          status: true,
-        },
       },
     },
+    orderBy: {
+      created_at: "desc",
+    },
+    take: 1,
   });
   if (sellers.length === 0) {
     throw new HttpException("No sellers found", 404);
   }
   const seller = sellers[0];
+  const approvalRequest = seller.approvalRequests[0];
+  const approvalStatus = approvalRequest?.status ?? seller.approval_status;
   const totalOrderItems = await MyGlobal.prisma.shopping_mall_order_items.count(
     {
       where: {
@@ -64,47 +63,29 @@ export async function getShoppingMallAdminAnalyticsSellers(props: {
         OR: [{ delivery_confirmed: true }, { delivered_at: { not: null } }],
       },
     });
-  const sellerOrderItemIds = (
-    await MyGlobal.prisma.shopping_mall_order_items.findMany({
-      where: {
-        shopping_mall_seller_id: seller.id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-      },
-    })
-  ).map((item) => item.id);
+  const shipmentCompletionRate =
+    totalShipments > 0 ? (completedShipments / totalShipments) * 100 : null;
   const approvedCancellations =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.count({
       where: {
-        shopping_mall_order_item_id: {
-          in: sellerOrderItemIds,
-        },
+        shopping_mall_seller_id: seller.id,
         status: "approved",
         deleted_at: null,
       },
     });
-  const approvedRefunds =
-    await MyGlobal.prisma.shopping_mall_refund_requests.count({
-      where: {
-        shopping_mall_order_item_id: {
-          in: sellerOrderItemIds,
-        },
-        status: "approved",
-        deleted_at: null,
-      },
-    });
-  const shipmentCompletionRate =
-    totalShipments > 0 ? (completedShipments / totalShipments) * 100 : null;
   const cancellationRate =
     totalOrderItems > 0
       ? (approvedCancellations / totalOrderItems) * 100
       : null;
+  const approvedRefunds =
+    await MyGlobal.prisma.shopping_mall_refund_requests.count({
+      where: {
+        status: "approved",
+        deleted_at: null,
+      },
+    });
   const refundRate =
     totalOrderItems > 0 ? (approvedRefunds / totalOrderItems) * 100 : null;
-  const approvalStatus =
-    seller.approvalRequests[0]?.status ?? seller.approval_status ?? "pending";
   return {
     id: seller.id,
     shopName: seller.shop_name,
@@ -115,5 +96,5 @@ export async function getShoppingMallAdminAnalyticsSellers(props: {
     cancellationRate,
     refundRate,
     createdAt: toISOStringSafe(seller.created_at),
-  } satisfies IShoppingMallSellerAnalytic;
+  };
 }

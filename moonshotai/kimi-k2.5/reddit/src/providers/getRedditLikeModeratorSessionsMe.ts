@@ -15,7 +15,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { ModeratorPayload } from "../decorators/payload/ModeratorPayload";
-import { RedditLikeModeratorAtSummaryTransformer } from "../transformers/RedditLikeModeratorAtSummaryTransformer";
+import { RedditLikeMemberAtSummaryTransformer } from "../transformers/RedditLikeMemberAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -32,21 +32,87 @@ export async function getRedditLikeModeratorSessionsMe(props: {
         referrer: true,
         created_at: true,
         expired_at: true,
-        moderator: RedditLikeModeratorAtSummaryTransformer.select(),
+        moderator: {
+          select: {
+            id: true,
+            can_add_moderators: true,
+            created_at: true,
+            member: RedditLikeMemberAtSummaryTransformer.select(),
+            community: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                created_at: true,
+                owner: RedditLikeMemberAtSummaryTransformer.select(),
+                iconAttachment: {
+                  select: {
+                    id: true,
+                    original_filename: true,
+                    mime_type: true,
+                    file_size_bytes: true,
+                    uploadedByMember:
+                      RedditLikeMemberAtSummaryTransformer.select(),
+                    created_at: true,
+                  },
+                },
+                _count: {
+                  select: {
+                    subscriptions: {
+                      where: { deleted_at: null },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
+  const communityData = session.moderator.community;
+  const iconAttachment = communityData.iconAttachment;
   return {
     id: session.id,
     actorType: "moderator",
-    actor: await RedditLikeModeratorAtSummaryTransformer.transform(
-      session.moderator,
-    ),
+    actor: {
+      id: session.moderator.id,
+      canAddModerators: session.moderator.can_add_moderators,
+      member: await RedditLikeMemberAtSummaryTransformer.transform(
+        session.moderator.member,
+      ),
+      community: {
+        id: communityData.id,
+        name: communityData.name,
+        description: communityData.description,
+        owner: await RedditLikeMemberAtSummaryTransformer.transform(
+          communityData.owner,
+        ),
+        icon: iconAttachment
+          ? ({
+              id: iconAttachment.id,
+              originalFilename: iconAttachment.original_filename,
+              mimeType: iconAttachment.mime_type,
+              fileSizeBytes: iconAttachment.file_size_bytes,
+              uploadedByMember:
+                await RedditLikeMemberAtSummaryTransformer.transform(
+                  iconAttachment.uploadedByMember,
+                ),
+              createdAt: toISOStringSafe(iconAttachment.created_at),
+            } satisfies IRedditLikeAttachment.ISummary)
+          : null,
+        subscriberCount: communityData._count.subscriptions as number &
+          tags.Type<"int32"> &
+          tags.Minimum<0>,
+        createdAt: toISOStringSafe(communityData.created_at),
+      } satisfies IRedditLikeCommunity.ISummary,
+      createdAt: toISOStringSafe(session.moderator.created_at),
+    } satisfies IRedditLikeModerator.ISummary,
     ip: session.ip,
     href: session.href,
     referrer: session.referrer,
     userAgent: null,
-    createdAt: session.created_at.toISOString(),
-    expiredAt: session.expired_at?.toISOString() ?? null,
-    expiresAt: session.expired_at?.toISOString() ?? null,
+    createdAt: toISOStringSafe(session.created_at),
+    expiredAt: session.expired_at ? toISOStringSafe(session.expired_at) : null,
+    expiresAt: session.expired_at ? toISOStringSafe(session.expired_at) : null,
   };
 }

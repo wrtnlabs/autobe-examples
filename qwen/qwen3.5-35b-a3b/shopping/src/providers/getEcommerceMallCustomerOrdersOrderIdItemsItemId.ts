@@ -25,35 +25,23 @@ export async function getEcommerceMallCustomerOrdersOrderIdItemsItemId(props: {
   orderId: string & tags.Format<"uuid">;
   itemId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallOrderItem> {
+  // Verify order exists and belongs to customer
   const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
-    where: { id: props.orderId },
+    where: {
+      id: props.orderId,
+      customer_id: props.customer.id,
+    },
     select: { id: true, customer_id: true, deleted_at: true },
   });
-  if (order.customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
+  // Verify order item exists, belongs to order, and is not soft-deleted
   const orderItem =
     await MyGlobal.prisma.ecommerce_mall_order_items.findUniqueOrThrow({
       where: {
         id: props.itemId,
+        ecommerce_mall_order_id: props.orderId,
         deleted_at: null,
       },
-      include: {
-        order: EcommerceMallOrderItemTransformer.select().select.order,
-        productSnapshot:
-          EcommerceMallOrderItemTransformer.select().select.productSnapshot,
-        variantSnapshot:
-          EcommerceMallOrderItemTransformer.select().select.variantSnapshot,
-        sellerSnapshot:
-          EcommerceMallOrderItemTransformer.select().select.sellerSnapshot,
-        snapshots: true,
-        shipmentItems: true,
-        cancellationRequests: true,
-        refundRequests: true,
-      },
+      ...EcommerceMallOrderItemTransformer.select(),
     });
-  if (orderItem.ecommerce_mall_order_id !== props.orderId) {
-    throw new HttpException("Not Found", 404);
-  }
   return await EcommerceMallOrderItemTransformer.transform(orderItem);
 }

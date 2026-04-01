@@ -23,31 +23,37 @@ export async function getEcommerceMallSellerProductsProductIdSnapshotsSnapshotId
   const snapshot =
     await MyGlobal.prisma.ecommerce_mall_product_snapshots.findUniqueOrThrow({
       where: { id: props.snapshotId },
-      select: {
-        id: true,
-        product:
-          EcommerceMallProductSnapshotTransformer.select().select.product,
-        created_at: true,
-        updated_at: true,
-        status: true,
-        name: true,
-        base_price: true,
-        sale_price: true,
-        slug: true,
-        description: true,
-        tags: true,
+      include: {
+        product: {
+          include: {
+            seller: true,
+            reviews: true,
+            wishlistItems: true,
+            variantSnapshots: true,
+            category: {
+              include: {
+                snapshots: true,
+                products: true,
+                parent: true,
+                children: true,
+              },
+            },
+            variants: true,
+            images: true,
+            productSnapshots: true,
+            entitySnapshots: true,
+          },
+        },
       },
     });
-  const productOwnerId = snapshot.product.seller.id as string &
-    tags.Format<"uuid">;
-  if (productOwnerId !== props.seller.id) {
+  if (snapshot.product.id !== props.productId) {
+    throw new HttpException(
+      "Snapshot does not belong to the specified product",
+      404,
+    );
+  }
+  if (snapshot.product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const snapshotProductId = snapshot.product.id as string & tags.Format<"uuid">;
-  if (snapshotProductId !== props.productId) {
-    throw new HttpException("Invalid productId", 400);
-  }
-  const result =
-    await EcommerceMallProductSnapshotTransformer.transform(snapshot);
-  return result;
+  return await EcommerceMallProductSnapshotTransformer.transform(snapshot);
 }

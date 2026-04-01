@@ -22,70 +22,74 @@ export async function patchHrmsMemberOrganizationsOrganizationIdFiles(props: {
   organizationId: string & tags.Format<"uuid">;
   body: IHrmsFile.IRequest;
 }): Promise<IPageIHrmsFile.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 100;
+  const skip: number = (page - 1) * limit;
   const whereInput: Prisma.hrms_filesWhereInput = {
     organization_id: props.organizationId,
-    deleted_at: props.body.includeDeleted === true ? undefined : null,
-    ...(props.body.category && {
+    deleted_at: props.body.includeDeleted ? undefined : null,
+    ...(props.body.category !== undefined && {
       file_category: props.body.category,
     }),
-    ...(props.body.validationStatus && {
+    ...(props.body.validationStatus !== undefined && {
       validation_status: props.body.validationStatus,
     }),
-    ...(props.body.ownerType !== null &&
-      props.body.ownerType !== undefined && {
-        owner_type: props.body.ownerType,
-      }),
+    ...(props.body.ownerType !== null && {
+      owner_type: props.body.ownerType,
+    }),
     ...(props.body.ownerId !== null &&
-      props.body.ownerId !== undefined && {
+      props.body.ownerType === "member" && {
         owner_id: props.body.ownerId,
       }),
-    ...(props.body.filename && {
+    ...(props.body.filename !== undefined && {
       filename: {
         contains: props.body.filename,
         mode: "insensitive",
       },
     }),
-    ...(props.body.startDate && {
+    ...(props.body.startDate !== undefined && {
       created_at: {
         gte: new Date(props.body.startDate),
       },
     }),
-    ...(props.body.endDate && {
+    ...(props.body.endDate !== undefined && {
       created_at: {
         lte: new Date(props.body.endDate),
       },
     }),
   } satisfies Prisma.hrms_filesWhereInput;
-  const orderByInput = [
+  const defaultSortOrder: "asc" | "desc" = "desc";
+  const sortBy: string | undefined = props.body.sortBy ?? "created_at";
+  const sortOrder: "asc" | "desc" =
+    props.body.sortOrder === "asc" || props.body.sortOrder === "desc"
+      ? props.body.sortOrder
+      : defaultSortOrder;
+  const orderByInput: Prisma.hrms_filesOrderByWithRelationInput[] = [
     {
-      [props.body.sortBy ?? "created_at"]: (props.body.sortOrder === "desc"
-        ? "desc"
-        : "asc") as "asc" | "desc",
+      [sortBy]: sortOrder,
     },
-  ];
+  ] satisfies Prisma.hrms_filesOrderByWithRelationInput[];
   const data = await MyGlobal.prisma.hrms_files.findMany({
     where: whereInput,
-    skip,
     take: limit,
+    skip,
     orderBy: orderByInput,
     ...HrmsFileAtSummaryTransformer.select(),
   });
-  const total = await MyGlobal.prisma.hrms_files.count({
+  const total: number = await MyGlobal.prisma.hrms_files.count({
     where: whereInput,
   });
+  const totalPages: number = total === 0 ? 0 : Math.ceil(total / limit);
   return {
     data: await ArrayUtil.asyncMap(
       data,
-      async (file) => await HrmsFileAtSummaryTransformer.transform(file),
+      HrmsFileAtSummaryTransformer.transform,
     ),
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: totalPages,
     } satisfies IPage.IPagination,
-  } satisfies IPageIHrmsFile.ISummary;
+  };
 }

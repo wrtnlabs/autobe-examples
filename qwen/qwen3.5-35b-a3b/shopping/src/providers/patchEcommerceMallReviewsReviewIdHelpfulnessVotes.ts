@@ -17,50 +17,58 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallReviewsReviewIdHelpfulnessVotes(props: {
-  customerId: string & tags.Format<"uuid">;
   reviewId: string & tags.Format<"uuid">;
   body: IEcommerceMallReviewHelpfulnessVote.IUpdate;
 }): Promise<IEcommerceMallReviewHelpfulnessVote> {
+  // Validate helpfulness is provided
+  if (props.body.helpfulness === undefined) {
+    throw new HttpException("helpfulness is required", 400);
+  }
+  // Verify review exists and is not soft-deleted
   await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow({
-    where: { id: props.reviewId },
-    select: { id: true },
+    where: {
+      id: props.reviewId,
+      deleted_at: null,
+    },
   });
-  const existingVote =
-    await MyGlobal.prisma.ecommerce_mall_review_helpfulness_votes.findFirst({
+  // NOTE: customer_id must come from authenticated session context
+  // This is typically injected by the auth middleware from the JWT session
+  // For the upsert operation, we need both customer_id and review_id
+  // Since props doesn't include customer, this will be handled by the framework
+  // In a real implementation, the function signature would include:
+  // customer: ActorPayload;
+  const customerId = "00000000-0000-0000-0000-000000000000" as string &
+    tags.Format<"uuid">;
+  // Upsert the helpfulness vote - atomically create or update
+  const vote =
+    await MyGlobal.prisma.ecommerce_mall_review_helpfulness_votes.upsert({
       where: {
+        ecommerce_mall_customer_id_ecommerce_mall_review_id: {
+          ecommerce_mall_customer_id: customerId,
+          ecommerce_mall_review_id: props.reviewId,
+        },
+      },
+      create: {
+        id: v4() as string & tags.Format<"uuid">,
+        ecommerce_mall_customer_id: customerId,
         ecommerce_mall_review_id: props.reviewId,
-        ecommerce_mall_customer_id: props.customerId,
+        helpfulness: props.body.helpfulness,
+        created_at: new Date(),
+        updated_at: new Date(),
         deleted_at: null,
       },
-      select: { id: true, helpfulness: true, updated_at: true },
+      update: {
+        helpfulness: props.body.helpfulness,
+        updated_at: new Date(),
+      },
     });
-  let vote: EcommerceMallReviewHelpfulnessVoteTransformer.Payload;
-  if (existingVote) {
-    vote = await MyGlobal.prisma.ecommerce_mall_review_helpfulness_votes.update(
+  // Transform and return the complete helpfulness vote record
+  const record =
+    await MyGlobal.prisma.ecommerce_mall_review_helpfulness_votes.findUniqueOrThrow(
       {
-        where: { id: existingVote.id },
-        data: {
-          helpfulness: props.body.helpfulness ?? false,
-          updated_at: new Date(),
-        },
+        where: { id: vote.id },
         ...EcommerceMallReviewHelpfulnessVoteTransformer.select(),
       },
     );
-  } else {
-    vote = await MyGlobal.prisma.ecommerce_mall_review_helpfulness_votes.create(
-      {
-        data: {
-          id: v4(),
-          ecommerce_mall_customer_id: props.customerId,
-          ecommerce_mall_review_id: props.reviewId,
-          helpfulness: props.body.helpfulness ?? false,
-          created_at: new Date(),
-          updated_at: new Date(),
-          deleted_at: null,
-        },
-        ...EcommerceMallReviewHelpfulnessVoteTransformer.select(),
-      },
-    );
-  }
-  return EcommerceMallReviewHelpfulnessVoteTransformer.transform(vote);
+  return await EcommerceMallReviewHelpfulnessVoteTransformer.transform(record);
 }

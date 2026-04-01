@@ -21,26 +21,18 @@ export namespace HrmPlatformRoleAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: {
-          select: {
-            id: true,
-          },
-        },
-        employeeAssignments: {
-          select: {
-            id: true,
-          },
-        },
-        employeeSnapshots: {
-          select: {
-            id: true,
-          },
-        },
+        organization: true,
+        employeeAssignments: true,
+        employeeSnapshots: true,
         permissions: {
           select: {
-            id: true,
+            permission: {
+              select: {
+                code: true,
+              },
+            },
           },
-        },
+        } satisfies Prisma.hrm_platform_role_permissionsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_rolesFindManyArgs;
   }
@@ -53,9 +45,9 @@ export namespace HrmPlatformRoleAtSummaryTransformer {
       name: input.name,
       description: input.description ?? null,
       is_builtin: input.is_builtin,
-      permissions: input.permissions.map((p) => p.id),
-      created_at: toISOStringSafe(input.created_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      permissions: input.permissions.map((rp) => rp.permission.code),
+      created_at: input.created_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

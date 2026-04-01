@@ -3,8 +3,10 @@ import { IEcommerceMallSellerApprovalRequest } from "@ORGANIZATION/PROJECT-api/l
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
 
@@ -17,12 +19,12 @@ export namespace EcommerceMallSellerApprovalRequestAtSummaryTransformer {
     return {
       select: {
         id: true,
-        seller: EcommerceMallSellerAtSummaryTransformer.select(),
         status: true,
         rejection_reason: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        seller: EcommerceMallSellerAtSummaryTransformer.select(),
         snapshots: true,
       },
     } satisfies Prisma.ecommerce_mall_seller_approval_requestsFindManyArgs;
@@ -35,8 +37,8 @@ export namespace EcommerceMallSellerApprovalRequestAtSummaryTransformer {
       seller: await EcommerceMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
-      status: typia.assert<"approved" | "pending" | "rejected">(input.status),
-      rejectionReason: input.rejection_reason ?? null,
+      status: typia.assert<"pending" | "approved" | "rejected">(input.status),
+      rejectionReason: input.rejection_reason,
       createdAt: toISOStringSafe(input.created_at),
       updatedAt: toISOStringSafe(input.updated_at),
     };

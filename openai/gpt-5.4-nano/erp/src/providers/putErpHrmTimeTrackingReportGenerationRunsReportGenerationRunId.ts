@@ -23,102 +23,83 @@ export async function putErpHrmTimeTrackingReportGenerationRunsReportGenerationR
   reportGenerationRunId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingReportGenerationRun.IUpdate;
 }): Promise<IErpHrmTimeTrackingReportGenerationRun> {
-  const body = props.body;
-  return await MyGlobal.prisma.$transaction(async (tx) => {
-    const run =
-      await tx.erp_hrm_time_tracking_report_generation_runs.findUniqueOrThrow({
-        where: { id: props.reportGenerationRunId },
-        select: {
-          id: true,
-          status: true,
-          started_at: true,
-          finished_at: true,
-          error_message: true,
-          deleted_at: true,
-          reportDefinition: {
-            select: {
-              erp_hrm_time_tracking_organization_id: true,
-            },
-          },
-        },
-      });
-    if (run.deleted_at !== null) {
-      throw new HttpException(
-        "Cannot update a deleted report generation run",
-        400,
-      );
-    }
-    const nextStatus = body.status !== undefined ? body.status : run.status;
-    const nextStartedAt =
-      body.started_at !== undefined ? body.started_at : run.started_at;
-    const nextFinishedAt =
-      body.finished_at !== undefined ? body.finished_at : run.finished_at;
-    const nextErrorMessage =
-      body.error_message !== undefined ? body.error_message : run.error_message;
-    const isSucceeded = nextStatus === "succeeded";
-    const isFailed = nextStatus === "failed";
-    if (isSucceeded && nextErrorMessage !== null) {
-      throw new HttpException(
-        "error_message must be null when status indicates success",
-        400,
-      );
-    }
-    if (isFailed && (nextErrorMessage === null || nextErrorMessage === "")) {
-      throw new HttpException(
-        "error_message must be provided when status indicates failure",
-        400,
-      );
-    }
-    if (nextStartedAt !== null && nextFinishedAt !== null) {
-      if (nextFinishedAt < nextStartedAt) {
-        throw new HttpException(
-          "finished_at must not be earlier than started_at",
-          400,
-        );
-      }
-    }
-    const allowedTransitions: Record<string, string[]> = {
-      pending: ["running", "succeeded", "failed"],
-      running: ["succeeded", "failed"],
-      succeeded: [],
-      failed: [],
-    };
-    if (body.status !== undefined && body.status !== run.status) {
-      const allowed = allowedTransitions[run.status] ?? [];
-      if (!allowed.includes(body.status)) {
-        throw new HttpException("Illegal status transition", 400);
-      }
-    }
-    const data: Prisma.erp_hrm_time_tracking_report_generation_runsUpdateInput =
+  const { reportGenerationRunId, body } = props;
+  const current =
+    await MyGlobal.prisma.erp_hrm_time_tracking_report_generation_runs.findUniqueOrThrow(
       {
+        where: { id: reportGenerationRunId },
+        ...ErpHrmTimeTrackingReportGenerationRunTransformer.select(),
+      },
+    );
+  if (current.deleted_at !== null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const nextStatus = body.status !== undefined ? body.status : current.status;
+  const nextStartedAt =
+    body.started_at !== undefined ? body.started_at : current.started_at;
+  const nextFinishedAt =
+    body.finished_at !== undefined ? body.finished_at : current.finished_at;
+  const nextErrorMessage =
+    body.error_message !== undefined
+      ? body.error_message
+      : current.error_message;
+  if (nextStartedAt !== null && nextFinishedAt !== null) {
+    if (nextFinishedAt < nextStartedAt) {
+      throw new HttpException(
+        "finished_at must not be earlier than started_at",
+        400,
+      );
+    }
+  }
+  const statusLower = nextStatus.toLowerCase();
+  const indicatesFailure =
+    statusLower.includes("fail") ||
+    statusLower.includes("error") ||
+    statusLower.includes("rejected");
+  const indicatesSuccess =
+    statusLower.includes("succ") ||
+    statusLower.includes("success") ||
+    statusLower.includes("complete");
+  if (indicatesFailure) {
+    if (nextErrorMessage === null || nextErrorMessage.trim().length === 0) {
+      throw new HttpException(
+        "error_message is required for failed status",
+        400,
+      );
+    }
+  }
+  if (indicatesSuccess) {
+    if (nextErrorMessage !== null) {
+      throw new HttpException(
+        "error_message must be null for successful status",
+        400,
+      );
+    }
+  }
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.erp_hrm_time_tracking_report_generation_runs.update({
+      where: { id: reportGenerationRunId },
+      data: {
         ...(body.status !== undefined && { status: body.status }),
-        ...(body.started_at !== undefined && {
-          started_at:
-            body.started_at === null
-              ? null
-              : new globalThis.Date(body.started_at),
-        }),
+        ...(body.started_at !== undefined && { started_at: body.started_at }),
         ...(body.finished_at !== undefined && {
-          finished_at:
-            body.finished_at === null
-              ? null
-              : new globalThis.Date(body.finished_at),
+          finished_at: body.finished_at,
         }),
         ...(body.error_message !== undefined && {
           error_message: body.error_message,
         }),
-      };
-    await tx.erp_hrm_time_tracking_report_generation_runs.update({
-      where: { id: props.reportGenerationRunId },
-      data,
+        updated_at: toISOStringSafe(new Date()),
+      },
     });
-    const updated =
-      await tx.erp_hrm_time_tracking_report_generation_runs.findUniqueOrThrow({
-        where: { id: props.reportGenerationRunId },
-        ...ErpHrmTimeTrackingReportGenerationRunTransformer.select(),
-      });
-    return await ErpHrmTimeTrackingReportGenerationRunTransformer.transform(
-      updated,
-    );
   });
+  const updated =
+    await MyGlobal.prisma.erp_hrm_time_tracking_report_generation_runs.findUniqueOrThrow(
+      {
+        where: { id: reportGenerationRunId },
+        ...ErpHrmTimeTrackingReportGenerationRunTransformer.select(),
+      },
+    );
+  return await ErpHrmTimeTrackingReportGenerationRunTransformer.transform(
+    updated,
+  );
 }

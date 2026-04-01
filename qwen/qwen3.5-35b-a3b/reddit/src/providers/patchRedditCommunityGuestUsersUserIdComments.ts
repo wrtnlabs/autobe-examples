@@ -13,6 +13,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { GuestPayload } from "../decorators/payload/GuestPayload";
+import { RedditCommunityCommentAtSummaryTransformer } from "../transformers/RedditCommunityCommentAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -24,58 +25,69 @@ export async function patchRedditCommunityGuestUsersUserIdComments(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const sort = props.body.sort ?? "best";
   const whereInput: Prisma.reddit_community_commentsWhereInput = {
     reddit_community_members_id: props.userId,
     deleted_at: null,
   };
+  if (props.body.postId !== undefined) {
+    whereInput.reddit_community_posts_id = props.body.postId;
+  }
+  if (props.body.authorId !== undefined) {
+    whereInput.reddit_community_members_id = props.body.authorId;
+  }
+  if (props.body.afterDate !== undefined && props.body.afterDate !== null) {
+    if (props.body.beforeDate !== undefined && props.body.beforeDate !== null) {
+      whereInput.created_at = {
+        gt: toISOStringSafe(props.body.afterDate),
+        lt: toISOStringSafe(props.body.beforeDate),
+      };
+    } else {
+      whereInput.created_at = {
+        gt: toISOStringSafe(props.body.afterDate),
+      };
+    }
+  } else if (
+    props.body.beforeDate !== undefined &&
+    props.body.beforeDate !== null
+  ) {
+    whereInput.created_at = {
+      lt: toISOStringSafe(props.body.beforeDate),
+    };
+  }
+  if (props.body.minDepth !== undefined) {
+    if (props.body.minDepth === 0) {
+      // No additional filter needed
+    } else {
+      whereInput.parent_comment_id = { not: null };
+    }
+  }
+  if (props.body.maxDepth !== undefined) {
+    if (props.body.maxDepth === 0) {
+      whereInput.parent_comment_id = null;
+    }
+  }
   const orderByInput: Prisma.reddit_community_commentsOrderByWithRelationInput[] =
-    [{ created_at: "desc" }];
-  const commentsData = await MyGlobal.prisma.reddit_community_comments.findMany(
-    {
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      include: {
-        author: {
-          select: {
-            id: true,
-            username: true,
-            created_at: true,
-          },
-        },
-      },
-    },
-  );
-  const totalCount = await MyGlobal.prisma.reddit_community_comments.count({
+    [];
+  orderByInput.push({ created_at: "desc" });
+  const data = await MyGlobal.prisma.reddit_community_comments.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: orderByInput,
+    ...RedditCommunityCommentAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.reddit_community_comments.count({
     where: whereInput,
   });
-  const transformedComments = await ArrayUtil.asyncMap(
-    commentsData,
-    async (comment) => {
-      return {
-        id: comment.id as string & tags.Format<"uuid">,
-        voteScore: 0,
-        createdAt: comment.created_at.toISOString(),
-        parentComment: null,
-        replyCount: 0,
-        author: {
-          id: comment.author.id as string & tags.Format<"uuid">,
-          username: comment.author.username,
-          created_at: comment.author.created_at.toISOString(),
-        } satisfies IRedditCommunityMember.ISummary,
-      } satisfies IRedditCommunityComment.ISummary;
-    },
-  );
-  const pages = totalCount === 0 ? 0 : Math.ceil(totalCount / limit);
   return {
+    data: await ArrayUtil.asyncMap(data, (elem) =>
+      RedditCommunityCommentAtSummaryTransformer.transform(elem),
+    ),
     pagination: {
       current: page,
-      limit,
-      records: totalCount,
-      pages,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformedComments,
-  } satisfies IPageIRedditCommunityComment.ISummary;
+  };
 }

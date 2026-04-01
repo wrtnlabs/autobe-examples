@@ -12,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { ErpHrmTimeTrackingContractAtSummaryTransformer } from "../transformers/ErpHrmTimeTrackingContractAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,134 +20,132 @@ export async function patchErpHrmTimeTrackingMemberContracts(props: {
   member: MemberPayload;
   body: IErpHrmTimeTrackingContract.IRequest;
 }): Promise<IPageIErpHrmTimeTrackingContract.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  if (page < 1) {
-    throw new HttpException("Invalid page", 400);
-  }
-  if (limit < 1 || limit > 100) {
-    throw new HttpException("Invalid limit", 400);
-  }
-  const selectedOrganizationId = (props.member as any).organization_id as
-    | string
-    | undefined;
-  if (!selectedOrganizationId) {
-    throw new HttpException("Organization context missing", 403);
-  }
-  const where = {
-    erp_hrm_time_tracking_organization_id: selectedOrganizationId,
-    ...(props.body.includeDeleted ? {} : { deleted_at: null }),
-    ...(props.body.contractNumber
-      ? { contract_number: { contains: props.body.contractNumber } }
-      : {}),
-    ...(props.body.contractTitle
-      ? { contract_title: { contains: props.body.contractTitle } }
-      : {}),
-    ...(props.body.status ? { status: props.body.status } : {}),
-    ...(props.body.workTermStartDateFrom || props.body.workTermStartDateTo
-      ? {
-          work_term_start_date: {
-            ...(props.body.workTermStartDateFrom
-              ? { gte: new Date(props.body.workTermStartDateFrom) }
-              : {}),
-            ...(props.body.workTermStartDateTo
-              ? { lte: new Date(props.body.workTermStartDateTo) }
-              : {}),
-          },
-        }
-      : {}),
-    ...(props.body.workTermEndDateFrom || props.body.workTermEndDateTo
-      ? {
-          work_term_end_date: {
-            ...(props.body.workTermEndDateFrom
-              ? { gte: new Date(props.body.workTermEndDateFrom as any) }
-              : {}),
-            ...(props.body.workTermEndDateTo
-              ? { lte: new Date(props.body.workTermEndDateTo as any) }
-              : {}),
-          },
-        }
-      : {}),
-  } satisfies Prisma.erp_hrm_time_tracking_contractsWhereInput;
-  const orderBy = (() => {
-    const dir = props.body.sortDirection ?? "desc";
-    const sortBy = props.body.sortBy;
-    switch (sortBy) {
-      case "created_at":
-      case "work_term_start_date":
-      case "work_term_end_date":
-      case "status":
-      case "contract_number":
-      case "contract_title":
-        return { [sortBy]: dir as Prisma.SortOrder };
-      default:
-        return { created_at: "desc" as const };
-    }
-  })() as Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput;
+  const page = props.body.page === undefined ? 1 : props.body.page;
+  const limit = props.body.limit === undefined ? 100 : props.body.limit;
   const skip = (page - 1) * limit;
-  const [rows, total] = await MyGlobal.prisma.$transaction([
+  const includeDeleted = props.body.includeDeleted === true;
+  const memberContracts =
+    await MyGlobal.prisma.erp_hrm_time_tracking_contracts.findMany({
+      where: {
+        erp_hrm_time_tracking_employee_id: props.member.id,
+        ...(includeDeleted ? {} : { deleted_at: null }),
+      },
+      select: {
+        erp_hrm_time_tracking_organization_id: true,
+      },
+      distinct: ["erp_hrm_time_tracking_organization_id"],
+      take: 2,
+      orderBy: {
+        created_at: "desc",
+      },
+    });
+  if (memberContracts.length !== 1) {
+    throw new HttpException("Missing or ambiguous organization context", 403);
+  }
+  const selectedOrganizationId =
+    memberContracts[0].erp_hrm_time_tracking_organization_id;
+  const hasWorkTermStartFrom = props.body.workTermStartDateFrom !== undefined;
+  const hasWorkTermStartTo = props.body.workTermStartDateTo !== undefined;
+  const hasWorkTermEndFrom = props.body.workTermEndDateFrom !== undefined;
+  const hasWorkTermEndTo = props.body.workTermEndDateTo !== undefined;
+  if (
+    hasWorkTermStartFrom ||
+    hasWorkTermStartTo ||
+    hasWorkTermEndFrom ||
+    hasWorkTermEndTo
+  ) {
+    throw new HttpException(
+      "work term datetime range filters are not supported in this implementation",
+      400,
+    );
+  }
+  const where: Prisma.erp_hrm_time_tracking_contractsWhereInput = {
+    erp_hrm_time_tracking_organization_id: selectedOrganizationId,
+    erp_hrm_time_tracking_employee_id: props.member.id,
+    ...(includeDeleted ? {} : { deleted_at: null }),
+    ...(props.body.contractNumber === undefined
+      ? {}
+      : {
+          contract_number: {
+            contains: props.body.contractNumber,
+            mode: "insensitive",
+          },
+        }),
+    ...(props.body.contractTitle === undefined
+      ? {}
+      : {
+          contract_title: {
+            contains: props.body.contractTitle,
+            mode: "insensitive",
+          },
+        }),
+    ...(props.body.status === undefined ? {} : { status: props.body.status }),
+  };
+  const sortBy = props.body.sortBy;
+  const sortDirection = props.body.sortDirection === "asc" ? "asc" : "desc";
+  const orderByInput: Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput[] =
+    sortBy === undefined
+      ? ([
+          { created_at: "desc" },
+          { id: "desc" },
+        ] satisfies Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput[])
+      : (() => {
+          const mapped: Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput =
+            sortBy === "created_at"
+              ? ({
+                  created_at: sortDirection,
+                } satisfies Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput)
+              : sortBy === "updated_at"
+                ? ({
+                    updated_at: sortDirection,
+                  } satisfies Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput)
+                : sortBy === "work_term_start_date"
+                  ? ({
+                      work_term_start_date: sortDirection,
+                    } satisfies Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput)
+                  : sortBy === "work_term_end_date"
+                    ? ({
+                        work_term_end_date: sortDirection,
+                      } satisfies Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput)
+                    : sortBy === "status"
+                      ? ({
+                          status: sortDirection,
+                        } satisfies Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput)
+                      : sortBy === "contract_number"
+                        ? ({
+                            contract_number: sortDirection,
+                          } satisfies Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput)
+                        : sortBy === "contract_title"
+                          ? ({
+                              contract_title: sortDirection,
+                            } satisfies Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput)
+                          : ({
+                              created_at: "desc",
+                            } satisfies Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput);
+          const tie: Prisma.erp_hrm_time_tracking_contractsOrderByWithRelationInput =
+            { id: "desc" };
+          return [mapped, tie];
+        })();
+  const [records, items] = await Promise.all([
+    MyGlobal.prisma.erp_hrm_time_tracking_contracts.count({ where }),
     MyGlobal.prisma.erp_hrm_time_tracking_contracts.findMany({
       where,
       skip,
       take: limit,
-      orderBy: [orderBy, { id: "asc" }],
-      select: {
-        id: true,
-        contract_number: true,
-        contract_title: true,
-        pay_amount: true,
-        pay_currency: true,
-        pay_frequency: true,
-        work_term_start_date: true,
-        work_term_end_date: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        employee: {
-          select: {
-            id: true,
-            email: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-          },
-        },
-      },
+      orderBy: orderByInput,
+      ...ErpHrmTimeTrackingContractAtSummaryTransformer.select(),
     }),
-    MyGlobal.prisma.erp_hrm_time_tracking_contracts.count({ where }),
   ]);
   return {
     pagination: {
       current: page,
       limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      records,
+      pages: Math.ceil(records / limit),
     },
-    data: rows.map((r) => ({
-      id: r.id as any,
-      contract_number: r.contract_number,
-      contract_title: r.contract_title,
-      pay_amount: r.pay_amount,
-      pay_currency: r.pay_currency,
-      pay_frequency: r.pay_frequency,
-      work_term_start_date: toISOStringSafe(r.work_term_start_date) as any,
-      work_term_end_date: r.work_term_end_date
-        ? (toISOStringSafe(r.work_term_end_date) as any)
-        : null,
-      status: r.status,
-      employee: {
-        id: r.employee.id as any,
-        email: r.employee.email,
-        created_at: toISOStringSafe(r.employee.created_at) as any,
-        updated_at: toISOStringSafe(r.employee.updated_at) as any,
-        deleted_at: r.employee.deleted_at
-          ? (toISOStringSafe(r.employee.deleted_at) as any)
-          : null,
-      },
-      created_at: toISOStringSafe(r.created_at) as any,
-      updated_at: toISOStringSafe(r.updated_at) as any,
-      deleted_at: r.deleted_at ? (toISOStringSafe(r.deleted_at) as any) : null,
-    })),
-  } satisfies IPageIErpHrmTimeTrackingContract.ISummary;
+    data: await ArrayUtil.asyncMap(
+      items,
+      ErpHrmTimeTrackingContractAtSummaryTransformer.transform,
+    ),
+  };
 }

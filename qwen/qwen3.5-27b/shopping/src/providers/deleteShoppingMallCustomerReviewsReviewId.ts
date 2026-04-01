@@ -15,22 +15,19 @@ export async function deleteShoppingMallCustomerReviewsReviewId(props: {
   customer: CustomerPayload;
   reviewId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the review and verify ownership
   const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
-    where: {
-      id: props.reviewId,
-      deleted_at: null,
-    },
+    where: { id: props.reviewId },
     select: {
-      id: true,
+      deleted_at: true,
       shopping_customer_id: true,
     },
   });
-  // Verify the customer owns this review
+  if (review.deleted_at !== null) {
+    throw new HttpException("Review not found", 404);
+  }
   if (review.shopping_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Soft delete the review by setting deleted_at
   await MyGlobal.prisma.shopping_mall_reviews.update({
     where: { id: props.reviewId },
     data: {

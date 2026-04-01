@@ -24,9 +24,19 @@ export namespace HrmPlatformEmployeeAtSummaryTransformer {
         employment_type: true,
         status: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
         user: HrmPlatformMemberAtSummaryTransformer.select(),
+        organization: { select: { id: true } },
         role: HrmPlatformRoleAtSummaryTransformer.select(),
         department: HrmPlatformDepartmentAtSummaryTransformer.select(),
+        contracts: true,
+        snapshots: true,
+        projectMemberships: true,
+        assignedTasks: true,
+        timelogs: true,
+        timesheets: true,
+        activeTimers: true,
       },
     } satisfies Prisma.hrm_platform_employeesFindManyArgs;
   }
@@ -35,7 +45,7 @@ export namespace HrmPlatformEmployeeAtSummaryTransformer {
   ): Promise<IHrmPlatformEmployee.ISummary> {
     return {
       id: input.id,
-      position: input.position ?? null,
+      position: input.position,
       employment_type: input.employment_type,
       status: input.status,
       user: await HrmPlatformMemberAtSummaryTransformer.transform(input.user),
@@ -45,7 +55,7 @@ export namespace HrmPlatformEmployeeAtSummaryTransformer {
             input.department,
           )
         : null,
-      created_at: toISOStringSafe(input.created_at),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

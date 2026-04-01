@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmsFileUpload } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsFileUpload";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace HrmsFileUploadAtSummaryTransformer {
@@ -25,23 +27,11 @@ export namespace HrmsFileUploadAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: {
-          select: {
-            id: true,
-            name: true,
-          },
-        } satisfies Prisma.hrms_organizationsFindManyArgs,
-        member: {
-          select: {
-            id: true,
-            email: true,
-          },
-        } satisfies Prisma.hrms_membersFindManyArgs,
+        organization: true,
+        member: true,
         file: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.hrms_filesFindManyArgs,
+          select: { id: true },
+        },
       },
     } satisfies Prisma.hrms_file_uploadsFindManyArgs;
   }
@@ -52,13 +42,13 @@ export namespace HrmsFileUploadAtSummaryTransformer {
       id: input.id,
       originalFilename: input.original_filename,
       fileType: input.file_type,
-      fileSize: input.file_size,
+      fileSize: Number(input.file_size),
       validationStatus: input.validation_status,
       uploadState: input.upload_state,
-      createdAt: input.created_at.toISOString(),
-      fileId: input.file?.id ?? undefined,
-      permanentStoragePath: input.permanent_storage_path ?? undefined,
-      errorMessage: input.error_message ?? undefined,
+      createdAt: toISOStringSafe(input.created_at),
+      fileId: input.file?.id ?? null,
+      permanentStoragePath: input.permanent_storage_path ?? null,
+      errorMessage: input.error_message ?? null,
     };
   }
 }

@@ -22,25 +22,36 @@ export async function patchEcommerceMallAdminShipmentsShipmentIdTrackingUpdates(
   shipmentId: string & tags.Format<"uuid">;
   body: IEcommerceMallShipmentTrackingUpdate.IRequest;
 }): Promise<IPageIEcommerceMallShipmentTrackingUpdate.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
-    where: { id: props.shipmentId },
-  });
+  // Verify shipment exists and is not soft deleted
+  const shipment =
+    await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
+      where: {
+        id: props.shipmentId,
+        deleted_at: null,
+      },
+      select: { id: true },
+    });
+  // Build query filters from request body
   const whereInput: Prisma.ecommerce_mall_shipment_tracking_updatesWhereInput =
     {
       shipment_id: props.shipmentId,
-      tracking_status: props.body.tracking_status,
-    };
+      deleted_at: null,
+      ...(props.body.tracking_status !== undefined && {
+        tracking_status: props.body.tracking_status,
+      }),
+    } satisfies Prisma.ecommerce_mall_shipment_tracking_updatesWhereInput;
+  // Pagination parameters
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  // Query tracking updates
   const data =
     await MyGlobal.prisma.ecommerce_mall_shipment_tracking_updates.findMany({
       where: whereInput,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
-      select: {
-        id: true,
+      include: {
         shipment: {
           select: {
             id: true,
@@ -57,6 +68,9 @@ export async function patchEcommerceMallAdminShipmentsShipmentIdTrackingUpdates(
                 order_number: true,
                 total_price: true,
                 status: true,
+                shipping_address_id: true,
+                created_at: true,
+                deleted_at: true,
                 shippingAddress: {
                   select: {
                     id: true,
@@ -71,95 +85,78 @@ export async function patchEcommerceMallAdminShipmentsShipmentIdTrackingUpdates(
                     deleted_at: true,
                   },
                 },
-                created_at: true,
-                deleted_at: true,
               },
             },
           },
         },
-        tracking_status: true,
-        created_at: true,
       },
     });
+  // Get total count
   const total =
     await MyGlobal.prisma.ecommerce_mall_shipment_tracking_updates.count({
       where: whereInput,
     });
-  const trackingCountByShipment =
-    await MyGlobal.prisma.ecommerce_mall_shipment_tracking_updates.groupBy({
-      by: ["shipment_id"],
-      _count: {
-        id: true,
-      },
-      where: whereInput,
-    });
-  const countMap = new Map(
-    trackingCountByShipment.map((item) => [item.shipment_id, item._count.id]),
-  );
-  return {
-    data: data.map((update) => {
-      const trackingCount = countMap.get(update.shipment.id) ?? 0;
-      return {
-        id: update.id as string & tags.Format<"uuid">,
-        shipment: {
-          id: update.shipment.id as string & tags.Format<"uuid">,
-          carrierName: update.shipment.carrier_name,
-          carrierPhone: update.shipment.carrier_phone,
-          carrierWebsite: update.shipment.carrier_website,
-          status: update.shipment.status,
-          shippedAt: update.shipment.shipped_at
-            ? toISOStringSafe(update.shipment.shipped_at)
-            : null,
-          deliveredAt: update.shipment.delivered_at
-            ? toISOStringSafe(update.shipment.delivered_at)
-            : null,
-          estimatedDeliveryAt: update.shipment.estimated_delivery_at
-            ? toISOStringSafe(update.shipment.estimated_delivery_at)
-            : null,
-          order: {
-            id: update.shipment.order.id as string & tags.Format<"uuid">,
-            order_number: update.shipment.order.order_number,
-            total_price: update.shipment.order.total_price,
-            status: update.shipment.order.status,
-            shipping_address: {
-              id: update.shipment.order.shippingAddress.id as string &
-                tags.Format<"uuid">,
-              recipient_name:
-                update.shipment.order.shippingAddress.recipient_name,
-              recipient_phone:
-                update.shipment.order.shippingAddress.recipient_phone,
-              street: update.shipment.order.shippingAddress.street,
-              city: update.shipment.order.shippingAddress.city,
-              state: update.shipment.order.shippingAddress.state,
-              is_default: update.shipment.order.shippingAddress.is_default,
-              created_at: toISOStringSafe(
-                update.shipment.order.shippingAddress.created_at,
-              ),
-              updated_at: toISOStringSafe(
-                update.shipment.order.shippingAddress.updated_at,
-              ),
-              deleted_at: update.shipment.order.shippingAddress.deleted_at
-                ? toISOStringSafe(
-                    update.shipment.order.shippingAddress.deleted_at,
-                  )
-                : null,
-            },
-            created_at: toISOStringSafe(update.shipment.order.created_at),
-            deleted_at: update.shipment.order.deleted_at
-              ? toISOStringSafe(update.shipment.order.deleted_at)
+  // Transform results
+  const transformedData: IEcommerceMallShipmentTrackingUpdate.ISummary[] =
+    await ArrayUtil.asyncMap(data, async (update) => {
+      const shipmentData = update.shipment;
+      const orderData = shipmentData.order;
+      const addressData = orderData.shippingAddress;
+      const shipment: IEcommerceMallShipment.ISummary = {
+        id: shipmentData.id as string & tags.Format<"uuid">,
+        carrierName: shipmentData.carrier_name ?? undefined,
+        carrierPhone: shipmentData.carrier_phone ?? undefined,
+        carrierWebsite: shipmentData.carrier_website ?? undefined,
+        status: shipmentData.status,
+        shippedAt: shipmentData.shipped_at
+          ? toISOStringSafe(shipmentData.shipped_at)
+          : undefined,
+        deliveredAt: shipmentData.delivered_at
+          ? toISOStringSafe(shipmentData.delivered_at)
+          : undefined,
+        estimatedDeliveryAt: shipmentData.estimated_delivery_at
+          ? toISOStringSafe(shipmentData.estimated_delivery_at)
+          : undefined,
+        order: {
+          id: orderData.id as string & tags.Format<"uuid">,
+          order_number: orderData.order_number,
+          total_price: orderData.total_price,
+          status: orderData.status,
+          shipping_address: {
+            id: addressData.id as string & tags.Format<"uuid">,
+            recipient_name: addressData.recipient_name,
+            recipient_phone: addressData.recipient_phone,
+            street: addressData.street,
+            city: addressData.city,
+            state: addressData.state,
+            is_default: addressData.is_default,
+            created_at: toISOStringSafe(addressData.created_at),
+            updated_at: toISOStringSafe(addressData.updated_at),
+            deleted_at: addressData.deleted_at
+              ? toISOStringSafe(addressData.deleted_at)
               : null,
           },
-          trackingCount: trackingCount,
-        } as IEcommerceMallShipment.ISummary,
+          created_at: toISOStringSafe(orderData.created_at),
+          deleted_at: orderData.deleted_at
+            ? toISOStringSafe(orderData.deleted_at)
+            : null,
+        },
+        trackingCount: data.length,
+      };
+      return {
+        id: update.id as string & tags.Format<"uuid">,
+        shipment: shipment,
         tracking_status: update.tracking_status,
         created_at: toISOStringSafe(update.created_at),
-      } as IEcommerceMallShipmentTrackingUpdate.ISummary;
-    }),
+      };
+    });
+  return {
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
+    data: transformedData,
   };
 }

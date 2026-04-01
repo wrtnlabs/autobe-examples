@@ -26,5 +26,17 @@ export async function getHrmPlatformMemberDepartmentsDepartmentId(props: {
       },
       ...HrmPlatformDepartmentTransformer.select(),
     });
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      user_id: props.member.id,
+      deleted_at: null,
+    },
+    select: {
+      organization_id: true,
+    },
+  });
+  if (!employee || employee.organization_id !== department.organization.id) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await HrmPlatformDepartmentTransformer.transform(department);
 }

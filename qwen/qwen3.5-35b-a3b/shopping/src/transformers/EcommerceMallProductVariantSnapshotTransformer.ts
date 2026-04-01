@@ -5,8 +5,10 @@ import { IEcommerceMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 import { EcommerceMallProductVariantAtSummaryTransformer } from "./EcommerceMallProductVariantAtSummaryTransformer";
@@ -39,7 +41,7 @@ export namespace EcommerceMallProductVariantSnapshotTransformer {
       id: input.id,
       sku_code: input.sku_code,
       options: input.options,
-      price: input.price,
+      price: Number(input.price),
       stock_quantity: input.stock_quantity,
       status: input.status,
       created_at: input.created_at.toISOString(),

@@ -2,6 +2,8 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallReviewSnapshot";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { IShoppingMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReviewSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -23,10 +25,19 @@ export async function patchShoppingMallCustomerReviewsReviewIdSnapshots(props: {
 }): Promise<IPageIShoppingMallReviewSnapshot.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
+  const sort = props.body.sort ?? "desc";
   const skip = (page - 1) * limit;
-  await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
+  const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
     where: { id: props.reviewId },
+    select: { id: true, customer_id: true },
   });
+  if (review.customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const orderByInput =
+    sort === "asc"
+      ? { created_at: "asc" as const }
+      : { created_at: "desc" as const };
   const whereInput = {
     shopping_mall_review_id: props.reviewId,
   } satisfies Prisma.shopping_mall_review_snapshotsWhereInput;
@@ -34,7 +45,7 @@ export async function patchShoppingMallCustomerReviewsReviewIdSnapshots(props: {
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { snapshot_at: "desc" },
+    orderBy: orderByInput,
     ...ShoppingMallReviewSnapshotAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.shopping_mall_review_snapshots.count({

@@ -1,0 +1,160 @@
+/// Organization-scoped role definitions used to control employee access
+/// within a tenant. Built-in roles and custom roles are stored together,
+/// while the assigned permission set is managed through {@link
+/// erp_hrm_time_role_permissions}.
+///
+/// Each role belongs to exactly one organization and is uniquely identified
+/// by its name within that organization. Built-in roles such as Owner,
+/// Manager, and Employee are represented in this table and must be protected
+/// from deletion by application rules. Custom roles may be edited or removed
+/// when no employees are assigned to them, with employee-role assignment
+/// enforced through the employee domain.
+///
+/// @namespace Roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the role record.
+  id String @id
+  
+  /// Organization's {@link erp_hrm_time_organizations.id}.
+  erp_hrm_time_organization_id String
+  
+  /// Role name unique within the organization, such as Owner, Manager,
+  /// Employee, or a custom role name.
+  name String
+  
+  /// Human-readable explanation of the role's purpose and intended access
+  /// level.
+  description String?
+  
+  /// Indicates whether the role is a protected built-in role managed by the
+  /// system.
+  is_builtin Boolean
+  
+  /// Timestamp when the role was created.
+  created_at DateTime
+  
+  /// Timestamp when the role was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the role was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization erp_hrm_time_organizations @relation(fields: [erp_hrm_time_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees erp_hrm_time_employees[]
+  rolePermissions erp_hrm_time_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([erp_hrm_time_organization_id, name])
+  @@index([erp_hrm_time_organization_id, is_builtin])
+}
+
+/// Approved permission catalog used to compose organization role permission
+/// sets.
+///
+/// This table stores the canonical list of permission keys recognized by the
+/// platform and their descriptions. It is referenced by {@link
+/// erp_hrm_time_role_permissions} so roles can be assigned a validated
+/// permission set without duplicating the permission vocabulary in
+/// application code.
+///
+/// @namespace Roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Stable permission key used by the authorization layer, such as org:manage
+  /// or project:view.
+  key String
+  
+  /// Human-readable explanation of what the permission allows.
+  description String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for inactive permissions, if ever retired.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  rolePermissions erp_hrm_time_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([key])
+}
+
+/// Stores the assignment of approved permissions to organization-scoped roles.
+///
+/// Each row represents one permission granted to one role, forming the
+/// many-to-many bridge between {@link erp_hrm_time_roles} and {@link
+/// erp_hrm_time_permissions}. The table contains only relational keys and
+/// standard temporal fields so permission sets remain normalized and can be
+/// audited over time.
+///
+/// @namespace Roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model erp_hrm_time_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Role's {@link erp_hrm_time_roles.id}.
+  erp_hrm_time_role_id String
+  
+  /// Permission's {@link erp_hrm_time_permissions.id}.
+  erp_hrm_time_permission_id String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role erp_hrm_time_roles @relation(fields: [erp_hrm_time_role_id], references: [id], onDelete: Cascade)
+  permission erp_hrm_time_permissions @relation(fields: [erp_hrm_time_permission_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([erp_hrm_time_role_id, erp_hrm_time_permission_id], map: "erp_hrm_time_role_permissions_erp_hrm_time_role_id_erp_c1499d1d")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_role_id, created_at], map: "erp_hrm_time_role_permissions_erp_hrm_time_role_id_cre_60d03fe4")
+  // spellchecker: ignore-next-line
+  @@index([erp_hrm_time_permission_id, created_at], map: "erp_hrm_time_role_permissions_erp_hrm_time_permission__b0e0b9b2")
+}

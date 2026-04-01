@@ -15,7 +15,7 @@ export async function deleteErpHrmTimeTrackingReportDefinitionsReportDefinitionI
   filterId: string & tags.Format<"uuid">;
 }): Promise<void> {
   await MyGlobal.prisma.$transaction(async (tx) => {
-    // Association check: filter must exist and belong to the specified report definition.
+    // Validate association: filter must exist and belong to the provided report definition.
     await tx.erp_hrm_time_tracking_report_definition_filters.findFirstOrThrow({
       where: {
         id: props.filterId,
@@ -23,7 +23,7 @@ export async function deleteErpHrmTimeTrackingReportDefinitionsReportDefinitionI
       },
       select: { id: true },
     });
-    // Delete only that single configured filter row.
+    // Delete exactly this filter row (do not touch any other rows).
     await tx.erp_hrm_time_tracking_report_definition_filters.delete({
       where: { id: props.filterId },
     });

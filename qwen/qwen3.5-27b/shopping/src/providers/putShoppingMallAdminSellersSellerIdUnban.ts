@@ -17,16 +17,13 @@ export async function putShoppingMallAdminSellersSellerIdUnban(props: {
   admin: AdminPayload;
   sellerId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallSeller> {
-  // Verify seller exists and check current status
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
     where: { id: props.sellerId },
     select: { id: true, status: true },
   });
-  // Validate seller is currently banned
   if (seller.status !== "banned") {
     throw new HttpException("Seller is not banned", 400);
   }
-  // Update status to active
   await MyGlobal.prisma.shopping_mall_sellers.update({
     where: { id: props.sellerId },
     data: {
@@ -34,7 +31,6 @@ export async function putShoppingMallAdminSellersSellerIdUnban(props: {
       updated_at: new Date(),
     },
   });
-  // Fetch updated seller with transformer select
   const updated = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow(
     {
       where: { id: props.sellerId },

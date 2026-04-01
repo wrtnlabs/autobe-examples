@@ -17,51 +17,56 @@ export async function postShoppingMallAdminSellersBulkBan(props: {
   body: IShoppingMallSeller.IBulkBan;
 }): Promise<IShoppingMallSeller.IBulkBanResult> {
   const sellerIds = props.body.sellerIds;
-  // Query all sellers to validate existence and status
+  // Query all sellers by their IDs
   const sellers = await MyGlobal.prisma.shopping_mall_sellers.findMany({
     where: {
       id: {
         in: sellerIds,
       },
-      deleted_at: null,
     },
     select: {
       id: true,
       status: true,
+      deleted_at: true,
     },
   });
-  const sellerMap = new Map(sellers.map((s) => [s.id, s.status]));
-  const validSellerIds: (string & tags.Format<"uuid">)[] = [];
   const failed: IShoppingMallSeller.IBulkBanFailedItem[] = [];
+  const idsToUpdate: string[] = [];
   // Validate each seller
   for (const sellerId of sellerIds) {
-    const status = sellerMap.get(sellerId);
-    if (status === undefined) {
-      // Seller not found or soft-deleted
+    const seller = sellers.find((s) => s.id === sellerId);
+    if (seller === undefined) {
       failed.push({
         sellerId: sellerId,
         errorCode: "SELLER_NOT_FOUND",
-        errorMessage: "Seller account not found or has been deleted",
-      });
-    } else if (status !== "active") {
-      // Seller already banned or in invalid state
-      failed.push({
-        sellerId: sellerId,
-        errorCode: "ALREADY_BANNED",
-        errorMessage:
-          "Seller account is already banned or not in active status",
-      });
-    } else {
-      validSellerIds.push(sellerId);
+        errorMessage: `Seller with ID ${sellerId} does not exist`,
+      } satisfies IShoppingMallSeller.IBulkBanFailedItem);
+      continue;
     }
+    if (seller.deleted_at !== null) {
+      failed.push({
+        sellerId: seller.id,
+        errorCode: "ACCOUNT_DELETED",
+        errorMessage: `Seller with ID ${seller.id} has been deleted and cannot be banned`,
+      } satisfies IShoppingMallSeller.IBulkBanFailedItem);
+      continue;
+    }
+    if (seller.status !== "active") {
+      failed.push({
+        sellerId: seller.id,
+        errorCode: "ALREADY_BANNED",
+        errorMessage: `Seller with ID ${seller.id} is already banned or has status ${seller.status}`,
+      } satisfies IShoppingMallSeller.IBulkBanFailedItem);
+      continue;
+    }
+    idsToUpdate.push(seller.id);
   }
   // Update all valid sellers to banned status
-  let successCount = 0;
-  if (validSellerIds.length > 0) {
-    const result = await MyGlobal.prisma.shopping_mall_sellers.updateMany({
+  if (idsToUpdate.length > 0) {
+    await MyGlobal.prisma.shopping_mall_sellers.updateMany({
       where: {
         id: {
-          in: validSellerIds,
+          in: idsToUpdate,
         },
       },
       data: {
@@ -69,10 +74,10 @@ export async function postShoppingMallAdminSellersBulkBan(props: {
         updated_at: new Date(),
       },
     });
-    successCount = result.count;
   }
+  const successCount = idsToUpdate.length;
   return {
-    successCount,
-    failed,
-  };
+    successCount: successCount,
+    failed: failed,
+  } satisfies IShoppingMallSeller.IBulkBanResult;
 }

@@ -11,18 +11,17 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { HrmPlatformEmployeeAtSummaryTransformer } from "./HrmPlatformEmployeeAtSummaryTransformer";
-import { HrmPlatformProjectAtSummaryTransformer } from "./HrmPlatformProjectAtSummaryTransformer";
 
 export namespace HrmPlatformTaskAtSummaryTransformer {
   export type Payload = Prisma.hrm_platform_tasksGetPayload<
     ReturnType<typeof select>
   >;
-  export function select() {
+  export function select(): Prisma.hrm_platform_tasksFindManyArgs {
     return {
       select: {
         id: true,
         title: true,
+        description: true,
         status: true,
         priority: true,
         estimated_hours: true,
@@ -30,21 +29,23 @@ export namespace HrmPlatformTaskAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        project: HrmPlatformProjectAtSummaryTransformer.select(),
-        assignedEmployee: HrmPlatformEmployeeAtSummaryTransformer.select(),
-        parent: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            priority: true,
-            estimated_hours: true,
-            due_date: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-          },
+        hrm_platform_projects_id: true,
+        hrm_platform_employees_id: true,
+        hrm_platform_tasks_id: true,
+      },
+      include: {
+        children: {
+          select: { id: true },
         } satisfies Prisma.hrm_platform_tasksFindManyArgs,
+        histories: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_task_historiesFindManyArgs,
+        taskTimelogs: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_timelogsFindManyArgs,
+        timers: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_timersFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_tasksFindManyArgs;
   }
@@ -56,35 +57,17 @@ export namespace HrmPlatformTaskAtSummaryTransformer {
       title: input.title,
       status: input.status,
       priority: input.priority,
-      estimated_hours: input.estimated_hours,
-      due_date: input.due_date?.toISOString() ?? null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-      project: await HrmPlatformProjectAtSummaryTransformer.transform(
-        input.project,
-      ),
-      assignedEmployee: input.assignedEmployee
-        ? await HrmPlatformEmployeeAtSummaryTransformer.transform(
-            input.assignedEmployee,
-          )
-        : null,
-      parent: input.parent
-        ? {
-            id: input.parent.id,
-            title: input.parent.title,
-            status: input.parent.status,
-            priority: input.parent.priority,
-            estimated_hours: input.parent.estimated_hours,
-            due_date: input.parent.due_date?.toISOString() ?? null,
-            created_at: input.parent.created_at.toISOString(),
-            updated_at: input.parent.updated_at.toISOString(),
-            deleted_at: input.parent.deleted_at?.toISOString() ?? null,
-            project: undefined,
-            assignedEmployee: undefined,
-            parent: undefined,
-          }
-        : null,
+      estimated_hours:
+        input.estimated_hours !== null && input.estimated_hours !== undefined
+          ? Number(input.estimated_hours)
+          : null,
+      due_date: input.due_date ? toISOStringSafe(input.due_date) : null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      project: null as any,
+      assignedEmployee: null as any,
+      parent: null as any,
     };
   }
 }

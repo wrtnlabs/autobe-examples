@@ -15,84 +15,83 @@ export async function deleteHrmPlatformMemberProjectsProjectId(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Get employee record to access role and organization
+  // 1. Find employee record to get organization and role
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
-      member_id: props.member.id,
+      user_id: props.member.id,
       deleted_at: null,
     },
     select: {
       id: true,
-      member_id: true,
       organization_id: true,
       role_id: true,
-      role: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
     },
   });
   if (!employee) {
-    throw new HttpException("Employee record not found", 403);
+    throw new HttpException("Employee not found", 404);
   }
-  // Check if user has project:manage permission (owner and manager have it implicitly)
-  const hasProjectManage =
-    employee.role.name === "owner" ||
-    employee.role.name === "manager" ||
-    (await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-      where: {
-        role_id: employee.role_id,
-        permission: "project:manage",
-      },
-    })) !== null;
-  if (!hasProjectManage) {
-    throw new HttpException(
-      "Forbidden: project:manage permission required",
-      403,
-    );
-  }
-  // Find project ensuring it belongs to member's organization and is not deleted
-  await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow({
-    where: {
-      id: props.projectId,
-      organization_id: employee.organization_id,
-      deleted_at: null,
+  // 2. Verify project exists, is not deleted, and belongs to employee's organization
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
+    where: { id: props.projectId },
+    select: {
+      id: true,
+      organization_id: true,
+      deleted_at: true,
     },
   });
-  // Check for associated timelogs
-  const timelogCount = await MyGlobal.prisma.hrm_platform_timelogs.count({
+  if (!project || project.deleted_at !== null) {
+    throw new HttpException("Project not found", 404);
+  }
+  if (project.organization_id !== employee.organization_id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // 3. Verify member has project:manage permission through their role
+  const rolePermission =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
+      where: {
+        hrm_platform_role_id: employee.role_id,
+        permission: "project:manage",
+      },
+    });
+  if (!rolePermission) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // 4. Verify no timelogs exist for this project
+  const hasTimelogs = await MyGlobal.prisma.hrm_platform_timelogs.findFirst({
     where: {
       project_id: props.projectId,
       deleted_at: null,
     },
   });
-  if (timelogCount > 0) {
+  if (hasTimelogs) {
     throw new HttpException(
-      "Cannot delete project with existing timelogs. Archive or complete the project instead.",
-      400,
+      "Project cannot be deleted because it has associated timelogs",
+      409,
     );
   }
-  // Perform soft delete by updating deleted_at
-  await MyGlobal.prisma.hrm_platform_projects.update({
-    where: { id: props.projectId },
-    data: {
-      deleted_at: new Date(),
-    },
-  });
-  // Create activity log entry
-  await MyGlobal.prisma.hrm_platform_activity_logs.create({
-    data: {
-      id: v4(),
-      member_id: props.member.id,
-      organization_id: employee.organization_id,
-      action_type: "project.deleted",
-      target_entity_type: "project",
-      target_entity_id: props.projectId,
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
-    },
+  // 5. Execute deletion in transaction (cascade handles tasks and project_members)
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    // Soft delete the project
+    await tx.hrm_platform_projects.update({
+      where: { id: props.projectId },
+      data: {
+        deleted_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+    // Create activity log entry
+    await tx.hrm_platform_activity_logs.create({
+      data: {
+        id: v4(),
+        organization_id: employee.organization_id,
+        member_id: props.member.id,
+        action_type: "project.deleted",
+        target_entity_type: "project",
+        target_entity_id: props.projectId,
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
+      },
+    });
   });
 }

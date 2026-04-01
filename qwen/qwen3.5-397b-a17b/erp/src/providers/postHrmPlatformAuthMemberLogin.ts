@@ -16,14 +16,16 @@ export async function postHrmPlatformAuthMemberLogin(props: {
   ip: string;
   body: IHrmPlatformMember.ILogin;
 }): Promise<IHrmPlatformMember.IAuthorized> {
-  // 1. Find member by email with password_hash for verification
   const member = await MyGlobal.prisma.hrm_platform_members.findFirst({
-    where: { email: props.body.email },
+    where: {
+      email: props.body.email,
+      deleted_at: null,
+    },
     select: {
       id: true,
       email: true,
       display_name: true,
-      avatar_url: true,
+      avatar_image: true,
       phone_number: true,
       created_at: true,
       updated_at: true,
@@ -31,11 +33,9 @@ export async function postHrmPlatformAuthMemberLogin(props: {
       password_hash: true,
     },
   });
-  // 2. Validate member exists and is not soft-deleted
-  if (!member || member.deleted_at !== null) {
+  if (!member) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     member.password_hash,
@@ -43,73 +43,69 @@ export async function postHrmPlatformAuthMemberLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 4. Generate session ID and calculate expiration times
   const sessionId = v4();
-  const accessExpiresAt = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshExpiresAt = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-  // 5. Generate JWT tokens
-  const accessToken = jwt.sign(
-    {
-      type: "member",
-      id: member.id,
-      session_id: sessionId,
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "member",
-      id: member.id,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // 6. Create new session record
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const nowIso = now.toISOString();
+  const accessExpiresIso = accessExpires.toISOString();
+  const refreshExpiresIso = refreshExpires.toISOString();
+  const accessPayload = {
+    type: "member",
+    id: member.id,
+    session_id: sessionId,
+    created_at: nowIso,
+  };
+  const refreshPayload = {
+    type: "member",
+    id: member.id,
+    session_id: sessionId,
+    tokenType: "refresh",
+    created_at: nowIso,
+  };
+  const accessToken = jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "1h",
+    issuer: "autobe",
+  });
+  const refreshToken = jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "7d",
+    issuer: "autobe",
+  });
+  const device_info = JSON.stringify({
+    ip: props.body.ip ?? props.ip,
+    href: props.body.href,
+    referrer: props.body.referrer,
+  });
+  const access_token_hash = await PasswordUtil.hash(accessToken);
+  const refresh_token_hash = await PasswordUtil.hash(refreshToken);
   await MyGlobal.prisma.hrm_platform_member_sessions.create({
     data: {
       id: sessionId,
-      member_id: member.id,
-      access_token: accessToken,
-      refresh_token: refreshToken,
+      member: { connect: { id: member.id } },
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: new Date(),
-      expired_at: new Date(Date.now() + 60 * 60 * 1000),
+      created_at: now,
+      expired_at: accessExpires,
+      device_info,
+      access_token_hash,
+      refresh_token_hash,
     },
   });
-  // 7. Return IAuthorized response
   return {
     id: member.id,
     email: member.email,
-    displayName: member.display_name,
-    avatarUrl: member.avatar_url ?? null,
-    phoneNumber: member.phone_number ?? null,
-    createdAt: toISOStringSafe(member.created_at),
-    updatedAt: toISOStringSafe(member.updated_at),
-    deletedAt: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
-    member: {
-      id: member.id,
-      email: member.email,
-      display_name: member.display_name,
-      avatar_url: member.avatar_url ?? null,
-      phone_number: member.phone_number ?? null,
-      created_at: toISOStringSafe(member.created_at),
-    } satisfies IHrmPlatformMember.ISummary,
+    display_name: member.display_name,
+    avatar_image: member.avatar_image ?? null,
+    phone_number: member.phone_number ?? null,
+    created_at: member.created_at.toISOString(),
+    updated_at: member.updated_at.toISOString(),
+    deleted_at: member.deleted_at?.toISOString() ?? null,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessExpiresAt,
-      refreshable_until: refreshExpiresAt,
-    } satisfies IAuthorizationToken,
-  } satisfies IHrmPlatformMember.IAuthorized;
+      expired_at: accessExpiresIso,
+      refreshable_until: refreshExpiresIso,
+    },
+  };
 }

@@ -21,9 +21,7 @@ export async function patchRedditLikeOwnerAttachmentsAttachmentIdAccessLogs(prop
   attachmentId: string & tags.Format<"uuid">;
   body: IRedditLikeAttachmentAccessLog.IRequest;
 }): Promise<IPageIRedditLikeAttachmentAccessLog.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
+  // Build where clause with proper typing
   const whereInput: Prisma.reddit_like_attachment_access_logsWhereInput = {
     reddit_like_attachment_id: props.attachmentId,
     ...(props.body.actorType !== undefined &&
@@ -31,9 +29,7 @@ export async function patchRedditLikeOwnerAttachmentsAttachmentIdAccessLogs(prop
         actor_type: props.body.actorType,
       }),
     ...(props.body.actorId !== undefined &&
-      props.body.actorId !== null && {
-        actor_id: props.body.actorId,
-      }),
+      props.body.actorId !== null && { actor_id: props.body.actorId }),
     ...(props.body.accessType !== undefined &&
       props.body.accessType !== null && {
         access_type: props.body.accessType,
@@ -46,37 +42,51 @@ export async function patchRedditLikeOwnerAttachmentsAttachmentIdAccessLogs(prop
       props.body.userAgent !== null && {
         user_agent: { contains: props.body.userAgent },
       }),
-    ...(props.body.createdAfter !== undefined &&
-      props.body.createdAfter !== null && {
-        created_at: { gte: props.body.createdAfter },
-      }),
-    ...(props.body.createdBefore !== undefined &&
-      props.body.createdBefore !== null && {
-        created_at: { lte: props.body.createdBefore },
-      }),
   };
-  const logs =
-    (await MyGlobal.prisma.reddit_like_attachment_access_logs.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" },
-      ...RedditLikeAttachmentAccessLogAtSummaryTransformer.select(),
-    })) as any;
+  // Handle date range filters
+  if (
+    props.body.createdAfter !== undefined ||
+    props.body.createdBefore !== undefined
+  ) {
+    whereInput.created_at = {};
+    if (props.body.createdAfter !== undefined) {
+      whereInput.created_at.gte = new Date(props.body.createdAfter);
+    }
+    if (props.body.createdBefore !== undefined) {
+      whereInput.created_at.lte = new Date(props.body.createdBefore);
+    }
+  }
+  // Pagination parameters with defaults
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 20, 100);
+  const skip = (page - 1) * limit;
+  // Get total count for pagination
   const total = await MyGlobal.prisma.reddit_like_attachment_access_logs.count({
     where: whereInput,
   });
+  // Query records with pagination and ordering
+  const records =
+    await MyGlobal.prisma.reddit_like_attachment_access_logs.findMany({
+      where: whereInput,
+      ...RedditLikeAttachmentAccessLogAtSummaryTransformer.select(),
+      skip,
+      take: limit,
+      orderBy: { created_at: "desc" },
+    });
+  // Transform to response DTO
   const data = await ArrayUtil.asyncMap(
-    logs,
+    records,
     RedditLikeAttachmentAccessLogAtSummaryTransformer.transform,
   );
+  // Build pagination metadata
+  const pages = Math.ceil(total / limit);
   return {
     data,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages,
     } satisfies IPage.IPagination,
   };
 }

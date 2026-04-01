@@ -1,15 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequestSnapshot";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
-import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallRefundRequestSnapshotAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_refund_request_snapshotsGetPayload<
@@ -21,12 +18,9 @@ export namespace ShoppingMallRefundRequestSnapshotAtSummaryTransformer {
         id: true,
         reason: true,
         status: true,
-        snapshot_at: true,
-        requested_at: true,
+        seller_response: true,
         responded_at: true,
-        delivered_at: true,
-        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
-        respondedBySeller: ShoppingMallSellerAtSummaryTransformer.select(),
+        created_at: true,
       },
     } satisfies Prisma.shopping_mall_refund_request_snapshotsFindManyArgs;
   }
@@ -35,20 +29,11 @@ export namespace ShoppingMallRefundRequestSnapshotAtSummaryTransformer {
   ): Promise<IShoppingMallRefundRequestSnapshot.ISummary> {
     return {
       id: input.id,
-      status: input.status,
       reason: input.reason,
-      snapshot_at: input.snapshot_at.toISOString(),
-      requested_at: input.requested_at.toISOString(),
+      status: input.status,
+      seller_response: input.seller_response ?? null,
       responded_at: input.responded_at?.toISOString() ?? null,
-      delivered_at: input.delivered_at?.toISOString() ?? null,
-      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      respondedBySeller: input.respondedBySeller
-        ? await ShoppingMallSellerAtSummaryTransformer.transform(
-            input.respondedBySeller,
-          )
-        : null,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

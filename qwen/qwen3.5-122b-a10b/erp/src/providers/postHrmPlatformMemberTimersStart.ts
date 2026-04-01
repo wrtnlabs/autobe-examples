@@ -31,58 +31,50 @@ export async function postHrmPlatformMemberTimersStart(props: {
       deleted_at: null,
     },
   });
-  if (employee === null) {
+  if (!employee) {
     throw new HttpException("Employee record not found", 404);
   }
   // Check for existing active timer (single active timer enforcement)
-  const existingActiveTimer =
-    await MyGlobal.prisma.hrm_platform_timers.findFirst({
-      where: {
-        employee_id: employee.id,
-        stopped_at: null,
-        deleted_at: null,
-      },
-    });
-  if (existingActiveTimer !== null) {
-    throw new HttpException(
-      "Employee already has an active timer. Stop or discard the existing timer before starting a new one.",
-      409,
-    );
-  }
-  // Validate project exists and employee is assigned to it
-  const projectMember =
-    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
-      where: {
-        hrm_platform_project_id: props.body.project_id,
-        hrm_platform_employee_id: employee.id,
-      },
-    });
-  if (projectMember === null) {
-    throw new HttpException("You are not assigned to this project", 403);
-  }
-  // Validate project status is active
-  const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
+  const existingTimer = await MyGlobal.prisma.hrm_platform_timers.findFirst({
     where: {
-      id: props.body.project_id,
+      employee_id: employee.id,
+      stopped_at: null,
+      deleted_at: null,
     },
   });
-  if (project === null) {
+  if (existingTimer) {
+    throw new HttpException("You already have an active timer", 409);
+  }
+  // Validate project exists and is active
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
+    where: { id: props.body.project_id },
+    select: { id: true, status: true, hrm_platform_organization_id: true },
+  });
+  if (!project) {
     throw new HttpException("Project not found", 404);
   }
   if (project.status !== "active") {
-    throw new HttpException(
-      "Project is not active and cannot accept new timers",
-      422,
-    );
+    throw new HttpException("Project is not active", 422);
+  }
+  // Verify employee is assigned to the project
+  const projectMember =
+    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
+      where: {
+        hrm_platform_employee_id: employee.id,
+        hrm_platform_project_id: props.body.project_id,
+        deleted_at: null,
+      },
+    });
+  if (!projectMember) {
+    throw new HttpException("You are not assigned to this project", 403);
   }
   // Validate task if provided
   if (props.body.task_id !== undefined && props.body.task_id !== null) {
     const task = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
-      where: {
-        id: props.body.task_id,
-      },
+      where: { id: props.body.task_id },
+      select: { id: true, hrm_platform_projects_id: true },
     });
-    if (task === null) {
+    if (!task) {
       throw new HttpException("Task not found", 404);
     }
     if (task.hrm_platform_projects_id !== props.body.project_id) {
@@ -92,21 +84,18 @@ export async function postHrmPlatformMemberTimersStart(props: {
       );
     }
   }
-  // Create timer record
-  const now = toISOStringSafe(new Date());
-  const timerId: string & tags.Format<"uuid"> = v4() as string &
-    tags.Format<"uuid">;
+  // Create timer
   const timer = await MyGlobal.prisma.hrm_platform_timers.create({
     data: {
-      id: timerId,
+      id: v4() as string & tags.Format<"uuid">,
       employee_id: employee.id,
       project_id: props.body.project_id,
       task_id: props.body.task_id ?? null,
-      started_at: now,
+      started_at: new Date(),
       stopped_at: null,
       description: props.body.description ?? null,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
     },
     ...HrmPlatformTimerTransformer.select(),

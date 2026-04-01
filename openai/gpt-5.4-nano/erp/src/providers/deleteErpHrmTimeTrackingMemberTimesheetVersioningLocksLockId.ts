@@ -15,5 +15,5 @@ export async function deleteErpHrmTimeTrackingMemberTimesheetVersioningLocksLock
   member: MemberPayload;
   lockId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // placeholder
+  throw new Error("Not implemented");
 }

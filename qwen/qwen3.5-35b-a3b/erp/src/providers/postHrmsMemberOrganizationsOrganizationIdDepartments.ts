@@ -10,8 +10,11 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { HrmsDepartmentCollector } from "../collectors/HrmsDepartmentCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { HrmsDepartmentAtSummaryTransformer } from "../transformers/HrmsDepartmentAtSummaryTransformer";
 import { HrmsDepartmentTransformer } from "../transformers/HrmsDepartmentTransformer";
+import { HrmsOrganizationAtSummaryTransformer } from "../transformers/HrmsOrganizationAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,28 +24,29 @@ export async function postHrmsMemberOrganizationsOrganizationIdDepartments(props
   body: IHrmsDepartment.ICreate;
 }): Promise<IHrmsDepartment> {
   const { member, organizationId, body } = props;
-  const organizationMembership =
+  const activeOrganizationMember =
     await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
         hrms_member_id: member.id,
-        hrms_organization_id: organizationId,
+        organization: {
+          id: organizationId,
+        },
+        deleted_at: null,
       },
-      select: {
-        hrms_organization_role_id: true,
+      include: {
+        organizationRole: true,
+        member: true,
+        organization: true,
       },
     });
-  if (organizationMembership === null) {
+  if (activeOrganizationMember === null) {
     throw new HttpException("Organization membership not found", 404);
   }
-  const role = await MyGlobal.prisma.hrms_organization_roles.findUnique({
-    where: { id: organizationMembership.hrms_organization_role_id },
-    select: { name: true },
-  });
-  if (role === null) {
-    throw new HttpException("Role not found", 500);
-  }
-  if (role.name !== "Owner" && role.name !== "Manager") {
-    throw new HttpException("Forbidden", 403);
+  if (
+    activeOrganizationMember.organizationRole.name !== "Owner" &&
+    activeOrganizationMember.organizationRole.name !== "Manager"
+  ) {
+    throw new HttpException("Organization management permission required", 403);
   }
   const existingDepartment = await MyGlobal.prisma.hrms_departments.findFirst({
     where: {
@@ -52,70 +56,65 @@ export async function postHrmsMemberOrganizationsOrganizationIdDepartments(props
     },
   });
   if (existingDepartment !== null) {
-    throw new HttpException("Department name already exists", 409);
+    throw new HttpException(
+      "Department name already exists in this organization",
+      409,
+    );
   }
-  let parentId: (string & tags.Format<"uuid">) | null | undefined = undefined;
-  if (body.parentDepartmentId !== null) {
+  if (
+    body.parentDepartmentId !== null &&
+    body.parentDepartmentId !== undefined
+  ) {
     const parentDepartment = await MyGlobal.prisma.hrms_departments.findFirst({
       where: {
         id: body.parentDepartmentId,
         organization_id: organizationId,
         deleted_at: null,
       },
-      select: { id: true },
     });
     if (parentDepartment === null) {
       throw new HttpException("Parent department not found", 404);
     }
-    parentId = parentDepartment.id;
   }
-  const createdDepartment = await MyGlobal.prisma.$transaction(async (tx) => {
-    const id: string & tags.Format<"uuid"> = v4();
-    const department = await tx.hrms_departments.create({
-      data: {
-        id,
-        name: body.name,
-        description: body.description ?? null,
-        organization: { connect: { id: organizationId } },
-        parent:
-          parentId !== undefined ? { connect: { id: parentId } } : undefined,
-        created_at: new Date(),
-        updated_at: new Date(),
-        deleted_at: null,
+  const created = await MyGlobal.prisma.$transaction(async (tx) => {
+    const collection = await HrmsDepartmentCollector.collect({
+      body,
+      hrmsOrganizations: {
+        id: organizationId,
       },
+    });
+    const department = await tx.hrms_departments.create({
+      data: collection,
       select: {
         id: true,
-        organization_id: true,
-        parent_id: true,
         name: true,
         description: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        organization: HrmsOrganizationAtSummaryTransformer.select(),
+        parent: HrmsDepartmentAtSummaryTransformer.select(),
+        children: HrmsDepartmentAtSummaryTransformer.select(),
+        employees: HrmsDepartmentAtSummaryTransformer.select(),
       },
-    });
+    } satisfies Prisma.hrms_departmentsCreateArgs);
     await tx.hrms_activity_logs.create({
       data: {
         id: v4(),
-        organization_id: organizationId,
-        performed_by_id: member.id,
+        organization: { connect: { id: organizationId } },
+        performedBy: { connect: { id: member.id } },
         action_type: "department.created",
         target_entity: "department",
         target_id: department.id,
         details: JSON.stringify({
           department_id: department.id,
-          department_name: department.name,
+          department_name: body.name,
         }),
         created_at: new Date(),
         updated_at: new Date(),
-      },
+      } satisfies Prisma.hrms_activity_logsCreateInput,
     });
     return department;
   });
-  const fullDepartment =
-    await MyGlobal.prisma.hrms_departments.findUniqueOrThrow({
-      where: { id: createdDepartment.id },
-      ...HrmsDepartmentTransformer.select(),
-    });
-  return await HrmsDepartmentTransformer.transform(fullDepartment);
+  return await HrmsDepartmentTransformer.transform(created);
 }

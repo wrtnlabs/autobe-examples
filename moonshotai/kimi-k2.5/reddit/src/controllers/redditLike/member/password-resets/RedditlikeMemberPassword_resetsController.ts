@@ -5,8 +5,8 @@ import typia from "typia";
 import { IPageIRedditLikeMemberPasswordReset } from "../../../../api/structures/IPageIRedditLikeMemberPasswordReset";
 import { IRedditLikeMemberPasswordReset } from "../../../../api/structures/IRedditLikeMemberPasswordReset";
 import { IRedditLikeMemberPasswordResetValidation } from "../../../../api/structures/IRedditLikeMemberPasswordResetValidation";
-import { AdminAuth } from "../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { getRedditLikeMemberPasswordResetsResetId } from "../../../../providers/getRedditLikeMemberPasswordResetsResetId";
 import { patchRedditLikeMemberPasswordResets } from "../../../../providers/patchRedditLikeMemberPasswordResets";
 
@@ -32,8 +32,8 @@ export class RedditlikeMemberPassword_resetsController {
    */
   @TypedRoute.Patch()
   public async index(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedBody()
     body: IRedditLikeMemberPasswordReset.IRequest,
   ): Promise<IPageIRedditLikeMemberPasswordReset.ISummary> {
@@ -71,8 +71,8 @@ export class RedditlikeMemberPassword_resetsController {
    */
   @TypedRoute.Get(":resetId")
   public async at(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("resetId")
     resetId: string,
   ): Promise<IRedditLikeMemberPasswordResetValidation> {

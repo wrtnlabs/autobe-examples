@@ -19,13 +19,14 @@ export namespace ErpHrmTimeTrackingActivityLogEntryCollector {
       target_entity_type: props.body.target_entity_type,
       target_entity_id: props.body.target_entity_id,
       summary: props.body.summary,
-      details: props.body.details ?? null,
+      details: props.body.details === undefined ? null : props.body.details,
       occurred_at: new Date(props.body.occurred_at),
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       organization: { connect: { id: props.organization.id } },
       performedByMember: { connect: { id: props.performedByMember.id } },
+      snapshots: undefined,
     } satisfies Prisma.erp_hrm_time_tracking_activity_log_entriesCreateInput;
   }
 }

@@ -6,45 +6,28 @@ import { IShoppingMallProductImage } from "../../../../../api/structures/IShoppi
 import { SellerAuth } from "../../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../../decorators/payload/SellerPayload";
 import { deleteShoppingMallSellerProductsProductIdImagesImageId } from "../../../../../providers/deleteShoppingMallSellerProductsProductIdImagesImageId";
-import { patchShoppingMallSellerProductsProductIdImagesReorder } from "../../../../../providers/patchShoppingMallSellerProductsProductIdImagesReorder";
+import { getShoppingMallSellerProductsProductIdImagesImageId } from "../../../../../providers/getShoppingMallSellerProductsProductIdImagesImageId";
+import { patchShoppingMallSellerProductsProductIdImages } from "../../../../../providers/patchShoppingMallSellerProductsProductIdImages";
 import { postShoppingMallSellerProductsProductIdImages } from "../../../../../providers/postShoppingMallSellerProductsProductIdImages";
+import { putShoppingMallSellerProductsProductIdImagesImageId } from "../../../../../providers/putShoppingMallSellerProductsProductIdImagesImageId";
 
 @Controller("/shoppingMall/seller/products/:productId/images")
 export class ShoppingmallSellerProductsImagesController {
   /**
-   * Upload a new product image to a product's image gallery.
+   * Upload a new image to a product's image gallery.
    *
-   * This operation allows sellers to add visual representations to their products. Each product can have multiple images arranged in a specific display order. The uploaded image is immediately associated with the product and becomes visible to all customers viewing the product detail page.
+   * This operation allows sellers to add visual content to their product listings. The uploaded image URL is stored and assigned a display order position. The first image (display_order 0) serves as the main thumbnail shown in product listings and search results.
    *
-   * Only the seller who owns the product can upload images to that product. The image URL should reference a file stored in cloud storage or CDN. The display order determines the sequence in which images appear in the product gallery, with lower numbers displayed first. If no display order is specified, the system automatically assigns the next sequential order.
+   * Only the seller who owns the product can upload images. The system validates product ownership before creating the image record. Uploaded images are immediately visible on the product detail page and included in product snapshots for audit trail purposes.
    *
-   * The first image in the display order (lowest display_order value) is used as the product's main thumbnail in search results and category listings. All uploaded images are preserved in product snapshots when the product is edited, ensuring historical accuracy for order items and dispute resolution.
+   * The image URL must be a valid HTTP/HTTPS URI pointing to an accessible image file. The system automatically assigns the next available display_order value to maintain proper sequencing in the product gallery.
    *
    * @param connection
-   * @param productId Target product's ID (UUID format)
-   * @param body Product image creation information including image URL and optional display order
+   * @param productId Product identifier (UUID format)
+   * @param body Image upload information containing the URL of the uploaded image file
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Create a new product image for the specified product.
-   *
-   * Implementation steps:
-   * 1. Validate that the authenticated user is a seller and owns the product identified by productId
-   * 2. Validate the imageUrl is a valid URI string
-   * 3. If displayOrder is not provided, auto-assign as the next sequential order (max existing display_order + 1)
-   * 4. Create a new shopping_mall_product_images record with:
-   *    - shopping_mall_product_id: from path parameter
-   *    - image_url: from request body
-   *    - display_order: from request body or auto-calculated
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   * 5. Return the created product image with all fields
-   *
-   * Business rules:
-   * - Only the seller who owns the product can upload images
-   * - No limit on the number of images per product
-   * - Image URL should point to cloud storage or CDN location
-   * - Display order determines the sequence in the product gallery (lower numbers appear first)
-   * - The first image (lowest display_order) is used as the main thumbnail
+   * @x-autobe-specification Validate productId exists in shopping_mall_products table and is not soft-deleted. Verify the authenticated seller's ID matches the product's seller_id field for ownership authorization. Generate a new UUID for the image record. Accept image_url from request body and validate it is a valid URI format. Query the maximum display_order for existing images of this product and assign next sequential value (or 0 if first image). Insert new record into shopping_mall_product_images with shopping_mall_product_id, image_url, display_order, and current timestamps. Return the complete created image object including system-assigned id and display_order. Handle concurrent upload scenarios with database-level unique constraint on [shopping_mall_product_id, display_order].
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -69,34 +52,48 @@ export class ShoppingmallSellerProductsImagesController {
   }
 
   /**
-   * Reorder the images of a product by updating their display sequence.
+   * Manage product images including reordering and deletion for a specific product.
    *
-   * This operation allows sellers to change the order in which product images are displayed. The first image in the sequence serves as the main thumbnail image, which is shown in product listings, search results, and category pages. Sellers can reorder images at any time to control which image appears as the primary visual representation of their product.
+   * This operation allows sellers to update the display order of images associated with their product and remove images that are no longer needed. The first image (display_order: 0) serves as the main thumbnail displayed in product listings.
    *
-   * The request body contains an ordered array of image IDs. The position of each image ID in the array determines its new display order - the first ID gets display order 0 (main thumbnail), the second gets display order 1, and so on. All images currently associated with the product must be included in the array; partial updates are not supported.
-   *
-   * Only the seller who owns the product can reorder its images. The operation validates that the authenticated seller is the product owner, that all specified image IDs belong to the product, and that no images are duplicated or omitted. Updates are performed atomically in a single transaction.
-   *
-   * Note that image reordering does not automatically create a product snapshot. However, when the product is edited in the future, the current image order at that time will be captured in the product snapshot for historical reference.
+   * Sellers can only manage images for products they own. When images are reordered or deleted, a product snapshot is automatically created to preserve the previous state for audit and dispute resolution purposes. Deleted images are soft-deleted and removed from customer view.
    *
    * @param connection
-   * @param productId Target product's ID (UUID format). The seller must own this product.
+   * @param productId Product ID (UUID format, scoped to seller's products)
+   * @param body Array of image update operations including reorder and delete actions
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Validate that the authenticated user is a seller and owns the product identified by productId. Query the product to verify ownership and that it exists. Validate that all imageIds in the request body belong to the specified product and that no images are duplicated or missing from the current image set. Update the display_order field for each image based on its position in the imageIds array (first item gets display_order 0, second gets 1, etc.). Perform the updates in a single database transaction to ensure atomicity. Return the updated list of product images with their new display orders. This operation does not create a product snapshot by itself, but the new image order will be captured when the product is next edited.
+   * @x-autobe-specification Validate that the authenticated seller owns the product by checking seller_id on shopping_mall_products table.
+   *
+   * For each image update in the request body:
+   * - Verify the image exists and belongs to the specified product
+   * - Update display_order for reordering operations
+   * - Set deleted_at timestamp for deletion operations
+   * - Ensure display_order values are unique and sequential (0, 1, 2, ...)
+   *
+   * Create a product snapshot in shopping_mall_product_snapshots before applying changes to preserve the previous image state.
+   *
+   * Create corresponding shopping_mall_product_snapshot_images entries capturing the image URLs and order at snapshot time.
+   *
+   * Return the updated list of active (non-deleted) images sorted by display_order.
+   *
+   * Handle edge cases: duplicate display_order values, images not belonging to product, product not found, seller authorization failure.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch("reorder")
-  public async reorder(
+  @TypedRoute.Patch()
+  public async patchByProductid(
     @SellerAuth()
     seller: SellerPayload,
     @TypedParam("productId")
     productId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallProductImage.IUpdate,
   ): Promise<IShoppingMallProductImage> {
     try {
-      return await patchShoppingMallSellerProductsProductIdImagesReorder({
+      return await patchShoppingMallSellerProductsProductIdImages({
         seller,
         productId,
+        body,
       });
     } catch (error) {
       console.log(error);
@@ -105,34 +102,123 @@ export class ShoppingmallSellerProductsImagesController {
   }
 
   /**
-   * Delete a specific image from a product's image gallery by marking it as soft deleted. This operation sets the deleted_at timestamp, immediately removing the image from the product display and all product listings while preserving the record in the database.
+   * Retrieve a specific product image by its ID within the context of a product.
    *
-   * Only the product owner (seller) can delete images from their product. The endpoint validates that the authenticated seller owns the product and that the image exists. When an image is deleted, the system automatically creates a product snapshot to preserve the previous state including the deleted image, ensuring historical accuracy for order items and dispute resolution.
+   * This operation returns the complete details of a single product image including the image URL, display order, and timestamps. The image must belong to the specified product.
    *
-   * If the deleted image was the main thumbnail (first in display order), the next image in the sequence becomes the new main thumbnail. A product can have zero images after deletion - deleting the last remaining image is allowed and the product will display without any images. Soft-deleted images remain preserved in historical product snapshots and cannot be restored to the active product, but remain accessible through snapshot records for audit and dispute resolution purposes.
+   * The display order determines the image's position in the product gallery, where index 0 represents the main thumbnail displayed in product listings. All timestamps are provided in UTC format.
    *
-   * This operation is idempotent - attempting to delete an already-deleted image will result in a rejection error. The endpoint does not affect the product's availability status or other product attributes.
+   * This endpoint is accessible to sellers managing their own products and administrators with oversight capabilities. Customers typically view images through product detail endpoints rather than accessing individual images directly.
    *
    * @param connection
-   * @param productId Target product's unique identifier (UUID format)
-   * @param imageId Target product image's unique identifier (UUID format)
+   * @param productId Product ID (UUID format)
+   * @param imageId Product image ID (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Delete a product image from the shopping_mall_product_images table. Implementation steps:
+   * @x-autobe-specification Query shopping_mall_product_images table by image ID with product ownership validation.
    *
-   * 1. Validate authentication: Ensure request is from authenticated seller
-   * 2. Verify ownership: Load product by productId and confirm seller_id matches authenticated user
-   * 3. Verify image existence: Load image by imageId and confirm product_id matches productId
-   * 4. Create product snapshot: Before deletion, capture current product state including all images to shopping_mall_product_snapshots and shopping_mall_product_snapshot_images tables
-   * 5. Delete image record: Remove the image from shopping_mall_product_images table
-   * 6. Update display order: If deleted image was first (main thumbnail), update remaining images' display_order or set next image as main
-   * 7. Return success: 204 No Content or 200 with empty response
+   * 1. Verify the product exists and is accessible to the requesting user
+   * 2. Query the image record by imageId with productId filter
+   * 3. Validate the image belongs to the specified product (shopping_mall_product_id matches)
+   * 4. Return the full image entity including image_url, display_order, created_at, updated_at
+   * 5. Handle 404 if image not found or doesn't belong to the product
+   * 6. Enforce seller ownership: sellers can only access images of their own products
+   * 7. Administrators can access any product image
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":imageId")
+  public async at(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedParam("imageId")
+    imageId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallProductImage> {
+    try {
+      return await getShoppingMallSellerProductsProductIdImagesImageId({
+        seller,
+        productId,
+        imageId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a specific product image's properties including URL and display order.
    *
-   * Edge cases:
-   * - Reject if seller does not own the product
-   * - Reject if image does not exist or already deleted
-   * - If last image is being deleted, validation may require at least one image to remain (check business rule)
-   * - Snapshot creation must happen BEFORE deletion to preserve historical state
+   * This operation allows sellers to modify individual image attributes for their products. Sellers can update the image URL when replacing an image file, or change the display order to control which image appears as the thumbnail (index 0) and the sequence in the product gallery.
+   *
+   * Only the seller who owns the parent product can update its images. The operation validates product ownership before processing the update. When display order is changed, the update may trigger a product snapshot to record the image reordering for audit trail purposes.
+   *
+   * The updated image object is returned with all current properties including timestamps. If the image is set as the new thumbnail (display_order: 0), it will be shown as the main image in product listings and search results.
+   *
+   * @param connection
+   * @param productId Product ID (UUID format, identifies the parent product)
+   * @param imageId Product image ID (UUID format, identifies the specific image to update)
+   * @param body Image properties to update - URL and/or display order
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Validate that the authenticated seller owns the product identified by productId. Query shopping_mall_product_images table to verify the image exists and belongs to the specified product. Apply the update to image_url and/or display_order fields based on the request body. If display_order changes, check for unique constraint violations on (shopping_mall_product_id, display_order) and adjust other images' order if needed to maintain uniqueness. Create a product snapshot in shopping_mall_product_snapshots to record the image modification for audit trail. Update the updated_at timestamp. Return the complete updated image object. Return 404 if product or image not found. Return 403 if seller does not own the product.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":imageId")
+  public async putByProductidAndImageid(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedParam("imageId")
+    imageId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallProductImage.IUpdate,
+  ): Promise<IShoppingMallProductImage> {
+    try {
+      return await putShoppingMallSellerProductsProductIdImagesImageId({
+        seller,
+        productId,
+        imageId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a product image from a product's image collection through soft deletion.
+   *
+   * This operation allows sellers to delete individual images from their products by marking them as deleted. The image is hidden from the current product view and becomes inaccessible to customers browsing the product. Only the product owner seller can delete images from their product.
+   *
+   * All images can be deleted from a product - if all images are removed, the product displays without any images. Deleted images are preserved in the database with a deletion timestamp and remain accessible through historical product snapshots for audit and dispute resolution purposes.
+   *
+   * Upon successful deletion, a product snapshot is automatically created to preserve the image state at the time of deletion, maintaining the complete visual history of the product.
+   *
+   * @param connection
+   * @param productId Product ID (UUID format, global scope)
+   * @param imageId Product image ID (UUID format, global scope)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Delete a specific product image by ID with the following implementation steps:
+   *
+   * 1. Verify the requesting seller owns the product by joining shopping_mall_product_images with shopping_mall_products and checking seller_id matches authenticated seller.
+   *
+   * 2. Validate the product has more than one active image (count images where deleted_at IS NULL). If this is the last image, reject with 400 Bad Request error.
+   *
+   * 3. Soft delete the image by setting deleted_at to current timestamp.
+   *
+   * 4. Create a product snapshot capturing all remaining images with their URLs and display_order values at this moment.
+   *
+   * 5. Return 204 No Content on success.
+   *
+   * Error handling:
+   * - 404 Not Found: imageId does not exist or already deleted
+   * - 403 Forbidden: seller does not own the product
+   * - 400 Bad Request: attempting to delete the last remaining image
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":imageId")

@@ -3,8 +3,10 @@ import { IEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/str
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 
@@ -16,14 +18,18 @@ export namespace EcommerceMallCustomerSessionAtSummaryTransformer {
     return {
       select: {
         id: true,
+        access_token: true,
+        refresh_token: true,
         ip: true,
         href: true,
         referrer: true,
         created_at: true,
         updated_at: true,
-        expired_at: true,
         deleted_at: true,
+        expired_at: true,
         customer: EcommerceMallCustomerAtSummaryTransformer.select(),
+        activityLogs: true,
+        notificationReferences: true,
       },
     } satisfies Prisma.ecommerce_mall_customer_sessionsFindManyArgs;
   }
@@ -38,10 +44,10 @@ export namespace EcommerceMallCustomerSessionAtSummaryTransformer {
       customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      expired_at: input.expired_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      expired_at: toISOStringSafe(input.expired_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

@@ -1,8 +1,9 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmTimeTrackingGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingGuest";
-import type { IHrmTimeTrackingMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingMemberSession";
+import type { IErpHrmTimeGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeGuest";
+import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import type { IErpHrmTimeMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMemberSession";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -17,17 +18,19 @@ export async function test_api_guest_session_not_found(
 ): Promise<void> {
   const guestConnection: api.IConnection = { host: connection.host };
   await authorize_guest_join(guestConnection, {
-    body: {},
+    body: {
+      href: `https://example.com/guest/${RandomGenerator.alphaNumeric(8)}`,
+      referrer: `https://example.com/ref/${RandomGenerator.alphaNumeric(8)}`,
+      email: typia.random<string & tags.Format<"email">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+      token: RandomGenerator.alphaNumeric(16),
+      invitationCode: RandomGenerator.alphaNumeric(12),
+    } satisfies IErpHrmTimeGuest.IJoin,
   });
-  const missingSessionId = "00000000-0000-0000-0000-000000000000" as string &
-    tags.Format<"uuid">;
-  await TestValidator.httpError(
-    "guest session lookup should return not found for a missing session",
-    404,
-    async () => {
-      await api.functional.hrmTimeTracking.guest.sessions.at(guestConnection, {
-        sessionId: missingSessionId,
-      });
-    },
-  );
+  const sessionId = typia.random<string & tags.Format<"uuid">>();
+  await TestValidator.httpError("guest session not found", 404, async () => {
+    await api.functional.erpHrmTime.guest.sessions.at(guestConnection, {
+      sessionId,
+    });
+  });
 }

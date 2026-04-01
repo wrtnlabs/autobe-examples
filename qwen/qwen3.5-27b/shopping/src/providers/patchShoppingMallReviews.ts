@@ -22,62 +22,56 @@ export async function patchShoppingMallReviews(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause with soft delete filter
   const whereInput: Prisma.shopping_mall_reviewsWhereInput = {
     deleted_at: null,
+    ...(props.body.rating !== undefined && { rating: props.body.rating }),
+    ...(props.body.customerId !== undefined && {
+      shopping_customer_id: props.body.customerId,
+    }),
+    ...(props.body.startDate !== undefined && {
+      created_at: { gte: new Date(props.body.startDate) },
+    }),
+    ...(props.body.endDate !== undefined && {
+      created_at: { lte: new Date(props.body.endDate) },
+    }),
+    ...(props.body.search !== undefined && {
+      content: { contains: props.body.search, mode: "insensitive" },
+    }),
   };
-  // Add optional filters
-  if (props.body.rating !== undefined) {
-    whereInput.rating = props.body.rating;
+  if (props.body.productId !== undefined) {
+    const matchingOrderItems =
+      await MyGlobal.prisma.shopping_mall_order_items.findMany({
+        where: {
+          deleted_at: null,
+          product_snapshot: {
+            contains: props.body.productId,
+          },
+        },
+        select: { id: true },
+      });
+    const orderItemIds = matchingOrderItems.map((item) => item.id);
+    whereInput.shopping_order_item_id = { in: orderItemIds };
   }
-  if (props.body.customerId !== undefined) {
-    whereInput.shopping_customer_id = props.body.customerId;
-  }
-  // Date range filter
-  if (props.body.startDate !== undefined || props.body.endDate !== undefined) {
-    whereInput.created_at = {};
-    if (props.body.startDate !== undefined) {
-      whereInput.created_at.gte = new Date(props.body.startDate);
-    }
-    if (props.body.endDate !== undefined) {
-      whereInput.created_at.lte = new Date(props.body.endDate);
-    }
-  }
-  // Text search filter
-  if (props.body.search !== undefined) {
-    whereInput.content = {
-      contains: props.body.search,
-      mode: "insensitive",
-    };
-  }
-  // Product ID filter via order_items relation - removed as product_id field doesn't exist in shopping_mall_order_items schema
-  // The DTO specification mentions this filter but the actual database schema doesn't have product_id field
-  // Execute findMany with pagination
   const data = await MyGlobal.prisma.shopping_mall_reviews.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: {
-      created_at: "desc",
-    },
+    orderBy: { created_at: "desc" },
     ...ShoppingMallReviewAtSummaryTransformer.select(),
   });
-  // Execute count for pagination metadata
   const total = await MyGlobal.prisma.shopping_mall_reviews.count({
     where: whereInput,
   });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    ShoppingMallReviewAtSummaryTransformer.transform,
-  );
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallReviewAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data: transformedData,
+    },
   };
 }

@@ -11,8 +11,10 @@ import { IRedditLikeReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRed
 import { IRedditLikeReportSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeReportSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeCommentTransformer } from "./RedditLikeCommentTransformer";
 import { RedditLikeCommunityAtSummaryTransformer } from "./RedditLikeCommunityAtSummaryTransformer";
@@ -36,11 +38,13 @@ export namespace RedditLikeReportTransformer {
         community: RedditLikeCommunityAtSummaryTransformer.select(),
         reportOfPost: {
           select: {
+            id: true,
             post: RedditLikePostTransformer.select(),
           },
         } satisfies Prisma.reddit_like_report_of_postsFindManyArgs,
         commentReport: {
           select: {
+            id: true,
             comment: RedditLikeCommentTransformer.select(),
           },
         } satisfies Prisma.reddit_like_report_of_commentsFindManyArgs,
@@ -49,11 +53,19 @@ export namespace RedditLikeReportTransformer {
     } satisfies Prisma.reddit_like_reportsFindManyArgs;
   }
   export async function transform(input: Payload): Promise<IRedditLikeReport> {
-    const content = input.reportOfPost
-      ? await RedditLikePostTransformer.transform(input.reportOfPost.post)
-      : await RedditLikeCommentTransformer.transform(
-          input.commentReport!.comment,
-        );
+    // Handle polymorphic content - either post or comment
+    let content: IRedditLikePost | IRedditLikeComment;
+    if (input.reportOfPost) {
+      content = await RedditLikePostTransformer.transform(
+        input.reportOfPost.post,
+      );
+    } else if (input.commentReport) {
+      content = await RedditLikeCommentTransformer.transform(
+        input.commentReport.comment,
+      );
+    } else {
+      throw new Error("Report must have either a post or comment target");
+    }
     return {
       id: input.id,
       reporter: await RedditLikeMemberAtSummaryTransformer.transform(
@@ -63,7 +75,7 @@ export namespace RedditLikeReportTransformer {
         input.community,
       ),
       reason: input.reason,
-      status: input.status as "pending" | "approved" | "dismissed",
+      status: input.status as IRedditLikeReport["status"],
       content,
       snapshots: await ArrayUtil.asyncMap(
         input.snapshots,

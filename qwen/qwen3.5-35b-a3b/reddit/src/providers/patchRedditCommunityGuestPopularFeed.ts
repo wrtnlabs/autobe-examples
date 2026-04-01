@@ -23,50 +23,43 @@ export async function patchRedditCommunityGuestPopularFeed(props: {
   body: IRedditCommunityPost.IRequest;
 }): Promise<IPageIRedditCommunityPost.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  const search = props.body.search;
+  const communityId = props.body.community_id;
+  // Build WHERE clause
   const whereInput: Prisma.reddit_community_postsWhereInput = {
     deleted_at: null,
-    ...(props.body.search && {
-      title: {
-        contains: props.body.search,
-        mode: "insensitive" as const,
-      },
-    }),
-    ...(props.body.community_id && {
-      community_id: props.body.community_id,
-    }),
-  } satisfies Prisma.reddit_community_postsWhereInput;
-  const orderByInput = [
-    {
-      vote_score: "desc" as const,
-    },
-    {
-      created_at: "desc" as const,
-    },
-  ] satisfies Prisma.reddit_community_postsOrderByWithRelationInput[];
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.reddit_community_posts.findMany({
-      where: whereInput,
-      orderBy: orderByInput,
-      skip,
-      take: limit,
-      ...RedditCommunityPostAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.reddit_community_posts.count({
-      where: whereInput,
-    }),
-  ]);
+    ...(search !== undefined && { title: { contains: search } }),
+    ...(communityId !== undefined && { community_id: communityId }),
+  };
+  // Build ORDER BY - default to created_at DESC since sort_method not in API
+  const orderByInput: Prisma.reddit_community_postsOrderByWithRelationInput[] =
+    [{ created_at: "desc" }];
+  // Get total count
+  const total = await MyGlobal.prisma.reddit_community_posts.count({
+    where: whereInput,
+  });
+  // Get paginated posts
+  const posts = await MyGlobal.prisma.reddit_community_posts.findMany({
+    where: whereInput,
+    orderBy: orderByInput,
+    skip,
+    take: limit,
+    ...RedditCommunityPostAtSummaryTransformer.select(),
+  });
+  // Transform posts
+  const transformedPosts = await ArrayUtil.asyncMap(
+    posts,
+    RedditCommunityPostAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      RedditCommunityPostAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: transformedPosts,
   } satisfies IPageIRedditCommunityPost.ISummary;
 }

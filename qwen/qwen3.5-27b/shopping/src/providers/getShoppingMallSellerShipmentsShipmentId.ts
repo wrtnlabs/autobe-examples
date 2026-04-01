@@ -25,10 +25,12 @@ export async function getShoppingMallSellerShipmentsShipmentId(props: {
     await MyGlobal.prisma.shopping_mall_shipments.findUniqueOrThrow({
       where: {
         id: props.shipmentId,
-        seller_id: props.seller.id,
         deleted_at: null,
       },
       ...ShoppingMallShipmentTransformer.select(),
     });
+  if (shipment.seller.id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await ShoppingMallShipmentTransformer.transform(shipment);
 }

@@ -22,79 +22,102 @@ export async function postEcommerceMallSellerCancellationRequestsCancellationReq
   seller: SellerPayload;
   cancellationRequestId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallCancellationRequest> {
-  // 1. Validate cancellation request exists, is pending, and belongs to seller
-  const cancellationRequest =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findFirstOrThrow(
-      {
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const snapshotId: string & tags.Format<"uuid"> = v4() as string &
+    tags.Format<"uuid">;
+  const inventoryRecordId: string & tags.Format<"uuid"> = v4() as string &
+    tags.Format<"uuid">;
+  const inventorySnapshotId: string & tags.Format<"uuid"> = v4() as string &
+    tags.Format<"uuid">;
+  const activityLogId: string & tags.Format<"uuid"> = v4() as string &
+    tags.Format<"uuid">;
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    const cancellationRequest =
+      await tx.ecommerce_mall_cancellation_requests.findUniqueOrThrow({
         where: {
           id: props.cancellationRequestId,
           deleted_at: null,
-          status: "pending",
-          seller_id: props.seller.id,
         },
+        include: {
+          orderItem: {
+            select: {
+              id: true,
+              quantity: true,
+              variant_snapshot_id: true,
+            },
+          },
+          customer: true,
+          seller: true,
+        },
+      });
+    if (cancellationRequest.status !== "pending") {
+      throw new HttpException("Cancellation request is not pending", 400);
+    }
+    if (cancellationRequest.seller_id !== props.seller.id) {
+      throw new HttpException("Forbidden", 403);
+    }
+    const productVariantId: string & tags.Format<"uuid"> =
+      cancellationRequest.orderItem.variant_snapshot_id;
+    await tx.ecommerce_mall_cancellation_request_snapshots.create({
+      data: {
+        id: snapshotId,
+        cancellation_request_id: props.cancellationRequestId,
+        actor_type: "seller",
+        status_before: "pending",
+        status_after: "approved",
+        action: "approved",
+        created_at: now,
+        updated_at: now,
       },
-    );
-  // 2. Fetch order item data needed for inventory and product variant
-  const orderItem = await MyGlobal.prisma.ecommerce_mall_order_items.findUnique(
-    {
-      where: { id: cancellationRequest.order_item_id },
-      include: {
-        productSnapshot: true,
-      },
-    },
-  );
-  if (!orderItem) {
-    throw new HttpException("Order item not found", 404);
-  }
-  // 3. Create snapshot of approval action
-  await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.create({
-    data: {
-      id: v4(),
-      cancellation_request_id: props.cancellationRequestId,
-      actor_type: "seller",
-      action: "approved",
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  });
-  // 4. Update cancellation request status to approved
-  const updatedRequest =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.update({
+    });
+    await tx.ecommerce_mall_cancellation_requests.update({
       where: { id: props.cancellationRequestId },
       data: {
         status: "approved",
-        updated_at: new Date(),
+        updated_at: now,
       },
-      ...EcommerceMallCancellationRequestTransformer.select(),
     });
-  // 5. Create inventory record to restore stock quantity
-  await MyGlobal.prisma.ecommerce_mall_inventory_records.create({
-    data: {
-      id: v4(),
-      ecommerce_mall_product_variant_id: orderItem.variant_snapshot_id,
-      quantity_change: orderItem.quantity,
-      remaining_quantity: 100,
-      type: "restore",
-      updated_at: new Date(),
-      reason: "cancellation_approved",
-      created_at: new Date(),
-    },
+    await tx.ecommerce_mall_order_items.update({
+      where: { id: cancellationRequest.order_item_id },
+      data: {
+        updated_at: now,
+      },
+    });
+    await tx.ecommerce_mall_inventory_records.create({
+      data: {
+        id: inventoryRecordId,
+        ecommerce_mall_product_variant_id: productVariantId,
+        ecommerce_mall_cancellation_request_id: props.cancellationRequestId,
+        quantity_change: cancellationRequest.orderItem.quantity,
+        remaining_quantity: 0,
+        reason: "CANCELLATION",
+        type: "INCOMING",
+        description: "Stock restored due to cancellation approval",
+        created_at: now,
+        updated_at: now,
+      },
+    });
+    await tx.ecommerce_mall_activity_logs.create({
+      data: {
+        id: activityLogId,
+        actor_type: "seller",
+        entity_type: "cancellation_request",
+        entity_id: props.cancellationRequestId,
+        action_type: "approve_cancellation_request",
+        action_description: "Seller approved cancellation request",
+        created_at: now,
+        updated_at: now,
+      },
+    });
   });
-  // 6. Log activity for audit trail
-  await MyGlobal.prisma.ecommerce_mall_activity_logs.create({
-    data: {
-      id: v4(),
-      actor_type: "seller",
-      action_type: "cancellation_approved",
-      entity_type: "cancellation_request",
-      entity_id: props.cancellationRequestId,
-      action_description: "Seller approved cancellation request",
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  });
-  // 7. Return updated cancellation request using transformer
+  const updatedCancellationRequest =
+    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findUniqueOrThrow(
+      {
+        where: { id: props.cancellationRequestId },
+        ...EcommerceMallCancellationRequestTransformer.select(),
+      },
+    );
   return await EcommerceMallCancellationRequestTransformer.transform(
-    updatedRequest,
+    updatedCancellationRequest,
   );
 }

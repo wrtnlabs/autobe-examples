@@ -22,161 +22,99 @@ export async function patchRedditCommunityMemberReports(props: {
   member: MemberPayload;
   body: IRedditCommunityReport.IRequest;
 }): Promise<IPageIRedditCommunityReport.ISummary> {
-  // Step 1: Get moderator communities
-  const member =
-    await MyGlobal.prisma.reddit_community_members.findUniqueOrThrow({
-      where: { id: props.member.id, deleted_at: null },
-      select: { id: true },
-    });
-  const moderatorCommunities =
-    await MyGlobal.prisma.reddit_community_moderators.findMany({
-      where: { reddit_community_moderator_id: member.id, deleted_at: null },
-      select: { reddit_community_community_id: true },
-    });
-  const communityIds = moderatorCommunities.map(
-    (m) => m.reddit_community_community_id,
-  );
-  // Step 2: Build WHERE clause
-  const reasonWhereInput: Prisma.StringFilter | undefined =
-    props.body.reason_search !== undefined
-      ? {
-          contains: props.body.reason_search,
-          mode: "insensitive",
-        }
-      : undefined;
-  const reporterWhereInput:
-    | {
-        username?: Prisma.StringFilter;
-      }
-    | undefined =
-    props.body.reporter_username !== undefined
-      ? {
-          username: {
-            contains: props.body.reporter_username,
-            mode: "insensitive",
-          },
-        }
-      : undefined;
-  const searchTextInput: Prisma.reddit_community_reportsWhereInput | undefined =
-    props.body.searchText !== undefined
-      ? {
-          OR: [
-            {
-              reason: {
-                contains: props.body.searchText,
-                mode: "insensitive",
-              },
-            },
-          ],
-        }
-      : undefined;
-  const createdAtGteInput: Prisma.DateTimeFilter | undefined =
-    props.body.createdAtGte !== undefined
-      ? {
-          gte: new Date(props.body.createdAtGte),
-        }
-      : undefined;
-  const createdAtLteInput: Prisma.DateTimeFilter | undefined =
-    props.body.createdAtLte !== undefined
-      ? {
-          lte: new Date(props.body.createdAtLte),
-        }
-      : undefined;
-  const whereInput: Prisma.reddit_community_reportsWhereInput = {
-    deleted_at: null,
-    community_id: {
-      in:
-        communityIds.length > 0
-          ? communityIds
-          : ["00000000-0000-0000-0000-000000000000"],
-    },
-    status: props.body.status,
-    target_type: props.body.target_type,
-    reporter: reporterWhereInput,
-    reason: reasonWhereInput,
-    ...searchTextInput,
-    created_at: {
-      ...createdAtGteInput,
-      ...createdAtLteInput,
-    },
-  };
-  // Step 3: Handle sorting
-  const orderByInput: Prisma.reddit_community_reportsOrderByWithRelationInput[] =
-    props.body.sortBy === "status"
-      ? [{ status: props.body.sortOrder === "ASC" ? "asc" : "desc" }]
-      : props.body.sortBy === "createdAt"
-        ? [{ created_at: props.body.sortOrder === "ASC" ? "asc" : "desc" }]
-        : [{ created_at: "desc" }];
-  // Step 4: Handle pagination
   const page = props.body.page ?? 1;
   const limit = props.body.pageSize ?? props.body.limit ?? 50;
-  let data: Prisma.reddit_community_reportsGetPayload<
-    ReturnType<typeof RedditCommunityReportAtSummaryTransformer.select>
-  >[];
-  let total: number;
-  if (props.body.cursor !== undefined) {
-    // Cursor-based pagination
-    const cursorRecord =
-      await MyGlobal.prisma.reddit_community_reports.findFirst({
-        where: { id: props.body.cursor, deleted_at: null },
-        orderBy: { created_at: "desc" },
-        select: { id: true, created_at: true, status: true, reporter_id: true },
-      });
-    if (!cursorRecord) {
-      throw new HttpException("Invalid cursor", 400);
-    }
-    const cursorWhereInput: Prisma.reddit_community_reportsWhereInput = {
-      ...whereInput,
-      AND: [
-        { created_at: { lt: cursorRecord.created_at } },
-        {
-          OR: [
-            { created_at: { lt: cursorRecord.created_at } },
+  const skip = (page - 1) * limit;
+  // Build where filter for moderator scoping
+  const moderatorWhere = {
+    reddit_community_moderator_id: props.member.id,
+    deleted_at: null,
+  };
+  // Build status filter if provided
+  const statusWhere = props.body.status
+    ? { status: props.body.status }
+    : undefined;
+  // Build community filter if provided
+  const communityWhere = props.body.community_id
+    ? { community_id: props.body.community_id }
+    : undefined;
+  // Build target_type filter if provided
+  const targetTypeWhere = props.body.target_type
+    ? { target_type: props.body.target_type }
+    : undefined;
+  // Build reporter filter
+  const reporterWhere = props.body.reporter_username
+    ? {
+        reporter: {
+          username: {
+            contains: props.body.reporter_username,
+          },
+        },
+      }
+    : undefined;
+  // Build reason search filter if provided
+  const reasonWhere = props.body.reason_search
+    ? {
+        reason: {
+          contains: props.body.reason_search,
+          mode: "insensitive" as const,
+        },
+      }
+    : undefined;
+  // Build date range filter
+  const dateWhere: Prisma.reddit_community_reportsWhereInput = {
+    ...(props.body.createdAtGte && {
+      created_at: { gte: new Date(props.body.createdAtGte) },
+    }),
+    ...(props.body.createdAtLte && {
+      created_at: { lte: new Date(props.body.createdAtLte) },
+    }),
+  };
+  // Combine all filters with moderator scoping
+  const whereInput: Prisma.reddit_community_reportsWhereInput = {
+    ...statusWhere,
+    ...communityWhere,
+    ...targetTypeWhere,
+    ...(reporterWhere && { reporter: reporterWhere.reporter }),
+    ...(reasonWhere && { reason: reasonWhere.reason }),
+    ...dateWhere,
+    community: {
+      moderators: {
+        some: moderatorWhere,
+      },
+    },
+  };
+  // Handle sortBy and sortOrder
+  const orderByInput: Prisma.reddit_community_reportsOrderByWithRelationInput[] =
+    props.body.sortBy === "status"
+      ? [
+          {
+            status: props.body.sortOrder === "ASC" ? "asc" : "desc",
+          },
+        ]
+      : props.body.sortBy === "reporterId"
+        ? [
             {
-              created_at: cursorRecord.created_at,
-              id: {
-                lt: cursorRecord.id,
+              reporter: {
+                created_at: props.body.sortOrder === "ASC" ? "asc" : "desc",
               },
             },
-          ],
-        },
-      ],
-    };
-    data = await MyGlobal.prisma.reddit_community_reports.findMany({
-      where: cursorWhereInput,
-      take: limit,
-      orderBy: orderByInput,
-      ...RedditCommunityReportAtSummaryTransformer.select(),
-    });
-    total = await MyGlobal.prisma.reddit_community_reports.count({
-      where: cursorWhereInput,
-    });
-  } else if (props.body.page !== undefined) {
-    // Offset-based pagination
-    const skip = (page - 1) * limit;
-    data = await MyGlobal.prisma.reddit_community_reports.findMany({
+          ]
+        : [
+            {
+              created_at: props.body.sortOrder === "ASC" ? "asc" : "desc",
+            },
+          ];
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.reddit_community_reports.findMany({
       where: whereInput,
       skip,
       take: limit,
       orderBy: orderByInput,
       ...RedditCommunityReportAtSummaryTransformer.select(),
-    });
-    total = await MyGlobal.prisma.reddit_community_reports.count({
-      where: whereInput,
-    });
-  } else {
-    // Default: first page
-    data = await MyGlobal.prisma.reddit_community_reports.findMany({
-      where: whereInput,
-      take: limit,
-      orderBy: orderByInput,
-      ...RedditCommunityReportAtSummaryTransformer.select(),
-    });
-    total = await MyGlobal.prisma.reddit_community_reports.count({
-      where: whereInput,
-    });
-  }
-  // Step 5: Transform and return
+    }),
+    MyGlobal.prisma.reddit_community_reports.count({ where: whereInput }),
+  ]);
   const transformedData = await ArrayUtil.asyncMap(
     data,
     RedditCommunityReportAtSummaryTransformer.transform,
@@ -189,5 +127,5 @@ export async function patchRedditCommunityMemberReports(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIRedditCommunityReport.ISummary;
 }

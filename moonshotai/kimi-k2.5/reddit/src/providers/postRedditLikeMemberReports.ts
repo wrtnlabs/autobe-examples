@@ -18,95 +18,45 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { RedditLikeReportCollector } from "../collectors/RedditLikeReportCollector";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeReportTransformer } from "../transformers/RedditLikeReportTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditLikeMemberReports(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   body: IRedditLikeReport.ICreate;
 }): Promise<IRedditLikeReport> {
-  // Validate exactly one of postId or commentId is provided
-  if (
-    (props.body.postId === null && props.body.commentId === null) ||
-    (props.body.postId !== null && props.body.commentId !== null)
-  ) {
+  // Validate exactly one target is provided
+  const hasPost = props.body.postId !== null;
+  const hasComment = props.body.commentId !== null;
+  if (hasPost && hasComment) {
     throw new HttpException(
-      "Exactly one of postId or commentId must be provided",
+      "Cannot report both post and comment simultaneously",
       400,
     );
   }
-  // Validate community exists
-  await MyGlobal.prisma.reddit_like_communities.findUniqueOrThrow({
-    where: { id: props.body.communityId },
-  });
-  // Validate target content and check for existing reports
-  if (props.body.postId !== null) {
-    // Validate post exists and belongs to community
-    const post = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
-      where: { id: props.body.postId },
-      select: { community_id: true },
-    });
-    if (post.community_id !== props.body.communityId) {
-      throw new HttpException(
-        "Post does not belong to the specified community",
-        400,
-      );
-    }
-    // Check for existing report by this member
-    const existingReport = await MyGlobal.prisma.reddit_like_reports.findFirst({
-      where: {
-        reporter_id: props.member.id,
-        reportOfPost: {
-          reddit_like_post_id: props.body.postId,
-        },
-      },
-    });
-    if (existingReport !== null) {
-      throw new HttpException("You have already reported this post", 409);
-    }
-  } else {
-    // props.body.commentId is not null
-    const commentId = props.body.commentId as string;
-    // Validate comment exists and belongs to community
-    const comment =
-      await MyGlobal.prisma.reddit_like_comments.findUniqueOrThrow({
-        where: { id: commentId },
-        select: {
-          post_id: true,
-        },
-      });
-    const post = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
-      where: { id: comment.post_id },
-      select: { community_id: true },
-    });
-    if (post.community_id !== props.body.communityId) {
-      throw new HttpException(
-        "Comment does not belong to the specified community",
-        400,
-      );
-    }
-    // Check for existing report by this member
-    const existingReport = await MyGlobal.prisma.reddit_like_reports.findFirst({
-      where: {
-        reporter_id: props.member.id,
-        commentReport: {
-          comment_id: commentId,
-        },
-      },
-    });
-    if (existingReport !== null) {
-      throw new HttpException("You have already reported this comment", 409);
-    }
+  if (!hasPost && !hasComment) {
+    throw new HttpException("Must provide either postId or commentId", 400);
   }
-  // Create the report using collector
-  const reportData = await RedditLikeReportCollector.collect({
+  // Validate target exists (either post or comment)
+  if (hasPost) {
+    await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
+      where: { id: props.body.postId! },
+    });
+  } else {
+    await MyGlobal.prisma.reddit_like_comments.findUniqueOrThrow({
+      where: { id: props.body.commentId! },
+    });
+  }
+  // Create the report - let database unique constraints handle duplicates if they exist
+  const data = await RedditLikeReportCollector.collect({
     body: props.body,
     redditLikeMembers: { id: props.member.id },
+    redditLikeMemberSessions: { id: props.member.session_id },
   });
   const created = await MyGlobal.prisma.reddit_like_reports.create({
-    data: reportData,
+    data,
     ...RedditLikeReportTransformer.select(),
   });
   return await RedditLikeReportTransformer.transform(created);

@@ -3,8 +3,10 @@ import { IHrmsMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsMembe
 import { IHrmsOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsMemberAtSummaryTransformer } from "./HrmsMemberAtSummaryTransformer";
 
@@ -22,18 +24,32 @@ export namespace HrmsOrganizationAtSummaryTransformer {
         currency: true,
         timezone: true,
         fiscal_start_month: true,
+        owner: HrmsMemberAtSummaryTransformer.select(),
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        owner: HrmsMemberAtSummaryTransformer.select(),
-        memberSessions: true,
-        activityLogs: true,
-        organizationMembers: true,
-        roles: true,
-        departments: true,
-        projects: true,
-        files: true,
-        fileUploads: true,
+        memberSessions: {
+          select: { id: true },
+        } satisfies Prisma.hrms_member_sessionsFindManyArgs,
+        activityLogs: {
+          select: { id: true },
+        } satisfies Prisma.hrms_activity_logsFindManyArgs,
+        organizationMembers: {
+          select: { id: true },
+        } satisfies Prisma.hrms_organization_membersFindManyArgs,
+        roles: {
+          select: { id: true },
+        } satisfies Prisma.hrms_organization_rolesFindManyArgs,
+        departments: {
+          select: { id: true },
+        } satisfies Prisma.hrms_departmentsFindManyArgs,
+        projects: {
+          select: { id: true },
+        } satisfies Prisma.hrms_projectsFindManyArgs,
+        files: { select: { id: true } } satisfies Prisma.hrms_filesFindManyArgs,
+        fileUploads: {
+          select: { id: true },
+        } satisfies Prisma.hrms_file_uploadsFindManyArgs,
       },
     } satisfies Prisma.hrms_organizationsFindManyArgs;
   }
@@ -52,6 +68,6 @@ export namespace HrmsOrganizationAtSummaryTransformer {
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    } satisfies IHrmsOrganization.ISummary;
+    };
   }
 }

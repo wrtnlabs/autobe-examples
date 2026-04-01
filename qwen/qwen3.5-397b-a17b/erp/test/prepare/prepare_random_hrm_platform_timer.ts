@@ -12,8 +12,16 @@ export function prepare_random_hrm_platform_timer(
     project_id:
       input?.project_id ?? typia.random<string & tags.Format<"uuid">>(),
     task_id:
-      input?.task_id ?? typia.random<(string & tags.Format<"uuid">) | null>(),
+      input?.task_id !== undefined
+        ? input.task_id
+        : typia.random<boolean>()
+          ? typia.random<string & tags.Format<"uuid">>()
+          : null,
     description:
-      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
+      input?.description !== undefined
+        ? input.description
+        : typia.random<boolean>()
+          ? RandomGenerator.paragraph({ sentences: 2 })
+          : null,
   };
 }

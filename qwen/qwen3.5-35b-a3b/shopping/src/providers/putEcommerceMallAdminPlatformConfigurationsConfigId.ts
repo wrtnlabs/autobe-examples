@@ -18,60 +18,36 @@ export async function putEcommerceMallAdminPlatformConfigurationsConfigId(props:
   configId: string & tags.Format<"uuid">;
   body: IEcommerceMallPlatformConfiguration.IUpdate;
 }): Promise<IEcommerceMallPlatformConfiguration> {
-  const existingConfig =
-    await MyGlobal.prisma.ecommerce_mall_platform_configurations.findFirstOrThrow(
-      {
-        where: {
-          id: props.configId,
-          deleted_at: null,
-        },
-      },
-    );
-  const updateData: {
-    description?: string | undefined;
-    configuration_type?: "string" | "integer" | "boolean" | "json" | undefined;
-    scope?: "global" | "staging" | "production" | undefined;
-    default_value?: string | null | undefined;
-    is_active?: boolean | undefined;
-    updated_at: Date;
-  } = {
-    updated_at: new Date(),
-  };
-  if (props.body.description !== undefined) {
-    updateData.description = props.body.description;
-  }
-  if (props.body.configuration_type !== undefined) {
-    const validTypes = ["string", "integer", "boolean", "json"] as const;
-    if (!validTypes.includes(props.body.configuration_type)) {
-      throw new HttpException("Invalid configuration_type", 400);
-    }
-    updateData.configuration_type = props.body.configuration_type;
-  }
-  if (props.body.scope !== undefined) {
-    const validScopes = ["global", "staging", "production"] as const;
-    if (!validScopes.includes(props.body.scope)) {
-      throw new HttpException("Invalid scope", 400);
-    }
-    updateData.scope = props.body.scope;
-  }
-  if (props.body.default_value !== undefined) {
-    updateData.default_value = props.body.default_value;
-  }
-  if (props.body.is_active !== undefined) {
-    updateData.is_active = props.body.is_active;
-  }
+  await MyGlobal.prisma.ecommerce_mall_platform_configurations.findUniqueOrThrow(
+    {
+      where: { id: props.configId },
+    },
+  );
   await MyGlobal.prisma.ecommerce_mall_platform_configurations.update({
     where: { id: props.configId },
-    data: updateData,
+    data: {
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
+      ...(props.body.configuration_type !== undefined && {
+        configuration_type: props.body.configuration_type,
+      }),
+      ...(props.body.scope !== undefined && { scope: props.body.scope }),
+      ...(props.body.default_value !== undefined && {
+        default_value: props.body.default_value,
+      }),
+      ...(props.body.is_active !== undefined && {
+        is_active: props.body.is_active,
+      }),
+      updated_at: new Date(),
+    },
   });
-  const updatedConfig =
+  const updated =
     await MyGlobal.prisma.ecommerce_mall_platform_configurations.findUniqueOrThrow(
       {
         where: { id: props.configId },
         ...EcommerceMallPlatformConfigurationTransformer.select(),
       },
     );
-  return await EcommerceMallPlatformConfigurationTransformer.transform(
-    updatedConfig,
-  );
+  return await EcommerceMallPlatformConfigurationTransformer.transform(updated);
 }

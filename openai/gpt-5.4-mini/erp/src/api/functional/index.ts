@@ -1,1 +1,1 @@
-export * as hrmTimeTracking from "./hrmTimeTracking/index";
+export * as erpHrmTime from "./erpHrmTime/index";

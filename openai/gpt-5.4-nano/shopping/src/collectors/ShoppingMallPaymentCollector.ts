@@ -9,8 +9,9 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace ShoppingMallPaymentCollector {
   export async function collect(props: { body: IShoppingMallPayment.ICreate }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       amount: props.body.amount,
       currency: props.body.currency,
       provider: props.body.provider,
@@ -22,7 +23,7 @@ export namespace ShoppingMallPaymentCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // Not created/linked here: orderForPayment is a reverse hasOne relation.
+      orderForPayment: undefined,
     } satisfies Prisma.shopping_mall_paymentsCreateInput;
   }
 }

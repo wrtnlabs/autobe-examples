@@ -18,6 +18,50 @@ export async function getHrmPlatformMemberDepartmentSnapshotsSnapshotId(props: {
   member: MemberPayload;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformDepartmentSnapshot> {
+  // Verify member has org:manage permission through their employees' roles
+  const member = await MyGlobal.prisma.hrm_platform_members.findFirst({
+    where: {
+      id: props.member.id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      employees: {
+        select: {
+          id: true,
+          role: {
+            select: {
+              id: true,
+              permissions: {
+                select: {
+                  permission: {
+                    select: {
+                      id: true,
+                      code: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (member === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Check if member has org:manage permission in any of their employees' roles
+  const hasOrgManagePermission = member.employees.some(
+    (employee) =>
+      employee.role?.permissions.some(
+        (rp) => rp.permission.code === "org:manage",
+      ) ?? false,
+  );
+  if (!hasOrgManagePermission) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Find the department snapshot by ID, ensuring it's not soft-deleted
   const snapshot =
     await MyGlobal.prisma.hrm_platform_department_snapshots.findUniqueOrThrow({
       where: {
@@ -26,5 +70,6 @@ export async function getHrmPlatformMemberDepartmentSnapshotsSnapshotId(props: {
       },
       ...HrmPlatformDepartmentSnapshotTransformer.select(),
     });
+  // Transform and return the response
   return await HrmPlatformDepartmentSnapshotTransformer.transform(snapshot);
 }

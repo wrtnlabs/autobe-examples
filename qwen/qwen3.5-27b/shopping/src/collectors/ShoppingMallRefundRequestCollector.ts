@@ -13,8 +13,9 @@ export namespace ShoppingMallRefundRequestCollector {
     shoppingMallCustomers: IEntity;
     shoppingMallCustomerSessions: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       reason: props.body.reason,
       status: "pending",
       requested_at: new Date(),

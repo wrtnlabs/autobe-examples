@@ -28,7 +28,7 @@ export namespace HrmPlatformEmployeeSnapshotAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        employee: true,
+        employee: { select: { id: true } },
         user: HrmPlatformMemberAtSummaryTransformer.select(),
         organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
         role: HrmPlatformRoleAtSummaryTransformer.select(),
@@ -41,10 +41,10 @@ export namespace HrmPlatformEmployeeSnapshotAtSummaryTransformer {
   ): Promise<IHrmPlatformEmployeeSnapshot.ISummary> {
     return {
       id: input.id,
-      position: input.position ?? undefined,
+      position: input.position ?? null,
       employment_type: input.employment_type,
       status: input.status,
-      created_at: toISOStringSafe(input.created_at),
+      created_at: input.created_at.toISOString(),
       user: await HrmPlatformMemberAtSummaryTransformer.transform(input.user),
       organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(
         input.organization,

@@ -20,6 +20,7 @@ export async function getShoppingMallSellerCancellationRequestsCancellationReque
   seller: SellerPayload;
   cancellationRequestId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallCancellationRequest> {
+  // Query the cancellation request with all nested relations
   const cancellationRequest =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow(
       {
@@ -30,9 +31,11 @@ export async function getShoppingMallSellerCancellationRequestsCancellationReque
         ...ShoppingMallCancellationRequestTransformer.select(),
       },
     );
+  // Verify authorization: seller must own the product in the order item
   if (cancellationRequest.orderItem.seller.id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
+  // Transform and return the cancellation request
   return await ShoppingMallCancellationRequestTransformer.transform(
     cancellationRequest,
   );

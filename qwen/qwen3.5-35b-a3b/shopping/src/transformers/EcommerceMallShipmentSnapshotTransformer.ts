@@ -5,8 +5,10 @@ import { IEcommerceMallShipmentSnapshot } from "@ORGANIZATION/PROJECT-api/lib/st
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallShipmentAtSummaryTransformer } from "./EcommerceMallShipmentAtSummaryTransformer";
 
@@ -50,15 +52,10 @@ export namespace EcommerceMallShipmentSnapshotTransformer {
       carrier_name: input.carrier_name ?? undefined,
       carrier_contact: input.carrier_contact ?? undefined,
       status: input.status,
-      estimated_delivery_date: input.estimated_delivery_date
-        ? toISOStringSafe(input.estimated_delivery_date)
-        : null,
-      actual_delivery_date: input.actual_delivery_date
-        ? toISOStringSafe(input.actual_delivery_date)
-        : null,
-      shipped_date: input.shipped_date
-        ? toISOStringSafe(input.shipped_date)
-        : null,
+      estimated_delivery_date:
+        input.estimated_delivery_date?.toISOString() ?? null,
+      actual_delivery_date: input.actual_delivery_date?.toISOString() ?? null,
+      shipped_date: input.shipped_date?.toISOString() ?? null,
       tracking_url: input.tracking_url ?? undefined,
       shipping_method: input.shipping_method ?? undefined,
       weight_kg: input.weight_kg ?? undefined,
@@ -73,7 +70,7 @@ export namespace EcommerceMallShipmentSnapshotTransformer {
       shipment: await EcommerceMallShipmentAtSummaryTransformer.transform(
         input.shipment,
       ),
-      created_at: toISOStringSafe(input.created_at),
-    };
+      created_at: input.created_at.toISOString(),
+    } satisfies IEcommerceMallShipmentSnapshot;
   }
 }

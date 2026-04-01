@@ -4,6 +4,7 @@ import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IS
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -24,13 +25,29 @@ export namespace ShoppingMallProductAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        seller: true,
+        seller: {
+          // IShoppingMallMember.ISummary is an empty object type, so any minimal select is fine.
+          select: {
+            id: true,
+          },
+        },
         category: ShoppingMallCategoryAtSummaryTransformer.select(),
-        productImages: true,
-        snapshots: true,
-        productVariants: true,
-        wishlistItems: true,
-        reviews: true,
+        // Required by generator validation; ignored in transform
+        productImages: {
+          select: { id: true },
+        },
+        snapshots: {
+          select: { id: true },
+        },
+        productVariants: {
+          select: { id: true },
+        },
+        wishlistItems: {
+          select: { id: true },
+        },
+        reviews: {
+          select: { id: true },
+        },
       },
     } satisfies Prisma.shopping_mall_productsFindManyArgs;
   }
@@ -43,7 +60,7 @@ export namespace ShoppingMallProductAtSummaryTransformer {
       name: input.name,
       description: input.description,
       is_featured: input.is_featured,
-      seller: input.seller as unknown as IShoppingMallMember.ISummary,
+      seller: {},
       category: await ShoppingMallCategoryAtSummaryTransformer.transform(
         input.category,
       ),

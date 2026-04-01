@@ -23,62 +23,52 @@ export async function getHrmsMemberEmployeesEmployeeIdContractsContractId(props:
     await MyGlobal.prisma.hrms_employee_contracts.findUniqueOrThrow({
       where: {
         id: props.contractId,
-        hrms_employee_id: props.employeeId,
         deleted_at: null,
       },
       ...HrmsEmployeeContractTransformer.select(),
     });
-  const employee = await MyGlobal.prisma.hrms_employees.findFirst({
-    where: {
-      id: contract.employee.id,
-      deleted_at: null,
-    },
-    select: {
-      organization_member_id: true,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Not found", 404);
+  if (contract.employee.id !== props.employeeId) {
+    throw new HttpException(
+      "Contract does not belong to the specified employee",
+      404,
+    );
   }
-  const employeeOrgMember =
-    await MyGlobal.prisma.hrms_organization_members.findFirst({
-      where: { id: employee.organization_member_id },
-    });
-  if (!employeeOrgMember) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const memberOrgMember =
+  const employeeMembership =
     await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
         hrms_member_id: props.member.id,
-        hrms_organization_id: employeeOrgMember.hrms_organization_id,
+        deleted_at: null,
       },
     });
-  if (!memberOrgMember) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const isEmployee = props.member.id === contract.employee.id;
-  const hasPermission = await checkEmployeeViewPermission({
-    memberId: props.member.id,
-    role: memberOrgMember,
-  });
-  if (isEmployee || hasPermission) {
+  if (employeeMembership !== null) {
     return await HrmsEmployeeContractTransformer.transform(contract);
   }
-  throw new HttpException("Forbidden", 403);
-}
-async function checkEmployeeViewPermission(props: {
-  memberId: string & tags.Format<"uuid">;
-  role: {
-    hrms_organization_role_id: string & tags.Format<"uuid">;
-  };
-}): Promise<boolean> {
-  const permission =
-    await MyGlobal.prisma.hrms_organization_role_permissions.findFirst({
+  const memberMemberships =
+    await MyGlobal.prisma.hrms_organization_members.findMany({
       where: {
-        hrms_organization_role_id: props.role.hrms_organization_role_id,
-        permission: "employee:view",
+        hrms_member_id: props.member.id,
+        deleted_at: null,
+      },
+      include: {
+        organization: true,
+        organizationRole: {
+          include: {
+            permissions: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
-  return permission !== null;
+  for (const membership of memberMemberships) {
+    const permissionIds = membership.organizationRole.permissions.map(
+      (p: { id: string }) => p.id,
+    );
+    if (permissionIds.includes("employee:view")) {
+      return await HrmsEmployeeContractTransformer.transform(contract);
+    }
+  }
+  throw new HttpException("Forbidden", 403);
 }

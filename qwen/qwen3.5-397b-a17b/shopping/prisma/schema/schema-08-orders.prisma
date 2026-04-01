@@ -1,0 +1,259 @@
+/// Customer purchase transactions with order number, order date, and
+/// immutable shipping address snapshot. Order status is derived from
+/// order_items (paid/shipped/delivered/cancelled/refunded). Each order
+/// belongs to one customer and contains one or more order items.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Unique order number for customer-facing reference and support lookup.
+  order_number String
+  
+  /// Timestamp when the order was placed.
+  ordered_at DateTime
+  
+  /// Recipient name from shipping address at time of purchase (immutable
+  /// snapshot).
+  recipient_name String
+  
+  /// Recipient phone number from shipping address at time of purchase
+  /// (immutable snapshot).
+  recipient_phone String
+  
+  /// Street address from shipping address at time of purchase (immutable
+  /// snapshot).
+  street_address String
+  
+  /// City from shipping address at time of purchase (immutable snapshot).
+  city String
+  
+  /// State/province from shipping address at time of purchase (immutable
+  /// snapshot).
+  state String
+  
+  /// Postal code from shipping address at time of purchase (immutable
+  /// snapshot).
+  postal_code String
+  
+  /// Country from shipping address at time of purchase (immutable snapshot).
+  country String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp (orders are typically never deleted for legal
+  /// purposes).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems shopping_mall_order_items[]
+  reviews shopping_mall_reviews[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_number])
+  @@index([customer_id, ordered_at])
+}
+
+/// Individual purchased variants within orders with quantity, price, and
+/// status tracking. Each order item represents one SKU purchased by a
+/// customer, linked to its parent order, product, variant, and seller.
+/// Status is tracked independently per item to support individual
+/// cancellation and refund workflows. Price is snapshotted at purchase time
+/// to preserve transaction state.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent order's {@link shopping_mall_orders.id}.
+  shopping_mall_order_id String
+  
+  /// Purchased product's {@link shopping_mall_products.id}.
+  shopping_mall_product_id String
+  
+  /// Purchased variant's {@link shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Selling seller's {@link shopping_mall_sellers.id}.
+  shopping_mall_seller_id String
+  
+  /// Number of units purchased for this variant.
+  quantity Int
+  
+  /// Unit price at time of purchase, snapshotted to preserve transaction state.
+  price Float
+  
+  /// Individual item status: paid, shipped, delivered, cancelled, or refunded.
+  status String
+  
+  /// Timestamp when the order item was created.
+  created_at DateTime
+  
+  /// Timestamp when the order item was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the order item was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshot shopping_mall_order_item_snapshots?
+  shipmentItem shopping_mall_shipment_items?
+  cancellationRequests shopping_mall_cancellation_requests[]
+  refundRequests shopping_mall_refund_requests[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_product_variant_id])
+  @@index([shopping_mall_order_id, status])
+  @@index([shopping_mall_seller_id, status])
+}
+
+/// Immutable snapshots preserving complete product, variant, and seller
+/// profile state at time of purchase for dispute resolution and audit trail.
+/// Each order item has exactly one snapshot capturing the exact state when
+/// the order was placed. References related entities: {@link
+/// shopping_mall_order_items} for the source order item, {@link
+/// shopping_mall_products} for product details, {@link
+/// shopping_mall_product_variants} for variant information, {@link
+/// shopping_mall_seller_profiles} for seller shop information.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shopping Mall Order Item's {@link shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Snapshot of product name at time of purchase.
+  product_name String
+  
+  /// Snapshot of product description at time of purchase.
+  product_description String
+  
+  /// Snapshot of variant SKU code at time of purchase.
+  variant_sku_code String
+  
+  /// Snapshot of variant price at time of purchase, may override product base
+  /// price.
+  variant_price Float
+  
+  /// Snapshot of seller's shop name at time of purchase.
+  seller_shop_name String
+  
+  /// Snapshot of seller's shop logo URL at time of purchase.
+  seller_shop_logo String?
+  
+  /// Timestamp when the snapshot was created (purchase time).
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  variantOptions shopping_mall_order_item_snapshot_variant_options[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_id], map: "shopping_mall_order_item_snapshots_shopping_mall_order_d97a0b64")
+}
+
+/// Junction table linking order item snapshots to their selected product
+/// option values, capturing the exact option combination (e.g., Color=Red,
+/// Size=Large) at time of purchase for normalized querying and 1NF
+/// compliance.
+///
+/// References {@link shopping_mall_order_item_snapshots} for the snapshot
+/// containing variant state at purchase time, and {@link
+/// shopping_mall_product_option_values} for the specific option values. Each
+/// row represents one option value assigned to an order item snapshot,
+/// enabling proper 1NF normalization instead of storing composite option
+/// strings.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_snapshot_variant_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target's {@link shopping_mall_order_item_snapshots.id}.
+  order_item_snapshot_id String
+  
+  /// Target's {@link shopping_mall_product_option_values.id}.
+  product_option_value_id String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItemSnapshot shopping_mall_order_item_snapshots @relation(fields: [order_item_snapshot_id], references: [id], onDelete: Cascade)
+  productOptionValue shopping_mall_product_option_values @relation(fields: [product_option_value_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([product_option_value_id], map: "shopping_mall_order_item_snapshot_variant_options_prod_1fa1a9e3")
+  // spellchecker: ignore-next-line
+  @@unique([order_item_snapshot_id, product_option_value_id], map: "shopping_mall_order_item_snapshot_variant_options_orde_08f80779")
+}

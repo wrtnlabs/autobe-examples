@@ -9,8 +9,6 @@ export function prepare_random_shopping_mall_cancellation_request(
   input?: DeepPartial<IShoppingMallCancellationRequest.ICreate>,
 ): IShoppingMallCancellationRequest.ICreate {
   return {
-    order_item_id:
-      input?.order_item_id ?? typia.random<string & tags.Format<"uuid">>(),
     reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
   };
 }

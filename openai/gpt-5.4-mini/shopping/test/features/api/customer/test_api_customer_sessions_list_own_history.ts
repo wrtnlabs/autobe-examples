@@ -1,11 +1,10 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import type { IMallPlatformCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerSession";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import type { IPageIShoppingMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallCustomerSession";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
-import type { IShoppingMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerSession";
+import type { IPageIMallPlatformCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformCustomerSession";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -20,62 +19,100 @@ export async function test_api_customer_sessions_list_own_history(
   connection: api.IConnection,
 ): Promise<void> {
   const customerConnection: api.IConnection = { host: connection.host };
-  const email = typia.random<string & tags.Format<"email">>();
-  const password = RandomGenerator.alphaNumeric(12);
   const authorized = await authorize_customer_join(customerConnection, {
     body: {
-      email,
-      password,
-      href: "https://example.com",
-      referrer: "https://example.com",
-    } satisfies IShoppingMallCustomer.IJoin,
+      email: typia.random<string & tags.Format<"email">>(),
+      password: typia.random<string & tags.Format<"password">>(),
+    } satisfies IMallPlatformCustomer.IJoin,
   });
-  typia.assert(authorized);
-  const page = await api.functional.shoppingMall.customer.sessions.index(
+  const request = {
+    page: 1,
+    limit: 20,
+    sort: "-createdAt",
+  } satisfies IMallPlatformCustomerSession.IRequest;
+  const first = await api.functional.mallPlatform.customer.sessions.index(
     customerConnection,
     {
-      body: {
-        page: 1,
-        limit: 10,
-      } satisfies IShoppingMallCustomerSession.IRequest,
+      body: request,
     },
   );
-  typia.assert(page);
-  TestValidator.equals("pagination current page", page.pagination.current, 1);
-  TestValidator.equals("pagination limit", page.pagination.limit, 10);
-  TestValidator.predicate(
-    "pagination records are non-negative",
-    page.pagination.records >= 0,
+  typia.assert(first);
+  const second = await api.functional.mallPlatform.customer.sessions.index(
+    customerConnection,
+    {
+      body: request,
+    },
   );
-  TestValidator.predicate(
-    "pagination pages are non-negative",
-    page.pagination.pages >= 0,
+  typia.assert(second);
+  TestValidator.equals(
+    "pagination current",
+    first.pagination.current,
+    request.page,
   );
-  TestValidator.predicate(
-    "data length does not exceed limit",
-    page.data.length <= page.pagination.limit,
+  TestValidator.equals(
+    "pagination limit",
+    first.pagination.limit,
+    request.limit,
   );
-  for (const session of page.data) {
-    typia.assert(session);
-  }
-  for (let i = 1; i < page.data.length; i++) {
+  TestValidator.equals(
+    "repeat pagination current",
+    second.pagination.current,
+    request.page,
+  );
+  TestValidator.equals(
+    "repeat pagination limit",
+    second.pagination.limit,
+    request.limit,
+  );
+  TestValidator.equals(
+    "deterministic pagination records",
+    first.pagination.records,
+    second.pagination.records,
+  );
+  TestValidator.equals(
+    "deterministic pagination pages",
+    first.pagination.pages,
+    second.pagination.pages,
+  );
+  TestValidator.equals("deterministic data", first.data, second.data);
+  for (const session of first.data) {
+    TestValidator.equals(
+      "session owner id",
+      session.customer.id,
+      authorized.id,
+    );
+    TestValidator.equals(
+      "session owner email",
+      session.customer.email,
+      authorized.email,
+    );
+    TestValidator.equals(
+      "session owner status",
+      session.customer.status,
+      authorized.status,
+    );
+    TestValidator.predicate("session id present", session.id.length > 0);
+    TestValidator.predicate("session ip present", session.ip.length > 0);
+    TestValidator.predicate("session href present", session.href.length > 0);
     TestValidator.predicate(
-      "sessions are ordered newest first by default",
-      page.data[i - 1].created_at >= page.data[i].created_at,
+      "session referrer present",
+      session.referrer.length > 0,
+    );
+    TestValidator.predicate(
+      "session createdAt present",
+      session.createdAt.length > 0,
+    );
+    TestValidator.predicate(
+      "session expiredAt present",
+      session.expiredAt.length > 0,
     );
   }
-  const lastPage = await api.functional.shoppingMall.customer.sessions.index(
-    customerConnection,
-    {
-      body: {
-        page: 9999,
-        limit: 10,
-      } satisfies IShoppingMallCustomerSession.IRequest,
-    },
-  );
-  typia.assert(lastPage);
-  TestValidator.predicate(
-    "empty or last page is allowed without error",
-    lastPage.data.length <= 10,
+  TestValidator.predicate("response exposes only read-only summaries", () =>
+    first.data.every(
+      (session) =>
+        !("access" in session) &&
+        !("refresh" in session) &&
+        !("secret" in session),
+    ),
   );
 }

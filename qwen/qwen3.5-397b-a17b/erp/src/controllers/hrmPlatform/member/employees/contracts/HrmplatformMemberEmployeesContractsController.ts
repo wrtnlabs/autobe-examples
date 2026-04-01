@@ -9,27 +9,41 @@ import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { getHrmPlatformMemberEmployeesEmployeeIdContractsContractId } from "../../../../../providers/getHrmPlatformMemberEmployeesEmployeeIdContractsContractId";
 import { patchHrmPlatformMemberEmployeesEmployeeIdContracts } from "../../../../../providers/patchHrmPlatformMemberEmployeesEmployeeIdContracts";
 import { postHrmPlatformMemberEmployeesEmployeeIdContracts } from "../../../../../providers/postHrmPlatformMemberEmployeesEmployeeIdContracts";
-import { putHrmPlatformMemberEmployeesEmployeeIdContractsContractId } from "../../../../../providers/putHrmPlatformMemberEmployeesEmployeeIdContractsContractId";
 
 @Controller("/hrmPlatform/member/employees/:employeeId/contracts")
 export class HrmplatformMemberEmployeesContractsController {
   /**
-   * Create a new employment contract for a specific employee within the organization.
+   * Create a new employment contract for an employee within the organization.
    *
-   * This operation allows users with employee management permission to establish or update employment terms for an employee. When a new contract is created, the system automatically manages the contract lifecycle by ending any previously active contract. If the employee has an existing contract without an end date (indicating it is ongoing), that contract's end date is automatically set to the day before the new contract's start date, ensuring only one contract is active at any time.
+   * This operation establishes employment terms including compensation rate, pay period, and working hours. When a new contract is created, the system automatically ends any previous active contract by setting its end date to the day before the new contract's start date, ensuring only one contract is active at any time.
    *
-   * The contract requires a start date marking when the employment terms begin, a pay rate as a numeric value, a pay period classification (hourly, daily, weekly, or monthly), and working hours per week defining the expected weekly commitment. An optional end date can be specified for fixed-term contracts; contracts without an end date are considered ongoing. Optional notes field allows recording additional terms or conditions.
+   * Required fields include start date, pay rate, pay period (hourly, daily, weekly, or monthly), and weekly working hours. Optional fields include end date (null indicates ongoing contract) and notes for additional terms or comments.
    *
-   * Authorization requires the employee:manage permission within the employee's organization. Employees can view their own contracts but cannot create contracts. Users with only employee:view permission can read contracts but cannot create or modify them. Past contracts become immutable historical records once superseded by a newer contract and cannot be edited regardless of permission level.
-   *
-   * The operation validates that the pay period is one of the allowed values and that numeric fields (pay rate, working hours) are positive values. The start date must be provided and cannot be null. Upon successful creation, the complete contract object is returned including system-generated timestamps for created_at and updated_at.
+   * The created contract becomes immediately active. All historical contracts are preserved as immutable records. This operation requires employee:manage permission and is logged in the activity trail.
    *
    * @param connection
-   * @param employeeId Target employee's UUID identifier
-   * @param body Employment contract creation data including start date, compensation details, and working hours
+   * @param employeeId UUID of the employee to create contract for (scoped to current organization)
+   * @param body Contract creation details including compensation and work terms
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new employment contract for the specified employee. Query the hrm_platform_employees table to verify the employee exists and is active. Check that the requesting user has employee:manage permission within the employee's organization. Before inserting the new contract, query for any existing active contract (where end_date is null) for this employee. If found, update that contract's end_date to be one day before the new contract's start_date within a database transaction. Insert the new contract record into hrm_platform_employee_contracts with all provided fields. The pay_period must be validated against allowed values: hourly, daily, weekly, monthly. The pay_rate must be a positive number. The working_hours_per_week must be a positive integer. The start_date is required. Return the complete newly created contract object including all fields and timestamps.
+   * @x-autobe-specification Create a new employment contract for the specified employee.
+   *
+   * Implementation steps:
+   * 1. Verify employee exists and belongs to current organization
+   * 2. Validate requester has employee:manage permission
+   * 3. Validate required fields: start_date, pay_rate, pay_period, working_hours_per_week
+   * 4. Validate pay_period is one of: hourly, daily, weekly, monthly
+   * 5. Validate working_hours_per_week is positive integer
+   * 6. If employee has an active contract (end_date is null), set its end_date to start_date - 1 day
+   * 7. Create new contract with provided fields
+   * 8. Record activity log entry for contract creation
+   * 9. Return created contract with full details
+   *
+   * Edge cases:
+   * - Reject if start_date is in the past without justification
+   * - Reject if pay_rate is negative or zero
+   * - Reject if working_hours_per_week is <= 0
+   * - Ensure only one contract has null end_date per employee after transaction
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -54,29 +68,20 @@ export class HrmplatformMemberEmployeesContractsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of employment contracts for a specific employee.
+   * Retrieve a paginated list of employment contracts for a specific employee.
    *
-   * This operation provides access to the complete contract history for an employee, including all past contracts and the current active contract if one exists. Contracts contain employment terms such as pay rate, pay period frequency, working hours per week, and contract duration.
+   * This operation provides access to an employee's complete contract history, including both active and past contracts. Each contract record contains compensation details, work terms, and employment period information.
    *
-   * Employees can access their own contracts regardless of permission level. Users with employee:view permission can view any employee's contracts within their organization for administrative and reporting purposes. Users with employee:manage permission can also create and edit contracts through separate endpoints.
+   * Authorization requires either being the employee themselves or having employee:view permission within the organization. The response includes contract summaries optimized for list display, with clear indication of which contract is currently active.
    *
-   * The endpoint supports filtering by date range to find contracts active during specific periods, pay period type filtering (hourly, daily, weekly, monthly), and comprehensive pagination. Results are sorted by start date in descending order by default, showing the most recent contracts first.
-   *
-   * Past contracts are immutable historical records that cannot be modified through this endpoint. Only the current active contract (with null end_date or future end_date) can be edited via the PUT /employees/{employeeId}/contracts/{contractId} endpoint.
+   * Results are sorted chronologically by start date (newest first) to surface the current or most recent contract. Filtering options support querying by contract status, date ranges, and pay period classification.
    *
    * @param connection
-   * @param employeeId Target employee's ID (UUID format)
-   * @param body Search criteria and pagination parameters for contract list
+   * @param employeeId Employee UUID identifier (scoped to current organization context)
+   * @param body Search criteria and pagination parameters for contract filtering
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_employee_contracts table filtered by hrm_platform_employee_id path parameter.
-   * Apply search filters from request body: start_date range (gte/lte), end_date range (gte/lte), pay_period enum filter, status filter (active/past based on end_date and current date).
-   * Implement cursor-based or offset pagination with limit and page parameters.
-   * Sort results by start_date DESC by default, allow custom sorting via request body.
-   * Join with hrm_platform_employees to verify employee exists and user has access permission.
-   * Check authorization: allow if requesting user is the employee themselves OR has employee:view permission in the organization.
-   * Exclude soft-deleted contracts (deleted_at IS NOT NULL) from results.
-   * Return IHrmPlatformEmployeeContract.ISummary for each contract with essential fields: id, start_date, end_date, pay_rate, pay_period, working_hours_per_week, notes.
+   * @x-autobe-specification Query hrm_platform_employee_contracts table filtered by hrm_platform_employee_id path parameter. Apply pagination with cursor-based or offset-based approach. Support filtering by contract status (active/ended), date ranges, and pay period. Join with hrm_platform_employees to verify employee exists and user has access permission. Check authorization: allow if requesting user is the employee themselves OR has employee:view permission in the organization. Return contracts sorted by start_date descending (newest first). Include contract summary fields: id, start_date, end_date, pay_rate, pay_period, working_hours_per_week, is_active indicator. Handle edge case: employee not found returns 404. Handle edge case: unauthorized access returns 403.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -101,32 +106,31 @@ export class HrmplatformMemberEmployeesContractsController {
   }
 
   /**
-   * Retrieve detailed information for a specific employee contract by its identifier.
+   * Retrieve a specific employment contract for an employee by contract ID.
    *
-   * This operation returns complete contract details including the employment terms such as start date, end date (null for ongoing contracts), pay rate, pay period classification, working hours per week, and any additional notes. The contract record includes audit timestamps for creation and last update.
+   * This operation returns the complete contract record including all employment terms: start date, end date (if applicable), pay rate, pay period classification, weekly working hours, and any additional notes. The contract represents a historical employment agreement that documents compensation and work conditions at a specific point in time.
    *
-   * Employees can access their own contracts regardless of status. Users with employee:view permission can view any employee's contracts within their organization for administrative and reporting purposes. When viewing contracts, users can see both the current active contract and historical past contracts.
+   * Access is restricted to the employee's own contracts or users with employee viewing permissions within the organization. Each employee can have multiple contracts over their tenure, with only one contract active at any given time. Past contracts serve as immutable historical records.
    *
-   * Past contracts are immutable historical records that cannot be edited, preserving the employment terms that were in effect during any given period. Only the current active contract (if one exists) can be modified by users with employee:manage permission.
-   *
-   * The contract's end_date being null indicates an ongoing contract with no specified end date. The pay_period field specifies the compensation frequency (hourly, daily, weekly, monthly), and working_hours_per_week defines the expected weekly working schedule.
+   * The response includes the full contract entity with all fields. End date being null indicates an ongoing contract without a specified termination date. Soft-deleted contracts are excluded from results.
    *
    * @param connection
-   * @param employeeId Target employee's UUID identifier (scoped to organization)
-   * @param contractId Target contract's UUID identifier
+   * @param employeeId Employee UUID identifier (scoped to current organization context)
+   * @param contractId Contract UUID identifier
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_employee_contracts table by contractId with employeeId scope verification.
+   * @x-autobe-specification Query hrm_platform_employee_contracts table by contract ID with employee ownership verification.
    *
-   * Validate that the contract belongs to the specified employee by checking hrm_platform_employee_id matches employeeId parameter.
+   * Validate that the contract belongs to the specified employee by checking hrm_platform_employee_id matches the employeeId parameter.
    *
-   * Verify authorization: requesting user must be either (1) the employee themselves (member_id matches authenticated user), or (2) have employee:view or employee:manage permission in the organization.
+   * Enforce authorization: allow access if requesting user is the contract owner (their own employee record) OR has employee:view permission in the current organization context.
    *
-   * Return full contract record including all fields: id, start_date, end_date, pay_rate, pay_period, working_hours_per_week, notes, created_at, updated_at.
+   * Return full contract entity including: id, employee_id, start_date, end_date (null for ongoing), pay_rate, pay_period, working_hours_per_week, notes, created_at, updated_at.
    *
-   * Handle soft deletion: exclude contracts where deleted_at is not null unless explicitly querying for deleted records.
+   * Handle 404 if contract not found or does not belong to specified employee.
+   * Handle 403 if user lacks permission to view this employee's contracts.
    *
-   * If contract not found or authorization fails, return appropriate error response.
+   * No soft-delete filtering needed as contracts are historical records that should remain accessible.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":contractId")
@@ -143,74 +147,6 @@ export class HrmplatformMemberEmployeesContractsController {
         member,
         employeeId,
         contractId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update an employee contract's employment terms including pay rate, pay period, working hours, and optional notes.
-   *
-   * This operation allows users with employee management permission to modify the current active contract for an employee. The endpoint validates that the contract belongs to the specified employee and that the contract is the current active contract (not a past historical record). Only the active contract can be edited; past contracts are immutable historical records that preserve employment terms that were in effect during previous periods.
-   *
-   * The contract update can modify the pay rate (numeric compensation amount), pay period (hourly, daily, weekly, or monthly frequency), working hours per week (expected weekly commitment), end date (to explicitly end the contract), and optional notes for additional terms. The start date cannot be changed as it marks when the contract terms began.
-   *
-   * Access to this operation requires employee:manage permission within the organization. Employees can view their own contracts but cannot create or edit them. Users with only employee:view permission can view contracts but cannot modify them. The system automatically validates that the contract is active before allowing updates, rejecting requests to modify past contracts regardless of permission level.
-   *
-   * Related operations include POST /employees/{employeeId}/contracts for creating new contracts (which automatically ends the previous active contract) and GET /employees/{employeeId}/contracts/{contractId} for retrieving contract details.
-   *
-   * @param connection
-   * @param employeeId Target employee's ID (UUID format)
-   * @param contractId Target contract's ID (UUID format)
-   * @param body Contract update information with employment terms
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Update an employee contract record in the hrm_platform_employee_contracts table.
-   *
-   * Implementation steps:
-   * 1. Verify the authenticated user has employee:manage permission in the organization
-   * 2. Validate that the contract exists and belongs to the specified employee (hrm_platform_employee_id matches employeeId)
-   * 3. Validate that the contract is the current active contract (end_date is null or in the future)
-   * 4. Reject the request if the contract is a past/historical record (immutable)
-   * 5. Update the contract fields: pay_rate, pay_period, working_hours_per_week, end_date, notes
-   * 6. Do NOT allow start_date modification (marks contract beginning, immutable)
-   * 7. Update the updated_at timestamp
-   * 8. Return the updated contract record
-   *
-   * Business rules:
-   * - Only active contracts can be edited
-   * - Past contracts are immutable historical records
-   * - User must have employee:manage permission
-   * - Contract must belong to the specified employee
-   * - All required fields must be present in update request
-   *
-   * Edge cases:
-   * - Contract not found: return 404
-   * - Contract belongs to different employee: return 404 (don't leak information)
-   * - Contract is historical (past): return 400 with error indicating contract is immutable
-   * - User lacks permission: return 403
-   * - Invalid pay_period value: return 400 with validation error
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":contractId")
-  public async update(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("employeeId")
-    employeeId: string & tags.Format<"uuid">,
-    @TypedParam("contractId")
-    contractId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IHrmPlatformEmployeeContract.IUpdate,
-  ): Promise<IHrmPlatformEmployeeContract> {
-    try {
-      return await putHrmPlatformMemberEmployeesEmployeeIdContractsContractId({
-        member,
-        employeeId,
-        contractId,
-        body,
       });
     } catch (error) {
       console.log(error);

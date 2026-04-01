@@ -25,11 +25,17 @@ export async function patchShoppingMallSellerOrdersItems(props: {
   const whereInput: Prisma.shopping_mall_order_itemsWhereInput = {
     deleted_at: null,
     shopping_mall_seller_id: props.seller.id,
-    ...(props.body.status && {
-      status: props.body.status,
+    ...(props.body.status && { status: props.body.status }),
+    ...(props.body.orderId && { shopping_mall_order_id: props.body.orderId }),
+    ...(props.body.productId && {
+      product_snapshot: {
+        contains: `"id":"${props.body.productId}"`,
+      },
     }),
-    ...(props.body.orderId && {
-      shopping_mall_order_id: props.body.orderId,
+    ...(props.body.variantId && {
+      variant_snapshot: {
+        contains: `"id":"${props.body.variantId}"`,
+      },
     }),
     ...(props.body.createdAtFrom && {
       created_at: {
@@ -64,22 +70,20 @@ export async function patchShoppingMallSellerOrdersItems(props: {
   } satisfies Prisma.shopping_mall_order_itemsWhereInput;
   const orderByInput: Prisma.shopping_mall_order_itemsOrderByWithRelationInput =
     props.body.sortBy && props.body.sortOrder
-      ? ({
-          [props.body.sortBy]: props.body.sortOrder,
-        } as Prisma.shopping_mall_order_itemsOrderByWithRelationInput)
-      : {
-          created_at: "desc",
-        };
-  const data = await MyGlobal.prisma.shopping_mall_order_items.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...ShoppingMallOrderItemAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.shopping_mall_order_items.count({
-    where: whereInput,
-  });
+      ? { [props.body.sortBy]: props.body.sortOrder }
+      : { created_at: "desc" };
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.shopping_mall_order_items.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: orderByInput,
+      ...ShoppingMallOrderItemAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.shopping_mall_order_items.count({
+      where: whereInput,
+    }),
+  ]);
   return {
     data: await ArrayUtil.asyncMap(
       data,

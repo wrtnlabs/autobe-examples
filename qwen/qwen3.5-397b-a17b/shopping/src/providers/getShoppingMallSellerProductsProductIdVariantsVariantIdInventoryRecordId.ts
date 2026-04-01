@@ -1,7 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallInventoryRecord";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -24,36 +24,31 @@ export async function getShoppingMallSellerProductsProductIdVariantsVariantIdInv
   const record =
     await MyGlobal.prisma.shopping_mall_inventory_records.findUniqueOrThrow({
       where: { id: props.recordId },
-      select: {
-        id: true,
-        product_variant_id: true,
-        quantity_change: true,
-        reason: true,
-        reference_id: true,
-        created_at: true,
-        variant: {
-          select: {
+      include: {
+        productVariant: {
+          include: {
             product: {
               select: {
-                shopping_seller_id: true,
+                id: true,
+                seller_id: true,
+                base_price: true,
+                created_at: true,
+                updated_at: true,
+                deleted_at: true,
+                category_id: true,
+                name: true,
+                description: true,
               },
             },
           },
         },
       },
     });
-  if (record.product_variant_id !== props.variantId) {
+  if (record.productVariant.product.id !== props.productId) {
     throw new HttpException("Not found", 404);
   }
-  if (record.variant.product.shopping_seller_id !== props.seller.id) {
+  if (record.productVariant.product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const recordWithVariant =
-    await MyGlobal.prisma.shopping_mall_inventory_records.findUniqueOrThrow({
-      where: { id: props.recordId },
-      ...ShoppingMallInventoryRecordTransformer.select(),
-    });
-  return await ShoppingMallInventoryRecordTransformer.transform(
-    recordWithVariant,
-  );
+  return await ShoppingMallInventoryRecordTransformer.transform(record);
 }

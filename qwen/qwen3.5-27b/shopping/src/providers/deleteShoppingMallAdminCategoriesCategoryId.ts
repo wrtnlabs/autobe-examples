@@ -15,17 +15,17 @@ export async function deleteShoppingMallAdminCategoriesCategoryId(props: {
   admin: AdminPayload;
   categoryId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Verify category exists and check if already deleted
-  const category = await MyGlobal.prisma.shopping_mall_categories.findUnique({
-    where: { id: props.categoryId },
-  });
-  if (category === null) {
-    throw new HttpException("Category not found", 404);
-  }
+  // Find the category by ID
+  const category =
+    await MyGlobal.prisma.shopping_mall_categories.findUniqueOrThrow({
+      where: { id: props.categoryId },
+      select: { id: true, deleted_at: true },
+    });
+  // Check if already deleted
   if (category.deleted_at !== null) {
-    throw new HttpException("Category already deleted", 409);
+    throw new HttpException("Category is already deleted", 409);
   }
-  // Step 2: Cascade delete subcategories (soft delete)
+  // Find and soft delete all subcategories
   await MyGlobal.prisma.shopping_mall_categories.updateMany({
     where: {
       parent_id: props.categoryId,
@@ -35,7 +35,7 @@ export async function deleteShoppingMallAdminCategoriesCategoryId(props: {
       deleted_at: new Date(),
     },
   });
-  // Step 3: Soft delete the target category
+  // Soft delete the target category
   await MyGlobal.prisma.shopping_mall_categories.update({
     where: { id: props.categoryId },
     data: {

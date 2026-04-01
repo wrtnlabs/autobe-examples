@@ -17,28 +17,28 @@ export async function postShoppingMallMemberAddressesDefault(props: {
   member: MemberPayload;
   body: IShoppingMallAddress.ISetDefault;
 }): Promise<IShoppingMallAddress.ISummary> {
-  const activeCount = await MyGlobal.prisma.shopping_mall_addresses.count({
-    where: { shopping_mall_customer_id: props.member.id, deleted_at: null },
-  });
-  if (activeCount <= 0) {
-    throw new HttpException("No available shipping addresses", 400);
-  }
-  const target =
-    await MyGlobal.prisma.shopping_mall_addresses.findUniqueOrThrow({
-      where: { id: props.body.id },
-      select: {
-        id: true,
-        shopping_mall_customer_id: true,
-        deleted_at: true,
-        is_default: true,
+  // 1) Ensure the target address exists, belongs to the current member, and is active.
+  const target = await MyGlobal.prisma.shopping_mall_addresses.findFirstOrThrow(
+    {
+      where: {
+        id: props.body.id,
+        shopping_mall_customer_id: props.member.id,
+        deleted_at: null,
       },
-    });
-  if (
-    target.shopping_mall_customer_id !== props.member.id ||
-    target.deleted_at !== null
-  ) {
-    throw new HttpException("Address not found", 404);
+      ...ShoppingMallAddressAtSummaryTransformer.select(),
+    },
+  );
+  // 2) No-address edge case: if the customer has zero active addresses, reject.
+  const activeCount = await MyGlobal.prisma.shopping_mall_addresses.count({
+    where: {
+      shopping_mall_customer_id: props.member.id,
+      deleted_at: null,
+    },
+  });
+  if (activeCount === 0) {
+    throw new HttpException("No addresses available", 400);
   }
+  // 3) Single-default enforcement in a transaction.
   await MyGlobal.prisma.$transaction(async (tx) => {
     await tx.shopping_mall_addresses.updateMany({
       where: {
@@ -46,17 +46,31 @@ export async function postShoppingMallMemberAddressesDefault(props: {
         is_default: true,
         deleted_at: null,
       },
-      data: { is_default: false, updated_at: new Date() },
+      data: {
+        is_default: false,
+        updated_at: new Date(),
+      },
     });
-    await tx.shopping_mall_addresses.update({
-      where: { id: props.body.id },
-      data: { is_default: true, updated_at: new Date() },
+    const updated = await tx.shopping_mall_addresses.updateMany({
+      where: {
+        id: props.body.id,
+        shopping_mall_customer_id: props.member.id,
+        deleted_at: null,
+      },
+      data: {
+        is_default: true,
+        updated_at: new Date(),
+      },
     });
+    if (updated.count !== 1) {
+      // Address became ineligible between the initial read and mutation.
+      throw new HttpException("Address is not eligible", 400);
+    }
   });
-  const updated =
+  const refreshed =
     await MyGlobal.prisma.shopping_mall_addresses.findUniqueOrThrow({
       where: { id: props.body.id },
       ...ShoppingMallAddressAtSummaryTransformer.select(),
     });
-  return await ShoppingMallAddressAtSummaryTransformer.transform(updated);
+  return await ShoppingMallAddressAtSummaryTransformer.transform(refreshed);
 }

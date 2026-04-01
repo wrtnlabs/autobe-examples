@@ -1,0 +1,294 @@
+/// Temporary guest accounts identified by device fingerprint for anonymous
+/// platform access.
+///
+/// Guests are unauthenticated users who access the platform without creating
+/// a member account. Each guest is uniquely identified by a device
+/// fingerprint, allowing the system to recognize returning guests and
+/// maintain their session context. Guest accounts are temporary and do not
+/// have email/password credentials.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique device identifier for guest recognition.
+  device_fingerprint String
+  
+  /// Timestamp when the guest account was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest account was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions hrm_platform_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+}
+
+/// Temporary session tokens for guest access with expiration tracking.
+/// Stores JWT session data including access and refresh tokens for anonymous
+/// platform access.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Guest's {@link hrm_platform_guests.id}.
+  hrm_platform_guest_id String
+  
+  /// Client IP address at session creation.
+  ip String
+  
+  /// Current page URL when session was initiated.
+  href String
+  
+  /// Referrer URL that led to session creation.
+  referrer String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp for automatic invalidation.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest hrm_platform_guests @relation(fields: [hrm_platform_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_guest_id, created_at], map: "hrm_platform_guest_sessions_hrm_platform_guest_id_crea_1cdac0df")
+}
+
+/// Registered member accounts with email/password credentials and global
+/// profile information. Members can belong to multiple organizations and
+/// switch between them. Profile information (display name, avatar, phone) is
+/// shared across all organizations.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address for authentication.
+  email String
+  
+  /// Bcrypt hashed password for authentication.
+  password_hash String
+  
+  /// User's display name shown across all organizations.
+  display_name String
+  
+  /// URL to user's avatar/profile image.
+  avatar_image String?
+  
+  /// User's phone number for contact.
+  phone_number String?
+  
+  /// Account creation timestamp.
+  created_at DateTime
+  
+  /// Last profile update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for account deletion.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions hrm_platform_member_sessions[]
+  passwordResets hrm_platform_member_password_resets[]
+  emailVerifications hrm_platform_member_email_verifications[]
+  employees hrm_platform_employees[]
+  invitations hrm_platform_invitations[] @relation("hrm_platform_invitations_of_user_id")
+  sentInvitations hrm_platform_invitations[] @relation("hrm_platform_invitations_of_invited_by_id")
+  taskHistories hrm_platform_task_histories[]
+  activityLogs hrm_platform_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens with access and refresh token support for member
+/// authentication. Tracks active login sessions with expiration, device
+/// information, and token hashes for validation. Each session belongs to
+/// exactly one member and is created during login, expired during logout or
+/// timeout.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's {@link hrm_platform_members.id}.
+  member_id String
+  
+  /// Client IP address at session creation for security auditing.
+  ip String
+  
+  /// Original URL where login was initiated.
+  href String
+  
+  /// HTTP referrer header at login time.
+  referrer String
+  
+  /// Hash of the current access token for validation and revocation.
+  access_token_hash String
+  
+  /// Hash of the current refresh token for validation and revocation.
+  refresh_token_hash String
+  
+  /// Client device information (user agent, browser, OS) for session
+  /// identification.
+  device_info String
+  
+  /// Session creation timestamp.
+  created_at DateTime
+  
+  /// Session expiration timestamp. Sessions are invalid after this time.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id, created_at])
+}
+
+/// Password reset tokens with expiration for member account recovery. Stores
+/// temporary tokens generated when members request password reset, with
+/// expiration tracking and usage state. Each token belongs to exactly one
+/// member and can be used only once.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target's {@link hrm_platform_members.id}. Member account requesting
+  /// password reset.
+  hrm_platform_member_id String
+  
+  /// Unique password reset token sent to member's email.
+  token String
+  
+  /// Token expiration timestamp. Token becomes invalid after this time.
+  expires_at DateTime
+  
+  /// Timestamp when token was consumed. Null if not yet used.
+  used_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_member_id, created_at], map: "hrm_platform_member_password_resets_hrm_platform_membe_62c2ec6a")
+  @@index([expires_at])
+}
+
+/// Email verification tokens for member registration validation. Stores
+/// temporary tokens sent to users during signup to verify email ownership.
+/// Each token has an expiration time and is consumed upon successful
+/// verification. Members can request new tokens if previous ones expire.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Member's {@link hrm_platform_members.id}.
+  hrm_platform_member_id String
+  
+  /// Verification token sent to user's email for validation.
+  token String
+  
+  /// Token expiration timestamp after which verification is invalid.
+  expires_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for record removal.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_member_id, created_at], map: "hrm_platform_member_email_verifications_hrm_platform_m_a5e8ed53")
+}

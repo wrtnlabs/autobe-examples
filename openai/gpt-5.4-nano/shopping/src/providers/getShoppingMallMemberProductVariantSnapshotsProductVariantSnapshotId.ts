@@ -17,16 +17,25 @@ export async function getShoppingMallMemberProductVariantSnapshotsProductVariant
   member: MemberPayload;
   productVariantSnapshotId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallProductVariantSnapshot> {
-  const select =
-    ShoppingMallProductVariantSnapshotTransformer.select() as Prisma.shopping_mall_product_variant_snapshotsSelect;
   const snapshot =
     await MyGlobal.prisma.shopping_mall_product_variant_snapshots.findUniqueOrThrow(
       {
         where: { id: props.productVariantSnapshotId },
-        select,
+        ...ShoppingMallProductVariantSnapshotTransformer.select(),
       },
     );
-  return await ShoppingMallProductVariantSnapshotTransformer.transform(
-    snapshot,
-  );
+  const productVariant =
+    await MyGlobal.prisma.shopping_mall_product_variants.findUniqueOrThrow({
+      where: { id: snapshot.shopping_mall_product_variant_id },
+      select: { shopping_mall_product_id: true },
+    });
+  const product =
+    await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
+      where: { id: productVariant.shopping_mall_product_id },
+      select: { shopping_mall_seller_id: true },
+    });
+  if (product.shopping_mall_seller_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  return ShoppingMallProductVariantSnapshotTransformer.transform(snapshot);
 }

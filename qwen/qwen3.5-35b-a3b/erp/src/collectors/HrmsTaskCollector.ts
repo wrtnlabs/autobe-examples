@@ -20,7 +20,7 @@ export namespace HrmsTaskCollector {
       status: props.body.status ?? "open",
       priority: props.body.priority ?? "medium",
       estimated_hours: props.body.estimated_hours ?? null,
-      due_date: props.body.due_date ? new Date(props.body.due_date) : null,
+      due_date: props.body.due_date ?? null,
       billable: props.body.billable ?? null,
       created_at: new Date(),
       updated_at: new Date(),
@@ -32,10 +32,6 @@ export namespace HrmsTaskCollector {
       parentTask: props.body.hrms_task_id
         ? { connect: { id: props.body.hrms_task_id } }
         : undefined,
-      subtasks: undefined,
-      statusHistories: undefined,
-      timelogs: undefined,
-      activeTimers: undefined,
     } satisfies Prisma.hrms_tasksCreateInput;
   }
 }

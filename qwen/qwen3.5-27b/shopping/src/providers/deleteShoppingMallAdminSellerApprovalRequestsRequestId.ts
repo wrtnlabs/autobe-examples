@@ -15,14 +15,16 @@ export async function deleteShoppingMallAdminSellerApprovalRequestsRequestId(pro
   admin: AdminPayload;
   requestId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  await MyGlobal.prisma.shopping_mall_seller_approval_requests.findUniqueOrThrow(
-    {
-      where: {
-        id: props.requestId,
-        deleted_at: null,
-      },
-    },
-  );
+  const request =
+    await MyGlobal.prisma.shopping_mall_seller_approval_requests.findUnique({
+      where: { id: props.requestId },
+    });
+  if (request === null) {
+    throw new HttpException("Not Found", 404);
+  }
+  if (request.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
+  }
   await MyGlobal.prisma.shopping_mall_seller_approval_requests.update({
     where: { id: props.requestId },
     data: {

@@ -1,13 +1,13 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import type { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
-import type { IShoppingMallProductReviewStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductReviewStatistic";
+import type { IShoppingMallProductOptionDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionDefinition";
+import type { IShoppingMallProductOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionValue";
+import type { IShoppingMallProductRating } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductRating";
 import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import type { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -24,126 +24,128 @@ import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_r
 import { prepare_random_shopping_mall_product_image } from "../../../prepare/prepare_random_shopping_mall_product_image";
 
 /**
- * Test the edge case where the seller deletes the main thumbnail image (first image in display order).
- * A seller creates a product, uploads multiple images with the first image serving as the main thumbnail,
- * then deletes that first image. The test should verify: (1) the deleted main image is removed from the
- * product gallery, (2) the next image in display order automatically becomes the new main thumbnail,
- * (3) the product's main thumbnail in listings updates to the new first image. This validates the
- * thumbnail reassignment logic when the primary image is removed.
+ * Test the edge case where a seller deletes the main thumbnail image (the first image with display_order: 0).
+ * A seller creates a product, uploads at least 2 images, then deletes the first image by setting its deleted_at timestamp.
+ * Verify that: (1) the deletion operation succeeds, (2) the deleted image is excluded from the returned active images list,
+ * (3) the next image in sequence automatically becomes the new main thumbnail (display_order: 0),
+ * (4) a product snapshot is created preserving the previous image state including the deleted image's URL and order,
+ * and (5) customers viewing the product see the updated image gallery without the deleted image.
+ * This validates the business rule that when the main thumbnail is deleted, the next image becomes the new thumbnail.
  */
 export async function test_api_product_image_main_thumbnail_deletion(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Seller registration and authentication
+  // 1. Seller authentication - create seller account and get authenticated connection
   const sellerConnection: api.IConnection = { host: connection.host };
   const sellerAuth = await authorize_seller_join(sellerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "TestPassword123!",
-      shop_name: RandomGenerator.name(),
-      shop_description: RandomGenerator.paragraph({ sentences: 2 }),
-    } satisfies IShoppingMallSeller.IJoin,
+      password: RandomGenerator.alphaNumeric(16),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    },
   });
   typia.assert(sellerAuth);
-  // 2. Create a product
+  // 2. Create a product for testing image management
   const product = await generate_random_shopping_mall_seller_products_create(
     sellerConnection,
     {
       body: {
-        name: RandomGenerator.paragraph({ sentences: 1 }),
-        description: RandomGenerator.content({ paragraphs: 2 }),
-        base_price: (typia.random<number & tags.Minimum<1000>>()) satisfies number as number,
-      } satisfies Partial<IShoppingMallProduct.ICreate>,
+        name: RandomGenerator.paragraph({ sentences: 2 }),
+        description: RandomGenerator.content({ paragraphs: 3 }),
+        category_id: typia.random<string & tags.Format<"uuid">>(),
+        base_price: typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<1000>
+        >(),
+      },
     },
   );
   typia.assert(product);
-  // 3. Upload multiple images with explicit display order
-  // Image 1: display_order = 0 (will be main thumbnail)
-  const image1 =
+  TestValidator.predicate("product created", product.id !== undefined);
+  // 3. Upload first image (main thumbnail - display_order: 0)
+  const firstImage =
     await generate_random_shopping_mall_seller_products_images_create(
       sellerConnection,
       {
         params: { productId: product.id },
         body: {
           image_url: typia.random<string & tags.Format<"uri">>(),
-          display_order: 0,
-        } satisfies IShoppingMallProductImage.ICreate,
+        },
       },
     );
-  typia.assert(image1);
-  // Image 2: display_order = 1
-  const image2 =
-    await generate_random_shopping_mall_seller_products_images_create(
-      sellerConnection,
-      {
-        params: { productId: product.id },
-        body: {
-          image_url: typia.random<string & tags.Format<"uri">>(),
-          display_order: 1,
-        } satisfies IShoppingMallProductImage.ICreate,
-      },
-    );
-  typia.assert(image2);
-  // Image 3: display_order = 2
-  const image3 =
-    await generate_random_shopping_mall_seller_products_images_create(
-      sellerConnection,
-      {
-        params: { productId: product.id },
-        body: {
-          image_url: typia.random<string & tags.Format<"uri">>(),
-          display_order: 2,
-        } satisfies IShoppingMallProductImage.ICreate,
-      },
-    );
-  typia.assert(image3);
-  // 4. Verify initial state - image1 is the main thumbnail (lowest display_order)
+  typia.assert(firstImage);
   TestValidator.equals(
-    "first image has display_order 0",
-    image1.display_order,
+    "first image is main thumbnail",
+    firstImage.display_order,
+    0,
+  );
+  // 4. Upload second image (display_order: 1)
+  const secondImage =
+    await generate_random_shopping_mall_seller_products_images_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          image_url: typia.random<string & tags.Format<"uri">>(),
+        },
+      },
+    );
+  typia.assert(secondImage);
+  TestValidator.equals("second image order", secondImage.display_order, 1);
+  // 5. Upload third image (display_order: 2) for better testing
+  const thirdImage =
+    await generate_random_shopping_mall_seller_products_images_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          image_url: typia.random<string & tags.Format<"uri">>(),
+        },
+      },
+    );
+  typia.assert(thirdImage);
+  TestValidator.equals("third image order", thirdImage.display_order, 2);
+  // Store first image details for verification
+  const deletedImageUrl = firstImage.image_url;
+  const deletedImageId = firstImage.id;
+  // 6. Delete the main thumbnail (first image) by setting deleted_at
+  const deletionResult =
+    await api.functional.shoppingMall.seller.products.images.patchByProductid(
+      sellerConnection,
+      {
+        productId: product.id,
+        body: {
+          deleted_at: new Date().toISOString(),
+        },
+      },
+    );
+  typia.assert(deletionResult);
+  // 7. Verify the deletion result - should return the new main thumbnail (second image)
+  TestValidator.equals(
+    "deletion returns updated main thumbnail with order 0",
+    deletionResult.display_order,
     0,
   );
   TestValidator.equals(
-    "second image has display_order 1",
-    image2.display_order,
-    1,
+    "new main thumbnail is second image URL",
+    deletionResult.image_url,
+    secondImage.image_url,
   );
+  TestValidator.notEquals(
+    "returned image is not the deleted first image",
+    deletionResult.id,
+    deletedImageId,
+  );
+  // 8. Verify the returned image is active (not deleted)
   TestValidator.equals(
-    "third image has display_order 2",
-    image3.display_order,
-    2,
+    "returned image is active (not deleted)",
+    deletionResult.deleted_at,
+    null,
   );
-  // 5. Delete the main thumbnail image (image1)
-  await api.functional.shoppingMall.seller.products.images.erase(
-    sellerConnection,
-    {
-      productId: product.id,
-      imageId: image1.id,
-    },
-  );
-  // 6. Verify deletion succeeded (no error thrown)
-  // The erase endpoint returns void, so successful completion indicates success
-  TestValidator.predicate("deletion completed without error", true);
-  // 7. Verify image2 and image3 still exist and are accessible
-  // After deleting image1 (display_order 0), image2 (display_order 1) becomes the new main thumbnail
-  TestValidator.equals(
-    "image2 display_order unchanged after deletion",
-    image2.display_order,
-    1,
-  );
-  TestValidator.equals(
-    "image3 display_order unchanged after deletion",
-    image3.display_order,
-    2,
-  );
-  // 8. Verify the remaining images have valid IDs and URLs
-  TestValidator.predicate("image2 has valid UUID", image2.id.length > 0);
-  TestValidator.predicate("image3 has valid UUID", image3.id.length > 0);
-  TestValidator.predicate("image2 has valid URL", image2.image_url.length > 0);
-  TestValidator.predicate("image3 has valid URL", image3.image_url.length > 0);
-  // 9. Verify image2 is now the effective main thumbnail (lowest display_order among remaining)
+  // 9. Verify second image is now the main thumbnail (display_order 0)
   TestValidator.predicate(
-    "image2 has lower display_order than image3",
-    image2.display_order < image3.display_order,
+    "second image becomes new main thumbnail",
+    deletionResult.image_url === secondImage.image_url &&
+      deletionResult.display_order === 0,
   );
 }

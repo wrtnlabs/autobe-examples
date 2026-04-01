@@ -17,54 +17,59 @@ export async function postShoppingMallAuthCustomerJoin(props: {
   ip: string;
   body: IShoppingMallCustomer.IJoin;
 }): Promise<IShoppingMallCustomer.IAuthorized> {
-  // 1. Check duplicate email
+  // 1. Check for duplicate email
   const existing = await MyGlobal.prisma.shopping_mall_customers.findFirst({
     where: {
       email: props.body.email,
+      deleted_at: null,
     },
   });
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Create customer record
+  // 2. Hash password
   const passwordHash = await PasswordUtil.hash(props.body.password);
-  const now = new Date();
+  // 3. Create customer record
   const customer = await MyGlobal.prisma.shopping_mall_customers.create({
     data: {
-      id: v4(),
+      id: v4() as string & tags.Format<"uuid">,
       email: props.body.email,
       password_hash: passwordHash,
       display_name: props.body.display_name,
-      phone_number: props.body.phone_number,
+      phone_number: props.body.phone_number ?? null,
       status: "active",
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
     },
     ...ShoppingMallCustomerTransformer.select(),
   });
-  // 3. Create session record
+  // 4. Create session record
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.shopping_mall_customer_sessions.create({
     data: {
-      id: v4(),
+      id: v4() as string & tags.Format<"uuid">,
       shopping_mall_customer_id: customer.id,
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: now,
+      created_at: new Date(),
       expired_at: accessExpires,
     },
+    select: {
+      id: true,
+      expired_at: true,
+    },
   });
-  // 4. Generate JWT tokens
+  // 5. Generate JWT tokens
   const token = {
     access: jwt.sign(
       {
         type: "customer",
         id: customer.id,
         session_id: session.id,
-        created_at: now.toISOString(),
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -75,17 +80,21 @@ export async function postShoppingMallAuthCustomerJoin(props: {
         id: customer.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: now.toISOString(),
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires.toISOString(),
-    refreshable_until: refreshExpires.toISOString(),
+    expired_at: toISOStringSafe(accessExpires) as string &
+      tags.Format<"date-time">,
+    refreshable_until: toISOStringSafe(refreshExpires) as string &
+      tags.Format<"date-time">,
   };
-  // 5. Return IAuthorized
+  // 6. Return IAuthorized
+  const transformedCustomer =
+    await ShoppingMallCustomerTransformer.transform(customer);
   return {
-    ...(await ShoppingMallCustomerTransformer.transform(customer)),
+    ...transformedCustomer,
     token,
   } satisfies IShoppingMallCustomer.IAuthorized;
 }

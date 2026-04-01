@@ -21,33 +21,48 @@ export async function getShoppingMallMemberOrdersOrderId(props: {
   member: MemberPayload;
   orderId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallOrder> {
-  const order = await MyGlobal.prisma.shopping_mall_orders.findFirstOrThrow({
-    where: {
+  try {
+    const memberType: unknown = (
+      props.member as {
+        type?: unknown;
+      }
+    ).type;
+    const shoppingCustomerId =
+      memberType === "admin"
+        ? undefined
+        : (props.member as unknown as IShoppingMallMember).id;
+    const whereInput = {
       id: props.orderId,
-      shopping_customer_id: props.member.id,
       deleted_at: null,
-    },
-    select: {
-      ...ShoppingMallOrderTransformer.select().select,
-      orderItems: {
-        ...ShoppingMallOrderTransformer.select().select.orderItems,
-        where: {
-          deleted_at: null,
-        },
-      },
-      shipments: {
-        ...ShoppingMallOrderTransformer.select().select.shipments,
-        where: {
-          deleted_at: null,
-        },
-      },
-      payment: {
-        ...ShoppingMallOrderTransformer.select().select.payment,
-      },
-      customer: {
-        ...ShoppingMallOrderTransformer.select().select.customer,
-      },
-    },
-  });
-  return await ShoppingMallOrderTransformer.transform(order);
+      ...(memberType === "admin"
+        ? {}
+        : { shopping_customer_id: shoppingCustomerId }),
+    };
+    const order = await MyGlobal.prisma.shopping_mall_orders.findFirstOrThrow({
+      where: whereInput,
+      ...ShoppingMallOrderTransformer.select(),
+    });
+    return await ShoppingMallOrderTransformer.transform(order);
+  } catch (e) {
+    const status = (
+      e as
+        | {
+            status?: number;
+            statusCode?: number;
+          }
+        | undefined
+    )?.status;
+    const statusCode = (
+      e as
+        | {
+            status?: number;
+            statusCode?: number;
+          }
+        | undefined
+    )?.statusCode;
+    if (typeof status === "number" || typeof statusCode === "number") {
+      throw e;
+    }
+    throw new HttpException("Internal Server Error", 500);
+  }
 }

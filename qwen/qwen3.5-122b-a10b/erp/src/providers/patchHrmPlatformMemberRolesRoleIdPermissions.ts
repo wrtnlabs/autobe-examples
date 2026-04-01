@@ -19,58 +19,43 @@ export async function patchHrmPlatformMemberRolesRoleIdPermissions(props: {
   roleId: string & tags.Format<"uuid">;
   body: IHrmPlatformRole.IPermissionUpdate;
 }): Promise<IHrmPlatformRole> {
-  // 1. Validate role exists and get basic info
   const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
     where: { id: props.roleId },
     select: {
       id: true,
-      is_builtin: true,
       hrm_platform_organization_id: true,
+      is_builtin: true,
     },
   });
-  // 2. Reject if built-in role
   if (role.is_builtin) {
-    throw new HttpException(
-      "Built-in roles cannot have their permissions modified",
-      403,
-    );
+    throw new HttpException("Cannot modify built-in role permissions", 403);
   }
-  // 3. Validate all permission IDs exist and are active (not deleted)
-  if (props.body.permission_ids.length > 0) {
-    const uniquePermissionIds = Array.from(new Set(props.body.permission_ids));
+  const permissionIds = Array.from(new Set(props.body.permission_ids));
+  if (permissionIds.length > 0) {
     const permissions = await MyGlobal.prisma.hrm_platform_permissions.findMany(
       {
         where: {
-          id: { in: uniquePermissionIds },
+          id: { in: permissionIds },
           deleted_at: null,
         },
+        select: { id: true },
       },
     );
-    const validPermissionIds = new Set(permissions.map((p) => p.id));
-    const invalidIds = uniquePermissionIds.filter(
-      (id) => !validPermissionIds.has(id),
-    );
-    if (invalidIds.length > 0) {
+    if (permissions.length !== permissionIds.length) {
       throw new HttpException(
-        `Invalid permission IDs: ${invalidIds.join(", ")}`,
+        "One or more permission IDs are invalid or deleted",
         400,
       );
     }
   }
-  // 4. Delete existing role_permissions and insert new ones in transaction
   await MyGlobal.prisma.$transaction(async (tx) => {
-    // Delete existing permissions
     await tx.hrm_platform_role_permissions.deleteMany({
       where: { hrm_platform_role_id: props.roleId },
     });
-    // Insert new permissions
-    if (props.body.permission_ids.length > 0) {
-      const uniquePermissionIds = Array.from(
-        new Set(props.body.permission_ids),
-      );
+    if (permissionIds.length > 0) {
       await tx.hrm_platform_role_permissions.createMany({
-        data: uniquePermissionIds.map((permissionId) => ({
-          id: v4(),
+        data: permissionIds.map((permissionId) => ({
+          id: v4() as string & tags.Format<"uuid">,
           hrm_platform_role_id: props.roleId,
           hrm_platform_permission_id: permissionId,
           created_at: new Date(),
@@ -79,18 +64,11 @@ export async function patchHrmPlatformMemberRolesRoleIdPermissions(props: {
         })),
       });
     }
-    // Update role's updated_at
-    await tx.hrm_platform_roles.update({
-      where: { id: props.roleId },
-      data: { updated_at: new Date() },
-    });
   });
-  // 5. Fetch updated role with permissions
   const updatedRole =
     await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
       where: { id: props.roleId },
       ...HrmPlatformRoleTransformer.select(),
     });
-  // 6. Transform and return
   return await HrmPlatformRoleTransformer.transform(updatedRole);
 }

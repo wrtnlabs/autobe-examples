@@ -18,26 +18,18 @@ export async function postEcommerceMallAdminPlatformConfigurations(props: {
   admin: AdminPayload;
   body: IEcommerceMallPlatformConfiguration.ICreate;
 }): Promise<IEcommerceMallPlatformConfiguration> {
-  try {
-    const created =
-      await MyGlobal.prisma.ecommerce_mall_platform_configurations.create({
-        data: await EcommerceMallPlatformConfigurationCollector.collect({
-          body: props.body,
-        }),
-        ...EcommerceMallPlatformConfigurationTransformer.select(),
-      });
-    return await EcommerceMallPlatformConfigurationTransformer.transform(
-      created,
-    );
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        throw new HttpException(
-          "Configuration with this key and scope already exists",
-          409,
-        );
-      }
-    }
-    throw new HttpException("Database error", 500);
-  }
+  // Transform the create DTO to Prisma input using the collector
+  const createInput = await EcommerceMallPlatformConfigurationCollector.collect(
+    {
+      body: props.body,
+    },
+  );
+  // Create the platform configuration in the database
+  const created =
+    await MyGlobal.prisma.ecommerce_mall_platform_configurations.create({
+      data: createInput,
+      ...EcommerceMallPlatformConfigurationTransformer.select(),
+    });
+  // Transform the database record to the response DTO
+  return await EcommerceMallPlatformConfigurationTransformer.transform(created);
 }

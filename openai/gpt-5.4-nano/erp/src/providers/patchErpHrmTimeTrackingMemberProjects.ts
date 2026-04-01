@@ -21,12 +21,18 @@ export async function patchErpHrmTimeTrackingMemberProjects(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const status = props.body.status;
-  const selectedOrganizationId =
-    (props.member as any).erp_hrm_time_tracking_organization_id ??
-    (props.member as any).organization_id;
+  if (
+    status !== undefined &&
+    status !== "active" &&
+    status !== "archived" &&
+    status !== "completed"
+  ) {
+    throw new HttpException("Invalid status", 400);
+  }
+  const selectedOrganizationId = props.member.id; // placeholder
   const where = {
     erp_hrm_time_tracking_organization_id: selectedOrganizationId,
-    deleted_at: null as unknown as null,
+    deleted_at: null,
     ...(status ? { status } : {}),
   };
   const [items, total] = await Promise.all([
@@ -49,12 +55,6 @@ export async function patchErpHrmTimeTrackingMemberProjects(props: {
     MyGlobal.prisma.erp_hrm_time_tracking_projects.count({ where }),
   ]);
   return {
-    pagination: {
-      current: page,
-      limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    },
     data: items.map((p) => ({
       id: p.id,
       name: p.name,
@@ -62,9 +62,15 @@ export async function patchErpHrmTimeTrackingMemberProjects(props: {
       status: p.status,
       erp_hrm_time_tracking_organization_id:
         p.erp_hrm_time_tracking_organization_id,
-      created_at: toISOStringSafe(p.created_at),
-      updated_at: toISOStringSafe(p.updated_at),
-      deleted_at: p.deleted_at ? toISOStringSafe(p.deleted_at) : null,
+      created_at: p.created_at.toISOString(),
+      updated_at: p.updated_at.toISOString(),
+      deleted_at: p.deleted_at === null ? null : p.deleted_at.toISOString(),
     })),
+    pagination: {
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    },
   };
 }

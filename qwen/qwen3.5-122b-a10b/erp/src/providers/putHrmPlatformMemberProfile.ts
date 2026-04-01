@@ -17,25 +17,25 @@ export async function putHrmPlatformMemberProfile(props: {
   member: MemberPayload;
   body: IHrmPlatformMember.IUpdate;
 }): Promise<IHrmPlatformMember> {
-  const member = await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
+  // Verify member exists and is not soft-deleted
+  await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
     where: { id: props.member.id },
   });
-  if (member.deleted_at !== null) {
-    throw new HttpException("Member account is deleted", 403);
-  }
+  // Update the member profile with only provided fields
   await MyGlobal.prisma.hrm_platform_members.update({
     where: { id: props.member.id },
     data: {
       display_name: props.body.displayName,
       ...(props.body.avatarImage !== undefined && {
-        avatar_image: props.body.avatarImage,
+        avatar_image: props.body.avatarImage ?? null,
       }),
       ...(props.body.phoneNumber !== undefined && {
-        phone_number: props.body.phoneNumber,
+        phone_number: props.body.phoneNumber ?? null,
       }),
       updated_at: new Date(),
     },
   });
+  // Retrieve and transform the updated member
   const updated = await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
     where: { id: props.member.id },
     ...HrmPlatformMemberTransformer.select(),

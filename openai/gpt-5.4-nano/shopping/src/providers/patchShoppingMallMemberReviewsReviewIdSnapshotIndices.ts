@@ -19,6 +19,10 @@ export async function patchShoppingMallMemberReviewsReviewIdSnapshotIndices(prop
   reviewId: string & tags.Format<"uuid">;
   body: IShoppingMallReviewSnapshotsIndex.IRequest;
 }): Promise<IPageIShoppingMallReviewSnapshotsIndex.ISummary> {
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const sortDirection: "asc" | "desc" = props.body.sortDirection ?? "asc";
+  const includeDeleted = props.body.includeDeleted ?? false;
   const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
     where: { id: props.reviewId },
     select: { shopping_mall_customer_id: true },
@@ -26,30 +30,22 @@ export async function patchShoppingMallMemberReviewsReviewIdSnapshotIndices(prop
   if (review.shopping_mall_customer_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const indicesWhere: Prisma.shopping_mall_review_snapshots_indicesWhereInput =
+    {
+      review_id: props.reviewId,
+      ...(includeDeleted ? {} : { deleted_at: null }),
+    };
   const skip = (page - 1) * limit;
-  const includeDeleted = props.body.includeDeleted ?? false;
-  const sortDirection = props.body.sortDirection ?? "asc";
-  const where = {
-    review_id: props.reviewId,
-    ...(includeDeleted ? {} : { deleted_at: null }),
-  } satisfies Prisma.shopping_mall_review_snapshots_indicesWhereInput;
-  const orderBy =
-    sortDirection === "desc"
-      ? ([
-          { snapshot_sequence: "desc" },
-          { created_at: "desc" },
-          { id: "desc" },
-        ] satisfies Prisma.shopping_mall_review_snapshots_indicesOrderByWithRelationInput[])
-      : ([
-          { snapshot_sequence: "asc" },
-          { created_at: "asc" },
-          { id: "asc" },
-        ] satisfies Prisma.shopping_mall_review_snapshots_indicesOrderByWithRelationInput[]);
-  const data =
+  const indices =
     await MyGlobal.prisma.shopping_mall_review_snapshots_indices.findMany({
-      where,
+      where: indicesWhere,
+      skip,
+      take: limit,
+      orderBy: [
+        { snapshot_sequence: sortDirection },
+        { created_at: sortDirection },
+        { id: "asc" },
+      ],
       select: {
         id: true,
         shopping_mall_snapshot_id: true,
@@ -60,38 +56,41 @@ export async function patchShoppingMallMemberReviewsReviewIdSnapshotIndices(prop
         updated_at: true,
         deleted_at: true,
       },
-      skip,
-      take: limit,
-      orderBy,
     });
-  const records =
+  const total =
     await MyGlobal.prisma.shopping_mall_review_snapshots_indices.count({
-      where,
+      where: indicesWhere,
     });
-  return {
-    data: data.map((row) => ({
-      id: row.id as string & tags.Format<"uuid">,
-      shoppingMallSnapshotId: row.shopping_mall_snapshot_id as string &
-        tags.Format<"uuid">,
-      reviewId: row.review_id as string & tags.Format<"uuid">,
-      actionType: row.action_type,
-      snapshotSequence: row.snapshot_sequence,
-      createdAt: row.created_at.toISOString() as string &
-        tags.Format<"date-time">,
-      updatedAt: row.updated_at.toISOString() as string &
-        tags.Format<"date-time">,
+  const data: IShoppingMallReviewSnapshotsIndex.ISummary[] = indices.map(
+    (r) => ({
+      id: typia.assert<string & tags.Format<"uuid">>(r.id),
+      shoppingMallSnapshotId: typia.assert<string & tags.Format<"uuid">>(
+        r.shopping_mall_snapshot_id,
+      ),
+      reviewId: typia.assert<string & tags.Format<"uuid">>(r.review_id),
+      actionType: r.action_type,
+      snapshotSequence: r.snapshot_sequence,
+      createdAt: typia.assert<string & tags.Format<"date-time">>(
+        r.created_at.toISOString(),
+      ),
+      updatedAt: typia.assert<string & tags.Format<"date-time">>(
+        r.updated_at.toISOString(),
+      ),
       deletedAt:
-        row.deleted_at === null
+        r.deleted_at === null
           ? null
-          : (row.deleted_at.toISOString() as string & tags.Format<"date-time">),
-    })),
+          : typia.assert<string & tags.Format<"date-time">>(
+              r.deleted_at.toISOString(),
+            ),
+    }),
+  );
+  return {
     pagination: {
-      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
-      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
-      records: records as number & tags.Type<"int32"> & tags.Minimum<0>,
-      pages: Math.ceil(records / limit) as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
     },
+    data,
   };
 }

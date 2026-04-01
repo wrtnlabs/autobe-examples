@@ -6,33 +6,32 @@ import { GuestPayload } from "../../decorators/payload/GuestPayload";
 export async function guestAuthorize(request: {
   headers: { authorization?: string };
 }): Promise<GuestPayload> {
-  const payload = jwtAuthorize({ request }) as GuestPayload;
+  let payload: GuestPayload;
+  try {
+    payload = jwtAuthorize({ request }) as GuestPayload;
+  } catch {
+    throw new UnauthorizedException("Invalid authorization token");
+  }
 
   if (payload.type !== "guest") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guestSession = await (MyGlobal.prisma as any).guestSessions.findFirst({
+  const session = await MyGlobal.prisma.shopping_mall_guest_sessions.findFirst({
     where: {
       id: payload.session_id,
       deleted_at: null,
+      expired_at: { gt: new Date() },
+      guest: {
+        deleted_at: null,
+      },
+      shopping_mall_guest_id: payload.id,
     },
+    select: { id: true },
   });
 
-  if (guestSession === null) {
+  if (session === null) {
     throw new ForbiddenException("You're not enrolled");
-  }
-
-  const expiredAt = (guestSession as any).expired_at;
-  if (expiredAt instanceof Date) {
-    if (expiredAt.getTime() <= Date.now()) {
-      throw new UnauthorizedException("Session expired");
-    }
-  } else if (typeof expiredAt === "string") {
-    const t = new Date(expiredAt);
-    if (!Number.isNaN(t.getTime()) && t.getTime() <= Date.now()) {
-      throw new UnauthorizedException("Session expired");
-    }
   }
 
   return payload;

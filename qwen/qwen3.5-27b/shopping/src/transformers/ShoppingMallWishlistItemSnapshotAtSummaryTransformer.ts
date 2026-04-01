@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallWishlistItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallWishlistItemSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallWishlistItemSnapshotAtSummaryTransformer {
@@ -20,7 +22,7 @@ export namespace ShoppingMallWishlistItemSnapshotAtSummaryTransformer {
           select: {
             id: true,
           },
-        } satisfies Prisma.shopping_mall_wishlist_itemsFindManyArgs,
+        },
       },
     } satisfies Prisma.shopping_mall_wishlist_item_snapshotsFindManyArgs;
   }
@@ -31,7 +33,7 @@ export namespace ShoppingMallWishlistItemSnapshotAtSummaryTransformer {
       id: input.id,
       shopping_mall_wishlist_item_id: input.wishlistItem.id,
       snapshot_data: input.snapshot_data,
-      created_at: input.created_at.toISOString(),
+      created_at: toISOStringSafe(input.created_at),
     };
   }
 }

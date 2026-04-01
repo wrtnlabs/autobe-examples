@@ -3,8 +3,10 @@ import { IRedditCommunityFile } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IRedditCommunityFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityFileThumbnail";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityFileAtSummaryTransformer } from "./RedditCommunityFileAtSummaryTransformer";
 
@@ -42,6 +44,6 @@ export namespace RedditCommunityFileThumbnailTransformer {
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
       file: await RedditCommunityFileAtSummaryTransformer.transform(input.file),
-    };
+    } satisfies IRedditCommunityFileThumbnail;
   }
 }

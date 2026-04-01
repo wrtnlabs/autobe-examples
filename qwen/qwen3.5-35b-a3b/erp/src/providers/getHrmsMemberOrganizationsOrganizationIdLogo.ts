@@ -17,22 +17,34 @@ export async function getHrmsMemberOrganizationsOrganizationIdLogo(props: {
   member: MemberPayload;
   organizationId: string & tags.Format<"uuid">;
 }): Promise<IHrmsOrganizationLogo> {
-  // Check if user is a member of this organization
-  const memberConnection =
-    await MyGlobal.prisma.hrms_organization_members.findFirst({
-      where: {
-        hrms_member_id: props.member.id,
-        hrms_organization_id: props.organizationId,
-      },
-    });
-  if (memberConnection === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Query organization with logo_uri
   const organization =
     await MyGlobal.prisma.hrms_organizations.findUniqueOrThrow({
       where: { id: props.organizationId },
-      ...HrmsOrganizationLogoTransformer.select(),
+      include: {
+        owner: true,
+        memberSessions: true,
+        activityLogs: true,
+        organizationMembers: true,
+        roles: true,
+        departments: true,
+        projects: true,
+        files: true,
+        fileUploads: true,
+      },
     });
+  const memberOrg = await MyGlobal.prisma.hrms_organization_members.findFirst({
+    where: {
+      organization: {
+        is: { id: props.organizationId },
+      },
+      member: {
+        is: { id: props.member.id },
+      },
+      deleted_at: null,
+    },
+  });
+  if (memberOrg === null) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await HrmsOrganizationLogoTransformer.transform(organization);
 }

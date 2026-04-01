@@ -10,47 +10,25 @@ import { deleteHrmPlatformMemberOrganizationsOrganizationId } from "../../../../
 import { getHrmPlatformMemberOrganizationsOrganizationId } from "../../../../providers/getHrmPlatformMemberOrganizationsOrganizationId";
 import { patchHrmPlatformMemberOrganizations } from "../../../../providers/patchHrmPlatformMemberOrganizations";
 import { postHrmPlatformMemberOrganizations } from "../../../../providers/postHrmPlatformMemberOrganizations";
+import { postHrmPlatformMemberOrganizationsOrganizationIdSelect } from "../../../../providers/postHrmPlatformMemberOrganizationsOrganizationIdSelect";
 import { putHrmPlatformMemberOrganizationsOrganizationId } from "../../../../providers/putHrmPlatformMemberOrganizationsOrganizationId";
 
 @Controller("/hrmPlatform/member/organizations")
 export class HrmplatformMemberOrganizationsController {
   /**
-   * Create a new organization workspace within the HRM platform.
+   * Create a new organization in the platform.
    *
-   * This operation allows authenticated members to create a new organization, which serves as an independent multi-tenant workspace. The member who creates the organization becomes its owner with full administrative control. Organizations operate independently with strict data isolation - employees, projects, departments, roles, and all business data belong exclusively to that organization and are not visible to members of other organizations.
+   * This operation creates a new organizational workspace with complete data isolation from other organizations. The organization serves as a container for employees, departments, projects, and all business data. The user creating the organization automatically becomes the owner with full access to all features.
    *
-   * The organization owner can configure settings including name, description, logo image, currency code, timezone, and fiscal year start month. These settings govern financial calculations, timesheet week boundaries, and reporting periods for all operations within the organization.
+   * Required fields include organization name, ISO 4217 currency code for financial displays, IANA timezone identifier for date/time displays, and fiscal year start month (1-12) for financial reporting. Optional fields include description and logo image URL.
    *
-   * Upon successful creation, the system automatically assigns the creator as the organization owner with the built-in Owner role. The owner gains access to all organization management features including employee management, role configuration, project oversight, and organization deletion. The organization is immediately available for use, and the member can switch to it via organization context management endpoints.
-   *
-   * This endpoint enforces that the requesting user must be an authenticated member. Guest actors cannot create organizations. The owner_id field is automatically populated from the authenticated session and cannot be overridden in the request body.
+   * Upon successful creation, the organization is immediately active and ready for use. The creating user is assigned as an employee with the Owner role, granting full administrative permissions.
    *
    * @param connection
-   * @param body Organization creation information
+   * @param body Organization creation data including name, currency, timezone, and fiscal settings
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new hrm_platform_organizations record with the following implementation steps:
-   *
-   * 1. Validate request body: name (required, non-empty), currency (required, valid ISO 4217 code), timezone (required, valid IANA identifier), fiscal_start_month (required, integer 1-12), description and logo_url (optional).
-   *
-   * 2. Extract owner_id from authenticated member session context. The owner must be an active member account.
-   *
-   * 3. Generate UUID for the new organization id.
-   *
-   * 4. Set created_at and updated_at to current timestamp. Set deleted_at to null.
-   *
-   * 5. Insert the organization record into hrm_platform_organizations table within a database transaction.
-   *
-   * 6. The member is automatically granted Owner role for this organization through the ownership relationship (owner_id foreign key).
-   *
-   * 7. Return the complete organization object including all fields.
-   *
-   * 8. Log the organization creation in hrm_platform_activity_logs with action type 'organization.created'.
-   *
-   * Error handling:
-   * - Return 400 if required fields are missing or invalid format
-   * - Return 401 if user is not authenticated (guest actor)
-   * - Return 500 for database transaction failures
+   * @x-autobe-specification Insert new record into hrm_platform_organizations table with provided name, description, logo, currency, timezone, and fiscal_start_month. Validate currency is valid ISO 4217 code (USD, EUR, KRW, etc.). Validate timezone is valid IANA identifier (America/New_York, Asia/Seoul, etc.). Validate fiscal_start_month is integer 1-12. Generate UUID for id. Set created_at and updated_at to current timestamp. Set deleted_at to null. After organization creation, automatically create the creating user as an employee record in hrm_platform_employees with Owner role. Return the complete organization entity. Reject if name is empty or missing. Reject if currency, timezone, or fiscal_start_month fail validation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -72,31 +50,17 @@ export class HrmplatformMemberOrganizationsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of organizations accessible to the authenticated user.
+   * Retrieve a filtered and paginated list of organizations that the current user belongs to.
    *
-   * This operation provides search capabilities for organizations based on name partial matching, owner filtering, and creation date ranges. The results are strictly scoped to organizations where the user has membership, enforcing multi-tenancy data isolation policies.
+   * This operation provides search capabilities for browsing organizations including name matching and filtering. Due to multi-tenancy architecture, users can only access organizations they are members of, ensuring strict data isolation between organizations.
    *
-   * Each organization in the response includes summary information such as name, description, logo URL, currency, timezone, and fiscal start month. Detailed organization information can be obtained by calling GET /organizations/{organizationId} with a specific organization identifier.
-   *
-   * The operation supports comprehensive pagination with configurable page sizes and sorting options. Users belonging to multiple organizations will see all organizations they have access to, filtered by the provided search criteria.
-   *
-   * Authentication is required as a member actor. Guest users cannot access this endpoint. The system enforces organization context validation on every request to prevent cross-organization data access.
+   * Supports comprehensive pagination with configurable page sizes and sorting. Response includes organization summary information optimized for list displays, showing key attributes like name, description, logo, currency, and timezone.
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering organizations
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_organizations table with pagination and filtering support.
-   *
-   * Apply search filters on name (partial match using LIKE), owner_id (exact match), and created_at date range. Filter results to only include organizations where the authenticated user has membership (either as owner or as employee).
-   *
-   * Join with hrm_platform_employees to verify user's organizational membership. Exclude soft-deleted organizations (deleted_at IS NOT NULL) from results.
-   *
-   * Support cursor-based or offset-based pagination with configurable page size (default 20, max 100). Allow sorting by name, created_at, or updated_at in ascending or descending order.
-   *
-   * Return organization summary fields: id, name, description, logo_url, currency, timezone, fiscal_start_month, created_at. Do not include owner_id in response to avoid exposing internal references.
-   *
-   * Handle edge cases: user with no organization membership returns empty array, search with no matching results returns empty data array with pagination metadata.
+   * @x-autobe-specification Query hrm_platform_organizations table with pagination and filtering. Filter results to only include organizations where the current user has an employee record (multi-tenancy enforcement). Apply search filters on name (partial match), currency, timezone. Join with hrm_platform_employees to verify user membership. Return cursor-based or offset pagination for result sets. Exclude soft-deleted organizations (deleted_at is not null). Sort by name or created_at by default.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -118,21 +82,17 @@ export class HrmplatformMemberOrganizationsController {
   }
 
   /**
-   * Retrieve detailed information about a specific organization by its unique identifier.
+   * Retrieve a single organization by its unique identifier.
    *
-   * This endpoint provides complete organization configuration including ownership details, branding settings, and operational parameters. The response includes the organization's name, description, logo URL, currency code, timezone setting, and fiscal year start month. This information is essential for displaying organization context in the user interface and configuring organization-specific features.
+   * This operation returns the complete organization record including name, description, logo URL, currency code, timezone, and fiscal year start month configuration. The organization must be active (not soft-deleted) and the requesting member must belong to this organization.
    *
-   * Access is restricted to member actors who belong to the target organization. The system enforces strict data isolation, ensuring users can only access organizations they are members of. When a user belongs to multiple organizations, this endpoint retrieves information for the specific organization identified in the path parameter.
-   *
-   * The organization owner information is included to support ownership verification and transfer workflows. Timestamps for creation, last update, and soft deletion are provided for audit and synchronization purposes. If the organization has been soft-deleted, access is denied unless the caller has administrative privileges.
-   *
-   * This operation is commonly used during organization context switching, settings page displays, and when validating organization membership before performing organization-scoped actions.
+   * All organization data is strictly isolated by multi-tenancy boundaries. Members can only access organizations they are affiliated with through their employee records. The response includes all organization settings used for display and configuration purposes.
    *
    * @param connection
-   * @param organizationId Target organization's unique identifier (UUID format)
+   * @param organizationId Organization unique identifier (UUID format, global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_platform_organizations table by the provided organizationId UUID parameter. Verify the requesting member belongs to the organization by checking membership through the hrm_platform_employees table where employee user_id matches the authenticated member's id and employee organization_id matches the requested organizationId. Return 403 Forbidden if membership verification fails. Include the owner relation to fetch owner member details. Exclude soft-deleted organizations (deleted_at is not null) from normal access. Return the complete organization entity with all fields: id, owner_id, name, description, logo_url, currency, timezone, fiscal_start_month, created_at, updated_at, deleted_at. Handle the case where organizationId does not exist by returning 404 Not Found.
+   * @x-autobe-specification Query hrm_platform_organizations table by primary key id. Filter by deleted_at IS NULL to exclude soft-deleted organizations. Validate that the requesting member has access to this organization (belongs to the organization as an employee). Return the complete organization record with all fields. If organization not found or access denied, return 404. Implementation must enforce organization context isolation - members can only access organizations they belong to.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":organizationId")
@@ -154,37 +114,20 @@ export class HrmplatformMemberOrganizationsController {
   }
 
   /**
-   * Update an existing organization's configuration settings.
+   * Update organization settings and configuration.
    *
-   * This operation allows organization owners to modify their organization's profile and settings including the organization name, description, logo image URL, currency code, timezone, and fiscal year start month. All changes are validated against business rules and the updated organization entity is returned.
+   * This operation allows organization owners or users with org:manage permission to modify organization properties including name, description, logo image URL, currency code, timezone, and fiscal year start month. All fields are optional in the request - only provided fields will be updated.
    *
-   * Only the organization owner has permission to update organization settings. The system enforces strict ownership validation on every request to ensure data isolation between organizations. Members who are not owners cannot access this endpoint.
+   * The organization must exist and be active (not soft deleted). The requesting user must have appropriate permissions within the organization context. Currency codes must follow ISO 4217 format, timezones must be valid IANA identifiers, and fiscal start month must be between 1 and 12.
    *
-   * The organization's owner_id cannot be modified through this endpoint. To transfer ownership, a separate ownership transfer operation must be used. System-managed fields including created_at, updated_at, and deleted_at are automatically handled by the system and cannot be modified directly.
-   *
-   * This operation is essential for organization administrators to configure their workspace settings, branding, and financial reporting parameters. Changes take effect immediately and are reflected across all organization-scoped operations.
+   * Returns the complete updated organization entity with all current field values including timestamps.
    *
    * @param connection
-   * @param organizationId Target organization's unique identifier (UUID format)
-   * @param body Organization configuration fields to update
+   * @param organizationId Organization UUID identifier (global scope)
+   * @param body Organization update fields (all optional)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_organizations table by organizationId UUID.
-   * Validate that the requesting member is the organization owner by comparing member.id with organization.owner_id.
-   * If member is not owner, throw 403 Forbidden error.
-   * Validate all provided fields against business rules:
-   * - name: required, non-empty string
-   * - description: optional string
-   * - logo_url: optional string, valid URL format
-   * - currency: required, valid ISO 4217 currency code (USD, EUR, KRW, etc.)
-   * - timezone: required, valid IANA timezone identifier
-   * - fiscal_start_month: required, integer 1-12
-   * Apply partial update - only update fields provided in request body.
-   * Set updated_at timestamp to current time.
-   * Save changes to database within transaction.
-   * Log activity if audit logging is enabled.
-   * Return updated organization entity with all fields.
-   * Handle concurrent update conflicts with optimistic locking if version field exists.
+   * @x-autobe-specification Update organization settings for hrm_platform_organizations table. Query organization by UUID id. Validate organization exists and is not soft deleted (deleted_at is null). Verify requesting user has org:manage permission or is organization owner. Update only provided fields: name, description, logo, currency, timezone, fiscal_start_month. Validate currency is valid ISO 4217 code (3 uppercase letters). Validate timezone is valid IANA identifier. Validate fiscal_start_month is integer 1-12. Validate logo is valid URL if provided. Validate name is not empty. Update updated_at timestamp to current time. Return full organization entity. Reject with 404 if organization not found. Reject with 403 if insufficient permissions. Reject with 400 if validation fails.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":organizationId")
@@ -209,40 +152,48 @@ export class HrmplatformMemberOrganizationsController {
   }
 
   /**
-   * Permanently delete an organization and all associated business data.
+   * Permanently delete an organization and all its associated data.
    *
-   * This operation allows organization owners to delete their organization. Before deletion, the system validates that all pending timesheets are resolved (approved or rejected) and there are no active employee contracts. If these conditions are not met, the deletion request is rejected.
+   * This operation removes an organization from the platform along with all employees, projects, tasks, timelogs, timesheets, departments, roles, and invitations. The deletion is permanent and cannot be undone.
    *
-   * When an organization is deleted, all employees, departments, projects, tasks, timelogs, timesheets, roles, contracts, and activity logs associated with that organization are permanently removed from the system. This deletion is irreversible and cannot be undone. The owner's member account remains intact but is no longer associated with any organization.
+   * Before deletion, the system validates that all pending timesheets are resolved (approved or rejected) and there are no active employee contracts. If either condition is not met, the deletion request is rejected with a conflict error.
    *
-   * Only the organization owner (the member whose ID matches the owner_id field) can delete the organization. Members with other roles cannot delete the organization regardless of their permissions.
-   *
-   * After successful deletion, the owner must either create a new organization or join another existing organization to continue using the platform.
+   * Only the organization owner can delete the organization. The owner's user account remains intact but is no longer associated with any organization. All historical data within the organization is permanently removed.
    *
    * @param connection
-   * @param organizationId Target organization's ID (UUID format)
+   * @param organizationId Organization identifier (UUID)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Delete an organization by marking deleted_at timestamp.
+   * @x-autobe-specification Delete an organization and all its associated data permanently.
    *
-   * Validation logic:
-   * 1. Verify requester is the organization owner (member.id === organization.owner_id)
-   * 2. Query all timesheets for this organization where status is 'draft' or 'submitted' - if any exist, reject with 400 error
-   * 3. Query all employee contracts where end_date is null or in the future - if any active contracts exist, reject with 400 error
-   * 4. If validation passes, set deleted_at to current timestamp in a transaction
+   * Validation Requirements:
+   * 1. Verify the requesting user is the owner of the organization
+   * 2. Check for any pending timesheets (status = 'draft' or 'submitted') - reject if found
+   * 3. Check for any active employee contracts (end_date is null or in the future) - reject if found
+   * 4. Verify no other blocking conditions from business rules
    *
-   * Cascade deletion (handled by database foreign key constraints with onDelete: Cascade):
-   * - All hrm_platform_employees records
-   * - All hrm_platform_departments records
-   * - All hrm_platform_projects records (and related project_members, tasks, task_histories)
-   * - All hrm_platform_roles records (and related role_permissions)
-   * - All hrm_platform_employee_contracts records
-   * - All hrm_platform_timelogs records
-   * - All hrm_platform_timesheets records
-   * - All hrm_platform_timers records
-   * - All hrm_platform_activity_logs records for this organization
+   * Deletion Logic:
+   * 1. Begin database transaction
+   * 2. Cascade delete all child records in order:
+   *    - Delete all projects (which cascades to tasks, project_members, timelogs)
+   *    - Delete all timesheets
+   *    - Delete all employee contracts
+   *    - Delete all employees (which cascades timelogs, timesheets)
+   *    - Delete all departments
+   *    - Delete all roles (custom roles only, built-in roles are removed with org)
+   *    - Delete all invitations
+   * 3. Soft delete the organization (set deleted_at timestamp)
+   * 4. Commit transaction
+   * 5. Log activity: organization deleted with timestamp and user who performed it
    *
-   * Return 204 No Content on success. Return 400 Bad Request with validation error details if timesheets or contracts block deletion. Return 403 Forbidden if requester is not the owner. Return 404 Not Found if organization doesn't exist or is already deleted.
+   * Error Handling:
+   * - 403 Forbidden: User is not the organization owner
+   * - 409 Conflict: Pending timesheets exist or active contracts exist
+   * - 404 Not Found: Organization does not exist or already deleted
+   *
+   * Authorization:
+   * - Requires 'org:manage' permission
+   * - User must be the organization owner
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":organizationId")
@@ -254,6 +205,40 @@ export class HrmplatformMemberOrganizationsController {
   ): Promise<void> {
     try {
       return await deleteHrmPlatformMemberOrganizationsOrganizationId({
+        member,
+        organizationId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Select the user's active organization context to work within a specific organization.
+   *
+   * This operation allows authenticated members who belong to multiple organizations to change their working context without logging out. The system validates membership by querying the hrm_platform_employees table to confirm the user has an employee record linking them to the specified organization.
+   *
+   * After successful selection, all subsequent API requests are scoped to the newly selected organization. The user's session remains active in hrm_platform_member_sessions, and only the organization context changes. The response includes complete organization details from hrm_platform_organizations including name, description, logo, currency, timezone, and fiscal year configuration.
+   *
+   * This is a session-level operation that does not generate activity log entries in hrm_platform_activity_logs, as organization context selection is handled as local session management rather than a business action.
+   *
+   * @param connection
+   * @param organizationId UUID of the organization to select (user must be a member)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Validate the organizationId parameter is a valid UUID format. Query hrm_platform_employees table to verify the authenticated user has an employee record in the specified organization. If no employee record exists, reject with 403 Forbidden. Update the user's session context to set the new organization ID as the active context. Return the organization details from hrm_platform_organizations table including id, name, description, logo, currency, timezone, and fiscal_start_month. Do not log this action in activity_logs as it is session management. Ensure all subsequent requests use the new organization context for data isolation.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post(":organizationId/select")
+  public async select(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("organizationId")
+    organizationId: string & tags.Format<"uuid">,
+  ): Promise<IHrmPlatformOrganization> {
+    try {
+      return await postHrmPlatformMemberOrganizationsOrganizationIdSelect({
         member,
         organizationId,
       });

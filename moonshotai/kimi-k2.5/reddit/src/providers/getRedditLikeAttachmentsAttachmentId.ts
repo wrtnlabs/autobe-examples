@@ -16,7 +16,6 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditLikeAttachmentsAttachmentId(props: {
   attachmentId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeAttachment> {
-  // Query attachment with transformer select
   const attachment =
     await MyGlobal.prisma.reddit_like_attachments.findUniqueOrThrow({
       where: {
@@ -25,22 +24,14 @@ export async function getRedditLikeAttachmentsAttachmentId(props: {
       },
       ...RedditLikeAttachmentTransformer.select(),
     });
-  // Log access for audit compliance
   await MyGlobal.prisma.reddit_like_attachment_access_logs.create({
     data: {
-      id: v4(),
-      reddit_like_attachment_id: props.attachmentId,
-      actor_id: null,
-      actor_type: null,
+      id: v4() as string & tags.Format<"uuid">,
+      attachment: { connect: { id: props.attachmentId } },
       access_type: "metadata_read",
-      ip_address: null,
-      user_agent: null,
-      referer: null,
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
     },
   });
-  // Transform and return
   return await RedditLikeAttachmentTransformer.transform(attachment);
 }

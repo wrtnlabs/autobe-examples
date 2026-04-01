@@ -18,28 +18,26 @@ export async function patchHrmPlatformMemberEmailVerifications(props: {
   member: MemberPayload;
   body: IHrmPlatformMemberEmailVerification.IVerify;
 }): Promise<IHrmPlatformMemberEmailVerification> {
-  const now = new Date();
-  const record =
+  const verification =
     await MyGlobal.prisma.hrm_platform_member_email_verifications.findFirst({
       where: {
         token: props.body.token,
         deleted_at: null,
       },
-      ...HrmPlatformMemberEmailVerificationTransformer.select(),
     });
-  if (record === null) {
+  if (verification === null) {
     throw new HttpException("Token not found", 404);
   }
-  if (record.expires_at <= now) {
+  const now = new Date();
+  const expiresAt = new Date(verification.expires_at);
+  if (expiresAt <= now) {
     throw new HttpException("Token has expired", 410);
   }
-  if (record.verified_at !== null) {
+  if (verification.verified_at !== null) {
     throw new HttpException("Token already verified", 409);
   }
   await MyGlobal.prisma.hrm_platform_member_email_verifications.update({
-    where: {
-      id: record.id,
-    },
+    where: { id: verification.id },
     data: {
       verified_at: now,
       updated_at: now,
@@ -48,7 +46,7 @@ export async function patchHrmPlatformMemberEmailVerifications(props: {
   const updated =
     await MyGlobal.prisma.hrm_platform_member_email_verifications.findUniqueOrThrow(
       {
-        where: { id: record.id },
+        where: { id: verification.id },
         ...HrmPlatformMemberEmailVerificationTransformer.select(),
       },
     );

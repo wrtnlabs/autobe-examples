@@ -21,10 +21,10 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditCommunitySystemLogsSystemLogId(props: {
   systemLogId: string & tags.Format<"uuid">;
 }): Promise<IRedditCommunitySystemLog> {
-  const systemLog =
+  const log =
     await MyGlobal.prisma.reddit_community_system_logs.findUniqueOrThrow({
       where: { id: props.systemLogId },
       ...RedditCommunitySystemLogTransformer.select(),
     });
-  return await RedditCommunitySystemLogTransformer.transform(systemLog);
+  return await RedditCommunitySystemLogTransformer.transform(log);
 }

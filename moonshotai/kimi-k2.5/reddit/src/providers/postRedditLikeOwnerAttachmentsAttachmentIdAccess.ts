@@ -19,19 +19,17 @@ export async function postRedditLikeOwnerAttachmentsAttachmentIdAccess(props: {
   attachmentId: string & tags.Format<"uuid">;
   body: IRedditLikeAttachmentAccessLog.ICreate;
 }): Promise<IRedditLikeAttachmentAccessLog> {
-  // Validate attachment exists
   await MyGlobal.prisma.reddit_like_attachments.findUniqueOrThrow({
     where: { id: props.attachmentId },
   });
-  // Create access log using collector for data construction
-  const log = await MyGlobal.prisma.reddit_like_attachment_access_logs.create({
-    data: await RedditLikeAttachmentAccessLogCollector.collect({
-      body: props.body,
-      redditLikeAttachments: { id: props.attachmentId },
-      redditLikeMembers: { id: props.owner.id },
-    }),
-    ...RedditLikeAttachmentAccessLogTransformer.select(),
-  });
-  // Transform and return the result
-  return await RedditLikeAttachmentAccessLogTransformer.transform(log);
+  const created =
+    await MyGlobal.prisma.reddit_like_attachment_access_logs.create({
+      data: await RedditLikeAttachmentAccessLogCollector.collect({
+        body: props.body,
+        redditLikeAttachments: { id: props.attachmentId },
+        redditLikeMembers: { id: props.owner.id },
+      }),
+      ...RedditLikeAttachmentAccessLogTransformer.select(),
+    });
+  return await RedditLikeAttachmentAccessLogTransformer.transform(created);
 }

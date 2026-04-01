@@ -17,7 +17,6 @@ export async function postRedditLikeAuthMemberLogin(props: {
   ip: string;
   body: IRedditLikeMember.ILogin;
 }): Promise<IRedditLikeMember.IAuthorized> {
-  // Find member by email with password_hash explicitly selected
   const member = await MyGlobal.prisma.reddit_like_members.findFirst({
     where: { email: props.body.email },
     select: {
@@ -25,11 +24,9 @@ export async function postRedditLikeAuthMemberLogin(props: {
       password_hash: true,
     },
   });
-  // Generic error to prevent user enumeration
   if (!member) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // Verify password using BCrypt
   const isValid = await PasswordUtil.verify(
     props.body.password,
     member.password_hash,
@@ -37,21 +34,19 @@ export async function postRedditLikeAuthMemberLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // Check if account is soft-deleted
   if (member.deleted_at !== null) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // Calculate expiration times
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  // Generate JWT tokens
+  const now = Date.now();
+  const accessExpiresAt = new Date(now + 60 * 60 * 1000);
+  const refreshExpiresAt = new Date(now + 7 * 24 * 60 * 60 * 1000);
+  const sessionId = v4() as string & tags.Format<"uuid">;
   const accessToken = jwt.sign(
     {
       type: "member",
       id: member.id,
-      session_id: v4(),
-      created_at: toISOStringSafe(now),
+      session_id: sessionId,
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -60,15 +55,13 @@ export async function postRedditLikeAuthMemberLogin(props: {
     {
       type: "member",
       id: member.id,
-      session_id: v4(),
+      session_id: sessionId,
       tokenType: "refresh",
-      created_at: toISOStringSafe(now),
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // Create session record
-  const sessionId = v4();
   await MyGlobal.prisma.reddit_like_member_sessions.create({
     data: {
       id: sessionId,
@@ -79,20 +72,21 @@ export async function postRedditLikeAuthMemberLogin(props: {
       href: "",
       referrer: "",
       user_agent: "",
-      created_at: now,
-      expires_at: accessExpires,
-      refresh_expires_at: refreshExpires,
+      created_at: new Date(now),
+      expires_at: accessExpiresAt,
+      refresh_expires_at: refreshExpiresAt,
     },
   });
-  // Transform member and add token
   const token: IAuthorizationToken = {
     access: accessToken,
     refresh: refreshToken,
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    expired_at: accessExpiresAt.toISOString() as string &
+      tags.Format<"date-time">,
+    refreshable_until: refreshExpiresAt.toISOString() as string &
+      tags.Format<"date-time">,
   };
   return {
     ...(await RedditLikeMemberTransformer.transform(member)),
     token,
-  };
+  } satisfies IRedditLikeMember.IAuthorized;
 }

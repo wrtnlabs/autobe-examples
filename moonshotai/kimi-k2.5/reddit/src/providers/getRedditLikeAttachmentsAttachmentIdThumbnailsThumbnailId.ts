@@ -18,14 +18,11 @@ export async function getRedditLikeAttachmentsAttachmentIdThumbnailsThumbnailId(
 }): Promise<IRedditLikeAttachmentThumbnail> {
   const thumbnail =
     await MyGlobal.prisma.reddit_like_attachment_thumbnails.findUniqueOrThrow({
-      where: { id: props.thumbnailId },
+      where: {
+        id: props.thumbnailId,
+        reddit_like_attachment_id: props.attachmentId,
+      },
       ...RedditLikeAttachmentThumbnailTransformer.select(),
     });
-  if (thumbnail.attachment.id !== props.attachmentId) {
-    throw new HttpException(
-      "Thumbnail does not belong to the specified attachment",
-      404,
-    );
-  }
   return await RedditLikeAttachmentThumbnailTransformer.transform(thumbnail);
 }

@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
@@ -12,7 +12,7 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guest = await MyGlobal.prisma.todo_app_guests.findFirst({
+  const guest = await MyGlobal.prisma.multi_user_todo_guests.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
@@ -23,16 +23,16 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException("You're not enrolled");
   }
 
-  const session = await MyGlobal.prisma.todo_app_guest_sessions.findFirst({
+  const session = await MyGlobal.prisma.multi_user_todo_guest_sessions.findFirst({
     where: {
       id: payload.session_id,
-      todo_app_guest_id: payload.id,
+      multi_user_todo_guests_id: payload.id,
       expired_at: { gt: new Date() },
     },
   });
 
   if (session === null) {
-    throw new UnauthorizedException("Session expired or invalid");
+    throw new ForbiddenException("Session expired or invalid");
   }
 
   return payload;

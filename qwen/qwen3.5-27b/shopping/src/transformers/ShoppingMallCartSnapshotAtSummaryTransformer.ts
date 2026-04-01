@@ -3,8 +3,10 @@ import { IShoppingMallCartSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structu
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
 
@@ -20,8 +22,8 @@ export namespace ShoppingMallCartSnapshotAtSummaryTransformer {
         option_values: true,
         price_at_snapshot: true,
         quantity: true,
-        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
         created_at: true,
+        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_cart_snapshotsFindManyArgs;
   }

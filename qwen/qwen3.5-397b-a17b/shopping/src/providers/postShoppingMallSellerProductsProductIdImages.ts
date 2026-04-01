@@ -1,9 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -23,21 +20,24 @@ export async function postShoppingMallSellerProductsProductIdImages(props: {
   productId: string & tags.Format<"uuid">;
   body: IShoppingMallProductImage.ICreate;
 }): Promise<IShoppingMallProductImage> {
-  // Validate that the seller owns the product
-  await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
-    where: {
-      id: props.productId,
-      shopping_seller_id: props.seller.id,
-      deleted_at: null,
+  // Verify product exists and is owned by the authenticated seller
+  const product = await MyGlobal.prisma.shopping_mall_products.findFirstOrThrow(
+    {
+      where: {
+        id: props.productId,
+        seller_id: props.seller.id,
+        deleted_at: null,
+      },
     },
-  });
-  // Create the product image using Collector and Transformer
+  );
+  // Create the image using the collector for data transformation
   const created = await MyGlobal.prisma.shopping_mall_product_images.create({
     data: await ShoppingMallProductImageCollector.collect({
       body: props.body,
-      shoppingMallProducts: { id: props.productId },
+      product: { id: product.id },
     }),
     ...ShoppingMallProductImageTransformer.select(),
   });
+  // Transform the database result to the response DTO
   return await ShoppingMallProductImageTransformer.transform(created);
 }

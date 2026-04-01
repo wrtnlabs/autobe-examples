@@ -19,8 +19,26 @@ export namespace HrmPlatformDepartmentAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        organization: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_organizationsFindManyArgs,
+        employees: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_employeesFindManyArgs,
+        childDepartments: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_departmentsFindManyArgs,
+        employeeSnapshots: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_employee_snapshotsFindManyArgs,
+        snapshots: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_department_snapshotsFindManyArgs,
+        childSnapshots: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_department_snapshotsFindManyArgs,
       },
-    };
+    } satisfies Prisma.hrm_platform_departmentsFindManyArgs;
   }
   export async function transform(
     input: Payload,

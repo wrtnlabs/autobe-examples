@@ -16,22 +16,33 @@ export async function deleteShoppingMallMemberWishlistsWishlistIdItemsWishlistIt
   wishlistId: string & tags.Format<"uuid">;
   wishlistItemId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const now = (toISOStringSafe(new Date()) ?? "") satisfies string &
-    tags.Format<"date-time">;
+  const now = toISOStringSafe(new Date());
+  const wishlist = await MyGlobal.prisma.shopping_mall_wishlists.findUnique({
+    where: { id: props.wishlistId },
+    select: { id: true, shopping_mall_member_id: true },
+  });
+  if (
+    wishlist === null ||
+    wishlist.shopping_mall_member_id !== props.member.id
+  ) {
+    throw new HttpException("Forbidden", 403);
+  }
   await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.shopping_mall_wishlists.findFirstOrThrow({
-      where: {
-        id: props.wishlistId,
-        shopping_mall_member_id: props.member.id,
-      },
-      select: { id: true },
-    });
-    await tx.shopping_mall_wishlist_items.updateMany({
+    const existing = await tx.shopping_mall_wishlist_items.findFirst({
       where: {
         id: props.wishlistItemId,
         shopping_mall_wishlist_id: props.wishlistId,
-        deleted_at: null,
       },
+      select: { id: true, deleted_at: true },
+    });
+    if (existing === null) {
+      return;
+    }
+    if (existing.deleted_at !== null) {
+      return;
+    }
+    await tx.shopping_mall_wishlist_items.update({
+      where: { id: props.wishlistItemId },
       data: {
         deleted_at: now,
         updated_at: now,

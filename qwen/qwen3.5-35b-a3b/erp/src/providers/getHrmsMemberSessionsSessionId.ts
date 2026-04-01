@@ -21,10 +21,18 @@ export async function getHrmsMemberSessionsSessionId(props: {
 }): Promise<IHrmsMemberSession.ISummary> {
   const session = await MyGlobal.prisma.hrms_member_sessions.findUniqueOrThrow({
     where: { id: props.sessionId },
-    ...HrmsMemberSessionAtSummaryTransformer.select(),
+    select: {
+      hrms_member_id: true,
+      ...HrmsMemberSessionAtSummaryTransformer.select().select,
+    },
   });
-  if (session.member.id !== props.member.id) {
+  if (session.hrms_member_id !== props.member.id) {
     throw new HttpException("Not Found", 404);
   }
-  return await HrmsMemberSessionAtSummaryTransformer.transform(session);
+  const fullSession =
+    await MyGlobal.prisma.hrms_member_sessions.findUniqueOrThrow({
+      where: { id: props.sessionId },
+      ...HrmsMemberSessionAtSummaryTransformer.select(),
+    });
+  return await HrmsMemberSessionAtSummaryTransformer.transform(fullSession);
 }

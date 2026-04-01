@@ -23,7 +23,10 @@ export async function getEcommerceMallAdminRefundRequestsRefundRequestId(props: 
 }): Promise<IEcommerceMallRefundRequest> {
   const refundRequest =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findUniqueOrThrow({
-      where: { id: props.refundRequestId },
+      where: {
+        id: props.refundRequestId,
+        deleted_at: null,
+      },
       ...EcommerceMallRefundRequestTransformer.select(),
     });
   return await EcommerceMallRefundRequestTransformer.transform(refundRequest);

@@ -17,52 +17,49 @@ export async function putErpHrmTimeTrackingMemberTimesheetVersioningLocksLockId(
   lockId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingTimesheetVersioningLock.IUpdate;
 }): Promise<void> {
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    const lock =
-      await tx.erp_hrm_time_tracking_timesheet_versioning_locks.findUniqueOrThrow(
-        {
-          where: { id: props.lockId },
-          select: {
-            id: true,
-            timesheet_id: true,
-            locked_by_user_id: true,
-            deleted_at: true,
-            lock_reason: true,
-            updated_at: true,
-            timesheet: {
-              select: {
-                erp_hrm_time_tracking_organization_id: true,
-                status: true,
-              },
+  const lock =
+    await MyGlobal.prisma.erp_hrm_time_tracking_timesheet_versioning_locks.findUnique(
+      {
+        where: { id: props.lockId },
+        select: {
+          id: true,
+          timesheet_id: true,
+          locked_by_user_id: true,
+          deleted_at: true,
+          updated_at: true,
+          timesheet: {
+            select: {
+              erp_hrm_time_tracking_organization_id: true,
             },
           },
         },
-      );
-    if (lock.timesheet.status === "approved") {
-      throw new HttpException("Forbidden", 403);
-    }
-    if (lock.locked_by_user_id !== props.member.id) {
-      throw new HttpException("Forbidden", 403);
-    }
-    const updated_at = toISOStringSafe(new Date());
-    const data: Record<string, unknown> = {
-      updated_at,
-    };
-    if (props.body.lock_reason !== undefined) {
-      data.lock_reason = props.body.lock_reason;
-    }
-    if (props.body.deleted_at !== undefined) {
-      data.deleted_at =
-        props.body.deleted_at === null
-          ? null
-          : toISOStringSafe(props.body.deleted_at);
-    }
-    if (lock.deleted_at !== null && props.body.deleted_at === undefined) {
-      delete data.deleted_at;
-    }
+      },
+    );
+  if (!lock) {
+    // match findUniqueOrThrow behavior
+    await MyGlobal.prisma.erp_hrm_time_tracking_timesheet_versioning_locks.findUniqueOrThrow(
+      { where: { id: props.lockId }, select: { id: true } },
+    );
+  }
+  if (lock!.locked_by_user_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (lock!.deleted_at !== null && props.body.deleted_at === undefined) {
+    throw new HttpException("Lock is released", 409);
+  }
+  const nowIso = toISOStringSafe(lock!.updated_at);
+  await MyGlobal.prisma.$transaction(async (tx) => {
     await tx.erp_hrm_time_tracking_timesheet_versioning_locks.update({
       where: { id: props.lockId },
-      data: data as any,
+      data: {
+        ...(props.body.lock_reason !== undefined && {
+          lock_reason: props.body.lock_reason,
+        }),
+        ...(props.body.deleted_at !== undefined && {
+          deleted_at: props.body.deleted_at,
+        }),
+        updated_at: nowIso,
+      },
     });
   });
 }

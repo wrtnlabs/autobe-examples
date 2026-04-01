@@ -1,12 +1,16 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { IShoppingMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReviewSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
+import { ShoppingMallReviewAtSummaryTransformer } from "./ShoppingMallReviewAtSummaryTransformer";
 
 export namespace ShoppingMallReviewSnapshotAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_review_snapshotsGetPayload<
@@ -18,10 +22,8 @@ export namespace ShoppingMallReviewSnapshotAtSummaryTransformer {
         id: true,
         rating: true,
         content: true,
-        snapshot_at: true,
         created_at: true,
-        review: true,
-        snapshotByUser: ShoppingMallCustomerAtSummaryTransformer.select(),
+        review: ShoppingMallReviewAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_review_snapshotsFindManyArgs;
   }
@@ -32,9 +34,9 @@ export namespace ShoppingMallReviewSnapshotAtSummaryTransformer {
       id: input.id,
       rating: input.rating,
       content: input.content ?? undefined,
-      snapshot_at: input.snapshot_at.toISOString(),
-      snapshotByUser: await ShoppingMallCustomerAtSummaryTransformer.transform(
-        input.snapshotByUser,
+      created_at: input.created_at.toISOString(),
+      review: await ShoppingMallReviewAtSummaryTransformer.transform(
+        input.review,
       ),
     };
   }

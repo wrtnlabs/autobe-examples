@@ -16,6 +16,12 @@ export async function patchShoppingMallAdminAdminOrders(props: {
   admin: AdminPayload;
   body: IShoppingMallOrder.IUpdate;
 }): Promise<IShoppingMallOrder.ISummary> {
-  // Placeholder draft
-  throw new HttpException("Not implemented", 501);
+  // This operation requires an admin oversight target (order/orderItem ids and force action),
+  // but the provided function signature uses IShoppingMallOrder.IUpdate which only contains
+  // shipment header fields. Without an order identifier in props, the target cannot be
+  // resolved safely.
+  throw new HttpException(
+    "Missing order targeting information for admin oversight",
+    400,
+  );
 }

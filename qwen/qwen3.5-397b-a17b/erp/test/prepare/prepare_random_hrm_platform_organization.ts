@@ -9,21 +9,46 @@ export function prepare_random_hrm_platform_organization(
   input?: DeepPartial<IHrmPlatformOrganization.ICreate>,
 ): IHrmPlatformOrganization.ICreate {
   return {
-    name: input?.name ?? RandomGenerator.name(2),
+    name:
+      input?.name ??
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 2, wordMax: 4 }),
     description:
-      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
-    logo_url: input?.logo_url ?? typia.random<string & tags.Format<"url">>(),
+      input?.description ??
+      (typia.random<boolean>()
+        ? RandomGenerator.content({
+            paragraphs: 1,
+            sentenceMin: 2,
+            sentenceMax: 4,
+          })
+        : null),
+    logo:
+      input?.logo ??
+      (typia.random<boolean>()
+        ? typia.random<string & tags.Format<"url">>()
+        : null),
     currency:
       input?.currency ??
-      RandomGenerator.pick(["USD", "EUR", "KRW", "JPY", "GBP"] as const),
+      RandomGenerator.pick([
+        "USD",
+        "EUR",
+        "KRW",
+        "JPY",
+        "GBP",
+        "CNY",
+        "AUD",
+        "CAD",
+      ] as const),
     timezone:
       input?.timezone ??
       RandomGenerator.pick([
-        "Asia/Seoul",
         "America/New_York",
-        "Europe/London",
-        "Asia/Tokyo",
         "America/Los_Angeles",
+        "Europe/London",
+        "Europe/Paris",
+        "Asia/Seoul",
+        "Asia/Tokyo",
+        "Asia/Shanghai",
+        "Australia/Sydney",
       ] as const),
     fiscal_start_month:
       input?.fiscal_start_month ??

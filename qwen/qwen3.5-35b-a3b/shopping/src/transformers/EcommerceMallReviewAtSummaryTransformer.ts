@@ -5,8 +5,10 @@ import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
@@ -29,12 +31,8 @@ export namespace EcommerceMallReviewAtSummaryTransformer {
         customer: EcommerceMallCustomerAtSummaryTransformer.select(),
         product: EcommerceMallProductAtSummaryTransformer.select(),
         order: true,
-        helpfulnessVotes: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_review_helpfulness_votesFindManyArgs,
-        snapshots: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_review_snapshotsFindManyArgs,
+        helpfulnessVotes: true,
+        snapshots: true,
       },
     } satisfies Prisma.ecommerce_mall_reviewsFindManyArgs;
   }
@@ -56,6 +54,6 @@ export namespace EcommerceMallReviewAtSummaryTransformer {
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    } satisfies IEcommerceMallReview.ISummary;
+    };
   }
 }

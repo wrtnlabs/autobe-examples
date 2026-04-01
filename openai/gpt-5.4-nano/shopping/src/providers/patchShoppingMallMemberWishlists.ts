@@ -27,29 +27,30 @@ export async function patchShoppingMallMemberWishlists(props: {
   if (limit < 1 || limit > 100) {
     throw new HttpException("Invalid limit", 400);
   }
+  const skip = (page - 1) * limit;
   const where = {
     shopping_mall_member_id: props.member.id,
     deleted_at: null,
   } satisfies Prisma.shopping_mall_wishlistsWhereInput;
-  const wishlists = await MyGlobal.prisma.shopping_mall_wishlists.findMany({
+  const records = await MyGlobal.prisma.shopping_mall_wishlists.count({
     where,
-    skip: (page - 1) * limit,
-    take: limit,
+  });
+  const data = await MyGlobal.prisma.shopping_mall_wishlists.findMany({
+    where,
     orderBy: { created_at: "desc" },
+    skip,
+    take: limit,
     ...ShoppingMallWishlistAtSummaryTransformer.select(),
   });
-  const total = await MyGlobal.prisma.shopping_mall_wishlists.count({
-    where,
-  });
   return {
-    data: await ArrayUtil.asyncMap(wishlists, (w) =>
-      ShoppingMallWishlistAtSummaryTransformer.transform(w),
+    data: await ArrayUtil.asyncMap(data, (at) =>
+      ShoppingMallWishlistAtSummaryTransformer.transform(at),
     ),
     pagination: {
       current: page,
       limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      records,
+      pages: Math.ceil(records / limit),
     } satisfies IPage.IPagination,
   };
 }

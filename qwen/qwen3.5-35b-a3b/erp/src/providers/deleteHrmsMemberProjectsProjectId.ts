@@ -15,17 +15,18 @@ export async function deleteHrmsMemberProjectsProjectId(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const { member, projectId } = props;
-  // Fetch project with organization context for permission validation
   const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
-    where: { id: projectId },
-    select: { id: true, hrms_organization_id: true, name: true },
+    where: { id: props.projectId },
+    select: {
+      id: true,
+      name: true,
+      hrms_organization_id: true,
+    },
   });
-  // Validate member belongs to the same organization
   const organizationMember =
     await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
-        hrms_member_id: member.id,
+        hrms_member_id: props.member.id,
         hrms_organization_id: project.hrms_organization_id,
         deleted_at: null,
       },
@@ -33,67 +34,76 @@ export async function deleteHrmsMemberProjectsProjectId(props: {
   if (organizationMember === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Fetch organization role for permission validation
-  const organizationRole =
-    await MyGlobal.prisma.hrms_organization_roles.findUnique({
-      where: { id: organizationMember.hrms_organization_role_id },
-      select: { name: true, is_builtin: true },
-    });
-  if (
-    organizationRole === null ||
-    (!organizationRole.name.toLowerCase().includes("admin") &&
-      !organizationRole.name.toLowerCase().includes("manager"))
-  ) {
+  const role = await MyGlobal.prisma.hrms_organization_roles.findFirst({
+    where: {
+      id: organizationMember.hrms_organization_role_id,
+    },
+  });
+  if (role === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Validate no associated timelogs (business rule: preserve historical data)
+  const permissions =
+    await MyGlobal.prisma.hrms_organization_role_permissions.findMany({
+      where: {
+        hrms_organization_role_id: role.id,
+      },
+      select: {
+        permission: true,
+      },
+    });
+  const hasProjectManage = permissions.some(
+    (p) => p.permission === "project:manage",
+  );
+  if (!hasProjectManage) {
+    throw new HttpException("Forbidden", 403);
+  }
   const timelogCount = await MyGlobal.prisma.hrms_timelogs.count({
-    where: { project_id: projectId, deleted_at: null },
+    where: {
+      project_id: props.projectId,
+      deleted_at: null,
+    },
   });
   if (timelogCount > 0) {
     throw new HttpException("Project has associated timelogs", 409);
   }
-  // Validate no active tasks (todo, in_progress, or in_review)
-  const activeTasks = await MyGlobal.prisma.hrms_tasks.findMany({
+  const activeTaskCount = await MyGlobal.prisma.hrms_tasks.count({
     where: {
-      hrms_project_id: projectId,
+      hrms_project_id: props.projectId,
       deleted_at: null,
       status: {
         in: ["todo", "in_progress", "in_review"],
       },
     },
   });
-  if (activeTasks.length > 0) {
+  if (activeTaskCount > 0) {
     throw new HttpException("Project has active tasks", 409);
   }
-  // Execute cascade deletion in transaction
   await MyGlobal.prisma.$transaction(async (tx) => {
-    // Delete project memberships (child entities)
     await tx.hrms_project_members.deleteMany({
-      where: { project_id: projectId, deleted_at: null },
+      where: { project_id: props.projectId },
     });
-    // Delete tasks (child entities)
     await tx.hrms_tasks.deleteMany({
-      where: { hrms_project_id: projectId, deleted_at: null },
+      where: { hrms_project_id: props.projectId },
     });
-    // Delete project (parent entity)
     await tx.hrms_projects.delete({
-      where: { id: projectId },
+      where: { id: props.projectId },
     });
-  });
-  // Log deletion activity for audit purposes
-  await MyGlobal.prisma.hrms_activity_logs.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      organization_id: project.hrms_organization_id,
-      performed_by_id: member.id,
-      action_type: "project.deleted",
-      target_entity: "project",
-      target_id: projectId,
-      details: JSON.stringify({ project_name: project.name }),
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
-      deleted_at: null,
-    },
+    await tx.hrms_activity_logs.create({
+      data: {
+        id: v4() as string & tags.Format<"uuid">,
+        organization_id: project.hrms_organization_id,
+        performed_by_id: props.member.id,
+        action_type: "project.deleted",
+        target_entity: "project",
+        target_id: props.projectId,
+        details: JSON.stringify({
+          project_name: project.name,
+          project_id: props.projectId,
+        }),
+        created_at: toISOStringSafe(new Date()),
+        updated_at: toISOStringSafe(new Date()),
+        deleted_at: null,
+      },
+    });
   });
 }

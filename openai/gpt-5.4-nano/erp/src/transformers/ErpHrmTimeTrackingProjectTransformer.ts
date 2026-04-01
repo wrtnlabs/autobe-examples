@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingProject";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingProjectTransformer {
@@ -21,6 +23,11 @@ export namespace ErpHrmTimeTrackingProjectTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        organization: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.erp_hrm_time_tracking_projectsFindManyArgs;
   }
@@ -30,13 +37,13 @@ export namespace ErpHrmTimeTrackingProjectTransformer {
     return {
       id: input.id,
       erp_hrm_time_tracking_organization_id:
-        input.erp_hrm_time_tracking_organization_id,
+        input.erp_hrm_time_tracking_organization_id ?? input.organization.id,
       name: input.name,
       color: input.color,
       status: input.status,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

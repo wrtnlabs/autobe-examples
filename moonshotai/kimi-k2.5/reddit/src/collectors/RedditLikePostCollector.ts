@@ -10,20 +10,14 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditLikePostCollector {
   export async function collect(props: {
     body: IRedditLikePost.ICreate;
-    redditLikeMembers: IEntity; // from authorized actor
-  }) {
-    const id: string = v4();
-    // Infer post_type from content fields if not explicitly provided
+    redditLikeMembers: IEntity;
+    redditLikeMemberSessions: IEntity;
+  }): Promise<Prisma.reddit_like_postsCreateInput> {
+    const id = v4();
     const postType =
       props.body.post_type ??
-      (props.body.body
-        ? "text"
-        : props.body.url
-          ? "link"
-          : props.body.attachment_id
-            ? "image"
-            : "text");
-    return {
+      (props.body.url ? "link" : props.body.attachment_id ? "image" : "text");
+    const createInput: Prisma.reddit_like_postsCreateInput = {
       id,
       title: props.body.title,
       post_type: postType,
@@ -35,6 +29,39 @@ export namespace RedditLikePostCollector {
       deleted_at: null,
       author: { connect: { id: props.redditLikeMembers.id } },
       community: { connect: { id: props.body.community_id } },
-    } satisfies Prisma.reddit_like_postsCreateInput;
+    };
+    if (postType === "text" && props.body.body) {
+      createInput.textContent = {
+        create: {
+          id: v4(),
+          body: props.body.body,
+          excerpt: props.body.excerpt ?? "",
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      };
+    } else if (postType === "link" && props.body.url) {
+      const domain = new URL(props.body.url).hostname;
+      createInput.linkContent = {
+        create: {
+          id: v4(),
+          url: props.body.url,
+          domain,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      };
+    } else if (postType === "image" && props.body.attachment_id) {
+      createInput.imageContent = {
+        create: {
+          id: v4(),
+          attachment: { connect: { id: props.body.attachment_id } },
+          thumbnail_generated: false,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      };
+    }
+    return createInput satisfies Prisma.reddit_like_postsCreateInput;
   }
 }

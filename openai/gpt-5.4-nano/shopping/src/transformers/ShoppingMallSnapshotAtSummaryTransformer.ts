@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -42,14 +43,13 @@ export namespace ShoppingMallSnapshotAtSummaryTransformer {
       snapshot_code: input.snapshot_code,
       source_type: input.source_type,
       source_entity_id: input.source_entity_id,
-      source_seller_id: input.source_seller_id ?? null,
-      source_order_id: input.source_order_id ?? null,
-      source_order_item_id: input.source_order_item_id ?? null,
-      source_review_id: input.source_review_id ?? null,
-      source_cancellation_request_id:
-        input.source_cancellation_request_id ?? null,
-      source_refund_request_id: input.source_refund_request_id ?? null,
-      created_by_member_id: input.created_by_member_id ?? null,
+      source_seller_id: input.source_seller_id,
+      source_order_id: input.source_order_id,
+      source_order_item_id: input.source_order_item_id,
+      source_review_id: input.source_review_id,
+      source_cancellation_request_id: input.source_cancellation_request_id,
+      source_refund_request_id: input.source_refund_request_id,
+      created_by_member_id: input.created_by_member_id,
       reason: input.reason,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),

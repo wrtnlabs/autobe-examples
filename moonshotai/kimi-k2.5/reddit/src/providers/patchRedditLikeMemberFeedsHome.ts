@@ -13,16 +13,16 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikePostAtSummaryTransformer } from "../transformers/RedditLikePostAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditLikeMemberFeedsHome(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   body: IRedditLikePost.IRequest;
 }): Promise<IPageIRedditLikePost.ISummary> {
-  // Get member's subscribed community IDs
+  // Get all active community subscriptions for the member
   const subscriptions =
     await MyGlobal.prisma.reddit_like_community_subscriptions.findMany({
       where: {
@@ -38,135 +38,118 @@ export async function patchRedditLikeMemberFeedsHome(props: {
   );
   // If no subscriptions, return empty page
   if (subscribedCommunityIds.length === 0) {
+    const page = props.body.page ?? 1;
+    const limit = props.body.limit ?? 20;
     return {
       data: [],
       pagination: {
-        current: props.body.page ?? 1,
-        limit: props.body.limit ?? 20,
+        current: page,
+        limit: limit,
         records: 0,
         pages: 0,
       } satisfies IPage.IPagination,
     };
   }
-  // Determine which communities to filter by
-  // If specific communityId requested, ensure it's in subscribed list
-  const communityIdsToFilter =
-    props.body.communityId !== undefined
-      ? subscribedCommunityIds.includes(props.body.communityId)
-        ? [props.body.communityId]
-        : [] // Requested community not subscribed, will return empty
-      : subscribedCommunityIds;
-  // If filtered list is empty (requested unsubscribed community), return empty
-  if (communityIdsToFilter.length === 0) {
-    return {
-      data: [],
-      pagination: {
-        current: props.body.page ?? 1,
-        limit: props.body.limit ?? 20,
-        records: 0,
-        pages: 0,
-      } satisfies IPage.IPagination,
-    };
-  }
-  // Calculate time filter date if applicable
-  const timeFilterDate: string | undefined = (() => {
-    if (
-      props.body.timeFilter === undefined ||
-      props.body.timeFilter === "all_time"
-    ) {
-      return undefined;
-    }
-    const now = new Date();
-    const offsetMap = {
-      today: 24 * 60 * 60 * 1000,
-      week: 7 * 24 * 60 * 60 * 1000,
-      month: 30 * 24 * 60 * 60 * 1000,
-      year: 365 * 24 * 60 * 60 * 1000,
-    };
-    return new Date(
-      now.getTime() - offsetMap[props.body.timeFilter],
-    ).toISOString();
-  })();
-  // Build created_at filter combining timeFilter and explicit date bounds
-  const createdAtFilter: Prisma.DateTimeFilter | undefined = (() => {
-    const filters: Prisma.DateTimeFilter = {};
-    if (timeFilterDate !== undefined) {
-      filters.gte = new Date(timeFilterDate);
-    }
-    if (props.body.createdAfter !== undefined) {
-      const afterDate = new Date(props.body.createdAfter);
-      if (filters.gte === undefined || afterDate > filters.gte) {
-        filters.gte = afterDate;
-      }
-    }
-    if (props.body.createdBefore !== undefined) {
-      filters.lte = new Date(props.body.createdBefore);
-    }
-    return Object.keys(filters).length > 0 ? filters : undefined;
-  })();
   // Build where clause
-  const whereInput: Prisma.reddit_like_postsWhereInput = {
-    is_deleted: false,
+  const where: Prisma.reddit_like_postsWhereInput = {
     community_id: {
-      in: communityIdsToFilter,
+      in: subscribedCommunityIds,
     },
-    ...(props.body.authorId !== undefined && {
-      author_id: props.body.authorId,
-    }),
-    ...(props.body.postType !== undefined && {
-      post_type: props.body.postType,
-    }),
-    ...(props.body.search !== undefined && {
-      title: {
-        contains: props.body.search,
-      },
-    }),
-    ...(createdAtFilter !== undefined && {
-      created_at: createdAtFilter,
-    }),
+    is_deleted: false,
   };
-  // Determine sort order
-  const orderBy: Prisma.reddit_like_postsOrderByWithRelationInput = (() => {
-    const sort = props.body.sort;
-    const sortBy = props.body.sortBy;
-    const sortOrder = props.body.sortOrder ?? "desc";
-    if (sort === "new") {
-      return { created_at: "desc" };
+  // Apply additional filters from request body
+  if (props.body.communityId) {
+    where.community_id = props.body.communityId;
+  }
+  if (props.body.authorId) {
+    where.author_id = props.body.authorId;
+  }
+  if (props.body.postType) {
+    where.post_type = props.body.postType;
+  }
+  if (props.body.search) {
+    where.title = {
+      contains: props.body.search,
+      mode: "insensitive",
+    };
+  }
+  // Date range filtering
+  if (props.body.createdAfter || props.body.createdBefore) {
+    where.created_at = {};
+    if (props.body.createdAfter) {
+      where.created_at.gte = new Date(props.body.createdAfter);
     }
-    if (sort === "top") {
-      return { vote_score: "desc" };
+    if (props.body.createdBefore) {
+      where.created_at.lte = new Date(props.body.createdBefore);
     }
-    if (sort === "hot") {
-      return { vote_score: "desc" };
+  }
+  // Time filter for top/controversial sorting
+  if (props.body.timeFilter && props.body.timeFilter !== "all_time") {
+    const now = new Date();
+    let cutoffDate: Date;
+    switch (props.body.timeFilter) {
+      case "today":
+        cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case "week":
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "month":
+        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case "year":
+        cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
     }
-    if (sort === "controversial") {
-      return { comment_count: "desc" };
+    where.created_at = {
+      ...((where.created_at ?? {}) as object),
+      gte: cutoffDate,
+    };
+  }
+  // Determine sorting
+  let orderBy:
+    | Prisma.reddit_like_postsOrderByWithRelationInput
+    | Prisma.reddit_like_postsOrderByWithRelationInput[];
+  if (props.body.sort) {
+    switch (props.body.sort) {
+      case "hot":
+        // Hot: combination of vote_score and recency
+        // Use vote_score as primary, created_at as secondary
+        orderBy = [{ vote_score: "desc" }, { created_at: "desc" }];
+        break;
+      case "new":
+        orderBy = { created_at: "desc" };
+        break;
+      case "top":
+        orderBy = { vote_score: "desc" };
+        break;
+      case "controversial":
+        // Controversial: high engagement but near-zero score
+        // Approximate with comment_count desc, vote_score asc
+        orderBy = [{ comment_count: "desc" }, { vote_score: "asc" }];
+        break;
     }
-    if (sortBy === "created_at") {
-      return { created_at: sortOrder };
-    }
-    if (sortBy === "vote_score") {
-      return { vote_score: sortOrder };
-    }
-    if (sortBy === "comment_count") {
-      return { comment_count: sortOrder };
-    }
-    return { created_at: "desc" };
-  })();
+  } else if (props.body.sortBy) {
+    const sortOrder = props.body.sortOrder === "asc" ? "asc" : "desc";
+    orderBy = { [props.body.sortBy]: sortOrder };
+  } else {
+    // Default: newest first
+    orderBy = { created_at: "desc" };
+  }
+  // Pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Query posts with pagination
+  // Execute queries
   const posts = await MyGlobal.prisma.reddit_like_posts.findMany({
-    where: whereInput,
+    where,
     orderBy,
     skip,
     take: limit,
     ...RedditLikePostAtSummaryTransformer.select(),
   });
-  // Count total records
   const total = await MyGlobal.prisma.reddit_like_posts.count({
-    where: whereInput,
+    where,
   });
   // Transform results
   const transformedPosts = await ArrayUtil.asyncMap(

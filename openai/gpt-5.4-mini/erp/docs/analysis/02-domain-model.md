@@ -1,4 +1,4 @@
-**hrmTimeTracking — Business concepts, relationships, and states from user perspective**
+**erpHrmTime — Business concepts, relationships, and states from user perspective**
 
 Business concepts, relationships, and states from user perspective
 
@@ -8,853 +8,431 @@ Describe what each concept means in the business domain and its key attributes.
 
 ## Organization Concept
 
-An organization represents a separate business space inside the platform. It is the top-level container for employees, projects, tasks, timelogs, timesheets, and related work records. Each organization has its own identity and operates independently from other organizations. The organization is identified by a name and can also include a description for business context. It may use a logo image to support branding across the workspace. The organization also carries a currency for financial values and a timezone for time-based business activity. A fiscal start month is part of the organization’s business profile and helps define its accounting calendar. This concept is central to data isolation because business records are understood within the scope of a single organization. The organization also represents the ownership boundary for roles, departments, and reporting visibility. 
+An organization is the main business boundary in the platform and represents one independent company or team environment. Each organization keeps its own employees, projects, tasks, timelogs, and timesheets separate from other organizations. It is identified by a business-facing profile that includes a name, description, logo image, currency, timezone, and fiscal start month. The organization is the context that defines which data a user is currently working with. Ownership of an organization is significant because owners carry the highest level of control within that organization. The organization concept also helps explain why the same user can belong to multiple organizations without mixing their records. When an organization no longer exists, its related operational data is treated as part of that organization’s complete business history rather than a shared global pool.
 
-### Organization as a Business Space
+### Organization Concept
 
-An organization is the top-level business space in the platform. It represents a single company, team, or internal business unit that uses the system to manage people and work records. The organization concept defines the business boundary for everything that belongs to that workspace.
+An organization is the primary business boundary in the platform. It represents one independent company or team environment and defines which data belongs together under a single business context. The same user may belong to multiple organizations, but each organization keeps its own records separate from the others.
 
-An organization is the identity anchor for its own data. People, work records, and organizational settings are understood within the context of one organization rather than across the entire platform. This makes the organization the primary unit of separation for business use.
+The organization concept is the foundation of the platform’s multi-tenancy boundary. Data created within one organization is not mixed with data from another organization, and each organization is treated as an independent business space.
 
-```mermaid
-flowchart LR
-    A["Organization"] --> B["Business workspace"]
-    B --> C["People and work records"]
-    B --> D["Organization settings"]
-    B --> E["Independent data boundary"]
-```
+The organization is described by the following business attributes, which define its identity and operating context:
+- Organization name: the business name used to identify the organization.
+- Organization description: a short explanation of what the organization represents.
+- Logo image: a visual identifier for the organization.
+- Currency: the monetary unit used for organization-related financial values.
+- Timezone: the local time setting used for the organization’s business context.
+- Fiscal start month: the month that defines the start of the organization’s fiscal year.
 
-### Multi-Tenant Organization Model
+These attributes belong to the organization itself and are part of its business profile. They help distinguish one organization from another and give each organization its own operational identity.
 
-The platform supports multiple organizations at the same time. Each organization operates as an independent tenant with its own business space and its own data context.
+Organization context means the selected organization a user is currently working in. All work performed by a user is interpreted within that selected organization, which ensures that the user sees and acts on the correct organization’s data.
 
-Independent organizations do not share their operational records with one another. Each organization is treated as a separate workspace, so business activity in one organization remains within that organization’s boundary.
-
-This multi-tenant structure allows different organizations to use the platform side by side while keeping their data separated by business context.
-
-```mermaid
-flowchart LR
-    A["Platform"] --> B["Organization A"]
-    A --> C["Organization B"]
-    A --> D["Organization C"]
-    B --> E["Independent data"]
-    C --> F["Independent data"]
-    D --> G["Independent data"]
-```
-
-### Organization Identity and Profile
-
-Each organization has a business identity made up of its name, description, and logo image. These values help distinguish one organization from another and provide context for the workspace.
-
-The organization name is the primary identity label used to recognize the business space.
-
-The organization description gives additional business context about the organization.
-
-The logo image supports the organization’s visual identity within the platform.
-
-These identity details belong to the organization itself and describe the workspace as a business entity rather than a user account or employee record.
-
-### Organization Financial and Time Settings
-
-Each organization carries a currency setting and a timezone setting as part of its business profile.
-
-The currency setting defines the organization’s preferred monetary context for business values.
-
-The timezone setting defines the organization’s local time context for time-based business activity.
-
-Each organization also has a fiscal start month that defines the start of its fiscal calendar. This setting helps establish the organization’s accounting and reporting cycle as part of its business identity.
-
-```mermaid
-flowchart LR
-    A["Organization profile"] --> B["Currency setting"]
-    A --> C["Timezone setting"]
-    A --> D["Fiscal start month"]
-```
-
-### Independent Organization Data Boundary
-
-An organization’s data is independent from the data of every other organization. The organization is the business boundary that determines which records belong together.
-
-Data inside one organization is understood only within that organization’s workspace. This includes the organization’s own identity information and the business records that exist under its scope.
-
-The boundary of the organization is what makes the platform multi-tenant: each organization has its own isolated business space, and that separation is part of the organization concept itself.
-
-```mermaid
-flowchart LR
-    A["Organization boundary"] --> B["Organization data"]
-    A --> C["Separate from other organizations"]
-    B --> D["Single business workspace"]
-```
+An organization’s data is independent from other organizations’ data. This independence applies to the organization’s business records and to the user’s experience when working within a selected organization.
 
 ## UserAccount Concept
 
-A user account represents an individual person’s authenticated presence in the platform. It is the global account that can belong to one or more organizations. The account is identified by an email address and protected by a password. Password change state is part of the account’s business meaning because it reflects the account’s security status over time. A user account is separate from organization-specific employee records, which allows one person to participate in multiple organizations. The account serves as the stable identity behind the person’s shared profile. It is also the anchor for access across different organizational contexts. Because the same account can move across organizations, the account is broader than any single employee assignment. This concept helps distinguish personal identity from organization membership. 
+A user account represents the global identity used to access the platform. It belongs to a person who signs in with an email and password and may participate in more than one organization. The account carries profile information that is shared across organizations, including display name, avatar image, and phone number. This concept is separate from organization-specific employee records, so one person can have a single account while appearing in several organizations in different roles. The account is also the anchor for personal access decisions, such as switching between organization contexts. Because the profile is global, the same identity can be recognized consistently wherever the user works. The user account is therefore the personal layer above all organization-specific business data.
 
-### User Account as a Global Identity
+### User Account Concept
 
-A user account represents the person’s global identity in the platform. It is the stable account that follows the person across all organizations they belong to. The same account can be associated with more than one organization, while still remaining a single identity. This concept separates the person’s global presence from any one organization-specific employee record. The account is the basis for recognizing the same person wherever they use the platform.
+A user account is the platform-wide identity for a person who uses the ERP system. It is the business concept that connects the person’s access, identity, and shared profile across all organizations they belong to.
 
-The user account is also the person’s authenticated presence in the platform. It is the business concept that confirms the person has an account identity that can be used to access the system. Because the account exists outside any single organization, it supports participation in multiple organizations without creating separate identities for each one.
+The user account is identified by email identity and protected by a password credential. These are the account-level access attributes used for sign-in and account access.
 
+The user account includes a global profile that is shared across organizations. The profile contains the display name, avatar image, and phone number. Because the profile is global, the same personal identity is visible consistently in every organization context the user joins.
+
+A user account may belong to multiple organizations at the same time. The account therefore exists above organization-specific membership and role assignments, while the organization-specific details remain separate from the shared profile.
+
+The organization context selection is part of how the user account is used within the platform. When a person belongs to more than one organization, the account supports choosing which organization context is currently active so that work is performed within the selected organization.
+
+In business terms, the user account is the stable personal identity layer that persists across organizations, while organization-specific access and work data are handled elsewhere in the domain model.
+
+### Email Identity
+
+Email identity is the account-level identifier associated with a user account. It is the business means by which the system recognizes the person for access and account association.
+
+The email identity is shared across the user account’s participation in multiple organizations because the same account can be connected to more than one organization.
+
+The email identity belongs to the user account concept and is not an organization-specific attribute.
+
+### Password Credential
+
+The password credential is the secret associated with a user account for access to the platform.
+
+It is part of the user account concept and supports sign-in for the person behind the account.
+
+The password credential belongs to the account itself rather than to any one organization, so it remains the same shared access credential across the user’s organization memberships.
+
+### Global Profile
+
+The global profile is the shared personal profile attached to the user account.
+
+It contains the display name, avatar image, and phone number. These profile attributes are shared across all organizations the user belongs to, so updates to the profile apply consistently everywhere the account appears.
+
+The global profile exists independently of organization-specific employee records and membership details.
+
+### Multiple Organization Membership
+
+A single user account can belong to multiple organizations.
+
+This means the same personal identity can participate in more than one organization while keeping one shared global profile.
+
+The account remains the common identity across those organizations, while each organization maintains its own separate business data and access context.
+
+### Organization Context Selection
+
+When a user account belongs to more than one organization, the account supports choosing which organization context is currently active.
+
+The selected organization context determines which organization the person is acting within at that moment.
+
+The context belongs to the user account’s usage within the platform and reflects that the same person can work in different organizations without creating a separate account for each one.
+
+## OrganizationMembership Concept
+
+An organization membership is the business record that links a user account to a specific organization. It defines that user’s place inside that organization without affecting their access in other organizations. The membership includes the currently selected organization context and the role the person holds within that organization. It also reflects the membership status, which indicates whether the person is actively part of the organization or not. This concept is important because permissions and visibility are evaluated within the boundaries of the selected organization. A single user can have multiple memberships, each one standing for a different organizational relationship. The membership record is the bridge between a global account and organization-scoped work.
+
+### Organization Membership
+
+An organization membership is the business record that connects a user account to a specific organization. It represents the person’s standing inside that organization and defines their organization-scoped access without changing their relationship to any other organization. The same user account can have multiple organization memberships, with each membership representing a separate organization-specific relationship.
+
+The organization membership includes the selected organization context, which identifies the organization currently in use for that membership. It also includes the organization-specific role assigned within that organization and the membership status that indicates whether the membership is active or not active.
+
+The membership record is the business representation of the user-to-organization link. It exists to show that a user belongs to an organization and to distinguish that relationship from the user’s global account profile. In this platform, access is evaluated within the boundaries of the selected organization context, so the membership is the point where global identity meets organization-scoped access.
+
+Mermaid diagram:
 ```mermaid
 flowchart LR
-    A["Person"] --> B["User Account"]
-    B --> C["Organization A"]
-    B --> D["Organization B"]
+    A["User account"] -->|"has"| B["Organization membership"]
+    B -->|"links to"| C["Organization"]
+    B -->|"includes"| D["Selected organization context"]
+    B -->|"includes"| E["Organization-specific role"]
+    B -->|"includes"| F["Membership status"]
 ```
 
-### Email Login Identity and Password-Based Account
+Key attributes:
 
-A user account is identified for sign-in by an email address. The email address is the login identity that ties the person to their account. The account is also password-based, meaning access is associated with a password as part of the account’s core identity. Together, the email address and password distinguish the account from other people in the platform.
+| Attribute | Meaning |
+|---|---|
+| Selected organization context | The organization that is currently active for the membership |
+| Organization-specific role | The role held by the user within that organization |
+| Membership status | Whether the membership is active or not active |
 
-The password change state is part of the account’s business meaning. It reflects the account’s current password condition over time and is part of how the account is understood as a living identity record. This state belongs to the account itself rather than to any organization-specific membership.
-
-```mermaid
-sequenceDiagram
-    participant P as Person
-    participant A as User Account
-    P->>A: Uses email identity and password
-    A-->>P: Recognized as the same account
-```
-
-### Multi-Organization Membership
-
-A user account can belong to multiple organizations. Membership in one organization does not replace or remove membership in another organization. The same account can therefore participate in more than one organizational context while remaining a single global identity.
-
-Organization membership is contextual, not duplicative. The account stays shared across all organizations, while the person’s organization-specific presence is interpreted separately within each organization. This allows one person to hold multiple organizational memberships without changing the underlying account identity.
-
-```mermaid
-flowchart LR
-    A["User Account"] --> B["Organization A membership"]
-    A --> C["Organization B membership"]
-    A --> D["Organization C membership"]
-```
-
-### Account Profile Anchor
-
-The user account acts as the anchor for the person’s shared profile. The profile belongs to the account rather than to a single organization, so the person’s core identity details remain consistent across all organizations they join. The account provides the stable reference point that connects the person to that shared profile.
-
-Because the profile is anchored to the account, the person’s identity can remain continuous even when they participate in different organizations. This makes the account the central business concept that holds the person’s cross-organization identity together.
-
-```mermaid
-flowchart LR
-    A["User Account"] --> B["Shared Profile"]
-    A --> C["Organization Memberships"]
-```
-
-### Personal Identity Outside Organization Context
-
-A user account represents the person’s personal identity outside any single organization. It is broader than employee membership, project participation, or any other organization-specific role. The account remains meaningful even when viewed independently from organizational context.
-
-This separation allows the same person to exist as one account across the platform while taking part in different organizations as needed. The personal identity is therefore not tied to one organization’s boundaries, even though access and participation are later interpreted within a selected organization context.
-
-```mermaid
-flowchart LR
-    A["Personal Identity"] --> B["User Account"]
-    B --> C["Organization-Scoped Participation"]
-```
-
-## UserProfile Concept
-
-A user profile represents the shared personal details attached to a user account. It is global across the platform and is not limited to one organization. The profile carries the visible name used to identify the person in business contexts. It may also include an avatar image that helps represent the person visually. A phone number can be part of the profile for contact purposes. The profile is separate from role assignments and employee records, so it remains consistent even when the person belongs to multiple organizations. This concept captures the personal-facing information associated with the account. It supports recognition of the person across different business spaces. The profile is the user’s common identity layer rather than a work-specific record. 
-
-### UserProfile as a Global Identity Layer
-
-A user profile represents the shared personal details attached to a user account. It is the person’s global profile across the platform and is not limited to one organization.
-
-The profile captures the visible identity used to recognize the person in business contexts. Its core profile information includes a display name, an avatar image, and a phone number.
-
-The display name is the primary visible identity shown for the person across the platform. The avatar image provides a visual representation of the person. The phone number is part of the profile information and serves as contact detail.
-
-The profile is account-adjacent identity rather than a work-specific record. It stays separate from organization membership, role assignment, and employee records, so the same personal details are shared across every organization the person belongs to.
-
-The profile concept supports consistent recognition of the same individual across multiple organizations while keeping personal details in one shared place.
+Important business meanings:
+- A membership is always tied to one organization.
+- A user may have multiple memberships across multiple organizations.
+- Active membership indicates that the user is currently part of the organization.
+- Organization-scoped access applies only within the selected organization context.
+- The membership record is separate from the user’s shared profile and other memberships.
 
 ## Role Concept
 
-A role represents a business classification that defines what an employee can do inside an organization. Each organization has its own role structure, so role meaning is local to that organization. Roles can be built-in or custom depending on how the organization organizes access. The built-in roles are Owner, Manager, and Employee. Custom roles add organization-specific flexibility when the built-in roles are not enough. A role is identified by name and by whether it is built-in or custom. The role concept is tied to a set of permissions that describe allowed business capabilities. Every employee belongs to exactly one role in a given organization, which makes the role a key part of access and responsibility. Role definitions are important for understanding authority boundaries and work expectations. 
+A role describes the level of responsibility a person has inside an organization. Roles are organization-specific, so the same role name or permission set does not automatically apply across different organizations. The platform includes built-in roles for Owner, Manager, and Employee, and these built-in roles form the default business model for access and responsibility. In addition, organizations can define custom roles to match their internal structure. A role is identified by its name and the permissions attached to it. Permissions express what someone can manage, view, approve, or update within the organization. This concept captures how access is organized without describing the detailed workflows behind each permission.
 
 ### Role Concept
 
-A role is an organization-specific access profile that defines how an employee is classified within a single organization. The role concept exists to describe responsibility and authority boundaries in that organization’s own context.
+A role is the business concept that describes the level of responsibility a person has within an organization. It defines how access and responsibility are organized in an organization-specific way, so the same role name or permission set does not automatically apply across different organizations.
 
-A role is identified by its role name and by its role classification. The role classification distinguishes whether the role is built-in or custom.
+A role belongs to exactly one organization and is used only within that organization. Each employee in an organization is assigned exactly one role, which makes the role the primary way the organization expresses access responsibility for that employee.
 
-Built-in roles are part of the standard organization structure and cannot be deleted. The built-in roles are Owner, Manager, and Employee. These role names are fixed and represent the standard role classification used across organizations.
+A role is identified by its role name and its permission set. The role name is the business label used to recognize the role, and the permission set is the collection of permissions attached to that role. Together, these attributes define what the role means in business terms.
 
-Custom roles are organization-defined roles that add flexibility when the built-in roles do not fully express how the organization wants to organize access and responsibility. A custom role belongs only to the organization that created it.
+The platform includes built-in roles and custom roles. Built-in roles are part of the standard business model and represent the default access responsibility structure used by the platform. Custom roles are organization-specific roles created by an organization to match its own internal structure and responsibility model.
 
-Every employee has single role assignment within an organization, meaning one employee belongs to exactly one role in that organization at a time. This makes the role concept central to how membership is organized inside the organization.
+The built-in roles are Owner, Manager, and Employee. These built-in roles are defined as follows:
+- Owner: the highest responsibility role in an organization, with full access to the organization’s features and the ability to manage roles and members.
+- Manager: a role for managing employees and projects, approving timesheets, and viewing reports.
+- Employee: a role for tracking time, submitting timesheets, and viewing own data.
 
-```mermaid
-flowchart LR
-    A["Organization"] --> B["Role"]
-    B --> C["Built-in role"]
-    B --> D["Custom role"]
-    C --> E["Owner"]
-    C --> F["Manager"]
-    C --> G["Employee"]
-    A --> H["Employee"]
-    H --> I["Single role assignment"]
-    I --> B
-```
+A custom role has the same business identity pattern as a built-in role, but its name and permission set are defined by the organization. Custom roles allow an organization to express additional or adjusted access responsibility without changing the built-in role model.
 
-## Permission Concept
-
-A permission represents one specific business capability available inside an organization. Permissions are the building blocks used to define what a role can do. Each permission has a code that identifies the capability and a business meaning that explains its scope. The available permissions cover organization management, employee management, employee viewing, project management, project viewing, time management, time approval, viewing all time records, and reporting. Permissions are not user-facing records by themselves; they are entitlement concepts attached to roles. They help distinguish narrow capabilities from broader role names. In practice, permissions define the boundaries of access to organizational data and actions. This concept is important because custom roles are formed by combining selected permissions. Permissions therefore describe authority in a precise and reusable way. 
-
-### Permission Concept
-
-A permission is a business entitlement that represents one specific capability inside an organization. It is not a user-facing record on its own; instead, it is a building block used to define what a role allows a person to do.
-
-A permission has a permission code and a business capability meaning. The permission code is the short identifier used to distinguish one capability from another, while the business capability describes the real-world authority that the permission represents.
-
-Permissions are always understood within the context of a single organization. The same permission concept can exist in different organizations, but each organization uses its own role configuration to determine access.
-
-Permissions are the smallest reusable unit of access entitlement in the system. They provide a precise way to express authority without relying only on broad role names.
-
-```mermaid
-flowchart LR
-    A["Permission"] --> B["Permission Code"]
-    A --> C["Business Capability"]
-    A --> D["Access Entitlement"]
-    E["Role"] --> A
-```
-
-
-### Business Capability
-
-A business capability is the practical meaning of a permission. It describes what kind of organizational action or visibility the permission represents in business terms.
-
-Each business capability belongs to exactly one permission concept and explains the scope of that entitlement. The capability is what makes the permission understandable to organization owners when they assemble roles.
-
-The available business capabilities in this system cover organization management, employee management, employee viewing, project management, project viewing, time management, time approval, viewing all time records, and reporting.
-
-A business capability does not describe how a feature is implemented. It describes the boundary of authority that a role may grant to a person.
-
-```mermaid
-flowchart LR
-    A["Business Capability"] --> B["Organization Management"]
-    A --> C["Employee Management"]
-    A --> D["Project Management"]
-    A --> E["Time Approval"]
-    A --> F["Report Viewing"]
-```
-
-
-### Permission Code
-
-A permission code is the identifying code for a permission. It is the concise value that names the business capability in a way that can be reused consistently across role definitions.
-
-Each permission code maps to one business capability only. This keeps permissions precise and avoids ambiguity between similar forms of access.
-
-The permission codes in this system include organization management permission, employee management permission, project management permission, time approval permission, time view all permission, and report viewing permission, along with the other capabilities listed in the business capability definition.
-
-A permission code belongs to the permission concept and is part of the access entitlement attached to roles.
-
-```mermaid
-flowchart LR
-    A["Permission Code"] --> B["One Permission"]
-    B --> C["One Business Capability"]
-    D["Role Capability Set"] --> A
-```
-
-
-### Organization Management Permission
-
-The organization management permission represents the capability to manage organization settings within the current organization context.
-
-This permission is one of the available business capabilities that can be included in a role capability set. It is used when a role needs authority over organization-level configuration rather than project or time-related access.
-
-Organization management permission is part of the access entitlement model that distinguishes broad organizational control from narrower operational permissions.
-
-```mermaid
-flowchart LR
-    A["Organization Management Permission"] --> B["Organization Settings"]
-    C["Role Capability Set"] --> A
-```
-
-
-### Employee Management Permission
-
-The employee management permission represents the capability to manage employees within an organization.
-
-This permission belongs to the set of business capabilities that can be combined into a role capability set. It expresses authority over employee-related management rather than general organizational access.
-
-Employee management permission is a specific access entitlement that can be assigned through a role when an organization needs someone to handle employee administration.
-
-```mermaid
-flowchart LR
-    A["Employee Management Permission"] --> B["Employee Administration"]
-    C["Role Capability Set"] --> A
-```
-
-
-### Project Management Permission
-
-The project management permission represents the capability to manage projects and tasks within an organization.
-
-It is one of the business capabilities available for inclusion in a role capability set. This permission is distinct from project viewing, because it represents management authority rather than read-only access.
-
-Project management permission is part of the access entitlement structure used to define whether a role can control project work within the organization.
-
-```mermaid
-flowchart LR
-    A["Project Management Permission"] --> B["Project and Task Management"]
-    C["Role Capability Set"] --> A
-```
-
-
-### Time Approval Permission
-
-The time approval permission represents the capability to approve or reject timesheets within an organization.
-
-It is a business capability that can be included in a role capability set when a role needs authority over timesheet review outcomes.
-
-Time approval permission is a distinct access entitlement from time viewing permissions, because it governs approval responsibility rather than visibility alone.
-
-```mermaid
-flowchart LR
-    A["Time Approval Permission"] --> B["Timesheet Approval Authority"]
-    C["Role Capability Set"] --> A
-```
-
-
-### Time View All Permission
-
-The time view all permission represents the capability to view all employees' timelogs and timesheets within an organization.
-
-This permission is a broad visibility entitlement. It differs from self-only time visibility because it extends access across employees in the same organization context.
-
-Time view all permission may be part of a role capability set when a role needs organization-wide visibility into time records.
-
-```mermaid
-flowchart LR
-    A["Time View All Permission"] --> B["All Timelogs and Timesheets"]
-    C["Role Capability Set"] --> A
-```
-
-
-### Report Viewing Permission
-
-The report viewing permission represents the capability to view organization reports.
-
-It is a business capability that can be included in a role capability set when a role needs access to reporting information for the organization.
-
-Report viewing permission is an access entitlement that supports visibility into summarized organizational information rather than direct management of records.
-
-```mermaid
-flowchart LR
-    A["Report Viewing Permission"] --> B["Organization Reports"]
-    C["Role Capability Set"] --> A
-```
-
-
-### Role Capability Set
-
-A role capability set is the collection of permissions assigned to a role.
-
-It defines the access entitlement granted by that role inside one organization. A role capability set may combine several permissions so that the role expresses a broader business responsibility.
-
-The role capability set is what links the permission concept to practical organizational access. Built-in roles and custom roles both rely on this set of permissions to define their authority.
-
-```mermaid
-flowchart LR
-    A["Role"] --> B["Role Capability Set"]
-    B --> C["Permission"]
-    B --> D["Access Entitlement"]
-```
-
-
-### Access Entitlement
-
-An access entitlement is the authority granted to a role by its permission set. It defines what the role allows within the organization context.
-
-Access entitlement is not a separate user-facing business object. It is the business meaning of the permissions attached to a role and the reason permissions matter in the domain model.
-
-Access entitlements help separate narrow capabilities from broad role labels, making it possible to describe authority in a precise and reusable way.
-
-```mermaid
-flowchart LR
-    A["Permission"] --> B["Access Entitlement"]
-    C["Role Capability Set"] --> B
-    B --> D["Organization Context"]
-```
-
+A role’s permission set is the business description of what that role can manage, view, approve, or update within the organization. The role concept does not describe how those actions are performed; it only defines the responsibility structure that other parts of the system use.
 
 ## Employee Concept
 
-An employee represents a person’s membership and working identity within a specific organization. The employee record links the global user account to an organization-specific role. It may also include a department and a position or title to describe where the person fits in the organization. Employment type is part of the concept and distinguishes full-time, part-time, contractor, and intern arrangements. Employee status captures whether the employee is active or deactivated. This record is distinct from the global user account because the same person can appear in multiple organizations with different roles or status. Employee information is the basis for time tracking, project assignment, and reporting within the organization. The concept also supports historical continuity because the employee record remains meaningful even when the person changes state. It is the core people entity used for day-to-day business operations. 
+An employee is the organization-specific representation of a user account within a particular organization. It shows how that person participates in work such as projects, time tracking, and internal reporting. The employee concept includes department, position or title, employment type, and status. Employment type can distinguish full-time, part-time, contractor, and intern workers. Status captures whether the person is active or deactivated in that organization. Because the employee record is scoped to one organization, the same user may have separate employee identities in different organizations. This concept is central to understanding workforce structure inside each organization.
 
-### Employee as an Organization-Specific Record
+### Employee Concept
 
-An employee is the organization-specific record that represents a person’s working identity within one organization. The same user account may appear as different employee records in multiple organizations, and each record is independent within its own organization context.
+An employee is the organization-specific worker record that represents how a user account participates in work within a particular organization. It is the business concept used to describe that person’s standing in the organization, including their department, position or title, employment type, and status.
 
-The employee record connects a user to a single organization membership for day-to-day business activity. It is the record used to describe the person’s participation in that organization, while the underlying user account remains global and shared across organizations.
+An employee belongs to one organization and is separate from the shared user account profile (defined in UserAccount Concept). This means the same person can have different employee records in different organizations, with different roles, departments, positions, or employment statuses.
 
-The employee record is the business basis for the person’s role, department assignment, position or title, employment type, and status within the organization.
+The employee concept is defined by the following business attributes:
+- Department: the organizational unit the employee is associated with, if any.
+- Position or title: the person’s job title or role description within the organization.
+- Employment type: the category used to describe the working arrangement.
+- Status: the current condition of the employee record within the organization.
 
-### Organization Membership and Role Assignment
+The employment type attribute can take one of four business values:
+- Full-time
+- Part-time
+- Contractor
+- Intern
 
-An employee belongs to exactly one organization at a time through the organization-specific employee record. This membership makes the employee part of that organization’s working population and distinguishes them from users who do not belong to that organization.
+The status attribute can take one of two business values:
+- Active status
+- Deactivated status
 
-Each employee is assigned exactly one role within the organization. The role assignment is part of the employee record and defines the employee’s standing in that organization.
+An active employee is a current worker record in the organization. A deactivated employee is still part of the organization’s historical record but is no longer treated as active for day-to-day participation in work. The distinction between active status and deactivated status is part of the employee concept itself and is used to describe whether the employee record is currently active in the organization.
 
-Role assignment is an attribute of the employee concept and is separate from the user account and from the organization itself. The same person can therefore have different role assignments in different organizations.
+Mermaid summary of the concept:
+```mermaid
+flowchart LR
+    A["User account"] --> B["Employee"]
+    B --> C["Department"]
+    B --> D["Position or title"]
+    B --> E["Employment type"]
+    E --> F["Full-time"]
+    E --> G["Part-time"]
+    E --> H["Contractor"]
+    E --> I["Intern"]
+    B --> J["Status"]
+    J --> K["Active status"]
+    J --> L["Deactivated status"]
+```
 
-### Department Assignment and Position Title
+## EmployeeContract Concept
 
-An employee may be assigned to one department within the organization. Department assignment is optional, so an employee may also have no department.
+An employee contract represents a historical employment arrangement between an employee and an organization. It captures the period during which a particular pay arrangement applies and preserves the employment record over time. The contract includes a start date, an optional end date, a pay rate, a pay period, weekly working hours, and optional notes. Because contracts are historical, they help show how employment terms changed across time. Only one contract can be active for an employee at any given moment, which makes the contract history meaningful for payroll and workforce understanding. A contract is tied to the employee rather than to the global user account. This concept describes compensation and working-time expectations in business terms.
 
-An employee may also have a position or title. The position or title is optional and is used to describe the employee’s place or function in the organization.
+### EmployeeContract Concept
 
-Department assignment and position or title belong to the employee record and describe how the employee is organized within the business structure of the organization.
+An employee contract is the business record that defines the employment arrangement between an employee and the organization over time. It represents the employee’s historical employment record and shows how compensation and working-time expectations change across the employee’s tenure.
 
-### Employment Type
+The contract includes the start date, which marks when the arrangement begins, and an optional end date, which marks when it stops. A missing end date means the contract is ongoing. This allows the organization to preserve a complete contract history instead of replacing old arrangements.
 
-Each employee has an employment type that identifies the nature of the person’s working arrangement within the organization.
+The contract also includes the pay rate, the pay period, the working hours per week, and optional notes. These attributes describe how the employee is compensated and how much work is expected during the contract period.
 
-The allowed employment types are full-time, part-time, contractor, and intern. These values are part of the employee concept and distinguish the employee’s arrangement in the organization.
+Only one contract can be active for an employee at any given time. The active contract is the one currently defining the employee’s employment terms, while earlier contracts remain part of the contract history as historical records.
 
-Employment type is stored on the employee record so that the organization can distinguish different kinds of working relationships without changing the underlying user account.
-
-### Active and Deactivated Status
-
-Each employee has a status that indicates whether the employee is active or deactivated within the organization.
-
-An active employee is currently participating in the organization as a working member. A deactivated employee remains part of the organization’s historical record but is marked as not currently active.
-
-Status is part of the employee record and is specific to the organization in which the employee exists. The same user may be active in one organization and deactivated in another.
-
-## Invitation Concept
-
-An invitation represents a pending invitation for a person to join an organization. It is identified by the invited email address, which is the contact point used to recognize the future member. The invitation concept also carries an invitation status that shows whether the invitation is still pending or has been resolved. It may be associated with one or more organizations that are waiting for the person to join. Invitation records exist so the organization can represent a future employee before the person fully joins the system. This makes the concept different from an employee record, which represents an active organization member. An invitation is also different from a user account because the invited person may not yet have an account. The concept helps describe a temporary business state between being invited and becoming an organization participant. 
-
-### Invitation Record
-
-An invitation record represents a temporary business record created for a person who is expected to join one or more organizations. It exists to capture the invitation before the person becomes an active employee in the organization.
-
-The invitation record is identified by the invited email address, which is the contact point used to recognize the person when they later join the system. The record also carries an invitation status that shows whether the invitation is still pending or has already been resolved.
-
-An invitation record is a pre-account invitation when the invited person does not yet have a user account. In that case, the record preserves the organization join invite until the person signs up and becomes linked to the organization.
-
-An invitation record is distinct from an employee record because it represents a future organization member rather than an active organization member. It is also distinct from a user account because the invited person may not yet have an account when the record is created.
-
-### Pending Invitation and Pending Organization Association
-
-A pending invitation is an invitation record that has not yet been resolved because the invited person has not yet joined the organization.
-
-A pending organization association means the invitation is waiting to connect the invited email address to an organization membership in the future. This association represents the organization that expects the person to join once the invitation is accepted implicitly through account creation or existing account recognition.
-
-A pending invitation remains associated with the organization until it is resolved. While pending, it continues to represent a future organization member and does not become an employee record on its own.
-
-### Invited Email Address and Invite by Email
-
-The invited email address is the business identifier used by an invitation record. It is the address through which the system recognizes the intended recipient of the organization join invite.
-
-Invite by email means the invitation is addressed to a specific email address rather than to an existing employee record. This supports inviting a future organization member before the person is fully present in the organization.
-
-The invited email address is the primary value used to connect the invitation record, the pending invitation, and the eventual user account when the invited person later joins the system.
-
-### Invitation Status
-
-Invitation status describes the current business state of an invitation record.
-
-A pending invitation has a status that indicates the invitation is still waiting for the invited person to join. A resolved invitation has a status that indicates the invitation no longer represents an unresolved join request.
-
-Invitation status exists so the organization can distinguish between a still-open organization join invite and one that has already been completed or otherwise resolved.
-
-### Future Organization Member
-
-A future organization member is the person represented by an invitation record before they become an employee in the organization.
-
-This concept captures the business meaning of an invited person who is expected to join later but is not yet an active organization participant. It is useful because the invitation record can exist before the person has a user account, making the invitation a pre-account invitation.
-
-The future organization member is represented by the pending invitation until the person becomes associated with the organization through a user account.
+The contract belongs to the employee rather than to the global user account, so the same person may have different contract histories in different organizations. The concept is used to preserve past and current employment terms in a way that supports historical understanding of the employee’s work arrangement.
 
 ## Department Concept
 
-A department represents an internal business grouping within an organization. It is used to organize employees by functional area, team, or division. Each department has a name that identifies it in the organization. A description can provide more detail about its purpose or scope. Departments can also have a parent department, which allows one level of nesting for simple hierarchy. This concept is organization-specific and does not cross into other organizations. It helps describe how people are grouped for management and reporting purposes. A department is not the same as a role, because it describes organizational structure rather than access rights. It is also not the same as a project, because it belongs to the people structure of the organization. 
+A department is an internal organizational grouping used to structure employees within one organization. It provides a way to organize people by business area, team, or function. Each department has a name and description, and it may also belong under a parent department. The parent relationship is limited to one level of nesting, which keeps the structure simple and readable. Departments do not define access by themselves, but they help describe how the workforce is arranged. Employees may be associated with a department, while some employees may not belong to one. This concept is useful for understanding organizational hierarchy and workforce segmentation.
 
 ### Department Concept
 
-A department is an internal business unit within an organization that is used to organize employees by team grouping, functional area, division, or similar organizational structure.
+A department is an internal organizational grouping used to structure employees within one organization. It represents a way to classify the workforce by business area, team, or function so the organization can describe how people are arranged.
 
-A department belongs to exactly one organization and does not cross organization boundaries. It represents the organization-specific way people are grouped for management and reporting purposes.
+The department concept belongs to the business domain of organizational structure. Its purpose is to support employee grouping and help explain the internal workforce structure of the organization from a business perspective.
 
-A department has a name, which identifies it within the organization. The name is the primary business label for the department.
+A department has the following business attributes:
+- Department name: the identifying name of the department.
+- Department description: a textual description of what the department represents.
+- Parent department: an optional higher-level department used to place the department within a simple hierarchy.
 
-A department may also have a description. The description provides additional context about the department’s purpose, scope, or place in the organization.
+The parent department relationship is limited to one level of nesting. This means a department may be placed under one parent department, but deeper hierarchies are not part of the model.
 
-A department may have a parent department. This creates a simple hierarchy with one level of nesting only. A parent department allows one department to sit under another department as part of the organization’s internal structure.
-
-A department is distinct from a role because it describes how people are grouped, not what access they have. It is also distinct from a project because it represents an ongoing part of the organization’s internal structure rather than a temporary body of work.
-
-A department may be used to describe employee grouping within the organization. Employees can be associated with a department as part of that organization’s structure, allowing the department to represent a team, unit, or division at the business level.
-
-```mermaid
-flowchart LR
-    O["Organization"] --> D["Department"]
-    D --> N["Name"]
-    D --> S["Description"]
-    D --> P["Parent Department"]
-    P --> D2["One Level Nesting"]
-    D --> G["Employee Grouping"]
-    D --> T["Team Grouping"]
-    D --> I["Internal Business Unit"]
-```
-
-## Contract Concept
-
-A contract represents a historical employment agreement for an employee within an organization. An employee can have multiple contracts over time, which makes the contract a time-based business record. Each contract has a start date that marks when the agreement begins. It may also have an end date when the agreement is no longer ongoing. Pay rate is a core contract attribute because it expresses the compensation basis. Pay period describes whether compensation is hourly, daily, weekly, or monthly. Working hours per week is part of the contract’s business meaning because it reflects expected workload. Notes may be included to capture additional context about the agreement. The contract concept is important for keeping a clear record of changing employment terms over time. 
-
-### Contract Concept
-
-A contract represents the employment terms recorded for an employee within one organization. It is a historical contract record, meaning it preserves the terms that applied during a specific period even after a newer contract becomes active. An employee can have multiple contracts over time, but only one contract can be active at a time.
-
-A contract begins on its start date, which marks when the agreement takes effect. An end date may be present when the contract is no longer ongoing. When no end date is present, the contract is ongoing. The end date therefore distinguishes a completed contract from one that is still in force.
-
-Pay rate is a core part of the contract because it expresses the compensation amount agreed for the employee. Pay period defines how that pay rate is understood. The supported pay periods include hourly, daily, weekly, and monthly, and hourly pay period means the contract uses an hourly basis for compensation.
-
-Working hours per week is part of the contract because it captures the expected weekly workload associated with the agreement. Contract notes may also be included to record additional context about the employment arrangement. Together, these attributes make the contract a complete business record of how the employee was engaged during a given period.
+Departments are used to organize employees into meaningful groups, such as business areas or teams, and they provide a readable classification of the organization’s workforce. Some employees may belong to a department, while others may remain unassigned to any department.
 
 ```mermaid
 flowchart LR
-    A["Employee"] --> B["Contract"]
-    B --> C["Start Date"]
-    B --> D["End Date"]
-    B --> E["Pay Rate"]
-    B --> F["Pay Period"]
-    B --> G["Working Hours Per Week"]
-    B --> H["Contract Notes"]
-    D --> I["Ongoing Contract"]
+    A["Organization"] --> B["Department"]
+    B --> C["Employee grouping"]
+    B --> D["Team classification"]
+    B --> E["Workforce structure"]
+    B --> F["Parent department"]
 ```
+
 
 ## Project Concept
 
-A project represents a unit of work that the organization tracks over time. It is one of the main business objects used for time tracking and task planning. Each project has a name that identifies it to employees. A description can provide additional context about the project’s purpose. A color code is part of the project concept because it supports visual recognition in the interface. The project also has a status that reflects whether it is active, archived, or completed. Budget hours can be attached to a project to show estimated effort, and start and end dates can define the project timeline. The project belongs to a single organization and is separate from department structure or employee identity. It serves as the main container for tasks, memberships, and logged time. 
+A project is a work container used to organize time, tasks, and assigned employees within an organization. It helps separate one business initiative from another and provides a clear place to track effort. Each project has a name, description, and color code for easy recognition. It also carries a status that shows whether the project is active, archived, or completed. Additional planning details may include budget hours, a start date, and an end date. Projects are scoped to a single organization, so they never mix with work from another organization. This concept is the foundation for linking people, tasks, and logged time to a shared business goal.
 
 ### Project Concept
 
-A project is a work unit that represents a unit of organized effort tracked by the organization over time. It is one of the primary business objects used to coordinate work, track time, and relate tasks and membership within the organization.
+A project is a business concept that represents a work container within an organization. It groups related work so the organization can separate one initiative from another and track effort against a shared business goal.
 
-A project belongs to a single organization and is separate from employee identity or department structure. It serves as the business container for work that is planned, tracked, and reported within that organization.
+The project concept defines the following attributes in business terms:
 
-The project name identifies the work unit and is the main label employees use to recognize it. The project description provides additional context about the purpose or scope of the work unit. Both values belong to the project concept and help distinguish one work unit from another.
+- Project name: the human-readable name used to identify the project.
+- Project description: a free-form explanation of what the project is for.
+- Color code: a visual identifier used to distinguish the project in displays.
+- Status: the current state of the project, which can be active, archived, or completed.
+- Budget hours: the planned total amount of effort for the project when budgeting is used.
+- Start date: the date the project is intended to begin.
+- End date: the date the project is intended to finish.
 
-### Project Identity and Visual Recognition
+A project belongs to a single organization and represents work only within that organization. It is the central place for organizing assigned employees, tasks, and logged time around one business initiative.
 
-Each project has a color code that supports visual recognition in the business domain. The color code is part of the project concept and helps distinguish projects from one another when they are referenced in organization-wide work tracking.
+Mermaid diagram:
+```mermaid
+flowchart LR
+    A["Organization"] --> B["Project"]
+    B --> C["Work container"]
+    B --> D["Project name"]
+    B --> E["Project description"]
+    B --> F["Color code"]
+    B --> G["Status"]
+    B --> H["Budget hours"]
+    B --> I["Start date"]
+    B --> J["End date"]
+```
 
-The color code belongs to the project itself and is not a separate business object. It exists as an identifying attribute of the work unit alongside the project name and description.
+The project status is used to express where the project is in its business lifecycle:
 
-### Project Status
+- Active status means the project is currently in use for ongoing work.
+- Archived status means the project is set aside from active use.
+- Completed status means the project has finished its intended work.
 
-A project has a status that reflects its current state in the organization’s work tracking lifecycle.
+Mermaid diagram:
+```mermaid
+flowchart LR
+    A["active"] -->|"Archive"| B["archived"]
+    A -->|"Complete"| C["completed"]
+    B -->|"Re-activate"| A
+```
 
-An active project is one that remains open for ongoing work tracking.
-An archived project is one that has been set aside from active work while remaining part of the organization’s historical record.
-A completed project is one that has reached its finished state in the organization’s tracking of work.
-
-The project status is an inherent part of the project concept and defines whether the work unit is currently active, archived, or completed.
-
-### Project Timeline
-
-A project may have a project timeline that defines the period during which the work unit is expected to run. The timeline is described by a start date and an end date.
-
-The start date marks when the project timeline begins. The end date marks when the project timeline ends. Together, these dates define the project timeline for the work unit.
-
-The timeline is optional as a business concept, but when it is present it belongs to the project and provides time boundaries for the work being tracked.
-
-### Budget Hours
-
-A project may include budget hours, which represent the estimated amount of effort planned for the work unit.
-
-Budget hours belong to the project and provide a business-level estimate used to describe the expected scale of the project. They are distinct from time logged by employees and from the project timeline.
+The project concept is also the parent business container for project-related work items. Tasks belong to a project, and time logged by employees is associated with a project so the organization can see effort in the context of that work container.
 
 ## ProjectMembership Concept
 
-A project membership represents the connection between an employee and a project. It shows that the employee is part of that project’s working group. The membership is specific to one project and one employee, so it captures a single assignment relationship. Each membership has a project role that describes the person’s function on that project. The available project roles are member and project-lead. This concept is important because an employee can belong to multiple projects at the same time. It helps define who is involved in a project and how they are positioned within the project team. Project membership is separate from the employee’s organization role because project responsibility can differ from organizational authority. It is a core concept for project collaboration and task ownership. 
+A project membership represents the connection between an employee and a project. It shows that the employee is assigned to participate in that project’s work. The membership includes the employee, the project, and the assigned role within that project. The assigned role can distinguish a regular member from a project lead. This concept explains how teams are formed around individual projects without changing the employee’s broader organization role. A single employee can belong to multiple projects, and each project can include multiple employees. Project membership is therefore the project-level counterpart to organization membership.
 
-### Project Membership Concept
+### Project Membership
 
-A project membership is the business concept that connects one employee to one project. It represents a single employee-to-project link and shows that the employee is part of that project’s team. This concept exists to identify who participates in a project and to distinguish project participation from organization membership.
+A project membership represents the business relationship between an employee and a project. It means the employee has been assigned to participate in that project’s work and is part of that project’s team for the scope of that project.
 
-A project membership belongs to exactly one employee and exactly one project. Because the relationship is specific to one employee and one project, it captures one project assignment at a time for that pair. An employee can have multiple project assignments across different projects, so a single employee may appear in several project memberships at the same time.
+This concept is project-level rather than organization-level. A project membership does not change the employee’s broader organization role; it only defines the employee’s participation within a specific project.
 
-A project membership is the unit that expresses project team membership. It tells the organization which employees are involved in a project and supports the structure of project responsibility within that project’s working group.
+The project membership includes the employee, the project, and the assigned role within that project. The assigned role identifies whether the employee participates as a regular member or as a project lead.
 
-### Project Role
+A single employee can have multiple project memberships at the same time, allowing participation in more than one project. A single project can also have multiple project memberships, allowing several employees to be assigned to the same project team.
 
-Each project membership includes a project role that describes the employee’s function inside the project team. The available project roles are member and project-lead.
-
-The project role is specific to the project membership, not to the employee as a whole. This means an employee may have one project role in one project and a different project role in another project. The role therefore reflects project-specific participation rather than organization-wide authority.
-
-The project role is the part of the project membership that identifies how the employee contributes to the project and how responsibility is organized within the project team.
-
-### Member Role and Project-Lead Role
-
-The member role identifies a standard project participant. It indicates that the employee is part of the project team as a contributing member.
-
-The project-lead role identifies an employee who carries a higher level of project responsibility within that project. It distinguishes the employee as the lead participant for the project team while still remaining a project member.
-
-These two project roles describe different forms of project participation. They allow the project membership concept to represent both general team participation and lead responsibility without changing the employee’s organization role.
+Project membership is the business concept used for project staffing. It shows who is assigned to which project and in what capacity, without describing how assignments are created or managed.
 
 ## Task Concept
 
-A task represents a piece of work inside a project. It is the finer-grained work item used to organize delivery and track progress. Each task has a title that identifies the work clearly. A description can add detail about the expected outcome or context. Task status shows where the task stands in its life cycle, and priority indicates how urgently the work should be handled. Estimated hours can be attached to describe expected effort. A due date may also be present to express timing expectations. A task can have an assigned employee, which ties the work to a person in the project. A parent task may exist for subtasks, allowing one level of nested task structure. 
+A task is a unit of work inside a project that helps break project delivery into manageable pieces. It carries a title and may also include a description to clarify the work. The task concept includes status, priority, estimated hours, due date, and an optional assigned employee. Tasks can also have a parent task, which creates a simple one-level subtask structure. Because tasks belong to projects, they stay within the business context of a specific project rather than the whole organization. The task concept helps teams describe what needs to be done and how urgent it is. It is the main work item used to connect project effort with time tracking and team responsibility.
 
 ### Task Concept
 
-A task is a work item inside a project. It represents a discrete piece of work that helps organize delivery and track progress within the project context.
+A task is a project work item used to describe a unit of work inside a project. It represents what needs to be done within the project context, rather than across the whole organization.
 
-A task belongs to one project and exists as part of that project's work structure. It may be used to represent either a standalone task or a smaller subtask within a larger piece of work.
+The task concept includes the task title, task description, status, priority, estimated hours, due date, assigned employee, and parent task. The task title identifies the work item. The task description provides additional context about the work. Status shows the current progress state of the task. Priority indicates how urgent or important the task is. Estimated hours describe the expected effort for the task. Due date identifies when the task is expected to be completed. Assigned employee identifies the employee responsible for the task. Parent task links the task to another task when the task is a subtask.
 
-A task title identifies the work clearly and is the main label used to distinguish the task from other work items. A task description can provide additional context about the expected outcome, background, or details needed to understand the work.
+A subtask is a task that belongs under another task to break work into smaller parts. The parent task relationship supports a simple one-level nesting structure, so a task may have a parent task, but it does not create deeper task hierarchies.
 
-A task status shows where the task stands in its life cycle. A task priority indicates how urgently the task should be handled. Estimated hours may be attached to describe the expected effort for the task.
+Because tasks belong to projects, they remain scoped to the project they support and are used to organize and track project work in a structured way.
 
-A due date may be present to express when the task is expected to be completed. An assigned employee may be linked to the task to indicate who is responsible for the work.
+## TaskHistoryEntry Concept
 
-A task may have a parent task. When a parent task exists, the task is treated as a subtask of that parent task. Subtasks provide one level of nested task structure and are used to break larger work into smaller related work items.
+A task history entry records a meaningful change in a task’s status over time. It preserves the status transition as part of the task’s business history. Each entry includes a timestamp, the previous status, the new status, and the person who made the change. This concept gives teams a traceable view of how work moved through its lifecycle. It is distinct from the task itself because it captures events rather than the current task state. By keeping these entries, the organization can understand when and by whom a task advanced or changed direction. The history entry is therefore an audit-style concept focused on task progress.
 
-```mermaid
-flowchart LR
-    A["Project"] --> B["Task"]
-    B --> C["Subtask"]
-    B --> D["Assigned Employee"]
-    B --> E["Status"]
-    B --> F["Priority"]
-    B --> G["Estimated Hours"]
-    B --> H["Due Date"]
-    B --> I["Task Description"]
-```
+### Task History Entry Concept
 
+A task history entry is a domain concept that represents a recorded change in a task’s status over time. It exists to preserve the business history of how work moved through its lifecycle and to provide an audit-style trace of task progress.
 
-## TaskHistory Concept
+A task history entry is not the task itself. The task remains the current business item, while the history entry captures a past status change as a separate record of what happened.
 
-Task history represents the record of how a task’s status changed over time. It preserves the timeline of task progression as a business record. Each history entry includes a timestamp so the change can be understood in sequence. It also captures the previous status and the new status, which makes the transition visible. The person who made the change is part of the history so accountability is preserved. Task history is separate from the current task state because it exists to show what happened earlier. This concept gives the organization a clear view of task movement through its life cycle. It is useful for understanding progress and responsibility without altering the current task itself. The record is an immutable business trace of status changes. 
+A task history entry supports the organization’s need to understand when a task changed, what it changed from, what it changed to, and who made the change. This makes the record a meaningful part of the task’s lifecycle history and a reliable task progress record.
 
-### TaskHistory Concept
+#### Business Meaning
+A task history entry documents a significant status change in a task’s business lifecycle.
+It provides traceability for task progress by preserving the previous status, the new status, the time of the change, and the person responsible.
+It is used as an audit-style trace so the organization can review how task status evolved over time.
 
-Task history is the historical record of how a task’s status changes over time. It exists to preserve a clear task progression trail so the organization can understand how the task moved through its lifecycle.
+#### Attributes
+A task history entry includes the following business attributes:
 
-Task history captures each status change as a timestamped task change. Every history entry records when the change happened, what the old status was, what the new status became, and who made the change. This makes the record a status transition audit rather than a description of the task’s current state.
+| Attribute | Meaning |
+|---|---|
+| Timestamp | The moment when the task status change was recorded. |
+| Old status | The task status before the change. |
+| New status | The task status after the change. |
+| Who made the change | The person who performed the status change. |
 
-The task history record is separate from the task itself. The task represents the current work item, while task history provides the historical task record that explains how that work item reached its present state. This distinction allows the organization to review the task lifecycle trace without altering the task’s current status.
+These attributes define the entry as a historical record rather than a mutable current-state object.
 
-Task history is intended to preserve accountability and continuity. By keeping each status change record in sequence, it provides an immutable business trace of the task’s progression and supports later review of how and when task status changes occurred.
+#### Task Lifecycle History
+A task may have multiple history entries over time, with each entry representing one status change in the task’s lifecycle.
+Taken together, these entries form the task lifecycle history.
+The history is ordered by the time each change was recorded, allowing the organization to reconstruct the sequence of task progress events.
 
-```mermaid
-flowchart LR
-    A["Task status change"] --> B["Timestamped history entry"]
-    B --> C["Old status recorded"]
-    B --> D["New status recorded"]
-    B --> E["Person who made the change recorded"]
-    C --> F["Task progression trail"]
-    D --> F
-    E --> F
-    F --> G["Historical task record"]
-```
-
+#### Audit-Style Trace
+The task history entry functions as an audit-style trace for task status changes.
+It preserves the business facts of a change without replacing the task’s current status.
+Because it records the previous status, the new status, the time of change, and the responsible person, it provides a clear historical trail of task progress.
 
 ## Timelog Concept
 
-A timelog represents a recorded amount of work time for an employee. It is one of the core time tracking business records in the platform. Each timelog has a date and a duration measured in minutes. It is associated with a project so the organization knows where the time was spent. A timelog can also be linked to a task when the work belongs to a specific task. A description can be included to summarize what was done during the logged time. The billable flag indicates whether the logged time should be treated as billable or non-billable. A timelog belongs to a specific employee and is part of the organization’s historical time record. It is a foundational concept for timesheets, reporting, and budget awareness. 
+A timelog is a recorded entry of work time spent by an employee on a project. It is the basic unit used to represent how long someone worked on a specific day. The timelog includes a date, duration in minutes, a project, and optional task association. It may also contain a description of what was done and a billable flag to indicate whether the time is billable work. Timelogs belong to one employee and one organization, so they are part of that employee’s work history within that organization. They also provide the raw material for timesheets and reports. This concept is the business record of time spent, independent of how the time was captured.
 
-### Timelog as a Time Entry
+### Timelog Concept
 
-A timelog is the platform’s business record for a single time entry. It represents a measurable amount of work time captured for one employee within one organization. A timelog belongs to one employee and is part of that employee’s time record in the organization.
+A timelog is a work time record that captures time spent by an employee on a project within the organization. It represents the business record of employee time entry and serves as the source material for timesheets and reports.
 
-A timelog is used to preserve historical time tracking information. It shows that work was performed on a particular date for a particular duration and provides a lasting record of that work for later review and reporting. Because it is a historical record, the timelog remains part of the employee’s organization-specific time history after it has been created.
+A timelog includes the date of the work, the duration in minutes, the project reference, and an optional task reference. It may also include a description of the work performed and a billable flag to indicate whether the time is billable.
 
-### Date and Duration
+The date identifies when the work was performed. The duration in minutes identifies how much time was spent. The project reference identifies the project the time belongs to. The task reference is optional and, when present, identifies the task the work was tied to. The description of work provides a short explanation of what was done. The billable flag marks the entry as billable or non-billable.
 
-Each timelog includes a date and a duration measured in minutes. The date identifies when the work was recorded, and the duration identifies how much time was spent.
-
-The duration in minutes is the standard measure used for a timelog so that time can be recorded consistently across the organization. This makes the timelog suitable for totals, summaries, and comparisons across different work records.
-
-### Project-Linked Time
-
-A timelog is linked to one project. This project association identifies where the employee’s time was spent and places the time entry within the organization’s project history.
-
-Project-linked time is a core part of the timelog concept because it connects the employee’s recorded work to the project being supported. A timelog belongs to one project only, which keeps each time entry focused on a single project context.
-
-### Task-Linked Time
-
-A timelog may also be linked to one task when the recorded work belongs to a specific task within the selected project. This task association narrows the time entry to a more precise unit of work.
-
-Task-linked time is optional, so a timelog can represent work at the project level or at the task level. When a task is associated with a timelog, it remains within the same project context as the timelog.
-
-### Work Description and Billable Time
-
-A timelog may include a work description to summarize what was done during the recorded time. The description gives context to the time entry and helps explain the nature of the work in business terms.
-
-A timelog also includes a billable flag that distinguishes billable time from non-billable time. Billable time is time that is treated as billable, while non-billable time is time that is not treated as billable. This distinction is part of the timelog’s business meaning and supports how the organization classifies recorded work.
-
-### Employee Time Record and Historical Time Tracking
-
-A timelog is an employee time record that belongs to one employee and contributes to that employee’s historical time tracking within the organization. It serves as a durable record of work performed over time.
-
-The timelog is part of the organization’s historical time tracking because it preserves past work activity in a form that can be reviewed later. As a historical record, it supports ongoing understanding of how employee time was spent across projects and tasks.
+A timelog is an employee time entry that records time spent as a business fact, independent of how the time was captured.
 
 ## Timesheet Concept
 
-A timesheet represents a weekly collection of an employee’s timelogs. It is the business record used to organize time for a specific week from Monday to Sunday. Each timesheet belongs to one employee and covers one week range. The timesheet status shows whether it is in draft, submitted, approved, or rejected state. Total hours is part of the concept because it summarizes the time included in the timesheet. Submitted at captures when the timesheet was sent for review. Reviewed at and reviewed by identify the review moment and the person responsible for the decision. Rejection reason is part of the concept because rejected timesheets need an explanation. The timesheet is a central approval record that groups time entries into a weekly package. 
+A timesheet is a weekly collection of timelogs for one employee. It groups time entries into a business review period from Monday through Sunday. The timesheet concept includes the week start date, week end date, status, total hours, submitted time, review time, reviewer, and an optional rejection reason. It represents a structured summary of an employee’s recorded time rather than individual log entries. Timesheets are important because they show when work time is being prepared, reviewed, approved, or rejected. They also preserve the relationship between the employee’s own time records and the organization’s review process. This concept helps explain how weekly time capture becomes an accountable business record.
 
 ### Timesheet Concept
 
-A timesheet is the business record for a weekly collection of an employee’s timelogs. It represents one employee’s time for one specific week and serves as the weekly time collection container within the organization. The timesheet concept is defined around a Monday to Sunday week so that every timesheet covers a consistent weekly range.
+A timesheet is a business concept that represents a weekly collection of timelogs for one employee. It groups recorded time into a review period that runs from Monday through Sunday and serves as a structured employee summary of that week’s work time.
 
-A timesheet belongs to exactly one employee and represents only that employee’s time for the week it covers. The timesheet is identified in the business domain by its week range, its owner, and its status. The status shows which stage the timesheet is in: draft, submitted, approved, or rejected.
+The timesheet concept includes the week start date, week end date, status, total hours, submitted time, review time, reviewer, and rejection reason. These attributes describe the timesheet as a weekly time collection and as a record of how that employee’s time was prepared and reviewed.
 
-A timesheet includes the following key business attributes:
-- Week start date, which marks the Monday of the covered week
-- Week end date, which marks the Sunday of the covered week
-- Status, which shows the current timesheet state
-- Total hours, which summarizes the time included in the timesheet
-- Submitted at, which records when the timesheet was sent for review
-- Reviewed at, which records when a review decision was made
-- Reviewed by, which identifies who made the review decision
-- Rejection reason, which explains why a timesheet was rejected
+The week start date identifies the Monday that begins the timesheet’s week. The week end date identifies the Sunday that ends the same week. Together, these dates define the weekly boundary of the timesheet.
 
-```mermaid
-flowchart LR
-    A["employee"] --> B["timesheet"]
-    B --> C["week start date"]
-    B --> D["week end date"]
-    B --> E["status"]
-    B --> F["total hours"]
-    B --> G["submitted at"]
-    B --> H["reviewed at"]
-    B --> I["reviewed by"]
-    B --> J["rejection reason"]
-```
+The status shows where the timesheet is in its review process. The total hours represent the combined hours from the timelogs included in the timesheet. The submitted time records when the timesheet was submitted for review. The review time records when the timesheet was approved or rejected. The reviewer identifies who completed that review. The rejection reason captures the explanation recorded when a timesheet is rejected.
 
-### Weekly Time Collection
+A timesheet belongs to one employee and summarizes that employee’s time for a specific week. It is a distinct business record from the individual timelogs it collects, and it preserves the employee’s weekly time history as a reviewable summary rather than a line-by-line log entry.
 
-A timesheet is the weekly time collection that groups an employee’s timelogs into a single business record for one week. The collection exists to summarize the employee’s logged time for the covered Monday to Sunday period.
+## Timer Concept
 
-The weekly collection is defined by the employee who owns it and the week it represents. A timesheet does not describe time outside its own week range. Its purpose is to hold the time entries that belong to that specific weekly period and to present them as one organized record.
+A timer represents a running time-tracking session for an employee. It captures work time in real time before that time is turned into a timelog. The timer includes a start timestamp, a project, an optional task, and a description. It is tied to one employee and reflects the currently active piece of work being tracked. The timer concept is useful for understanding ongoing work before it becomes a saved time entry. Because it is a live working state, it stands apart from historical timelogs and timesheets. This concept describes the temporary business state of time being tracked right now.
 
-The total hours value belongs to this weekly collection and summarizes the amount of time included in the timesheet. The weekly collection is therefore both a container for the week’s timelogs and a summary of the employee’s time for that week.
+### Timer Concept
+
+A timer is the business concept that represents a live time-tracking session for an employee. It captures work time in real time before that time becomes a timelog, so it exists as a temporary work state rather than a historical record.
+
+The timer reflects the currently active piece of work being tracked by the employee. It is associated with one employee and is used to represent work that is ongoing right now.
+
+The key attributes of a timer are:
+- Start timestamp: the point in time when the live session began.
+- Project: the project the running session is associated with.
+- Task: the task associated with the running session when one is present.
+- Description: a short business description of what is being worked on.
+
+A timer is distinct from a timelog because it describes work that is still in progress. Its business meaning is tied to real-time tracking and the employee’s active timer state while work is ongoing.
 
 ```mermaid
 flowchart LR
-    A["employee timelogs"] --> B["weekly time collection"]
-    B --> C["Monday to Sunday week"]
-    B --> D["total hours"]
+    A["Employee"] -->|"has one active timer"| B["Timer"]
+    B -->|"tracks"| C["Live time-tracking session"]
+    B -->|"references"| D["Project"]
+    B -->|"references"| E["Task"]
+    B -->|"describes"| F["Description"]
+    B -->|"starts at"| G["Start timestamp"]
+    B -->|"represents"| H["Temporary work state"]
 ```
 
-### Timesheet Status and Review States
+## ActivityLogEntry Concept
 
-The timesheet status describes the business state of the timesheet. A timesheet may be in one of four states: draft, submitted, approved, or rejected.
+An activity log entry is a business record of a significant action performed in the organization. It provides a traceable history of important events so the organization can understand what changed and who changed it. Each entry includes a timestamp, the user who performed the action, the action type, the target entity, and supporting details. This concept is broader than a single object because it can describe changes to employees, contracts, projects, tasks, timesheets, or roles. Activity log entries help preserve accountability across major business actions. They are part of the organization’s operational memory and are useful for reviewing past decisions and changes. The entry concept focuses on the record of the event itself rather than the workflow that caused it.
 
-A draft timesheet is a timesheet that has been prepared but not yet sent for review. A submitted timesheet is a timesheet that has been sent for review. An approved timesheet is a submitted timesheet that has been accepted. A rejected timesheet is a submitted timesheet that has not been accepted and has returned to the rejected state.
+### Activity Log Entry
 
-These states are part of the timesheet concept and define how the record is understood in the business domain. The status is central to whether the timesheet is still being prepared, is awaiting review, has been accepted, or has been rejected.
+An activity log entry is a business record of a significant action performed within an organization. It serves as the organization’s audit trail, preserving a historical record of important changes so the business can review what happened, when it happened, and who performed the action. It is also an accountability record because it ties each recorded action to a specific user and a specific target entity.
 
-```mermaid
-flowchart LR
-    A["draft"] --> B["submitted"]
-    B --> C["approved"]
-    B --> D["rejected"]
-```
+The concept focuses on the record of the event itself rather than the workflow that produced it. It is used to capture important organizational history across major business activities such as changes to employees, contracts, projects, tasks, timesheets, and roles.
 
-### Timesheet Review Metadata
+Key attributes of an activity log entry:
+- Timestamp: identifies when the significant action was recorded.
+- User who performed the action: identifies the user responsible for the action.
+- Action type: identifies the kind of business action that occurred.
+- Target entity: identifies the business object affected by the action.
+- Details: provides supporting information about the recorded action.
 
-A timesheet carries review metadata that identifies when it was submitted and how it was reviewed. Submitted at records the moment the timesheet was sent for review.
-
-Reviewed at records the moment when the review decision was made. Reviewed by identifies the person who made that review decision. These values belong to the timesheet concept because they describe the record’s review history and the accountability of the review outcome.
-
-The rejection reason is part of the timesheet concept because a rejected timesheet needs an explanation for the rejection outcome. When present, it provides the business reason associated with the rejected state.
-
-```mermaid
-flowchart LR
-    A["submitted at"] --> B["reviewed at"]
-    B --> C["reviewed by"]
-    C --> D["rejection reason"]
-```
-
-## TimerSession Concept
-
-A timer session represents a live time tracking record that is currently running or has been run. It captures the start timestamp when the timed work begins. The session is associated with a project so the running time can be categorized correctly. A task may also be attached if the time is tied to specific work. Description is part of the timer session because it explains what the person is working on. This concept is distinct from a timelog because it represents the active tracking state before or during conversion into a logged record. Timer session is tied to an employee and reflects real-time work tracking activity. It helps describe ongoing work without yet turning it into a finalized time entry. The concept is useful for understanding immediate work context and active tracking state. 
-
-### Timer Session Concept
-
-A timer session represents the active tracking session used for live time tracking while work is ongoing. It describes a running timer before that work becomes a finalized timelog.
-
-A timer session is tied to one employee and reflects real-time work tracking activity for that person. It exists to capture ongoing work state while the person is still timing their work.
-
-The timer session includes the start timestamp, which marks when the timed work begins. It also includes the selected project so the active tracking session is categorized in the correct business context.
-
-A task may be attached to the timer session when the live tracking work is connected to a specific task. The task is part of the timer session only when the work needs that additional level of detail.
-
-The description is part of the timer session because it explains what the person is working on during the active tracking session. It provides context for the running timer while the work is still in progress.
-
-A timer session is distinct from a timelog because it represents the ongoing work state rather than a finalized time entry. It supports understanding current work activity without turning that activity into a completed record yet.
-
-```mermaid
-flowchart LR
-    A["Ongoing work state"] --> B["Active tracking session"]
-    B --> C["Running timer"]
-    C --> D["Start timestamp"]
-    C --> E["Timer project"]
-    C --> F["Timer task"]
-    C --> G["Timer description"]
-    C --> H["Timelog after completion"]
-```
-
-## ActivityRecord Concept
-
-An activity record represents a significant business action captured for organizational visibility. It preserves a timestamp so the action can be placed in time. The record identifies the user who performed the action. It also includes an action type that describes what kind of business event occurred. A target entity is part of the record so the action can be linked to the relevant object, such as an employee, project, task, or timesheet. Additional details can be stored to provide context about the action. Activity records form the organization’s historical activity trail. They are useful for understanding who did what and when across major business events. This concept helps create an auditable view of important changes without describing the implementation of logging itself. 
-
-### Activity Record as a Business Action Log
-
-An activity record is the organization’s business action log for significant events. It captures important business events in a form that can be reviewed later to understand what happened within the organization. The record exists to preserve a visible history of meaningful changes, rather than routine background activity.
-
-An activity record is part of the organization’s activity trail. Each record contributes to the broader history of significant actions that occurred in the organization over time.
-
-Mermaid diagram:
-```mermaid
-flowchart LR
-    A["Significant business event"] --> B["Activity record"]
-    B --> C["Organizational activity trail"]
-```
-
-### Timestamped Activity and Performed By User
-
-Each activity record contains a timestamped activity so the business event can be placed in time. The timestamp identifies when the significant action occurred and supports chronological review of the organization’s history.
-
-Each activity record also identifies the user who performed the action. This makes it possible to understand who carried out the business event and to connect the record to the person responsible for it.
-
-A single activity record therefore combines when the event happened and who performed it, which makes the record useful as part of an auditable business event history.
-
-### Action Type, Target Entity, and Activity Details
-
-Each activity record includes an action type that describes the kind of business event that occurred. The action type distinguishes one category of significant action from another, such as changes involving employees, projects, tasks, timesheets, contracts, or role assignments.
-
-Each activity record also includes a target entity. The target entity is the business object the action relates to, so the record can be linked to the relevant employee, project, task, timesheet, contract, or role.
-
-Each activity record may include activity details to provide additional context about the event. The details explain the meaningful parts of the action so the record is more informative when reviewed later.
-
-### Significant Action History and Organizational Visibility
-
-Activity records together form a significant action history for the organization. This history provides an auditable view of important business events across the organization’s operational life.
-
-The activity trail is organization-specific, so the records reflect events within one organization’s context rather than a shared cross-organization history. This makes the activity record concept part of the organization’s own historical memory.
-
-In business terms, the activity record exists to preserve what happened, when it happened, who performed it, what kind of action it was, and which business object it affected.
-
-Mermaid diagram:
-```mermaid
-flowchart LR
-    A["User action"] --> B["Action type"]
-    B --> C["Target entity"]
-    C --> D["Activity details"]
-    D --> E["Activity record"]
-    E --> F["Auditable business event history"]
-```
+An activity log entry belongs to the organization’s historical record and supports traceability across the business domain. It is intended for reviewing past actions and understanding how the organization changed over time.
 
 # Domain Relationships
 
@@ -866,341 +444,151 @@ Describe how concepts relate to each other in business terms.
 
 ### Organization Relationships
 
-An organization is the top-level business boundary for all operational data in the platform.
+The organization is the top-level business boundary for organization-scoped data. Each organization owns its employees, projects, departments, roles, timelogs, timesheets, tasks, and activity log entries. A user account may own one or more organizations, and an organization belongs to the user account that created it.
 
-An organization belongs to the overall platform context and has many members, employees, departments, projects, tasks, timelogs, timesheets, roles, contracts, and activity records within its own boundary.
+An organization has many users through organization membership. Organization membership links a user account to a specific organization and establishes that user’s access within that organization context. A user account can have memberships in multiple organizations, but each membership belongs to only one organization.
 
-An organization is owned by one or more members. Ownership gives those members control over organization-level administration and the ability to manage the organization according to the rules defined elsewhere in the specification.
+An organization has many departments, roles, employees, projects, timelogs, timesheets, and activity log entries. These records belong to exactly one organization and are not shared across organizations.
 
-A user account may belong to multiple organizations, but each organization membership is independent of the others.
+An organization also has many relationships to its other concepts through ownership and association. The organization owns its organization-scoped data, while the user account owns the global profile that is shared across all organizations.
 
-All employees, projects, tasks, timelogs, timesheets, roles, contracts, and activity records belong to exactly one organization. They do not share data across organizations.
+### Employee Relationships
 
-```mermaid
-flowchart LR
-    A["Organization"] --> B["Members"]
-    A --> C["Employees"]
-    A --> D["Departments"]
-    A --> E["Projects"]
-    A --> F["Tasks"]
-    A --> G["Timelogs"]
-    A --> H["Timesheets"]
-    A --> I["Roles"]
-    A --> J["Contracts"]
-    A --> K["Activity Records"]
-    L["User Account"] --> M["Multiple Organizations"]
-    M --> A
-```
+An employee belongs to one user account and one organization. The employee record represents that user account’s participation in a specific organization, rather than the user account globally.
 
-### User Account and Profile Relationships
+An employee has exactly one role within the organization. That role belongs to the same organization as the employee, and the assignment is specific to that employee in that organization.
 
-A user account is the global identity used to access one or more organizations.
+An employee belongs to an optional department. A department can have many employees, but each employee belongs to at most one department.
 
-A user account belongs to a shared user profile. The profile contains personal information that is reused across every organization the user belongs to.
+An employee can have many contracts over time. Each contract belongs to one employee, and those contracts form a historical record for that employee.
 
-The user profile is not duplicated per organization. Changes to the shared profile are visible wherever that user account is used.
+An employee can be assigned to many projects through project membership. A project can have many employees assigned to it, and the membership links the employee to the project with an assigned project role.
 
-A user account may be linked to multiple employee records, one in each organization where the user participates.
+An employee can have many timelogs and many timesheets. Each timelog and timesheet belongs to one employee. These records stay associated with the employee even when the employee is deactivated.
 
-An employee record belongs to exactly one organization and references exactly one user account. This creates the association between the global account and the organization-specific membership.
+An employee can also have one currently running timer. The timer belongs to one employee and represents a live work session for that employee.
 
-```mermaid
-flowchart LR
-    A["User Account"] --> B["User Profile"]
-    A --> C["Employee Record in Organization A"]
-    A --> D["Employee Record in Organization B"]
-    C --> E["Organization A"]
-    D --> F["Organization B"]
-    B --> G["Shared Across Organizations"]
-```
+### Project, Task, and Time Relationships
 
-### Role and Permission Relationships
+A project belongs to one organization and can have many employees assigned through project membership. A project also has many tasks and many timelogs.
 
-A role belongs to exactly one organization.
+A task belongs to one project. A project can have many tasks, and a task cannot exist outside its project.
 
-An organization has many roles, but each employee in that organization is assigned exactly one role at a time.
+A task may belong to one parent task, which allows a single level of subtasks. A parent task can have many child tasks, but each child task belongs to only one parent task.
 
-Built-in roles are part of the organization’s role set and cannot be deleted. Custom roles also belong to the organization and are created and maintained by organization owners.
+A task may be assigned to one project member. That assigned employee must belong to the project through project membership.
 
-A role has many permissions, and each permission represents one business capability within the organization.
+A task has many task history entries. Each task history entry belongs to one task and records one status change for that task.
 
-Role assignment is the association that connects an employee to the permissions they can use in that organization.
+A timelog belongs to one employee and one project. A timelog may also belong to one task. A project can have many timelogs, and an employee can have many timelogs. If a timelog is linked to a task, the task must belong to the same project.
 
-```mermaid
-flowchart LR
-    A["Organization"] --> B["Roles"]
-    B --> C["Permissions"]
-    D["Employee"] --> E["One Role"]
-    E --> B
-    C --> F["Business Capabilities"]
-```
+A timesheet belongs to one employee and contains many timelogs for one specific week. A timelog may be included in a timesheet, and a timelog can only be associated with the timesheet structure described for that employee’s week.
 
-### Employee Associations
+A timer belongs to one employee and may be associated with one project and one task while it is running. When stopped, it produces a timelog for that employee.
 
-An employee belongs to exactly one organization and is linked to exactly one user account.
+### Roles, Departments, and Activity Relationships
 
-An employee has one role in that organization and may belong to one department.
+A role belongs to one organization. An organization has many roles, and each employee in that organization is assigned exactly one role.
 
-An employee may be assigned to many projects over time, and each project may have many employees assigned to it.
+A role may be built-in or custom. Built-in roles belong to the organization as fixed role types, while custom roles are created within the organization and assigned to employees there.
 
-An employee owns personal timelogs and timesheets within the organization.
+A department belongs to one organization. A department may have one parent department and may have many child departments, with the nesting limited to one level.
 
-An employee may have many contracts over time, but only one contract can be active at a time.
+A department can have many employees. When a department is deleted, employees remain and their department association is removed.
 
-An employee’s association with an organization can change over time through deactivation and reactivation, while the historical records linked to that employee remain part of the organization’s history.
-
-```mermaid
-flowchart LR
-    A["Employee"] --> B["Organization"]
-    A --> C["User Account"]
-    A --> D["One Role"]
-    A --> E["One Department"]
-    A --> F["Many Projects"]
-    A --> G["Timelogs"]
-    A --> H["Timesheets"]
-    A --> I["Contracts"]
-```
-
-### Department Hierarchy and Membership
-
-A department belongs to one organization.
-
-An organization has many departments.
-
-A department may have one parent department, which creates a one-level hierarchy within the same organization.
-
-Employees may belong to a department, but the department does not own the employee. The relationship is an assignment within the organization.
-
-When a department is removed, the employees assigned to it are no longer associated with that department.
-
-```mermaid
-flowchart LR
-    A["Organization"] --> B["Department"]
-    B --> C["Parent Department"]
-    B --> D["Employees Assigned"]
-    D --> E["Organization Employees"]
-```
-
-### Project, Task, and Work Assignment Relationships
-
-A project belongs to one organization.
-
-An organization has many projects.
-
-A project has many tasks and may have many employees assigned to it through project membership.
-
-A task belongs to one project and may have one parent task, creating one-level subtask association within the same project.
-
-A task may be assigned to one employee, but that employee must already be a member of the project.
-
-Project membership is the association that connects an employee to a project and identifies whether that employee is a regular member or a project lead.
-
-A project lead has a stronger relationship to the project than a regular member because that association allows task management within the project.
-
-```mermaid
-flowchart LR
-    A["Organization"] --> B["Project"]
-    B --> C["Tasks"]
-    B --> D["Project Members"]
-    D --> E["Employee"]
-    C --> F["Parent Task"]
-    C --> G["Assigned Employee"]
-    G --> E
-```
-
-### Time Tracking Relationships
-
-A timelog belongs to exactly one employee, one organization, and one project.
-
-A timelog may also belong to one task, but only when that task belongs to the same project.
-
-The timelog is the basic time-entry record that connects an employee’s work to a project and, optionally, to a task.
-
-A timesheet belongs to exactly one employee and contains many timelogs for one week.
-
-A timelog may be included in at most one timesheet at a time.
-
-An approved timesheet creates a locked relationship over its included timelogs, which preserves the historical record of the submitted work.
-
-A timer session belongs to exactly one employee and one organization while it is running.
-
-A running timer session can be turned into a timelog when stopped, or discarded without creating a timelog.
-
-```mermaid
-flowchart LR
-    A["Employee"] --> B["Timelog"]
-    B --> C["Project"]
-    B --> D["Task"]
-    E["Timesheet"] --> F["Many Timelogs"]
-    A --> E
-    G["Timer Session"] --> A
-    G --> H["Create Timelog on Stop"]
-```
-
-### Contract and Historical Record Relationships
-
-A contract belongs to one employee.
-
-An employee may have many contracts over time, but only one contract may be active at a time.
-
-A new contract is associated with the employee’s current employment period and closes the previous active relationship so that historical contract records remain complete.
-
-Past contracts remain part of the employee’s history and are not replaced by later contracts.
-
-This creates a clear ownership chain: the employee owns the employment history, and each contract is one dated record within that history.
-
-```mermaid
-flowchart LR
-    A["Employee"] --> B["Current Active Contract"]
-    A --> C["Past Contract 1"]
-    A --> D["Past Contract 2"]
-    B --> E["Historical Employment Record"]
-```
-
-### Activity Record Relationships
-
-An activity record belongs to one organization.
-
-An organization has many activity records.
-
-Each activity record is associated with one action type, one target entity, and the user who performed the action.
-
-Activity records provide the organization with a historical relationship trail for significant business events such as employee changes, contract changes, project changes, task status changes, timesheet actions, and role assignment changes.
-
-```mermaid
-flowchart LR
-    A["Organization"] --> B["Activity Records"]
-    B --> C["Performed By"]
-    B --> D["Target Entity"]
-    B --> E["Action Type"]
-```
+An activity log entry belongs to one organization and is associated with the user account who performed the action. The activity log records significant actions that occur within the organization and keeps them tied to that organization’s business history.
 
 ## Lifecycle and Retention
 
 Describe concept lifecycle states and transitions only. Detailed retention/recovery policies belong in 05-non-functional. Operation details belong in 03-functional-requirements.
 
-### Lifecycle States Across Core Business Records
+### Lifecycle
 
-Business records in the platform move through recognizable lifecycle states that describe whether they are active, inactive, historical, archived, or removed from the organization context.
+The organization lifecycle begins when a user creates an organization during initial sign-up. The organization remains active until it is deleted by an organization owner.
 
-The organization remains the primary lifecycle boundary for organization-scoped records. When an organization ends, its operational records no longer remain available as active business data within that organization.
+An employee lifecycle is tied to the employee status within an organization. An active employee can participate in the organization according to their assigned role. A deactivated employee remains part of the historical record but cannot log time or submit timesheets. A deactivated employee can be reactivated.
 
-Employee records can move between active and deactivated states within an organization. A deactivated employee remains part of the organization’s historical record, but no longer participates as an active worker in that organization.
+An employee contract lifecycle is historical. An employee can have multiple contracts over time, but only one contract can be active at a time. When a new contract is created, the previous active contract ends the day before the new contract starts. Past contracts remain as immutable history.
 
-Projects can move between active, archived, and completed states. Archived and completed projects remain part of the organization’s record but no longer behave as active work containers for new time entries.
+A project lifecycle includes active, archived, and completed states. An active project can continue to receive work. An archived or completed project remains available for historical reference, but it cannot receive new timelogs.
 
-Tasks can move through their own work states independently of the broader project lifecycle. Task state changes remain part of the task’s history so the record reflects how work progressed over time.
+A task lifecycle includes open, in-progress, completed, and closed states. Task status changes are recorded in task history as part of the task’s historical record.
 
-Timesheets move through draft, submitted, approved, and rejected states. These states represent whether the time collection is still editable, awaiting review, accepted, or returned for revision.
+A timesheet lifecycle includes draft, submitted, approved, and rejected states. A draft timesheet can be modified before submission. A submitted timesheet awaits review. An approved timesheet becomes locked. A rejected timesheet returns to draft so the employee can modify and resubmit it.
 
-Timer sessions exist only while time is actively being tracked. A running timer is a temporary business state rather than a permanent work record until it is stopped and becomes a timelog.
-
-Activity records are historical by nature. They preserve the fact that significant business events occurred, even when the related operational record later changes state or is no longer active.
+A timer lifecycle begins when an employee starts tracking work and ends when the employee stops or discards it. A running timer continues until the employee stops it or discards it. Stopping a timer creates a timelog.
 
 ```mermaid
 flowchart LR
-    A["Active organization data"] --> B["Historical retained records"]
-    B --> C["Archived or deactivated records"]
-    C --> D["Deleted organizational context"]
+    A["active employee"] -->|"Deactivate"| B["deactivated employee"]
+    B -->|"Reactivate"| A
+    C["draft timesheet"] -->|"Submit"| D["submitted timesheet"]
+    D -->|"Approve"| E["approved timesheet"]
+    D -->|"Reject"| F["rejected timesheet"]
+    F -->|"Modify and resubmit"| C
+    G["active project"] -->|"Archive"| H["archived project"]
+    G -->|"Complete"| I["completed project"]
 ```
 
-### Retention of Historical Business Data
+### Retention
 
-Historical business data remains part of the organization’s record even after the related active state changes.
+Historical employee data is retained when an employee is deactivated. Their timelogs and timesheets remain preserved, and their employee record is not removed from historical use.
 
-Deactivated employees retain their past timelogs, timesheets, contracts, and other historical employee-related records within the organization.
+Historical contract records are retained as immutable records. Past contracts cannot be edited after they are no longer active.
 
-Approved timesheets preserve the time entries included in them as locked historical records. Rejected timesheets remain available as part of the employee’s time history and can be returned to draft for continued use.
+Historical task changes are retained through task history entries. Each status change remains available with the time of change, the previous status, the new status, and the person who made the change.
 
-Past contracts remain part of the employment history and cannot be treated as current employment terms once a newer active contract exists.
+Historical timelogs are retained even when related projects are archived or completed. Historical timesheets are retained after approval or rejection.
 
-Archived or completed projects retain their existing timelogs and related work history, even though they no longer accept new time entries.
+Historical activity log entries are retained as organizational records of significant actions.
 
-Task history preserves each recorded status change so that the business can review how task work evolved over time.
+When a department is deleted, employees assigned to it are retained and their department is cleared.
 
-Activity records are retained as the organization’s audit-style business history for significant events such as employee changes, contract changes, project changes, task status changes, timesheet decisions, and role changes.
+When a project is deleted, the project is removed only when no timelogs are associated with it. Timelog history is not removed by archiving or completing a project.
+
+When an organization is deleted, its employees, projects, tasks, timelogs, and timesheets are permanently deleted, while the owner’s account remains.
+
+### Archival
+
+Archival applies to projects and approved timesheets through their business lifecycle.
+
+An archived project remains part of the organization’s historical record. It cannot receive new timelogs, but existing timelogs remain preserved.
+
+An approved timesheet is archived in the sense that it becomes locked. Its included timelogs cannot be edited or deleted while the timesheet remains approved.
+
+Archival does not remove historical visibility for data that already exists. The archived state is a preservation state rather than a removal state.
 
 ```mermaid
 flowchart LR
-    A["Active record"] --> B["Historical record retained"]
-    B --> C["State no longer current"]
-    C --> D["Record remains visible as history"]
+    A["active project"] -->|"Archive"| B["archived project"]
+    C["submitted timesheet"] -->|"Approve"| D["approved and locked timesheet"]
 ```
 
-### Archival and Historical Preservation
+### Deletion Policy
 
-Archival is a business state used to preserve records that are no longer active while keeping their historical value intact.
+An organization owner can delete the organization only when all pending timesheets have been resolved and there are no active employee contracts.
 
-An archived project remains part of the organization’s project history and still preserves its associated timelogs.
+When an organization is deleted, all employees, projects, tasks, timelogs, and timesheets belonging to that organization are permanently deleted. The owner’s account remains, but it is no longer associated with any organization.
 
-A completed project is also preserved as a finished business record rather than being treated as an active working project.
+A project can be deleted only when it has no timelogs associated with it.
 
-Approved timesheets effectively archive their included time entries into an approved historical state, because those entries are no longer freely editable or removable as ordinary work records.
+A custom role can be deleted only when no employees are assigned to it.
 
-Historical contracts are preserved as immutable records once they are no longer active, which ensures the employment timeline can still be reviewed later.
+A department can be deleted, and deletion clears the department from employees without deleting the employees themselves.
 
-Task history preserves archived work progress by keeping previous task states and status changes available for reference.
+A user can delete their account only if they are not the sole owner of an organization, unless they transfer ownership or delete the organization first. When the account is deleted, the user’s employee records in other organizations are marked as deactivated.
 
-Archival does not erase the business meaning of a record. It marks the record as no longer active while keeping the history attached to it.
+### Recovery
 
-```mermaid
-flowchart LR
-    A["Active project"] --> B["Archived project"]
-    A --> C["Completed project"]
-    B --> D["Preserved timelogs"]
-    C --> D
-```
+A deactivated employee can be reactivated, restoring their ability to log time and submit timesheets within the organization.
 
-### Deletion Policy and Organization Removal
+A rejected timesheet can be modified and resubmitted by the employee who owns it.
 
-Deletion is used only when the business rules for removing an organization or a business record are satisfied.
+A running timer can be stopped to convert the current work session into a timelog, or discarded so that no timelog is created.
 
-An organization can be deleted only when all pending timesheets have been resolved and no active employee contracts remain.
+A deleted organization is not recoverable through the domain lifecycle described here. Its employees, projects, tasks, timelogs, and timesheets are permanently deleted when the deletion policy is satisfied.
 
-When an organization is deleted, all organization-scoped operational records are permanently removed from that organization’s business context, including employees, projects, tasks, timelogs, and timesheets.
-
-The owner’s account remains after organization deletion, but the account is no longer associated with that organization.
-
-Projects can be deleted only when they have no associated timelogs, which preserves the integrity of historical time records.
-
-Custom roles can be deleted only when no employees are assigned to them, so that active role assignments are not broken.
-
-Deleting a department does not remove employees; instead, it clears the department reference from employees who were assigned to it.
-
-Deleting a user account has organization-level consequences for that person’s employee records in other organizations, which are marked as deactivated rather than erased.
-
-```mermaid
-flowchart LR
-    A["Deletion requested"] --> B["Deletion conditions checked"]
-    B --> C["Allowed"]
-    B --> D["Not allowed"]
-    C --> E["Organization context removed"]
-    E --> F["Operational records permanently deleted"]
-    E --> G["Owner account remains"]
-```
-
-### Recovery and Reinstatement Paths
-
-Recovery describes the business ability to return certain records from an inactive state to an active state when the record still exists in the organization’s history.
-
-A deactivated employee can be reactivated and return to active participation in the organization.
-
-A rejected timesheet returns to draft status, which allows the employee to modify it and submit it again.
-
-A running timer can be discarded without becoming a timelog, or stopped so that its tracked time is preserved as a timelog.
-
-A project that is archived or completed remains recoverable as a historical record, but recovery here means returning to active business use only if the organization later changes the project’s state back to active.
-
-Recovery does not apply to records that were permanently deleted. Once an organization or record has been permanently removed, it is no longer part of the organization’s recoverable business history.
-
-Historical records such as past contracts, approved timesheets, task history, and activity records are preserved for reference rather than restored to an active working state.
-
-```mermaid
-flowchart LR
-    A["Inactive or returned record"] --> B["Reactivated or revised"]
-    A --> C["Historical record only"]
-    D["Permanently deleted"] --> E["No recovery path"]
-```
+Historical records that are preserved, such as past contracts, task history, timelogs, timesheets, and activity log entries, remain available as retained records rather than being recreated through recovery.
 
 # Business Categories and State Flows
 
@@ -1210,70 +598,49 @@ Business category classifications and state flow definitions.
 
 Define all business category classifications with their allowed values and descriptions.
 
-### Business Category Classification
+### Business Category Definitions
 
-Business categories are the top-level ways the domain groups its concepts for the purpose of describing the platform. Each category represents a major business area in the system and is used to organize the domain model into clear, understandable classifications.
+The platform uses business categories as a shared way to classify domain concepts and their allowed values. A business category defines the permitted set of values for a specific kind of classification so that the same concept is interpreted consistently across the organization.
 
-The allowed business categories are:
-- Organization concepts
-- User identity concepts
-- Role and permission concepts
-- Employee management concepts
-- Department concepts
-- Contract concepts
-- Project concepts
-- Task concepts
-- Time tracking concepts
-- Reporting concepts
-- Activity tracking concepts
+#### Classification
+A classification groups related business values under one named category. Each classification exists to describe one business meaning, such as a status, type, role, or similar controlled choice set.
 
-Each business concept belongs to one primary category so the domain model remains consistent and easy to interpret. A concept may be related to other concepts, but its business-category classification identifies its main purpose in the business domain.
+A classification is defined once and then reused wherever the same business meaning is needed. This prevents different parts of the system from using different words for the same category.
 
+Mermaid diagram:
 ```mermaid
 flowchart LR
-    A["Business Domain"] --> B["Business Category"]
-    B --> C["Organization concepts"]
-    B --> D["User identity concepts"]
-    B --> E["Role and permission concepts"]
-    B --> F["Employee management concepts"]
-    B --> G["Department concepts"]
-    B --> H["Contract concepts"]
-    B --> I["Project concepts"]
-    B --> J["Task concepts"]
-    B --> K["Time tracking concepts"]
-    B --> L["Reporting concepts"]
-    B --> M["Activity tracking concepts"]
+    A["Business Category"] --> B["Classification"]
+    B --> C["Allowed Values"]
 ```
 
-### Allowed Values for Business Classifications
+#### Allowed Values
+Each business category has a fixed set of allowed values. Users and the system can only select values that belong to the relevant category.
 
-Allowed-values define the approved set of classification values that may be used when describing a business concept. These values keep the domain model consistent and prevent overlapping or ambiguous category assignments.
+The allowed values for a category represent the complete business-approved set for that classification. If a value is not part of the category, it is not valid for use in that context.
 
-The allowed-values for business classifications are the predefined business categories listed in the Business Category Classification section. No additional category values are introduced in this specification.
+The categories in this file do not define technical storage rules or implementation details. They define business-approved choices only.
 
-A business concept must use one of the allowed-values when it is classified. If a concept does not clearly fit more than one category, the classification must follow the concept’s primary business purpose.
+#### Status Type
+A status type is a classification used to describe the current condition of a business concept. Status types are used when a concept must be represented by one of several allowed states.
 
+A status type must follow the allowed values defined for that category. The status value shown for a concept must always come from its approved business category, not from an unrelated label or free-form text.
+
+Mermaid diagram:
 ```mermaid
 flowchart LR
-    A["Business Concept"] --> B["Choose Classification"]
-    B --> C["Use Allowed Value"]
-    C --> D["Assigned Business Category"]
+    A["Status Type"] --> B["Draft"]
+    A --> C["Submitted"]
+    A --> D["Approved"]
+    A --> E["Rejected"]
 ```
 
-### Status Type Classification
+#### Business Category Usage
+Business categories are used to keep classification consistent across the platform. They help ensure that a concept, its status, and its permitted values are understood the same way wherever they appear.
 
-Status-type is the classification used for concepts whose business meaning depends on a state or progress value. A status-type does not define the action itself; it defines the set of allowed states that the concept may occupy.
+Where a concept depends on a classification, the concept must use the approved category values rather than inventing additional ones.
 
-Status-type values are used to describe business states such as whether something is active, pending, draft, submitted, approved, rejected, archived, completed, open, in-progress, closed, or deactivated, when those states are part of the domain model.
-
-The allowed-values for a status-type classification are limited to the status values that belong to the specific concept being described. A status-type must always be interpreted in the context of its owning business concept, because the same wording can have different business meaning depending on the concept.
-
-```mermaid
-flowchart LR
-    A["Business Concept"] --> B["Status-Type Classification"]
-    B --> C["Allowed Status Value"]
-    C --> D["Current Business State"]
-```
+Business categories are descriptive domain definitions only. They do not define permissions, workflows, data retention, or error handling.
 
 ## State Transitions
 
@@ -1281,118 +648,181 @@ Define valid state transition paths for stateful concepts.
 
 ### Organization Lifecycle
 
-Organizations have a defined relationship to ownership and operational readiness. An organization is associated with one or more owners among its members. An organization is associated with unresolved pending timesheets and active employee contracts as part of its operational state. When an organization is deleted, its operational data is removed, while the owner’s user account remains and is no longer associated with any organization.
+An organization begins when a user creates it during initial sign-up.
+
+An organization owner can update the organization’s settings while the organization is active.
+
+An organization can be deleted only when all pending timesheets have been resolved and there are no active employee contracts.
+
+When an organization is deleted, all employees, projects, tasks, timelogs, and timesheets in that organization are permanently deleted.
+
+When an organization is deleted, the owner’s account remains available, but it is no longer associated with any organization.
 
 ```mermaid
 flowchart LR
-    A["organization"] -->|"owned by"| B["owner member"]
-    A -->|"has operational state related to"| C["pending timesheets"]
-    A -->|"has operational state related to"| D["active employee contracts"]
-    A -->|"deletion affects"| E["organization-scoped operational data"]
-    B -->|"user account remains"| F["user account"]
+    A["organization created"] -->|"edit settings"| B["organization active"]
+    B -->|"delete when timesheets resolved and no active contracts"| C["organization deleted"]
 ```
 
-### Employee and Role Assignment Status
+### Employee Lifecycle
 
-An employee belongs to one organization and has one role within that organization at a time. An employee is linked to one user account. An employee may belong to one department. A role belongs to one organization and is assigned to exactly one employee in that organization at a time. A role is either built-in or custom.
+An employee starts as active when added to an organization.
+
+An employee can be deactivated.
+
+A deactivated employee cannot log time or submit timesheets.
+
+A deactivated employee can be reactivated.
+
+Deactivation does not remove the employee’s historical timelogs or timesheets.
+
+If a user deletes their account, their employee records in other organizations are marked as deactivated.
 
 ```mermaid
 flowchart LR
-    A["employee"] -->|"belongs to"| B["organization"]
-    A -->|"linked to"| C["user account"]
-    A -->|"may belong to"| D["department"]
-    A -->|"has one"| E["role"]
-    E -->|"belongs to"| B
-    E -->|"is either"| F["built-in role"]
-    E -->|"is either"| G["custom role"]
+    A["active"] -->|"deactivate"| B["deactivated"]
+    B -->|"reactivate"| A
 ```
 
-### Contract Progression
+### Employee Contract Lifecycle
 
-Each contract belongs to one employee. An employee may have multiple contracts over time. A contract has a relationship to a previous active contract for the same employee and to the employee’s historical contract record.
+An employee can have multiple contracts over time, but only one contract can be active at a time.
+
+A new contract starts a new contract period for the employee.
+
+When a new contract is created, the previous active contract ends the day before the new contract starts.
+
+The current active contract can be edited.
+
+Past contracts remain as historical records and cannot be edited.
 
 ```mermaid
 flowchart LR
-    A["employee"] -->|"has"| B["active contract"]
-    B -->|"can be followed by"| C["next contract"]
-    B -->|"becomes part of"| D["historical contracts"]
+    A["no active contract"] -->|"create contract"| B["active contract"]
+    B -->|"create new contract"| C["previous contract ended"]
+    B -->|"edit current active contract"| B
+    C -->|"historical record"| D["past contract"]
 ```
 
-### Department State Changes
+### Project Lifecycle
 
-A department belongs to one organization and may have one parent department for one-level nesting. A department may have employees assigned to it. Employees can also exist without a department assignment.
+A project starts as active when created.
+
+A project can be archived.
+
+A project can be completed.
+
+Archived and completed projects cannot receive new timelogs.
+
+Existing timelogs on archived or completed projects are preserved.
+
+A project can be deleted only when it has no timelogs associated with it.
 
 ```mermaid
 flowchart LR
-    A["department"] -->|"belongs to"| B["organization"]
-    A -->|"may have parent"| C["parent department"]
-    A -->|"may have assigned"| D["employees"]
-    D -->|"may also have no"| E["department"]
+    A["active"] -->|"archive"| B["archived"]
+    A -->|"complete"| C["completed"]
+    B -->|"delete if no timelogs"| D["deleted"]
+    C -->|"delete if no timelogs"| D
 ```
 
-### Project Status Flow
+### Task Status Lifecycle
 
-A project belongs to one organization. A project can have multiple assigned employees and can contain tasks. A project can collect timelogs.
+A task can move through the statuses open, in-progress, completed, and closed.
+
+Task status changes are recorded in task history.
+
+Each task history entry records when the change happened, the previous status, the new status, and who made the change.
 
 ```mermaid
 flowchart LR
-    A["project"] -->|"belongs to"| B["organization"]
-    A -->|"can have"| C["assigned employees"]
-    A -->|"can contain"| D["tasks"]
-    A -->|"can collect"| E["timelogs"]
+    A["open"] -->|"start work"| B["in-progress"]
+    B -->|"finish work"| C["completed"]
+    C -->|"close"| D["closed"]
+    B -->|"close"| D
+    A -->|"close"| D
 ```
 
-### Task Status and History
+### Timelog Lifecycle
 
-A task belongs to one project and may have one parent task for one-level subtasks. A task may be assigned to one project member. A task is referenced by timelogs and task history. Task history belongs to one task and records task status changes.
+A timelog is created when an employee logs time or when a running timer is stopped.
+
+A timelog can be edited by its owner only while it is not part of an approved timesheet.
+
+A timelog can be deleted by its owner only while it is not part of any submitted or approved timesheet.
+
+A timelog can also be edited or deleted by a user with time management permission.
+
+Timelogs included in an approved timesheet are locked from editing and deletion.
 
 ```mermaid
 flowchart LR
-    A["task"] -->|"belongs to"| B["project"]
-    A -->|"may have parent"| C["parent task"]
-    A -->|"may be assigned to"| D["project member"]
-    A -->|"is referenced by"| E["timelogs"]
-    A -->|"has"| F["task history"]
+    A["timelog created"] -->|"edit while not approved timesheet"| B["editable"]
+    A -->|"delete while not submitted or approved timesheet"| C["deleted"]
+    A -->|"included in approved timesheet"| D["locked"]
 ```
 
-### Timelog Locking and Timesheet Inclusion
+### Timesheet Lifecycle
 
-A timelog belongs to one employee and one project, and may optionally reference one task in that project. A timelog may be included in one timesheet. A timesheet belongs to one employee and contains multiple timelogs for one week. A timelog can be linked to a timer session when it is created from a running timer.
+A timesheet starts as a draft for a specific week.
+
+Creating a draft timesheet automatically includes all timelogs for that employee in that week.
+
+Timelogs can be added to or removed from a draft timesheet.
+
+A draft timesheet can be submitted for approval only when it contains timelogs and no other timesheet for the same week is already submitted or approved.
+
+A submitted timesheet can be approved or rejected.
+
+When a timesheet is approved, all included timelogs are locked.
+
+When a timesheet is rejected, it returns to draft status and the employee can modify and resubmit it.
 
 ```mermaid
 flowchart LR
-    A["timelog"] -->|"belongs to"| B["employee"]
-    A -->|"belongs to"| C["project"]
-    A -->|"may reference"| D["task"]
-    A -->|"may be included in"| E["timesheet"]
-    E -->|"belongs to"| B
-    A -->|"may be created from"| F["timer session"]
+    A["draft"] -->|"submit with timelogs and no duplicate week"| B["submitted"]
+    B -->|"approve"| C["approved"]
+    B -->|"reject with reason"| A
+    A -->|"modify"| A
 ```
 
-### Timer Session Flow
+### Timer Lifecycle
 
-Each timer session belongs to one employee and tracks one active timer at a time per employee. A timer session is associated with a project, and may be associated with an optional task and description.
+An employee can start a timer to begin tracking a work session in real time.
+
+Each employee can have at most one active timer at a time.
+
+A running timer can be edited for its description and project or task selection.
+
+A running timer can be stopped, which creates a timelog with the calculated duration.
+
+The duration from stopping a timer is rounded to the nearest minute.
+
+A running timer can be discarded without creating a timelog.
+
+If a timer is not stopped, it continues running indefinitely.
 
 ```mermaid
 flowchart LR
-    A["employee"] -->|"has at most one"| B["timer session"]
-    B -->|"is associated with"| C["project"]
-    B -->|"may be associated with"| D["task"]
-    B -->|"may include"| E["description"]
+    A["no active timer"] -->|"start timer"| B["running timer"]
+    B -->|"edit description or project/task"| B
+    B -->|"stop"| C["timelog created"]
+    B -->|"discard"| D["discarded"]
+    B -->|"not stopped"| B
 ```
 
-### Activity Recording
+### Organization Membership Context
 
-An activity record belongs to one organization and records significant business actions. The recorded actions include employee changes, contracts, projects, tasks, timesheets, and role assignments. An activity record is visible to users with organization management permission.
+A user can belong to multiple organizations.
+
+When a user logs in, they select the organization they want to work in.
+
+All subsequent actions use the selected organization context.
+
+A user can switch organizations without logging out.
 
 ```mermaid
 flowchart LR
-    A["organization"] -->|"has"| B["activity record"]
-    B -->|"records"| C["business actions"]
-    C -->|"includes"| D["employee changes"]
-    C -->|"includes"| E["contracts"]
-    C -->|"includes"| F["projects"]
-    C -->|"includes"| G["tasks"]
-    C -->|"includes"| H["timesheets"]
-    C -->|"includes"| I["role assignments"]
+    A["user belongs to multiple organizations"] -->|"select organization"| B["selected organization context"]
+    B -->|"switch organization"| C["new selected organization context"]
 ```

@@ -19,28 +19,27 @@ export async function postEcommerceMallSellerProductsProductIdImages(props: {
   productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductImage.ICreate;
 }): Promise<IEcommerceMallProductImage> {
-  // Validate product exists and is not soft-deleted
+  // Verify product exists and is not soft-deleted
   const product =
-    await MyGlobal.prisma.ecommerce_mall_products.findFirstOrThrow({
-      where: {
-        id: props.productId,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      select: { id: true, seller_id: true, deleted_at: true },
     });
-  // Verify product ownership
+  if (product.deleted_at !== null) {
+    throw new HttpException("Product not found", 404);
+  }
+  // Verify product owner matches authenticated seller
   if (product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Validate display_order is non-negative
-  if (props.body.display_order < 0) {
-    throw new HttpException("Display order must be non-negative", 400);
-  }
-  // Create product image using collector
+  // Collect data using the collector
+  const collectedData = await EcommerceMallProductImageCollector.collect({
+    body: props.body,
+    ecommerceMallProducts: { id: product.id },
+  });
+  // Create the image record
   const created = await MyGlobal.prisma.ecommerce_mall_product_images.create({
-    data: await EcommerceMallProductImageCollector.collect({
-      body: props.body,
-      ecommerceMallProducts: product,
-    }),
+    data: collectedData,
     ...EcommerceMallProductImageTransformer.select(),
   });
   // Transform and return

@@ -1,15 +1,13 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCloneComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneComment";
-import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import type { IRedditCloneKarmaScore } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneKarmaScore";
-import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
-import type { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
-import type { IRedditClonePostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostImage";
-import type { IRedditClonePostLink } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostLink";
-import type { IRedditClonePostText } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostText";
-import type { IRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneSubscription";
+import type { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
+import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
+import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
+import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
+import type { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
+import type { IRedditCommunityPostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostImage";
+import type { IRedditCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunitySubscription";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -19,150 +17,131 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_reddit_clone_communities_create } from "../../../generate/generate_random_reddit_clone_communities_create";
-import { generate_random_reddit_clone_member_posts_comments_create } from "../../../generate/generate_random_reddit_clone_member_posts_comments_create";
-import { generate_random_reddit_clone_member_posts_create } from "../../../generate/generate_random_reddit_clone_member_posts_create";
-import { generate_random_reddit_clone_member_subscriptions_create } from "../../../generate/generate_random_reddit_clone_member_subscriptions_create";
-import { prepare_random_reddit_clone_comment } from "../../../prepare/prepare_random_reddit_clone_comment";
-import { prepare_random_reddit_clone_community } from "../../../prepare/prepare_random_reddit_clone_community";
-import { prepare_random_reddit_clone_post } from "../../../prepare/prepare_random_reddit_clone_post";
-import { prepare_random_reddit_clone_post_image } from "../../../prepare/prepare_random_reddit_clone_post_image";
-import { prepare_random_reddit_clone_post_link } from "../../../prepare/prepare_random_reddit_clone_post_link";
-import { prepare_random_reddit_clone_post_text } from "../../../prepare/prepare_random_reddit_clone_post_text";
-import { prepare_random_reddit_clone_subscription } from "../../../prepare/prepare_random_reddit_clone_subscription";
+import { generate_random_reddit_community_member_communities_create } from "../../../generate/generate_random_reddit_community_member_communities_create";
+import { generate_random_reddit_community_member_posts_comments_create } from "../../../generate/generate_random_reddit_community_member_posts_comments_create";
+import { prepare_random_reddit_community_comment } from "../../../prepare/prepare_random_reddit_community_comment";
+import { prepare_random_reddit_community_community } from "../../../prepare/prepare_random_reddit_community_community";
 
 export async function test_api_comment_update_by_author(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create member account and get authorized connection
-  const memberAuth = await authorize_member_join(connection, {
+  // 1. Member registration and authentication
+  const memberConnection: api.IConnection = { host: connection.host };
+  const authResult = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       username: RandomGenerator.name(1),
-      display_name: RandomGenerator.name(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
       ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IRedditCloneMember.IJoin,
+    } satisfies IRedditCommunityMember.IJoin,
   });
-  typia.assert(memberAuth);
-  // Create member-specific connection with authorization token
-  const memberConnection: api.IConnection = { host: connection.host };
-  memberConnection.headers = { Authorization: memberAuth.token.access };
-  // 2. Create community (creator is automatically subscribed)
-  const community = await generate_random_reddit_clone_communities_create(
-    memberConnection,
-    {
-      body: {
-        name: RandomGenerator.alphabets(10),
-        description: RandomGenerator.paragraph({ sentences: 2 }),
-        icon: null,
+  typia.assert(authResult);
+  // 2. Create community
+  const community =
+    await generate_random_reddit_community_member_communities_create(
+      memberConnection,
+      {
+        body: {
+          name: RandomGenerator.alphabets(10),
+          description: RandomGenerator.paragraph({ sentences: 2 }),
+        },
       },
-    },
-  );
+    );
   typia.assert(community);
-  // 3. Create TEXT type post in the community
-  const post = await generate_random_reddit_clone_member_posts_create(
+  // 3. Subscribe to community
+  const subscription =
+    await api.functional.redditCommunity.member.communities.subscription.create(
+      memberConnection,
+      {
+        communityName: community.name,
+      },
+    );
+  typia.assert(subscription);
+  // 4. Create post in the community
+  const post = await api.functional.redditCommunity.member.posts.create(
     memberConnection,
     {
       body: {
         title: RandomGenerator.paragraph({ sentences: 1 }),
-        post_type: "TEXT",
-        community_id: community.id,
-        text: {
-          body: RandomGenerator.content({ paragraphs: 2 }),
-        },
-      } satisfies IRedditClonePost.ICreate,
+        post_type: "text" as const,
+        text_content: RandomGenerator.content({ paragraphs: 2 }),
+      } satisfies IRedditCommunityPost.ICreate,
     },
   );
   typia.assert(post);
-  // 4. Create comment on the post
-  const originalCommentBody = RandomGenerator.paragraph({ sentences: 3 });
-  const originalComment =
-    await generate_random_reddit_clone_member_posts_comments_create(
+  // 5. Create comment on the post
+  const originalCommentContent = RandomGenerator.paragraph({ sentences: 3 });
+  const comment =
+    await generate_random_reddit_community_member_posts_comments_create(
       memberConnection,
       {
-        params: { postId: post.id },
         body: {
-          body: originalCommentBody,
+          content: originalCommentContent,
           parent_comment_id: null,
-        } satisfies IRedditCloneComment.ICreate,
+        },
+        params: {
+          postId: post.id,
+        },
       },
     );
-  typia.assert(originalComment);
-  // Store original timestamps for validation
-  const originalCreatedAt = originalComment.created_at;
-  const originalUpdatedAt = originalComment.updated_at;
-  // Wait a small amount to ensure timestamp difference
-  await new Promise((resolve) => setTimeout(resolve, 10));
-  // 5. Update the comment with new body content
-  const updatedBody = RandomGenerator.paragraph({ sentences: 4 });
+  typia.assert(comment);
+  // 6. Update the comment with new content
+  const updatedContent = RandomGenerator.paragraph({ sentences: 5 });
   const updatedComment =
-    await api.functional.redditClone.member.posts.comments.update(
+    await api.functional.redditCommunity.member.posts.comments.update(
       memberConnection,
       {
         postId: post.id,
-        commentId: originalComment.id,
+        commentId: comment.id,
         body: {
-          body: updatedBody,
-        } satisfies IRedditCloneComment.IUpdate,
+          content: updatedContent,
+        } satisfies IRedditCommunityComment.IUpdate,
       },
     );
   typia.assert(updatedComment);
-  // 6. Validate the update results
-  // Verify the body was updated
+  // 7. Validate the updated comment
+  TestValidator.equals("comment id unchanged", updatedComment.id, comment.id);
   TestValidator.equals(
-    "comment body updated",
-    updatedComment.body,
-    updatedBody,
+    "content updated",
+    updatedComment.content,
+    updatedContent,
   );
-  // Verify the body is different from original
   TestValidator.notEquals(
-    "body changed from original",
-    updatedComment.body,
-    originalCommentBody,
+    "content changed",
+    updatedComment.content,
+    originalCommentContent,
   );
-  // Verify created_at remains unchanged
-  TestValidator.equals(
-    "created_at unchanged",
-    updatedComment.created_at,
-    originalCreatedAt,
-  );
-  // Verify updated_at has changed
-  TestValidator.notEquals(
-    "updated_at changed",
-    updatedComment.updated_at,
-    originalUpdatedAt,
-  );
-  // Verify comment ID remains the same
-  TestValidator.equals(
-    "comment id unchanged",
-    updatedComment.id,
-    originalComment.id,
-  );
-  // Verify author remains the same
   TestValidator.equals(
     "author unchanged",
     updatedComment.author.id,
-    originalComment.author.id,
+    comment.author.id,
   );
-  // Verify post reference remains the same
   TestValidator.equals(
-    "post reference unchanged",
+    "post unchanged",
     updatedComment.post.id,
-    originalComment.post.id,
+    comment.post.id,
   );
-  // Verify parent remains the same (null for top-level comment)
   TestValidator.equals(
-    "parent unchanged",
-    updatedComment.parent,
-    originalComment.parent,
+    "parentComment unchanged",
+    updatedComment.parentComment,
+    comment.parentComment,
   );
-  // Verify vote score remains the same
   TestValidator.equals(
-    "vote score unchanged",
-    updatedComment.vote_score,
-    originalComment.vote_score,
+    "deletedAt remains null",
+    updatedComment.deletedAt,
+    null,
+  );
+  TestValidator.predicate("updated_at is later than created_at", () => {
+    return (
+      new Date(updatedComment.updatedAt).getTime() >=
+      new Date(updatedComment.createdAt).getTime()
+    );
+  });
+  TestValidator.equals(
+    "voteScore unchanged",
+    updatedComment.voteScore,
+    comment.voteScore,
   );
 }

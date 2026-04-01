@@ -2,8 +2,10 @@ import { IEcommerceMallCategorySnapshot } from "@ORGANIZATION/PROJECT-api/lib/st
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallCategorySnapshotAtSummaryTransformer {
@@ -14,7 +16,6 @@ export namespace EcommerceMallCategorySnapshotAtSummaryTransformer {
     return {
       select: {
         id: true,
-        snapshot_id: true,
         code: true,
         name: true,
         description: true,
@@ -28,7 +29,7 @@ export namespace EcommerceMallCategorySnapshotAtSummaryTransformer {
           select: {
             id: true,
           },
-        } satisfies Prisma.ecommerce_mall_categoriesFindManyArgs,
+        },
       },
     } satisfies Prisma.ecommerce_mall_category_snapshotsFindManyArgs;
   }
@@ -37,16 +38,16 @@ export namespace EcommerceMallCategorySnapshotAtSummaryTransformer {
   ): Promise<IEcommerceMallCategorySnapshot.ISummary> {
     return {
       id: input.id,
-      snapshotId: input.snapshot_id,
+      snapshotId: input.category.id,
       code: input.code,
       name: input.name,
       description: input.description ?? undefined,
       slug: input.slug,
-      parentId: input.parent_id ?? null,
+      parentId: input.parent_id,
       level: input.level,
       sortOrder: input.sort_order,
       isActive: input.is_active,
       createdAt: input.created_at.toISOString(),
-    } satisfies IEcommerceMallCategorySnapshot.ISummary;
+    };
   }
 }

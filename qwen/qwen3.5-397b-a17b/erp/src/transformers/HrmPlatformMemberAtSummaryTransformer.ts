@@ -14,11 +14,9 @@ export namespace HrmPlatformMemberAtSummaryTransformer {
     return {
       select: {
         id: true,
-        email: true,
         display_name: true,
-        avatar_url: true,
+        avatar_image: true,
         phone_number: true,
-        created_at: true,
       },
     } satisfies Prisma.hrm_platform_membersFindManyArgs;
   }
@@ -27,11 +25,9 @@ export namespace HrmPlatformMemberAtSummaryTransformer {
   ): Promise<IHrmPlatformMember.ISummary> {
     return {
       id: input.id,
-      email: input.email,
       display_name: input.display_name,
-      avatar_url: input.avatar_url ?? null,
+      avatar_image: input.avatar_image ?? null,
       phone_number: input.phone_number ?? null,
-      created_at: input.created_at.toISOString(),
     };
   }
 }

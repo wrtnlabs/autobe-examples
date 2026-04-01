@@ -20,38 +20,49 @@ export async function postShoppingMallCustomerReviews(props: {
   customer: CustomerPayload;
   body: IShoppingMallReview.ICreate;
 }): Promise<IShoppingMallReview> {
-  // Verify order item exists, belongs to customer, and is delivered
+  // Verify order item exists and belongs to customer
   const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: {
         id: props.body.orderItemId,
         deleted_at: null,
-        status: "delivered",
       },
       select: {
+        id: true,
+        status: true,
         shopping_mall_order_id: true,
       },
     });
-  // Verify the order belongs to the customer
+  // Verify order item status is delivered
+  if (orderItem.status !== "delivered") {
+    throw new HttpException(
+      "Order item must be delivered before reviewing",
+      403,
+    );
+  }
+  // Verify order item belongs to customer
   const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
     where: {
       id: orderItem.shopping_mall_order_id,
-      shopping_mall_customer_id: props.customer.id,
     },
     select: {
-      id: true,
+      shopping_mall_customer_id: true,
     },
   });
+  if (order.shopping_mall_customer_id !== props.customer.id) {
+    throw new HttpException("Order item does not belong to customer", 403);
+  }
   // Check if review already exists for this order item
-  const existingReview = await MyGlobal.prisma.shopping_mall_reviews.findUnique(
-    {
-      where: { shopping_order_item_id: props.body.orderItemId },
+  const existingReview = await MyGlobal.prisma.shopping_mall_reviews.findFirst({
+    where: {
+      shopping_order_item_id: props.body.orderItemId,
+      deleted_at: null,
     },
-  );
-  if (existingReview !== null) {
+  });
+  if (existingReview) {
     throw new HttpException("Review already exists for this order item", 409);
   }
-  // Create the review using collector and transformer
+  // Create review using Collector
   const created = await MyGlobal.prisma.shopping_mall_reviews.create({
     data: await ShoppingMallReviewCollector.collect({
       body: props.body,

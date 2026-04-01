@@ -3,8 +3,10 @@ import { IEcommerceMallCategorySnapshot } from "@ORGANIZATION/PROJECT-api/lib/st
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCategoryAtSummaryTransformer } from "./EcommerceMallCategoryAtSummaryTransformer";
 
@@ -16,6 +18,7 @@ export namespace EcommerceMallCategorySnapshotTransformer {
     return {
       select: {
         id: true,
+        snapshot_id: true,
         code: true,
         name: true,
         description: true,
@@ -25,7 +28,6 @@ export namespace EcommerceMallCategorySnapshotTransformer {
         sort_order: true,
         is_active: true,
         created_at: true,
-        snapshot_id: true,
         category: EcommerceMallCategoryAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_category_snapshotsFindManyArgs;
@@ -38,13 +40,13 @@ export namespace EcommerceMallCategorySnapshotTransformer {
       snapshot_id: input.snapshot_id,
       code: input.code,
       name: input.name,
-      description: input.description ?? null,
+      description: input.description,
       slug: input.slug,
-      parent_id: input.parent_id ?? null,
+      parent_id: input.parent_id,
       level: input.level,
       sort_order: input.sort_order,
       is_active: input.is_active,
-      created_at: toISOStringSafe(input.created_at),
+      created_at: input.created_at.toISOString(),
       category: await EcommerceMallCategoryAtSummaryTransformer.transform(
         input.category,
       ),

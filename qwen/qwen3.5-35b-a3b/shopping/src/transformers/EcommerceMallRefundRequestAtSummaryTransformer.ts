@@ -6,8 +6,10 @@ import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/struc
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 import { EcommerceMallOrderItemAtSummaryTransformer } from "./EcommerceMallOrderItemAtSummaryTransformer";
@@ -41,12 +43,6 @@ export namespace EcommerceMallRefundRequestAtSummaryTransformer {
       id: input.id,
       refund_code: input.refund_code,
       status: input.status,
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      orderItem: await EcommerceMallOrderItemAtSummaryTransformer.transform(
-        input.orderItem,
-      ),
       delivery_date: input.delivery_date.toISOString(),
       submitted_at: input.submitted_at?.toISOString() ?? null,
       decision_at: input.decision_at?.toISOString() ?? null,
@@ -54,6 +50,12 @@ export namespace EcommerceMallRefundRequestAtSummaryTransformer {
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
+        input.customer,
+      ),
+      orderItem: await EcommerceMallOrderItemAtSummaryTransformer.transform(
+        input.orderItem,
+      ),
+    } satisfies IEcommerceMallRefundRequest.ISummary;
   }
 }

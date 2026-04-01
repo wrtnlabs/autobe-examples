@@ -17,13 +17,18 @@ export async function getRedditLikeGuestSessionsSessionId(props: {
   guest: GuestPayload;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeGuestSession> {
-  const session =
-    await MyGlobal.prisma.reddit_like_guest_sessions.findUniqueOrThrow({
-      where: { id: props.sessionId },
-      ...RedditLikeGuestSessionTransformer.select(),
-    });
-  if (session.guest.id !== props.guest.id) {
+  const session = await MyGlobal.prisma.reddit_like_guest_sessions.findUnique({
+    where: { id: props.sessionId },
+    ...RedditLikeGuestSessionTransformer.select(),
+  });
+  if (session === null) {
+    throw new HttpException("Session not found", 404);
+  }
+  if (session.reddit_like_guest_id !== props.guest.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return await RedditLikeGuestSessionTransformer.transform(session);
+  if (session.expired_at < new Date()) {
+    throw new HttpException("Session has expired", 404);
+  }
+  return RedditLikeGuestSessionTransformer.transform(session);
 }

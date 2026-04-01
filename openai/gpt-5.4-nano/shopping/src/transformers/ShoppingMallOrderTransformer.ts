@@ -6,6 +6,7 @@ import { IShoppingMallPayment } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -57,16 +58,18 @@ export namespace ShoppingMallOrderTransformer {
       placed_at: input.placed_at.toISOString(),
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
       customer: await ShoppingMallOrderAtSummaryTransformer.transform(
-        input.customer,
+        input.customer as any,
       ),
       payment: await ShoppingMallPaymentTransformer.transform(input.payment),
-      orderItems: await ArrayUtil.asyncMap(input.orderItems, (it) =>
-        ShoppingMallOrderItemAtSummaryTransformer.transform(it),
+      orderItems: await ArrayUtil.asyncMap(
+        input.orderItems,
+        ShoppingMallOrderItemAtSummaryTransformer.transform,
       ),
-      shipments: await ArrayUtil.asyncMap(input.shipments, (it) =>
-        ShoppingMallShipmentAtSummaryTransformer.transform(it),
+      shipments: await ArrayUtil.asyncMap(
+        input.shipments,
+        ShoppingMallShipmentAtSummaryTransformer.transform,
       ),
     };
   }

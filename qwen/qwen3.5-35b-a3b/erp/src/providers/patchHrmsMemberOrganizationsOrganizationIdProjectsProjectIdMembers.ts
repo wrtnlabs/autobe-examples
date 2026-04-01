@@ -23,139 +23,124 @@ export async function patchHrmsMemberOrganizationsOrganizationIdProjectsProjectI
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const maxLimit = 100;
-  const effectiveLimit = Math.min(limit, maxLimit);
-  const hasProjectFilter =
-    props.body.projectIds && props.body.projectIds.length > 0;
-  const projectNames = new Map<string, string>();
-  const projectMemberships =
-    await MyGlobal.prisma.hrms_project_members.findMany({
-      where: {
-        project_id: props.projectId,
-        ...(props.body.includeInactive
-          ? {}
-          : {
-              employee: {
-                status: "active",
-              },
-            }),
-      },
-      include: {
-        employee: {
-          include: {
-            department: { select: { name: true } },
+  const topN = props.body.topN;
+  // Get all project members with their employee and department info
+  const projectMembers = await MyGlobal.prisma.hrms_project_members.findMany({
+    where: {
+      project_id: props.projectId,
+      employee: {
+        organizationMember: {
+          organization: {
+            id: props.organizationId,
           },
         },
       },
-    });
-  if (hasProjectFilter && props.body.projectIds) {
-    const projects = await MyGlobal.prisma.hrms_projects.findMany({
-      where: {
-        id: { in: props.body.projectIds },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
-    for (const project of projects) {
-      projectNames.set(project.id, project.name);
-    }
-  }
-  const employeeIds = projectMemberships.map((pm) => pm.employee_id);
-  const timelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
-    where: {
-      employee_id: { in: employeeIds },
-      ...(hasProjectFilter
-        ? { project_id: { in: props.body.projectIds! } }
-        : {}),
-      ...(props.body.startDate ? { date: { gte: props.body.startDate } } : {}),
-      ...(props.body.endDate ? { date: { lte: props.body.endDate } } : {}),
+      ...(props.body.includeInactive !== true && {
+        employee: {
+          deleted_at: null,
+        },
+      }),
     },
+    select: {
+      id: true,
+      employee_id: true,
+      employee: {
+        select: {
+          display_name: true,
+          department: {
+            select: { name: true },
+          },
+        },
+      },
+    },
+    orderBy: { employee: { display_name: "asc" } },
   });
-  const employeeMetrics = new Map<
-    string,
-    {
-      totalMinutes: number;
-      billableMinutes: number;
-      byProject: Map<
-        string,
-        {
-          totalMinutes: number;
-          billableMinutes: number;
-        }
-      >;
-    }
-  >();
-  for (const timelog of timelogs) {
-    const empId = timelog.employee_id;
-    const existing = employeeMetrics.get(empId) || {
-      totalMinutes: 0,
-      billableMinutes: 0,
-      byProject: new Map<
-        string,
-        {
-          totalMinutes: number;
-          billableMinutes: number;
-        }
-      >(),
+  // Calculate metrics for each employee
+  const metricData = await ArrayUtil.asyncMap(projectMembers, async (pm) => {
+    const timelogFilters: Prisma.hrms_timelogsWhereInput = {
+      deleted_at: null,
+      employee_id: pm.employee_id,
+      ...(props.body.startDate && { date: { gte: props.body.startDate } }),
+      ...(props.body.endDate && { date: { lte: props.body.endDate } }),
+      ...(props.body.projectIds &&
+        props.body.projectIds.length > 0 && {
+          project_id: { in: props.body.projectIds },
+        }),
     };
-    const minutes = timelog.duration_minutes;
-    existing.totalMinutes += minutes;
-    if (timelog.billable) {
-      existing.billableMinutes += minutes;
-    }
-    if (hasProjectFilter && props.body.projectIds) {
-      const projMetrics = existing.byProject.get(timelog.project_id) || {
-        totalMinutes: 0,
-        billableMinutes: 0,
-      };
-      projMetrics.totalMinutes += minutes;
-      if (timelog.billable) {
-        projMetrics.billableMinutes += minutes;
-      }
-      existing.byProject.set(timelog.project_id, projMetrics);
-    }
-    employeeMetrics.set(empId, existing);
-  }
-  const results = projectMemberships.map((pm) => {
-    const metrics = employeeMetrics.get(pm.employee_id);
-    const totalMinutes = metrics ? metrics.totalMinutes : 0;
-    const billableMinutes = metrics ? metrics.billableMinutes : 0;
+    const timelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+      where: timelogFilters,
+      select: {
+        duration_minutes: true,
+        billable: true,
+      },
+    });
+    const totalMinutes = timelogs.reduce(
+      (sum, t) => sum + t.duration_minutes,
+      0,
+    );
+    const billableMinutes = timelogs.reduce(
+      (sum, t) => sum + (t.billable ? t.duration_minutes : 0),
+      0,
+    );
     const totalHours = totalMinutes / 60;
     const billableHours = billableMinutes / 60;
     const billableRate = totalHours > 0 ? billableHours / totalHours : 0;
-    let hoursByProject: IHrmsProjectMember.IHoursByProject[] | undefined;
-    let projectName: string | undefined;
-    if (
-      hasProjectFilter &&
-      props.body.projectIds &&
-      props.body.projectIds.length > 0
-    ) {
-      if (props.body.projectIds.length === 1) {
-        projectName = projectNames.get(props.body.projectIds[0]);
-      } else if (metrics && metrics.byProject.size > 0) {
-        hoursByProject = Array.from(metrics.byProject.entries()).map(
-          ([projectId, projMetrics]) => ({
-            projectName: projectNames.get(projectId) ?? "",
-            totalHours: projMetrics.totalMinutes / 60,
-            billableHours: projMetrics.billableMinutes / 60,
-          }),
-        );
-      }
-    }
+    // Calculate hours by project if projectIds filter is provided
+    const hoursByProject =
+      props.body.projectIds && props.body.projectIds.length > 0
+        ? await MyGlobal.prisma.hrms_timelogs
+            .findMany({
+              where: {
+                ...timelogFilters,
+                employee_id: pm.employee_id,
+                project_id: { in: props.body.projectIds },
+              },
+              select: {
+                duration_minutes: true,
+                billable: true,
+                project: { select: { name: true } },
+              },
+            })
+            .then((allTimelogs) => {
+              const grouped: Record<
+                string,
+                {
+                  total: number;
+                  billable: number;
+                }
+              > = {};
+              for (const tl of allTimelogs) {
+                const projectName = tl.project.name;
+                if (!grouped[projectName]) {
+                  grouped[projectName] = { total: 0, billable: 0 };
+                }
+                grouped[projectName].total += tl.duration_minutes;
+                if (tl.billable) {
+                  grouped[projectName].billable += tl.duration_minutes;
+                }
+              }
+              return Object.entries(grouped).map(
+                ([projectName, { total, billable }]) => ({
+                  projectName,
+                  totalHours: total / 60,
+                  billableHours: billable / 60,
+                }),
+              ) satisfies IHrmsProjectMember.IHoursByProject[];
+            })
+        : undefined;
     return {
-      id: pm.employee_id,
+      id: pm.employee_id as string & tags.Format<"uuid">,
       displayName: pm.employee.display_name,
       departmentName: pm.employee.department?.name ?? "",
       totalHours,
       billableHours,
       billableRate,
-      projectName,
-      hoursByProject,
+      projectName: undefined,
+      hoursByProject: hoursByProject?.length ? hoursByProject : undefined,
     } satisfies IHrmsProjectMember.ISummary;
   });
-  const sorted = results.sort((a, b) => {
+  // Sort by metric
+  metricData.sort((a, b) => {
     switch (props.body.metric) {
       case "billable":
         return b.billableHours - a.billableHours;
@@ -167,16 +152,17 @@ export async function patchHrmsMemberOrganizationsOrganizationIdProjectsProjectI
         return 0;
     }
   });
-  const paginated = sorted.slice(skip, skip + effectiveLimit);
-  const total = sorted.length;
-  const totalPages = total > 0 ? Math.ceil(total / effectiveLimit) : 0;
+  // Apply topN if specified
+  const sortedData = topN ? metricData.slice(0, topN) : metricData;
+  const total = sortedData.length;
+  const paginatedData = sortedData.slice(skip, skip + limit);
   return {
-    data: paginated,
     pagination: {
       current: page,
-      limit: effectiveLimit,
+      limit,
       records: total,
-      pages: totalPages,
-    },
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+    data: paginatedData,
   } satisfies IPageIHrmsProjectMember.ISummary;
 }

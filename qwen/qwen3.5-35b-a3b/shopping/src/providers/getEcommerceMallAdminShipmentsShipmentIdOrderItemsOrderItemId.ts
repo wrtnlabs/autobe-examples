@@ -12,8 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { EcommerceMallOrderAtSummaryTransformer } from "../transformers/EcommerceMallOrderAtSummaryTransformer";
-import { EcommerceMallShipmentAtSummaryTransformer } from "../transformers/EcommerceMallShipmentAtSummaryTransformer";
+import { EcommerceMallShipmentsOrderItemTransformer } from "../transformers/EcommerceMallShipmentsOrderItemTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -22,46 +21,16 @@ export async function getEcommerceMallAdminShipmentsShipmentIdOrderItemsOrderIte
   shipmentId: string & tags.Format<"uuid">;
   orderItemId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallShipmentsOrderItem> {
-  const result =
-    await MyGlobal.prisma.ecommerce_mall_shipments_order_items.findUniqueOrThrow(
+  const record =
+    await MyGlobal.prisma.ecommerce_mall_shipments_order_items.findFirstOrThrow(
       {
         where: {
-          ecommerce_mall_shipment_id_ecommerce_mall_order_item_id: {
-            ecommerce_mall_shipment_id: props.shipmentId,
-            ecommerce_mall_order_item_id: props.orderItemId,
-          },
+          id: props.orderItemId,
+          ecommerce_mall_shipment_id: props.shipmentId,
+          deleted_at: null,
         },
-        select: {
-          id: true,
-          shipped_quantity: true,
-          orderItem: {
-            select: {
-              id: true,
-              unit_price: true,
-              total_price: true,
-              product_name: true,
-              product_sku: true,
-              variant_name: true,
-            },
-          },
-          shipment: EcommerceMallShipmentAtSummaryTransformer.select(),
-        },
+        ...EcommerceMallShipmentsOrderItemTransformer.select(),
       },
     );
-  const shipmentData =
-    await EcommerceMallShipmentAtSummaryTransformer.transform(result.shipment);
-  const orderData = await EcommerceMallOrderAtSummaryTransformer.transform(
-    result.shipment.order,
-  );
-  return {
-    id: result.id,
-    quantity: result.shipped_quantity,
-    unit_price: result.orderItem.unit_price,
-    total_price: result.orderItem.total_price,
-    product_name: result.orderItem.product_name,
-    product_sku: result.orderItem.product_sku,
-    variant_name: result.orderItem.variant_name,
-    shipment: shipmentData,
-    order: orderData,
-  } satisfies IEcommerceMallShipmentsOrderItem;
+  return await EcommerceMallShipmentsOrderItemTransformer.transform(record);
 }

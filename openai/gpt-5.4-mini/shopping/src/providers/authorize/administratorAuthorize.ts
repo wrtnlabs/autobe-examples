@@ -6,27 +6,34 @@ import { AdministratorPayload } from "../../decorators/payload/AdministratorPayl
 export async function administratorAuthorize(request: {
   headers: { authorization?: string };
 }): Promise<AdministratorPayload> {
-  let payload: AdministratorPayload;
-
-  try {
-    payload = jwtAuthorize({ request }) as AdministratorPayload;
-  } catch {
-    throw new UnauthorizedException("Invalid or missing authorization token");
-  }
+  const payload: AdministratorPayload = jwtAuthorize({ request }) as AdministratorPayload;
 
   if (payload.type !== "administrator") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const administrator = await MyGlobal.prisma.shopping_mall_administrators.findFirst({
+  const administrator = await MyGlobal.prisma.mall_platform_administrators.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
     },
   });
 
   if (administrator === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new UnauthorizedException("Administrator account not found");
+  }
+
+  const session = await MyGlobal.prisma.mall_platform_administrator_sessions.findFirst({
+    where: {
+      id: payload.session_id,
+      administrator_id: payload.id,
+      expired_at: {
+        gt: new Date(),
+      },
+    },
+  });
+
+  if (session === null) {
+    throw new UnauthorizedException("Administrator session is invalid");
   }
 
   return payload;

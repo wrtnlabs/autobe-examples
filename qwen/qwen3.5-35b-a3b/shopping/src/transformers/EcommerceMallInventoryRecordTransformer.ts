@@ -11,8 +11,10 @@ import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/struc
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCancellationRequestAtSummaryTransformer } from "./EcommerceMallCancellationRequestAtSummaryTransformer";
 import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
@@ -27,10 +29,6 @@ export namespace EcommerceMallInventoryRecordTransformer {
     return {
       select: {
         id: true,
-        ecommerce_mall_product_variant_id: true,
-        ecommerce_mall_order_id: true,
-        ecommerce_mall_cancellation_request_id: true,
-        ecommerce_mall_refund_request_id: true,
         quantity_change: true,
         remaining_quantity: true,
         reason: true,
@@ -53,11 +51,10 @@ export namespace EcommerceMallInventoryRecordTransformer {
   ): Promise<IEcommerceMallInventoryRecord> {
     return {
       id: input.id,
-      variant_id: input.ecommerce_mall_product_variant_id,
-      order_id: input.ecommerce_mall_order_id ?? undefined,
-      cancellation_request_id:
-        input.ecommerce_mall_cancellation_request_id ?? undefined,
-      refund_request_id: input.ecommerce_mall_refund_request_id ?? undefined,
+      variant_id: input.variant.id,
+      order_id: input.order?.id ?? undefined,
+      cancellation_request_id: input.cancellationRequest?.id ?? undefined,
+      refund_request_id: input.refundRequest?.id ?? undefined,
       quantity_change: input.quantity_change,
       remaining_quantity: input.remaining_quantity,
       reason: input.reason,

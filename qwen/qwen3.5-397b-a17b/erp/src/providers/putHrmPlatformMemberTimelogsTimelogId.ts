@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
@@ -27,99 +28,78 @@ export async function putHrmPlatformMemberTimelogsTimelogId(props: {
 }): Promise<IHrmPlatformTimelog> {
   const timelog = await MyGlobal.prisma.hrm_platform_timelogs.findUniqueOrThrow(
     {
-      where: { id: props.timelogId },
-      ...HrmPlatformTimelogTransformer.select(),
-    },
-  );
-  if (timelog.deleted_at !== null) {
-    throw new HttpException("Timelog not found", 404);
-  }
-  const timelogEmployee =
-    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: { id: timelog.employee.id },
+      where: { id: props.timelogId, deleted_at: null },
       select: {
         id: true,
-        organization_id: true,
-        member_id: true,
+        employee_id: true,
+        timesheet_id: true,
+        timesheet: { select: { status: true } },
       },
+    },
+  );
+  if (
+    timelog.timesheet_id !== null &&
+    timelog.timesheet?.status === "approved"
+  ) {
+    throw new HttpException("Cannot update timelog in approved timesheet", 422);
+  }
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+      where: { user_id: props.member.id, deleted_at: null },
+      select: { id: true, role_id: true, organization_id: true },
     });
-  const isOwner = timelogEmployee.member_id === props.member.id;
-  let hasTimeManagePermission = false;
+  const isOwner = timelog.employee_id === employee.id;
   if (!isOwner) {
-    const requesterEmployee =
-      await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    const hasTimeManagePermission =
+      await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
         where: {
-          member_id: props.member.id,
-          organization_id: timelogEmployee.organization_id,
+          hrm_platform_role_id: employee.role_id,
+          permission: "time:manage",
           deleted_at: null,
         },
-        select: {
-          role_id: true,
-        },
       });
-    if (requesterEmployee) {
-      const rolePermissions =
-        await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
-          where: {
-            role_id: requesterEmployee.role_id,
-            permission: "time:manage",
-          },
-        });
-      hasTimeManagePermission = rolePermissions.length > 0;
+    if (!hasTimeManagePermission) {
+      throw new HttpException("Forbidden", 403);
     }
   }
-  if (!isOwner && !hasTimeManagePermission) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (timelog.timesheet !== null && timelog.timesheet.status === "approved") {
-    throw new HttpException("Cannot update timelog in approved timesheet", 403);
-  }
-  if (props.body.project_id !== undefined && props.body.project_id !== null) {
+  if (props.body.project_id !== undefined) {
     const projectMembership =
       await MyGlobal.prisma.hrm_platform_project_members.findFirst({
         where: {
-          employee: { id: timelogEmployee.id },
-          project: { id: props.body.project_id },
+          hrm_platform_employee_id: employee.id,
+          hrm_platform_project_id: props.body.project_id,
           deleted_at: null,
         },
       });
     if (!projectMembership) {
       throw new HttpException("Employee is not assigned to this project", 400);
     }
-  }
-  if (props.body.task_id !== undefined && props.body.task_id !== null) {
-    const targetProjectId = props.body.project_id ?? timelog.project.id;
-    const task = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
-      where: { id: props.body.task_id },
-      select: { project: { select: { id: true } } },
-    });
-    if (!task || task.project.id !== targetProjectId) {
-      throw new HttpException(
-        "Task does not belong to the selected project",
-        400,
-      );
+    if (props.body.task_id !== undefined && props.body.task_id !== null) {
+      const task = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
+        where: { id: props.body.task_id },
+        select: { hrm_platform_project_id: true },
+      });
+      if (!task || task.hrm_platform_project_id !== props.body.project_id) {
+        throw new HttpException(
+          "Task does not belong to the specified project",
+          400,
+        );
+      }
     }
   }
   const updated = await MyGlobal.prisma.hrm_platform_timelogs.update({
     where: { id: props.timelogId },
     data: {
-      ...(props.body.date !== undefined &&
-        props.body.date !== null && { date: new Date(props.body.date) }),
-      ...(props.body.duration_minutes !== undefined &&
-        props.body.duration_minutes !== null && {
-          duration_minutes: props.body.duration_minutes,
-        }),
-      ...(props.body.project_id !== undefined &&
-        props.body.project_id !== null && {
-          project: { connect: { id: props.body.project_id } },
-        }),
-      ...(props.body.task_id !== undefined
-        ? props.body.task_id === null
-          ? { task: { disconnect: true } }
-          : { task: { connect: { id: props.body.task_id } } }
-        : {}),
+      ...(props.body.date !== undefined && { date: new Date(props.body.date) }),
+      ...(props.body.duration_minutes !== undefined && {
+        duration_minutes: props.body.duration_minutes,
+      }),
+      ...(props.body.project_id !== undefined && {
+        project_id: props.body.project_id,
+      }),
+      ...(props.body.task_id !== undefined && { task_id: props.body.task_id }),
       ...(props.body.description !== undefined && {
-        description: props.body.description ?? null,
+        description: props.body.description,
       }),
       ...(props.body.billable !== undefined && {
         billable: props.body.billable,

@@ -15,7 +15,6 @@ export async function deleteRedditLikeOwnerCommunitiesCommunityId(props: {
   owner: OwnerPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find community and verify ownership
   const community = await MyGlobal.prisma.reddit_like_communities.findFirst({
     where: {
       id: props.communityId,
@@ -32,18 +31,16 @@ export async function deleteRedditLikeOwnerCommunitiesCommunityId(props: {
   }
   if (community.owner_id !== props.owner.id) {
     throw new HttpException(
-      "Forbidden - only the community owner can delete this community",
+      "Forbidden - only the owner can delete this community",
       403,
     );
   }
-  // Soft delete the community by setting deleted_at
+  const now = new Date();
   await MyGlobal.prisma.reddit_like_communities.update({
     where: { id: props.communityId },
     data: {
-      deleted_at: new Date(),
-      updated_at: new Date(),
+      deleted_at: now,
+      updated_at: now,
     },
   });
-  // If there's an icon attachment, the cascade delete on the attachment reference
-  // will handle cleanup due to onDelete: Cascade in the schema
 }

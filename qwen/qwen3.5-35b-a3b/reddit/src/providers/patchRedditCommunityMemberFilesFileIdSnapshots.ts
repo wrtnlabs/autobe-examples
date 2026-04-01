@@ -12,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { RedditCommunityFileSnapshotAtSummaryTransformer } from "../transformers/RedditCommunityFileSnapshotAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,92 +21,78 @@ export async function patchRedditCommunityMemberFilesFileIdSnapshots(props: {
   fileId: string & tags.Format<"uuid">;
   body: IRedditCommunityFileSnapshot.IRequest;
 }): Promise<IPageIRedditCommunityFileSnapshot.ISummary> {
-  // Validate file exists and is not deleted
-  const file = await MyGlobal.prisma.reddit_community_files.findUniqueOrThrow({
+  // Validate file exists
+  const file = await MyGlobal.prisma.reddit_community_files.findFirst({
     where: {
       id: props.fileId,
-      deleted_at: null,
     },
+    select: { id: true },
   });
+  if (file === null) {
+    throw new HttpException("File not found", 404);
+  }
   // Build pagination parameters
   const page = props.body.page ?? 1;
   const pageSize = props.body.pageSize ?? 20;
-  const limit = props.body.limit ?? pageSize;
-  const skip = (page - 1) * limit;
-  // Build WHERE clause with filters using string comparisons for date-time fields
+  const limit = props.body.limit ?? 100;
+  // Build filter conditions
+  const snapshotCreatedAtRange = props.body.snapshotCreatedAtRange;
+  const createdAtRange = props.body.createdAtRange;
   const whereInput: Prisma.reddit_community_file_snapshotsWhereInput = {
     reddit_community_file_id: props.fileId,
-    ...(props.body.snapshotCreatedAtRange?.start && {
-      snapshot_created_at: { gte: props.body.snapshotCreatedAtRange.start },
+    ...(snapshotCreatedAtRange !== undefined && {
+      snapshot_created_at: {
+        gte: snapshotCreatedAtRange.start,
+        lte: snapshotCreatedAtRange.end,
+      },
     }),
-    ...(props.body.snapshotCreatedAtRange?.end && {
-      snapshot_created_at: { lte: props.body.snapshotCreatedAtRange.end },
+    ...(createdAtRange !== undefined && {
+      created_at: {
+        gte: createdAtRange.start,
+        lte: createdAtRange.end,
+      },
     }),
-    ...(props.body.createdAtRange?.start && {
-      created_at: { gte: props.body.createdAtRange.start },
-    }),
-    ...(props.body.createdAtRange?.end && {
-      created_at: { lte: props.body.createdAtRange.end },
-    }),
-  };
-  // Build ORDER BY clause
-  const orderByInput = (
-    props.body.sortBy === "created_at"
-      ? [{ created_at: props.body.order === "asc" ? "asc" : "desc" }]
-      : [{ snapshot_created_at: props.body.order === "asc" ? "asc" : "desc" }]
-  ) satisfies Prisma.reddit_community_file_snapshotsOrderByWithRelationInput[];
-  // Fetch paginated snapshots
+  } satisfies Prisma.reddit_community_file_snapshotsWhereInput;
+  // Calculate skip for pagination (respecting limit)
+  const skip = (page - 1) * pageSize;
+  const take = limit < pageSize ? limit : pageSize;
+  // Build order by input
+  const sortBy = props.body.sortBy ?? "snapshot_created_at";
+  const order = props.body.order ?? "desc";
+  const orderByInput =
+    sortBy === "created_at"
+      ? ([
+          {
+            [sortBy]: order,
+          },
+        ] satisfies Prisma.reddit_community_file_snapshotsOrderByWithRelationInput[])
+      : ([
+          {
+            snapshot_created_at: order,
+          },
+        ] satisfies Prisma.reddit_community_file_snapshotsOrderByWithRelationInput[]);
+  // Query snapshots - use sequential awaits per guidelines
   const data = await MyGlobal.prisma.reddit_community_file_snapshots.findMany({
     where: whereInput,
-    orderBy: orderByInput,
     skip,
-    take: limit,
-    select: {
-      id: true,
-      snapshot_created_at: true,
-      created_at: true,
-      updated_at: true,
-      file: {
-        select: {
-          id: true,
-          file_type: true,
-          mime_type: true,
-          file_path: true,
-          file_size: true,
-          created_at: true,
-        },
-      },
-    },
+    take,
+    orderBy: orderByInput,
+    ...RedditCommunityFileSnapshotAtSummaryTransformer.select(),
   });
-  // Fetch total count
   const total = await MyGlobal.prisma.reddit_community_file_snapshots.count({
     where: whereInput,
   });
-  // Transform results to DTO format using proper type resolution
-  const transformedData: IRedditCommunityFileSnapshot.ISummary[] =
-    await ArrayUtil.asyncMap(data, async (snapshot) => ({
-      id: snapshot.id,
-      snapshot_created_at: snapshot.snapshot_created_at.toISOString(),
-      created_at: snapshot.created_at.toISOString(),
-      updated_at: snapshot.updated_at.toISOString(),
-      file: {
-        id: snapshot.file.id,
-        fileType: snapshot.file.file_type as
-          | "user_avatar"
-          | "post_image"
-          | "community_icon",
-        mimeType: snapshot.file.mime_type,
-        filePath: snapshot.file.file_path,
-        fileSize: snapshot.file.file_size,
-        createdAt: snapshot.file.created_at.toISOString(),
-      } satisfies IRedditCommunityFile.ISummary,
-    }));
+  const totalPages = Math.ceil(total / pageSize);
+  const transformedData = (await ArrayUtil.asyncMap(
+    data,
+    RedditCommunityFileSnapshotAtSummaryTransformer.transform,
+  )) satisfies IRedditCommunityFileSnapshot.ISummary[];
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit: pageSize,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: totalPages,
     } satisfies IPage.IPagination,
     data: transformedData,
   } satisfies IPageIRedditCommunityFileSnapshot.ISummary;

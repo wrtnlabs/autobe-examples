@@ -16,17 +16,26 @@ export async function getErpHrmTimeTrackingReportDefinitionsReportDefinitionIdDi
   reportDefinitionId: string & tags.Format<"uuid">;
   dimensionId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingReportDefinitionDimension> {
-  const reportDefinition =
-    await MyGlobal.prisma.erp_hrm_time_tracking_report_definitions.findUniqueOrThrow(
-      {
-        where: { id: props.reportDefinitionId },
-        select: { id: true },
+  // Resolve report definition first to ensure it exists for the provided id.
+  // Organization scoping and report:view permission are enforced by upstream auth middleware,
+  // but we still ensure the dimension belongs to the given report definition id.
+  await MyGlobal.prisma.erp_hrm_time_tracking_report_definitions.findUniqueOrThrow(
+    {
+      where: {
+        id: props.reportDefinitionId,
       },
-    );
+      select: {
+        id: true,
+        deleted_at: true,
+      },
+    },
+  );
   const dimension =
     await MyGlobal.prisma.erp_hrm_time_tracking_report_definition_dimensions.findUniqueOrThrow(
       {
-        where: { id: props.dimensionId },
+        where: {
+          id: props.dimensionId,
+        },
         select: {
           id: true,
           erp_hrm_time_tracking_report_definition_id: true,
@@ -36,11 +45,22 @@ export async function getErpHrmTimeTrackingReportDefinitionsReportDefinitionIdDi
           created_at: true,
           updated_at: true,
           deleted_at: true,
+          reportDefinition: {
+            select: {
+              id: true,
+            },
+          },
+          reportOutputs: {
+            select: {
+              id: true,
+            },
+          },
         },
       },
     );
   if (
-    dimension.erp_hrm_time_tracking_report_definition_id !== reportDefinition.id
+    dimension.erp_hrm_time_tracking_report_definition_id !==
+    props.reportDefinitionId
   ) {
     throw new HttpException("Not Found", 404);
   }

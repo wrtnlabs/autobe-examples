@@ -1,16 +1,14 @@
 import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
-import { SuperadminPayload } from "../../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../../decorators/payload/SuperAdminPayload";
 
 export async function superadminAuthorize(request: {
   headers: { authorization?: string };
-}): Promise<SuperadminPayload> {
-  const payload: SuperadminPayload = jwtAuthorize({
-    request,
-  }) as SuperadminPayload;
+}): Promise<SuperAdminPayload> {
+  const payload: SuperAdminPayload = jwtAuthorize({ request }) as SuperAdminPayload;
 
-  if (payload.type !== "superAdmin") {
+  if (payload.type !== "super_admin") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 

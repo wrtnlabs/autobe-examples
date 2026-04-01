@@ -1,5 +1,4 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
 import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -18,20 +17,23 @@ export async function getHrmPlatformMemberOrganizationsOrganizationId(props: {
   member: MemberPayload;
   organizationId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformOrganization> {
+  const organization =
+    await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
+      where: {
+        id: props.organizationId,
+        deleted_at: null,
+      },
+      ...HrmPlatformOrganizationTransformer.select(),
+    });
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
-      member_id: props.member.id,
       organization_id: props.organizationId,
+      user_id: props.member.id,
       deleted_at: null,
     },
   });
   if (employee === null) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException("Forbidden", 404);
   }
-  const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-      where: { id: props.organizationId },
-      ...HrmPlatformOrganizationTransformer.select(),
-    });
   return await HrmPlatformOrganizationTransformer.transform(organization);
 }

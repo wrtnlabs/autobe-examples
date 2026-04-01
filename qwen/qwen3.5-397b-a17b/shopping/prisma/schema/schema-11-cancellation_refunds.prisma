@@ -1,0 +1,234 @@
+/// Customer cancellation requests for individual order items with paid
+/// status before shipping. Each request targets one order item and includes
+/// a reason text. Sellers review and respond to requests with approval or
+/// rejection. Approved requests trigger item cancellation and stock
+/// restoration via inventory records.
+///
+/// @namespace cancellation_refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target's {@link shopping_mall_order_items.id}.
+  shopping_mall_order_item_id String
+  
+  /// Target's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Customer's reason for requesting cancellation.
+  reason String
+  
+  /// Current approval status: pending, approved, or rejected.
+  status String
+  
+  /// Timestamp when the cancellation request was created.
+  created_at DateTime
+  
+  /// Timestamp when the cancellation request was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the cancellation request was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_cancellation_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, status], map: "shopping_mall_cancellation_requests_shopping_mall_orde_2f2b5e14")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_cust_664625f4")
+}
+
+/// Immutable snapshots capturing cancellation request state when seller
+/// responds. Each snapshot preserves the request status, customer reason,
+/// seller response, and timestamp for audit trail and dispute resolution.
+/// References {@link shopping_mall_cancellation_requests}.
+///
+/// @namespace cancellation_refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Cancellation request's {@link shopping_mall_cancellation_requests.id}.
+  shopping_mall_cancellation_request_id String
+  
+  /// Seller's {@link shopping_mall_sellers.id} who responded to this
+  /// cancellation request.
+  shopping_mall_seller_id String
+  
+  /// Cancellation request status at time of snapshot: pending, approved, or
+  /// rejected.
+  status String
+  
+  /// Customer's cancellation reason provided in the request.
+  reason String
+  
+  /// Seller's response reason for approval or rejection. Null if pending.
+  response_reason String?
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [shopping_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id], map: "shopping_mall_cancellation_request_snapshots_shopping__02f67c17")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_cancellation_request_id, created_at], map: "shopping_mall_cancellation_request_snapshots_shopping__802546ef")
+}
+
+/// Customer refund requests for delivered order items. Customers can request
+/// refunds within 7 days of delivery. Sellers review and approve or reject
+/// each request with a response reason. Approved refunds restore stock
+/// quantities via inventory records.
+///
+/// Each refund request is associated with exactly one order item and
+/// initiated by the customer who placed the order. The request remains in
+/// pending status until a seller responds with either approval or rejection.
+/// Sellers provide a response reason explaining their decision. The {@link
+/// shopping_mall_refund_request_snapshots} table preserves immutable
+/// snapshots of refund request state when sellers respond.
+///
+/// @namespace cancellation_refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Order item's {@link shopping_mall_order_items.id}.
+  order_item_id String
+  
+  /// Customer's {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Seller's {@link shopping_mall_sellers.id} who responded to this request.
+  /// Null if no response yet.
+  seller_id String?
+  
+  /// Customer's reason for requesting the refund.
+  reason String
+  
+  /// Current status: pending, approved, or rejected.
+  status String
+  
+  /// Seller's explanation for the approval or rejection decision. Null if
+  /// pending.
+  response_reason String?
+  
+  /// Timestamp when the refund request was submitted.
+  requested_at DateTime
+  
+  /// Timestamp when the seller responded to the request. Null if pending.
+  responded_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers? @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_refund_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_id])
+  @@index([customer_id, requested_at])
+  @@index([order_item_id])
+  @@index([status])
+}
+
+/// Immutable snapshots of refund request state created when sellers respond
+/// to refund requests. Preserves the complete state including customer's
+/// reason, request status, seller's response, and response timestamp at the
+/// moment of snapshot creation. Used for audit trail and dispute resolution.
+/// Append-only and cannot be modified or deleted.
+///
+/// @namespace cancellation_refunds
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent refund request's {@link shopping_mall_refund_requests.id}.
+  shopping_mall_refund_request_id String
+  
+  /// Customer's reason for requesting refund at time of snapshot.
+  reason String
+  
+  /// Refund request status at time of snapshot (pending, approved, rejected).
+  status String
+  
+  /// Seller's response text or rejection reason provided when responding to
+  /// the refund request.
+  seller_response String?
+  
+  /// Timestamp when seller responded to the refund request, creating this
+  /// snapshot.
+  responded_at DateTime?
+  
+  /// Timestamp when this snapshot record was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_id, created_at], map: "shopping_mall_refund_request_snapshots_shopping_mall_r_7cee8140")
+}

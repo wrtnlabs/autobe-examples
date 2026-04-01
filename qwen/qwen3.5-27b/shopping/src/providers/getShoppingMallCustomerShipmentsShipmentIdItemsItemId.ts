@@ -22,44 +22,58 @@ export async function getShoppingMallCustomerShipmentsShipmentIdItemsItemId(prop
   shipmentId: string & tags.Format<"uuid">;
   itemId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallOrderItem> {
-  // Verify the order item exists in the specified shipment
-  const shipmentItem =
-    await MyGlobal.prisma.shopping_mall_shipment_items.findFirst({
+  // Verify the shipment exists and is not soft-deleted
+  const shipment =
+    await MyGlobal.prisma.shopping_mall_shipments.findUniqueOrThrow({
       where: {
-        shopping_mall_shipment_id: props.shipmentId,
-        shopping_mall_order_item_id: props.itemId,
+        id: props.shipmentId,
+        deleted_at: null,
       },
+      select: { id: true },
     });
-  if (shipmentItem === null) {
-    throw new HttpException("Order item not found in shipment", 404);
-  }
-  // Retrieve the complete order item with all relations
+  // Verify the order item exists in the specified shipment via junction table
+  const shipmentItem =
+    await MyGlobal.prisma.shopping_mall_shipment_items.findUniqueOrThrow({
+      where: {
+        shopping_mall_shipment_id_shopping_mall_order_item_id: {
+          shopping_mall_shipment_id: props.shipmentId,
+          shopping_mall_order_item_id: props.itemId,
+        },
+      },
+      select: { id: true },
+    });
+  // Retrieve the complete order item with authorization check
   const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: {
         id: props.itemId,
+        deleted_at: null,
       },
-      ...ShoppingMallOrderItemTransformer.select(),
+      select: {
+        id: true,
+        shopping_mall_order_id: true,
+        shopping_mall_seller_id: true,
+      },
     });
-  // Check if order item is soft-deleted
-  if (orderItem.deleted_at !== null) {
-    throw new HttpException("Order item has been deleted", 404);
-  }
-  // Verify the shipment is not soft-deleted
-  const shipment = await MyGlobal.prisma.shopping_mall_shipments.findUnique({
+  // Verify authorization: customer must own the order
+  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
     where: {
-      id: props.shipmentId,
+      id: orderItem.shopping_mall_order_id,
+      deleted_at: null,
     },
     select: {
-      deleted_at: true,
+      id: true,
+      shopping_mall_customer_id: true,
     },
   });
-  if (shipment?.deleted_at !== null) {
-    throw new HttpException("Shipment has been deleted", 404);
-  }
-  // Verify authorization: customer must own the order
-  if (orderItem.order.customer.id !== props.customer.id) {
+  if (order.shopping_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return await ShoppingMallOrderItemTransformer.transform(orderItem);
+  // Retrieve the complete order item with all relations using transformer
+  const completeOrderItem =
+    await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
+      where: { id: props.itemId },
+      ...ShoppingMallOrderItemTransformer.select(),
+    });
+  return await ShoppingMallOrderItemTransformer.transform(completeOrderItem);
 }

@@ -20,11 +20,11 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_hrm_platform_member_employees_create } from "../../../generate/generate_random_hrm_platform_member_employees_create";
+import { generate_random_hrm_platform_member_organizations_create } from "../../../generate/generate_random_hrm_platform_member_organizations_create";
 import { generate_random_hrm_platform_member_projects_create } from "../../../generate/generate_random_hrm_platform_member_projects_create";
 import { generate_random_hrm_platform_member_projects_members_create } from "../../../generate/generate_random_hrm_platform_member_projects_members_create";
 import { generate_random_hrm_platform_member_timelogs_create } from "../../../generate/generate_random_hrm_platform_member_timelogs_create";
-import { prepare_random_hrm_platform_employee } from "../../../prepare/prepare_random_hrm_platform_employee";
+import { prepare_random_hrm_platform_organization } from "../../../prepare/prepare_random_hrm_platform_organization";
 import { prepare_random_hrm_platform_project } from "../../../prepare/prepare_random_hrm_platform_project";
 import { prepare_random_hrm_platform_project_member } from "../../../prepare/prepare_random_hrm_platform_project_member";
 import { prepare_random_hrm_platform_timelog } from "../../../prepare/prepare_random_hrm_platform_timelog";
@@ -32,78 +32,75 @@ import { prepare_random_hrm_platform_timelog } from "../../../prepare/prepare_ra
 export async function test_api_timelog_retrieve_own_entry(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register new member and get authenticated connection
-  const memberAuth = await authorize_member_join(connection, {
+  // 1. Authenticate as member (automatically creates employee record)
+  const memberConnection: api.IConnection = { host: connection.host };
+  const memberAuth = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(12),
+      password: typia.random<string & tags.Format<"password">>(),
       display_name: RandomGenerator.name(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-    } satisfies IHrmPlatformMember.IJoin,
+    },
   });
   typia.assert(memberAuth);
-  // Create member-specific connection with auth token
-  const memberConnection: api.IConnection = {
-    host: connection.host,
-    headers: {
-      Authorization: memberAuth.token.access,
-    },
-  };
-  // 2. Create employee record for the authenticated member
-  const employee = await generate_random_hrm_platform_member_employees_create(
+  // 2. Create organization
+  const organization =
+    await generate_random_hrm_platform_member_organizations_create(
+      memberConnection,
+      {
+        body: {
+          name: RandomGenerator.name(),
+          currency: "USD",
+          timezone: "Asia/Seoul",
+          fiscal_start_month: 1,
+        },
+      },
+    );
+  typia.assert(organization);
+  // 3. Select organization as active context
+  await api.functional.hrmPlatform.member.organizations.select(
     memberConnection,
     {
-      body: {
-        member_id: memberAuth.id,
-        employment_type: "full-time",
-      },
+      organizationId: organization.id,
     },
   );
-  typia.assert(employee);
-  // 3. Create a project to log time against
+  // 4. Create project
   const project = await generate_random_hrm_platform_member_projects_create(
     memberConnection,
     {
       body: {
-        name: RandomGenerator.paragraph({ sentences: 2 }),
-        color_code: "#3498db",
+        name: RandomGenerator.name(),
+        color_code: "#FF5733",
+        status: "active",
       },
     },
   );
   typia.assert(project);
-  // 4. Assign employee to project as member to enable timelog creation
-  const projectMember =
-    await generate_random_hrm_platform_member_projects_members_create(
-      memberConnection,
-      {
-        params: {
-          projectId: project.id,
-        },
-        body: {
-          hrm_platform_employee_id: employee.id,
-          role: "member",
-        },
+  // 5. Assign employee to project (member ID = employee ID after organization creation)
+  await generate_random_hrm_platform_member_projects_members_create(
+    memberConnection,
+    {
+      params: { projectId: project.id },
+      body: {
+        hrm_platform_employee_id: memberAuth.id,
+        role: "member",
       },
-    );
-  typia.assert(projectMember);
-  // 5. Create a timelog entry for the employee on the assigned project
+    },
+  );
+  // 6. Create timelog entry
   const timelog = await generate_random_hrm_platform_member_timelogs_create(
     memberConnection,
     {
       body: {
-        project_id: project.id,
         date: new Date().toISOString(),
-        duration_minutes: typia.random<
-          number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<480>
-        >(),
-        description: RandomGenerator.paragraph({ sentences: 1 }),
+        durationMinutes: 60,
+        projectId: project.id,
+        description: RandomGenerator.paragraph({ sentences: 2 }),
         billable: true,
       },
     },
   );
   typia.assert(timelog);
-  // 6. Retrieve the timelog using the GET endpoint
+  // 7. Retrieve the timelog by ID
   const retrievedTimelog = await api.functional.hrmPlatform.member.timelogs.at(
     memberConnection,
     {
@@ -111,41 +108,83 @@ export async function test_api_timelog_retrieve_own_entry(
     },
   );
   typia.assert(retrievedTimelog);
-  // 7. Validate the retrieved timelog contains complete information
-  TestValidator.equals("timelog ID matches", retrievedTimelog.id, timelog.id);
+  // 8. Validate all fields match
+  TestValidator.equals("timelog ID matches", timelog.id, retrievedTimelog.id);
   TestValidator.equals(
     "employee ID matches",
+    timelog.employee.id,
     retrievedTimelog.employee.id,
-    employee.id,
   );
   TestValidator.equals(
     "project ID matches",
+    timelog.project.id,
     retrievedTimelog.project.id,
-    project.id,
+  );
+  TestValidator.equals(
+    "work date matches",
+    timelog.date,
+    retrievedTimelog.date,
   );
   TestValidator.equals(
     "duration matches",
-    retrievedTimelog.duration_minutes,
-    timelog.duration_minutes,
+    timelog.durationMinutes,
+    retrievedTimelog.durationMinutes,
   );
   TestValidator.equals(
     "description matches",
-    retrievedTimelog.description,
     timelog.description,
+    retrievedTimelog.description,
   );
   TestValidator.equals(
     "billable flag matches",
-    retrievedTimelog.billable,
     timelog.billable,
+    retrievedTimelog.billable,
   );
-  TestValidator.equals(
-    "employee display name matches",
-    retrievedTimelog.employee.display_name,
-    employee.display_name,
+  // Validate employee structure
+  TestValidator.predicate(
+    "employee has user profile",
+    retrievedTimelog.employee.user !== null,
   );
+  TestValidator.predicate(
+    "employee has role",
+    retrievedTimelog.employee.role !== null,
+  );
+  TestValidator.predicate(
+    "employee has employment type",
+    retrievedTimelog.employee.employment_type !== null,
+  );
+  TestValidator.predicate(
+    "employee status is active",
+    retrievedTimelog.employee.status === "active",
+  );
+  // Validate project structure
   TestValidator.equals(
     "project name matches",
-    retrievedTimelog.project.name,
     project.name,
+    retrievedTimelog.project.name,
   );
+  TestValidator.equals(
+    "project color matches",
+    project.color_code,
+    retrievedTimelog.project.color_code,
+  );
+  TestValidator.equals(
+    "project status matches",
+    project.status,
+    retrievedTimelog.project.status,
+  );
+  // Validate task is null (no task assigned)
+  TestValidator.equals("task is null", retrievedTimelog.task, null);
+  // Validate timesheet is null (new timelog not yet in timesheet)
+  TestValidator.equals("timesheet is null", retrievedTimelog.timesheet, null);
+  // Validate timestamps exist
+  TestValidator.predicate(
+    "createdAt exists",
+    retrievedTimelog.createdAt !== null,
+  );
+  TestValidator.predicate(
+    "updatedAt exists",
+    retrievedTimelog.updatedAt !== null,
+  );
+  TestValidator.equals("deletedAt is null", retrievedTimelog.deletedAt, null);
 }

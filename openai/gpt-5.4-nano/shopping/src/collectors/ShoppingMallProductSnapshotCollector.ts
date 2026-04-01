@@ -28,6 +28,9 @@ export namespace ShoppingMallProductSnapshotCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      snapshotParties: undefined,
+      payload: undefined,
+      sellerSnapshotOrderItems: undefined,
     } satisfies Prisma.shopping_mall_snapshotsCreateInput;
   }
 }

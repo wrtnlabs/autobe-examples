@@ -19,48 +19,71 @@ export async function getHrmsMemberEmailVerificationsVerificationId(props: {
 }): Promise<IHrmsMemberEmailVerification> {
   const verification =
     await MyGlobal.prisma.hrms_member_email_verifications.findUniqueOrThrow({
-      where: { id: props.verificationId },
+      where: {
+        id: props.verificationId,
+        deleted_at: null,
+      },
       ...HrmsMemberEmailVerificationTransformer.select(),
     });
-  if (verification.deleted_at !== null) {
-    throw new HttpException("Not Found", 404);
+  const targetMember = await MyGlobal.prisma.hrms_members.findUniqueOrThrow({
+    where: { id: verification.member.id },
+    select: { id: true, deleted_at: true },
+  });
+  if (targetMember.deleted_at !== null) {
+    throw new HttpException("Target member account is deleted", 404);
   }
-  const member = verification.member;
-  const memberOrganizationMembers =
-    await MyGlobal.prisma.hrms_organization_members.findMany({
-      where: { hrms_member_id: member.id },
-      include: {
-        organization: true,
+  const requesterOrgMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        member: { id: props.member.id },
+        deleted_at: null,
+      },
+      select: {
+        organization: { select: { id: true } },
+        hrms_organization_role_id: true,
       },
     });
-  const requestingMemberOrganizationMembers =
-    await MyGlobal.prisma.hrms_organization_members.findMany({
-      where: { hrms_member_id: props.member.id },
-      include: {
-        organization: true,
+  if (requesterOrgMember === null) {
+    throw new HttpException("No organization context", 403);
+  }
+  const requesterRole = await MyGlobal.prisma.hrms_organization_roles.findFirst(
+    {
+      where: {
+        id: requesterOrgMember.hrms_organization_role_id,
+        organization_id: requesterOrgMember.organization.id,
+      },
+      select: { id: true },
+    },
+  );
+  if (requesterRole === null) {
+    throw new HttpException("Invalid role", 403);
+  }
+  const permissions =
+    await MyGlobal.prisma.hrms_organization_role_permissions.findMany({
+      where: {
+        hrms_organization_role_id: requesterRole.id,
+      },
+      select: { permission: true },
+    });
+  const hasEmailManagePermission = permissions.some(
+    (p) => p.permission === "email:manage",
+  );
+  if (!hasEmailManagePermission) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const targetOrgMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        member: { id: targetMember.id },
+        hrms_organization_id: requesterOrgMember.organization.id,
+        deleted_at: null,
       },
     });
-  const targetOrganization = memberOrganizationMembers.find(
-    (om) => om.organization.owner_id === props.member.id,
-  );
-  if (!targetOrganization) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const verificationBelongsToOrganization = memberOrganizationMembers.some(
-    (om) => om.hrms_organization_id === targetOrganization.organization.id,
-  );
-  if (!verificationBelongsToOrganization) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const requestingMembership = requestingMemberOrganizationMembers.find(
-    (om) => om.hrms_organization_id === targetOrganization.organization.id,
-  );
-  if (!requestingMembership) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const hasPermission = true;
-  if (!hasPermission) {
-    throw new HttpException("Forbidden", 403);
+  if (targetOrgMember === null) {
+    throw new HttpException(
+      "Verification belongs to member outside organization",
+      403,
+    );
   }
   return await HrmsMemberEmailVerificationTransformer.transform(verification);
 }

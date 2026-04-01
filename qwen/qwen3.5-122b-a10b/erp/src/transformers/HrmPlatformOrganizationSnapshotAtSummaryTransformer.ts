@@ -21,6 +21,11 @@ export namespace HrmPlatformOrganizationSnapshotAtSummaryTransformer {
         timezone: true,
         fiscal_start_month: true,
         created_at: true,
+        hrmPlatformOrganization: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_organizationsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_organization_snapshotsFindManyArgs;
   }

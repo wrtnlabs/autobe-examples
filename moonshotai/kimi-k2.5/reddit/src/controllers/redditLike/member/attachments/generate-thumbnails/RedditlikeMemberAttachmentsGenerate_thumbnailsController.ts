@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IRedditLikeAttachmentThumbnail } from "../../../../../api/structures/IRedditLikeAttachmentThumbnail";
-import { AdminAuth } from "../../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { postRedditLikeMemberAttachmentsAttachmentIdGenerateThumbnails } from "../../../../../providers/postRedditLikeMemberAttachmentsAttachmentIdGenerateThumbnails";
 
 @Controller("/redditLike/member/attachments/:attachmentId/generate-thumbnails")
@@ -28,8 +28,8 @@ export class RedditlikeMemberAttachmentsGenerate_thumbnailsController {
    */
   @TypedRoute.Post()
   public async generateThumbnails(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("attachmentId")
     attachmentId: string & tags.Format<"uuid">,
     @TypedBody()

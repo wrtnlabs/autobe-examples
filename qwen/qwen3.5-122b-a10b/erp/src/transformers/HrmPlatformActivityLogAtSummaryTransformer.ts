@@ -12,22 +12,6 @@ export namespace HrmPlatformActivityLogAtSummaryTransformer {
   export type Payload = Prisma.hrm_platform_activity_logsGetPayload<
     ReturnType<typeof select>
   >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        action_type: true,
-        target_entity: true,
-        target_id: true,
-        created_at: true,
-        user: HrmPlatformMemberAtSummaryTransformer.select(),
-        details: true,
-        organization: {
-          select: { id: true },
-        } satisfies Prisma.hrm_platform_organizationsFindManyArgs,
-      },
-    } satisfies Prisma.hrm_platform_activity_logsFindManyArgs;
-  }
   export async function transform(
     input: Payload,
   ): Promise<IHrmPlatformActivityLog.ISummary> {
@@ -39,5 +23,17 @@ export namespace HrmPlatformActivityLogAtSummaryTransformer {
       user: await HrmPlatformMemberAtSummaryTransformer.transform(input.user),
       created_at: input.created_at.toISOString(),
     };
+  }
+  export function select() {
+    return {
+      select: {
+        id: true,
+        action_type: true,
+        target_entity: true,
+        target_id: true,
+        created_at: true,
+        user: HrmPlatformMemberAtSummaryTransformer.select(),
+      },
+    } satisfies Prisma.hrm_platform_activity_logsFindManyArgs;
   }
 }

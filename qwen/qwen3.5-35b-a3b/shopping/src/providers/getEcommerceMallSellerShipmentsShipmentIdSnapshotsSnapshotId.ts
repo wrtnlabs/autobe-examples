@@ -25,43 +25,20 @@ export async function getEcommerceMallSellerShipmentsShipmentIdSnapshotsSnapshot
     await MyGlobal.prisma.ecommerce_mall_shipment_snapshots.findUniqueOrThrow({
       where: {
         id: props.snapshotId,
-        ecommerce_mall_shipment_id: props.shipmentId,
       },
-      include: {
-        shipment: {
-          include: {
-            seller: true,
-            order: {
-              include: {
-                customer: true,
-                inventoryRecords: true,
-                snapshots: true,
-                reviews: true,
-                shippingAddress: {
-                  include: {
-                    customer: true,
-                    snapshots: true,
-                    orders: true,
-                  },
-                },
-                orderItems: true,
-                shipments: true,
-              },
-            },
-            snapshots: true,
-            _count: {
-              select: {
-                trackingCodes: true,
-              },
-            },
-            orderItems: true,
-            trackingUpdates: true,
-          },
-        },
-      } satisfies Prisma.ecommerce_mall_shipment_snapshotsInclude,
+      ...EcommerceMallShipmentSnapshotTransformer.select(),
     });
-  if (snapshot.shipment.seller.id !== props.seller.id) {
+  const shipment =
+    await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
+      where: {
+        id: props.shipmentId,
+      },
+      select: {
+        ecommerce_mall_seller_id: true,
+      },
+    });
+  if (shipment.ecommerce_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return EcommerceMallShipmentSnapshotTransformer.transform(snapshot);
+  return await EcommerceMallShipmentSnapshotTransformer.transform(snapshot);
 }

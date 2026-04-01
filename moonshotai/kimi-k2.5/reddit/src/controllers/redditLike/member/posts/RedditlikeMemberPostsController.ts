@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IRedditLikePost } from "../../../../api/structures/IRedditLikePost";
-import { AdminAuth } from "../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { deleteRedditLikeMemberPostsPostId } from "../../../../providers/deleteRedditLikeMemberPostsPostId";
 import { postRedditLikeMemberPosts } from "../../../../providers/postRedditLikeMemberPosts";
 import { putRedditLikeMemberPostsPostId } from "../../../../providers/putRedditLikeMemberPostsPostId";
@@ -57,8 +57,8 @@ export class RedditlikeMemberPostsController {
    */
   @TypedRoute.Post()
   public async create(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedBody()
     body: IRedditLikePost.ICreate,
   ): Promise<IRedditLikePost> {
@@ -97,8 +97,8 @@ export class RedditlikeMemberPostsController {
    */
   @TypedRoute.Put(":postId")
   public async update(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -149,8 +149,8 @@ export class RedditlikeMemberPostsController {
    */
   @TypedRoute.Delete(":postId")
   public async erase(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
   ): Promise<void> {

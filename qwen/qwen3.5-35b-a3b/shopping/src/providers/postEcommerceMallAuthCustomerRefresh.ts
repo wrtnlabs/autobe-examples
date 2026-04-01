@@ -16,33 +16,26 @@ export async function postEcommerceMallAuthCustomerRefresh(props: {
   body: IEcommerceMallCustomer.IRefresh;
 }): Promise<IEcommerceMallCustomer.IAuthorized> {
   // 1. Verify refresh token
-  const verifiedPayload: unknown = jwt.verify(
-    props.body.refresh_token,
-    MyGlobal.env.JWT_SECRET_KEY,
-    { issuer: "autobe" },
-  );
-  if (
-    typeof verifiedPayload !== "object" ||
-    verifiedPayload === null ||
-    !("type" in verifiedPayload) ||
-    !("id" in verifiedPayload) ||
-    !("session_id" in verifiedPayload) ||
-    !("created_at" in verifiedPayload)
-  ) {
-    throw new HttpException("Invalid refresh token", 401);
-  }
-  const decoded = verifiedPayload as {
-    type: string;
-    id: string;
-    session_id: string;
-    tokenType?: string;
-    created_at: string;
+  let decoded: {
+    type: "customer";
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    created_at: string & tags.Format<"date-time">;
   };
-  // 2. Validate token type
+  try {
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as unknown as typeof decoded;
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
+  }
+  // 2. Validate type
   if (decoded.type !== "customer") {
     throw new HttpException("Invalid token type", 401);
   }
-  // 3. Validate session exists and is active
+  // 3. Validate session exists
   const session =
     await MyGlobal.prisma.ecommerce_mall_customer_sessions.findFirst({
       where: {
@@ -53,68 +46,76 @@ export async function postEcommerceMallAuthCustomerRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate session not past expiration
-  const now = new Date();
-  if (session.expired_at && new Date(session.expired_at) <= now) {
-    throw new HttpException("Session has expired", 401);
-  }
-  // 5. Validate customer account not deleted
+  // 4. Validate customer not deleted
   const customer =
     await MyGlobal.prisma.ecommerce_mall_customers.findUniqueOrThrow({
       where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
     });
-  if (customer.deleted_at !== null) {
+  if (customer.status === "deleted") {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 6. Generate new tokens (SAME session_id)
-  const accessExpiresTimestamp: string & tags.Format<"date-time"> =
+  // 5. Generate new tokens with same session_id
+  const nowString: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(),
+  );
+  const accessExpiresString: string & tags.Format<"date-time"> =
     toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpiresTimestamp: string & tags.Format<"date-time"> =
+  const refreshExpiresString: string & tags.Format<"date-time"> =
     toISOStringSafe(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
   const accessToken: string = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
+      type: "customer" as const,
+      id: customer.id as string & tags.Format<"uuid">,
       session_id: decoded.session_id,
-      created_at: toISOStringSafe(new Date()),
+      created_at: nowString,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const refreshToken: string = jwt.sign(
+  const refreshTokenString: string = jwt.sign(
     {
-      type: decoded.type,
-      id: decoded.id,
+      type: "customer" as const,
+      id: customer.id as string & tags.Format<"uuid">,
       session_id: decoded.session_id,
       tokenType: "refresh" as const,
-      created_at: toISOStringSafe(new Date()),
+      created_at: nowString,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 7. Update session expiration
+  // 6. Update session expiration
   await MyGlobal.prisma.ecommerce_mall_customer_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: new Date(refreshExpiresTimestamp) },
+    data: { expired_at: new Date(refreshExpiresString) },
   });
-  // 8. Return new tokens
-  return {
-    id: decoded.id as string & tags.Format<"uuid">,
-    display_name: customer.email,
+  // 7. Build response
+  const token: IAuthorizationToken = {
+    access: accessToken,
+    refresh: refreshTokenString,
+    expired_at: accessExpiresString,
+    refreshable_until: refreshExpiresString,
+  };
+  const response: IEcommerceMallCustomer.IAuthorized = {
+    id: customer.id as string & tags.Format<"uuid">,
+    display_name: "",
     phone_number: null,
     status: customer.status,
     created_at: toISOStringSafe(customer.created_at),
     updated_at: toISOStringSafe(customer.updated_at),
     deleted_at:
-      customer.deleted_at === null
-        ? null
-        : toISOStringSafe(customer.deleted_at),
+      customer.deleted_at !== null
+        ? toISOStringSafe(customer.deleted_at)
+        : null,
     email: customer.email,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiresTimestamp,
-      refreshable_until: refreshExpiresTimestamp,
-    },
+    token: token,
   };
+  return response;
 }

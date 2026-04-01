@@ -11,63 +11,99 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { RedditLikeCommentAtSummaryTransformer } from "../transformers/RedditLikeCommentAtSummaryTransformer";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditLikeMemberComments(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   body: IRedditLikeComment.IRequest;
 }): Promise<IPageIRedditLikeComment.ISummary> {
-  const page = props.body.page;
-  const limit = props.body.limit;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause based on filters
-  const where = {
-    ...(props.body.includeDeleted === false && { is_deleted: false }),
+  const baseWhere = {
     ...(props.body.authorId !== null && { author_id: props.body.authorId }),
     ...(props.body.parentId !== null
       ? { parent_id: props.body.parentId }
       : { parent_id: null }),
-    ...(props.body.search !== null && {
-      content: { contains: props.body.search, mode: "insensitive" as const },
-    }),
+    ...(props.body.search !== null &&
+      props.body.search.length > 0 && {
+        content: {
+          contains: props.body.search,
+          mode: "insensitive" as const,
+        },
+      }),
   } satisfies Prisma.reddit_like_commentsWhereInput;
-  // Determine orderBy based on sort parameter
-  const orderBy = (
+  const whereInput: Prisma.reddit_like_commentsWhereInput = props.body
+    .includeDeleted
+    ? baseWhere
+    : {
+        ...baseWhere,
+        OR: [{ is_deleted: false }, { author_id: props.member.id }],
+      };
+  const orderByInput = (
     props.body.sort === "BEST"
       ? { vote_score: "desc" as const }
       : props.body.sort === "NEW"
         ? { created_at: "desc" as const }
-        : props.body.sort === "CONTROVERSIAL"
-          ? { vote_score: "asc" as const }
+        : props.body.sort === "OLD"
+          ? { created_at: "asc" as const }
           : props.body.sort === "TOP"
             ? { vote_score: "desc" as const }
-            : props.body.sort === "OLD"
-              ? { created_at: "asc" as const }
-              : props.body.sort === "QA"
-                ? [
-                    { parent_id: "asc" as const },
-                    { created_at: "asc" as const },
-                  ]
-                : { created_at: "desc" as const }
-  ) as Prisma.reddit_like_commentsOrderByWithRelationInput;
-  // Query comments with pagination
+            : props.body.sort === "CONTROVERSIAL"
+              ? { vote_score: "asc" as const }
+              : { created_at: "desc" as const }
+  ) satisfies Prisma.reddit_like_commentsOrderByWithRelationInput;
   const comments = await MyGlobal.prisma.reddit_like_comments.findMany({
-    where,
+    where: whereInput,
+    orderBy: orderByInput,
     skip,
     take: limit,
-    orderBy,
-    ...RedditLikeCommentAtSummaryTransformer.select(),
+    select: {
+      id: true,
+      content: true,
+      vote_score: true,
+      is_edited: true,
+      is_deleted: true,
+      created_at: true,
+      parent_id: true,
+      author: {
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          email_verified: true,
+          created_at: true,
+        },
+      },
+      _count: {
+        select: {
+          replies: true,
+        },
+      },
+    },
   });
-  // Count total matching records
-  const total = await MyGlobal.prisma.reddit_like_comments.count({ where });
-  // Transform results
-  const data = await ArrayUtil.asyncMap(
-    comments,
-    RedditLikeCommentAtSummaryTransformer.transform,
-  );
+  const total = await MyGlobal.prisma.reddit_like_comments.count({
+    where: whereInput,
+  });
+  const data: IRedditLikeComment.ISummary[] = comments.map((comment) => ({
+    id: comment.id,
+    content: comment.content,
+    author: {
+      id: comment.author.id,
+      email: comment.author.email,
+      username: comment.author.username,
+      emailVerified: comment.author.email_verified,
+      createdAt: comment.author.created_at.toISOString(),
+    },
+    vote_score: comment.vote_score,
+    is_edited: comment.is_edited,
+    is_deleted: comment.is_deleted,
+    created_at: comment.created_at.toISOString(),
+    parent_id: comment.parent_id,
+    reply_count: comment._count.replies,
+  }));
   return {
     data,
     pagination: {
@@ -75,6 +111,6 @@ export async function patchRedditLikeMemberComments(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
   };
 }

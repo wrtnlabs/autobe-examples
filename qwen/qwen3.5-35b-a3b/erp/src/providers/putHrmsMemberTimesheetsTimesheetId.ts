@@ -14,6 +14,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { HrmsMemberAtSummaryTransformer } from "../transformers/HrmsMemberAtSummaryTransformer";
 import { HrmsTimesheetTransformer } from "../transformers/HrmsTimesheetTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -23,119 +24,103 @@ export async function putHrmsMemberTimesheetsTimesheetId(props: {
   timesheetId: string & tags.Format<"uuid">;
   body: IHrmsTimesheet.IUpdate;
 }): Promise<IHrmsTimesheet> {
-  // Fetch timesheet with full data including employee relation
   const timesheet = await MyGlobal.prisma.hrms_timesheets.findUniqueOrThrow({
-    where: { id: props.timesheetId },
-    select: {
-      id: true,
-      hrms_employee_id: true,
-      reviewed_by: true,
-      week_start_date: true,
-      week_end_date: true,
-      status: true,
-      total_hours: true,
-      submitted_at: true,
-      reviewed_at: true,
-      rejection_reason: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      employee: {
-        select: { id: true, status: true },
-      },
+    where: { id: props.timesheetId, deleted_at: null },
+    include: {
+      employee: true,
+      reviewer: HrmsMemberAtSummaryTransformer.select(),
     },
   });
-  // Validate status is draft
   if (timesheet.status !== "draft") {
     throw new HttpException("Timesheet is not in draft status", 409);
   }
-  // Check ownership - compare employee ID (not member ID directly)
-  if (timesheet.hrms_employee_id !== props.member.id) {
+  const requesterOrgMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        hrms_member_id: props.member.id,
+        deleted_at: null,
+      },
+      include: {
+        organizationRole: {
+          include: {
+            permissions: true,
+          },
+        },
+      },
+    });
+  if (requesterOrgMember === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Validate employee is active
-  if (timesheet.employee.status !== "active") {
-    throw new HttpException("Employee is deactivated", 400);
+  const ownerEmployee = timesheet.employee;
+  if (ownerEmployee.deleted_at !== null) {
+    throw new HttpException("Timesheet owner is deleted", 403);
   }
-  // Build update data
-  const updateData: Prisma.hrms_timesheetsUpdateInput = {
-    updated_at: new Date(),
-  };
+  const requesterOrgId = requesterOrgMember.hrms_organization_id;
+  const ownerOrgId = ownerEmployee.hrms_organization_id;
+  if (requesterOrgId !== ownerOrgId) {
+    throw new HttpException("Forbidden", 403);
+  }
+  let hasPermission = false;
+  if (requesterOrgMember.organizationRole !== null) {
+    hasPermission = requesterOrgMember.organizationRole.permissions.some(
+      (p: { permission: string }) =>
+        p.permission === "time:manage" || p.permission === "time:approve",
+    );
+  }
+  if (ownerEmployee.id !== timesheet.hrms_employee_id) {
+    if (!hasPermission) {
+      throw new HttpException("Forbidden", 403);
+    }
+  }
+  if (ownerEmployee.status !== "active") {
+    throw new HttpException("Timesheet owner is deactivated", 400);
+  }
+  let updateData: Prisma.hrms_timesheetsUpdateInput;
   if (props.body.week_start_date !== undefined) {
-    updateData.week_start_date = props.body.week_start_date;
-    const startDate = new Date(props.body.week_start_date);
-    const endDate = new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000);
-    updateData.week_end_date = endDate;
-  }
-  // Recalculate total_hours from timelogs using employee_id and date range
-  const queryDates = props.body.week_start_date
-    ? {
-        week_start_date: props.body.week_start_date,
-        week_end_date: new Date(
-          new Date(props.body.week_start_date).getTime() +
-            6 * 24 * 60 * 60 * 1000,
-        ),
-      }
-    : {
-        week_start_date: timesheet.week_start_date,
-        week_end_date: timesheet.week_end_date,
-      };
-  const timelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
-    where: {
-      employee_id: timesheet.hrms_employee_id,
-      date: {
-        gte: queryDates.week_start_date,
-        lte: queryDates.week_end_date,
+    const weekStart = new Date(props.body.week_start_date);
+    const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+    const existingTimesheet = await MyGlobal.prisma.hrms_timesheets.findFirst({
+      where: {
+        hrms_employee_id: ownerEmployee.id,
+        id: { not: props.timesheetId },
+        deleted_at: null,
+        AND: [
+          {
+            week_start_date: {
+              lte: weekEnd,
+            },
+          },
+          {
+            week_end_date: {
+              gte: weekStart,
+            },
+          },
+        ],
       },
-    },
-    select: { duration_minutes: true },
-  });
-  const totalHours = timelogs.reduce(
-    (sum, timelog) => sum + timelog.duration_minutes / 60,
-    0,
-  );
-  updateData.total_hours = totalHours;
-  // Update record
-  const updated = await MyGlobal.prisma.hrms_timesheets.update({
+    });
+    if (existingTimesheet !== null) {
+      throw new HttpException(
+        "Overlapping timesheet exists for this week",
+        400,
+      );
+    }
+    updateData = {
+      week_start_date: weekStart,
+      week_end_date: weekEnd,
+      updated_at: new Date(),
+    };
+  } else {
+    updateData = {
+      updated_at: new Date(),
+    };
+  }
+  const updatedTimesheet = await MyGlobal.prisma.hrms_timesheets.update({
     where: { id: props.timesheetId },
     data: updateData,
-    select: {
-      id: true,
-      week_start_date: true,
-      week_end_date: true,
-      status: true,
-      total_hours: true,
-      submitted_at: true,
-      reviewed_at: true,
-      rejection_reason: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      employee: {
-        select: {
-          id: true,
-          display_name: true,
-          position: true,
-          department_id: true,
-          status: true,
-          _count: { select: { timelogs: true } },
-        },
-      },
-      reviewer: {
-        select: {
-          id: true,
-          email: true,
-          display_name: true,
-          avatar_uri: true,
-          phone_number: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-          _count: { select: { organizationMembers: true } },
-        },
-      },
+    include: {
+      employee: true,
+      reviewer: HrmsMemberAtSummaryTransformer.select(),
     },
   });
-  // Transform and return
-  return await HrmsTimesheetTransformer.transform(updated);
+  return await HrmsTimesheetTransformer.transform(updatedTimesheet);
 }

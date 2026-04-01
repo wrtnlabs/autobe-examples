@@ -15,21 +15,25 @@ export async function deleteShoppingMallCustomerCartItemsItemId(props: {
   customer: CustomerPayload;
   itemId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const cart = await MyGlobal.prisma.shopping_mall_carts.findFirstOrThrow({
+  const cartItem = await MyGlobal.prisma.shopping_mall_cart_items.findFirst({
     where: {
-      shopping_customer_id: props.customer.id,
+      id: props.itemId,
       deleted_at: null,
+      cart: {
+        customer_id: props.customer.id,
+        deleted_at: null,
+      },
     },
   });
-  await MyGlobal.prisma.shopping_mall_cart_items.findFirstOrThrow({
+  if (!cartItem) {
+    throw new HttpException("Not Found", 404);
+  }
+  await MyGlobal.prisma.shopping_mall_cart_items.update({
     where: {
       id: props.itemId,
-      shopping_mall_cart_id: cart.id,
     },
-  });
-  await MyGlobal.prisma.shopping_mall_cart_items.delete({
-    where: {
-      id: props.itemId,
+    data: {
+      deleted_at: new Date(),
     },
   });
 }

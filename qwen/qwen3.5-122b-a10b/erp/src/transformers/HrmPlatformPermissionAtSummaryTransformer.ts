@@ -18,6 +18,14 @@ export namespace HrmPlatformPermissionAtSummaryTransformer {
         name: true,
         category: true,
         description: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        roleAssignments: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_role_permissionsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_permissionsFindManyArgs;
   }
@@ -28,8 +36,8 @@ export namespace HrmPlatformPermissionAtSummaryTransformer {
       id: input.id,
       code: input.code,
       name: input.name,
-      category: input.category ?? undefined,
-      description: input.description ?? undefined,
+      category: input.category ?? null,
+      description: input.description ?? null,
     };
   }
 }

@@ -3,12 +3,13 @@ import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IS
 import { IShoppingMallSellerApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerApprovalRequest";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
-// ShoppingMallSellerApprovalRequestAtSummaryTransformer.ts
 export namespace ShoppingMallSellerApprovalRequestAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_seller_approval_requestsGetPayload<
     ReturnType<typeof select>
@@ -21,9 +22,6 @@ export namespace ShoppingMallSellerApprovalRequestAtSummaryTransformer {
         reason: true,
         submitted_at: true,
         responded_at: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_seller_approval_requestsFindManyArgs;

@@ -24,35 +24,30 @@ export async function getHrmPlatformMemberTimersTimerId(props: {
   member: MemberPayload;
   timerId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTimer> {
+  // Find the employee record for this member in the current organization context
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
       deleted_at: null,
     },
+    select: {
+      id: true,
+    },
   });
   if (employee === null) {
     throw new HttpException("Employee record not found", 404);
   }
-  const timer = await MyGlobal.prisma.hrm_platform_timers.findUniqueOrThrow({
+  // Find the timer by ID with ownership validation
+  const timer = await MyGlobal.prisma.hrm_platform_timers.findUnique({
     where: {
       id: props.timerId,
+      employee_id: employee.id,
       deleted_at: null,
     },
-    select: {
-      employee_id: true,
-    },
+    ...HrmPlatformTimerTransformer.select(),
   });
-  if (timer.employee_id !== employee.id) {
-    throw new HttpException("Forbidden", 403);
+  if (timer === null) {
+    throw new HttpException("Timer not found", 404);
   }
-  const fullTimer = await MyGlobal.prisma.hrm_platform_timers.findUniqueOrThrow(
-    {
-      where: {
-        id: props.timerId,
-        deleted_at: null,
-      },
-      ...HrmPlatformTimerTransformer.select(),
-    },
-  );
-  return await HrmPlatformTimerTransformer.transform(fullTimer);
+  return await HrmPlatformTimerTransformer.transform(timer);
 }

@@ -10,8 +10,10 @@ import { IRedditCommunityUserKarma } from "@ORGANIZATION/PROJECT-api/lib/structu
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace RedditCommunityUserProfileTransformer {
@@ -33,7 +35,6 @@ export namespace RedditCommunityUserProfileTransformer {
             username: true,
             email: true,
             created_at: true,
-            deleted_at: true,
           },
         },
         avatar: {
@@ -47,33 +48,45 @@ export namespace RedditCommunityUserProfileTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IRedditCommunityUserProfile> {
-    const userSummary: IRedditCommunityMember.ISummary = {
+    // Fetch karma - must exist for every user (one-to-one relationship)
+    const karmaRecord =
+      await MyGlobal.prisma.reddit_community_user_karmas.findFirstOrThrow({
+        where: {
+          reddit_community_member_id: input.user.id,
+        },
+      });
+    // Inline transform: construct IRedditCommunityMember.ISummary for user
+    const user: IRedditCommunityMember.ISummary = {
       id: input.user.id,
       username: input.user.username,
-      created_at: toISOStringSafe(input.user.created_at),
-      profile: undefined,
-      karma: undefined,
+      created_at: input.user.created_at.toISOString(),
+      karma:
+        karmaRecord !== undefined && karmaRecord !== null
+          ? Number(karmaRecord.current_score)
+          : undefined,
     };
-    const karmaData: IRedditCommunityUserKarma = {
-      id: crypto.randomUUID(),
-      reddit_member_id: input.id,
-      current_score: 0,
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+    // Inline transform: construct IRedditCommunityUserKarma
+    const karma: IRedditCommunityUserKarma = {
+      id: karmaRecord.id,
+      reddit_member_id: karmaRecord.reddit_community_member_id,
+      current_score: Number(karmaRecord.current_score),
+      created_at: karmaRecord.created_at.toISOString(),
+      updated_at: karmaRecord.updated_at.toISOString(),
     };
-    const postsPagination: IPageIRedditCommunityPost.ISummary = {
+    // Posts and comments require service-level pagination - return defaults
+    const posts: IPageIRedditCommunityPost.ISummary = {
       pagination: {
         current: 1,
-        limit: 10,
+        limit: 20,
         records: 0,
         pages: 0,
       },
       data: [],
     };
-    const commentsPagination: IPageIRedditCommunityComment.ISummary = {
+    const comments: IPageIRedditCommunityComment.ISummary = {
       pagination: {
         current: 1,
-        limit: 10,
+        limit: 20,
         records: 0,
         pages: 0,
       },
@@ -81,13 +94,13 @@ export namespace RedditCommunityUserProfileTransformer {
     };
     return {
       id: input.id,
-      user: userSummary,
+      user,
       avatar_image_url_id: input.avatar?.id ?? null,
       display_name: input.display_name,
       bio: input.bio ?? null,
-      karma: karmaData,
-      posts: postsPagination,
-      comments: commentsPagination,
+      karma,
+      posts,
+      comments,
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
       deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,

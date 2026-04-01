@@ -27,9 +27,7 @@ export async function patchEcommerceMallSellerShipments(props: {
   const whereInput: Prisma.ecommerce_mall_shipmentsWhereInput = {
     ecommerce_mall_seller_id: props.seller.id,
     deleted_at: null,
-    ...(props.body.status !== undefined && {
-      status: props.body.status,
-    }),
+    ...(props.body.status !== undefined && { status: props.body.status }),
     ...(props.body.carrier_name !== undefined && {
       carrier_name: {
         contains: props.body.carrier_name,
@@ -37,37 +35,30 @@ export async function patchEcommerceMallSellerShipments(props: {
       },
     }),
     ...(props.body.created_at !== undefined && {
-      created_at: {
-        gte: new Date(props.body.created_at),
-      },
+      created_at: { gte: props.body.created_at },
     }),
     ...(props.body.shipped_at !== undefined && {
-      shipped_at: {
-        gte: new Date(props.body.shipped_at),
-      },
+      shipped_at: { gte: props.body.shipped_at },
     }),
     ...(props.body.delivered_at !== undefined && {
-      delivered_at: {
-        gte: new Date(props.body.delivered_at),
-      },
+      delivered_at: { gte: props.body.delivered_at },
     }),
     ...(props.body.estimated_delivery_at !== undefined && {
-      estimated_delivery_at: {
-        gte: new Date(props.body.estimated_delivery_at),
-      },
+      estimated_delivery_at: { gte: props.body.estimated_delivery_at },
     }),
   } satisfies Prisma.ecommerce_mall_shipmentsWhereInput;
-  const orderByInput = (
-    props.body.sort === "shipped_at"
-      ? { shipped_at: "desc" as const }
-      : props.body.sort === "delivered_at"
-        ? { delivered_at: "desc" as const }
-        : props.body.sort === "status"
-          ? { status: "desc" as const }
-          : props.body.sort === "carrier_name"
-            ? { carrier_name: "desc" as const }
-            : { created_at: "desc" as const }
-  ) satisfies Prisma.ecommerce_mall_shipmentsOrderByWithRelationInput;
+  const orderByInput: Prisma.ecommerce_mall_shipmentsOrderByWithRelationInput[] =
+    (
+      props.body.sort === "shipped_at"
+        ? [{ shipped_at: "desc" as const }]
+        : props.body.sort === "delivered_at"
+          ? [{ delivered_at: "desc" as const }]
+          : props.body.sort === "status"
+            ? [{ status: "asc" as const }]
+            : props.body.sort === "carrier_name"
+              ? [{ carrier_name: "asc" as const }]
+              : [{ created_at: "desc" as const }]
+    ) satisfies Prisma.ecommerce_mall_shipmentsOrderByWithRelationInput[];
   const data = await MyGlobal.prisma.ecommerce_mall_shipments.findMany({
     where: whereInput,
     skip,
@@ -78,16 +69,17 @@ export async function patchEcommerceMallSellerShipments(props: {
   const total = await MyGlobal.prisma.ecommerce_mall_shipments.count({
     where: whereInput,
   });
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    EcommerceMallShipmentAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallShipmentAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+    data: transformedData,
+  } satisfies IPageIEcommerceMallShipment.ISummary;
 }

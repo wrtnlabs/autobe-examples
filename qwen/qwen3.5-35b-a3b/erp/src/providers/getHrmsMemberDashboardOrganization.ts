@@ -19,175 +19,151 @@ export async function getHrmsMemberDashboardOrganization(props: {
 }): Promise<IHrmsOrganization> {
   const session = await MyGlobal.prisma.hrms_member_sessions.findFirst({
     where: {
-      hrms_member_id: props.member.id,
       id: props.member.session_id,
-      expired_at: { gt: new Date() },
+    },
+    select: {
+      current_organization_id: true,
     },
   });
   if (session === null) {
-    throw new HttpException("Session not found", 404);
+    throw new HttpException("Session expired", 403);
   }
-  const organizationId: string & tags.Format<"uuid"> =
-    session.current_organization_id ?? "";
-  const orgMember = await MyGlobal.prisma.hrms_organization_members.findFirst({
-    where: {
-      hrms_member_id: props.member.id,
-      hrms_organization_id: organizationId,
-      deleted_at: null,
-    },
-  });
-  if (orgMember === null) {
-    throw new HttpException("Organization member not found", 404);
-  }
-  const activeEmployeesCount: number & tags.Type<"int32"> =
-    await MyGlobal.prisma.hrms_employees.count({
-      where: {
-        organizationMember: {
-          hrms_organization_id: organizationId,
-          deleted_at: null,
-        },
-        status: "active",
-        deleted_at: null,
-      },
+  const selectedOrgId = session.current_organization_id as string;
+  const selectedOrganization =
+    await MyGlobal.prisma.hrms_organizations.findUnique({
+      where: { id: selectedOrgId, deleted_at: null },
     });
+  if (selectedOrganization === null) {
+    throw new HttpException("Organization not found", 404);
+  }
   const now = new Date();
-  const currentDayOfWeek: number = now.getUTCDay();
-  const mondayOffset: number =
-    currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
-  const weekStart: Date = new Date(now.getTime() + mondayOffset * 86400000);
+  const dayOfWeek = now.getUTCDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const weekStart = new Date(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() + mondayOffset,
+  );
   weekStart.setUTCHours(0, 0, 0, 0);
-  const weekEnd: Date = new Date(weekStart.getTime() + 6 * 86400000);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
   weekEnd.setUTCHours(23, 59, 59, 999);
-  const weeklyTimelogsSum = await MyGlobal.prisma.hrms_timelogs.aggregate({
-    _sum: {
-      duration_minutes: true,
-    },
+  const activeEmployees = await MyGlobal.prisma.hrms_employees.findMany({
     where: {
-      employee: {
-        organizationMember: {
-          hrms_organization_id: organizationId,
-          deleted_at: null,
-        },
-        status: "active",
-        deleted_at: null,
+      deleted_at: null,
+      status: "active",
+      organizationMember: {
+        hrms_organization_id: selectedOrgId as string,
+      },
+    },
+    select: { id: true },
+  });
+  const activeEmployeeIds = activeEmployees.map((e) => e.id);
+  const totalActiveEmployees = activeEmployeeIds.length;
+  const weeklyTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+    where: {
+      deleted_at: null,
+      employee_id: {
+        in: activeEmployeeIds,
       },
       date: {
         gte: weekStart,
         lte: weekEnd,
       },
-      deleted_at: null,
     },
+    select: { duration_minutes: true },
   });
-  const totalHoursThisWeek: number =
-    weeklyTimelogsSum._sum !== undefined &&
-    weeklyTimelogsSum._sum.duration_minutes !== undefined &&
-    weeklyTimelogsSum._sum.duration_minutes !== null
-      ? Math.round((weeklyTimelogsSum._sum.duration_minutes / 60) * 100) / 100
-      : 0;
-  const pendingTimesheetsCount: number & tags.Type<"int32"> =
-    await MyGlobal.prisma.hrms_timesheets.count({
-      where: {
-        employee: {
-          organizationMember: {
-            hrms_organization_id: organizationId,
-            deleted_at: null,
-          },
-          status: "active",
-          deleted_at: null,
-        },
-        status: "submitted",
-        deleted_at: null,
-      },
-    });
-  const projects = await MyGlobal.prisma.hrms_projects.findMany({
+  const totalMinutes = weeklyTimelogs.reduce(
+    (sum, tl) => sum + tl.duration_minutes,
+    0,
+  );
+  const totalHoursThisWeek = Math.round((totalMinutes / 60) * 100) / 100;
+  const pendingTimesheets = await MyGlobal.prisma.hrms_timesheets.findMany({
     where: {
-      hrms_organization_id: organizationId,
-      status: { in: ["active", "archived"] },
-      budget_hours: { gt: 0 },
       deleted_at: null,
+      status: "submitted",
+      hrms_employee_id: {
+        in: activeEmployeeIds,
+      },
+    },
+    select: { id: true },
+  });
+  const pendingTimesheetsCount = pendingTimesheets.length;
+  const activeProjects = await MyGlobal.prisma.hrms_projects.findMany({
+    where: {
+      deleted_at: null,
+      hrms_organization_id: selectedOrgId as string,
+      status: {
+        in: ["active", "archived"],
+      },
+      budget_hours: {
+        gt: 0,
+      },
     },
     select: {
       id: true,
       name: true,
-      description: true,
-      color_code: true,
       budget_hours: true,
-      status: true,
-      start_date: true,
-      end_date: true,
-      created_at: true,
-      updated_at: true,
     },
   });
   const projectsOverBudget: IHrmsProject.ISummary[] = [];
-  for (const project of projects) {
-    const projectWeeklyTimelogsSum =
-      await MyGlobal.prisma.hrms_timelogs.aggregate({
-        _sum: {
-          duration_minutes: true,
+  for (const project of activeProjects) {
+    const projectTimelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
+      where: {
+        deleted_at: null,
+        project_id: project.id,
+        employee_id: {
+          in: activeEmployeeIds,
         },
-        where: {
-          project_id: project.id,
-          date: {
-            gte: weekStart,
-            lte: weekEnd,
-          },
-          deleted_at: null,
+        date: {
+          gte: weekStart,
+          lte: weekEnd,
         },
-      });
-    const loggedHours: number =
-      projectWeeklyTimelogsSum._sum !== undefined &&
-      projectWeeklyTimelogsSum._sum.duration_minutes !== undefined &&
-      projectWeeklyTimelogsSum._sum.duration_minutes !== null
-        ? projectWeeklyTimelogsSum._sum.duration_minutes / 60
-        : 0;
-    const budgetHours: number = project.budget_hours ?? 0;
-    const utilizationPercentage: number | null =
-      budgetHours > 0 ? (loggedHours / budgetHours) * 100 : null;
-    if (utilizationPercentage !== null && utilizationPercentage > 80) {
+      },
+      select: { duration_minutes: true },
+    });
+    const projectMinutes = projectTimelogs.reduce(
+      (sum, tl) => sum + tl.duration_minutes,
+      0,
+    );
+    const projectHours = projectMinutes / 60;
+    const utilizationPercentage = (projectHours / project.budget_hours!) * 100;
+    if (utilizationPercentage > 80) {
       projectsOverBudget.push({
-        id: project.id as string & tags.Format<"uuid">,
+        id: project.id,
         name: project.name,
-        description: project.description ?? "",
-        color_code: project.color_code,
-        organization_id: organizationId,
-        organization_name: "",
-        status: project.status as "active" | "completed" | "archived",
+        description: "",
+        color_code: "#000000",
+        organization_id: selectedOrgId as string,
+        organization_name: selectedOrganization.name,
+        status: "active",
         budget_hours: project.budget_hours,
-        start_date: project.start_date
-          ? toISOStringSafe(project.start_date)
-          : null,
-        end_date: project.end_date ? toISOStringSafe(project.end_date) : null,
-        planned_hours: budgetHours,
-        actual_hours: loggedHours,
+        start_date: null,
+        end_date: null,
+        planned_hours: project.budget_hours ?? 0,
+        actual_hours: projectHours,
         budget_utilization_percentage: utilizationPercentage,
         total_tasks: 0,
         pending_tasks: 0,
         in_progress_tasks: 0,
         completed_tasks: 0,
         closed_tasks: 0,
-        timelog_count: 0,
-        created_at: toISOStringSafe(project.created_at),
-        updated_at: toISOStringSafe(project.updated_at),
+        timelog_count: projectTimelogs.length,
+        created_at: toISOStringSafe(new Date()),
+        updated_at: toISOStringSafe(new Date()),
       } satisfies IHrmsProject.ISummary);
     }
   }
-  const topEmployeeTimelogs = await MyGlobal.prisma.hrms_timelogs.groupBy({
+  const employeeWeeklyHours = await MyGlobal.prisma.hrms_timelogs.groupBy({
     by: ["employee_id"],
     where: {
-      employee: {
-        organizationMember: {
-          hrms_organization_id: organizationId,
-          deleted_at: null,
-        },
-        status: "active",
-        deleted_at: null,
+      employee_id: {
+        in: activeEmployeeIds,
       },
       date: {
         gte: weekStart,
         lte: weekEnd,
       },
-      deleted_at: null,
     },
     _sum: {
       duration_minutes: true,
@@ -199,47 +175,48 @@ export async function getHrmsMemberDashboardOrganization(props: {
     },
     take: 5,
   });
-  const topEmployees: IHrmsEmployee.ISummary[] = [];
-  for (const empTimelog of topEmployeeTimelogs) {
-    const employee = await MyGlobal.prisma.hrms_employees.findUnique({
-      where: {
-        id: empTimelog.employee_id,
+  const employeeIdsInTop5 = employeeWeeklyHours.map((e) => e.employee_id);
+  const topEmployeesData = await MyGlobal.prisma.hrms_employees.findMany({
+    where: {
+      id: {
+        in: employeeIdsInTop5,
       },
-      select: {
-        id: true,
-        display_name: true,
-        position: true,
-        department_id: true,
-        status: true,
-      },
-    });
-    if (employee !== null) {
-      const hours: number =
-        empTimelog._sum !== undefined &&
-        empTimelog._sum.duration_minutes !== undefined &&
-        empTimelog._sum.duration_minutes !== null
-          ? Math.round((empTimelog._sum.duration_minutes / 60) * 100) / 100
-          : 0;
-      topEmployees.push({
-        id: employee.id as string & tags.Format<"uuid">,
-        display_name: employee.display_name,
-        position: employee.position ?? "",
-        department_id: employee.department_id as string & tags.Format<"uuid">,
-        total_hours_logged: empTimelog._sum?.duration_minutes ?? 0,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      display_name: true,
+      position: true,
+      department_id: true,
+    },
+  });
+  const employeeHoursMap = new Map(
+    employeeWeeklyHours.map((e) => [
+      e.employee_id,
+      Math.round(((e._sum.duration_minutes ?? 0) / 60) * 100) / 100,
+    ]),
+  );
+  const topEmployees: IHrmsEmployee.ISummary[] = topEmployeesData.map(
+    (emp) =>
+      ({
+        id: emp.id,
+        display_name: emp.display_name,
+        position: emp.position ?? "",
+        department_id: emp.department_id ?? "",
+        total_hours_logged: 0,
         timelog_count: 0,
         timesheets_submitted: 0,
         timesheets_approved: 0,
         timesheets_pending: 0,
-        status: employee.status,
-      } satisfies IHrmsEmployee.ISummary);
-    }
-  }
+        status: "active",
+      }) satisfies IHrmsEmployee.ISummary,
+  );
   return {
-    totalActiveEmployees: activeEmployeesCount,
-    totalHoursThisWeek: totalHoursThisWeek,
-    pendingTimesheetsCount: pendingTimesheetsCount,
-    projectsOverBudget: projectsOverBudget,
-    topEmployees: topEmployees,
-    generatedAt: toISOStringSafe(now),
+    totalActiveEmployees,
+    totalHoursThisWeek,
+    pendingTimesheetsCount,
+    projectsOverBudget,
+    topEmployees,
+    generatedAt: toISOStringSafe(new Date()),
   } satisfies IHrmsOrganization;
 }

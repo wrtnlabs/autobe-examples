@@ -23,7 +23,7 @@ export async function patchRedditLikeModerators(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const where = {
+  const whereInput = {
     deleted_at: null,
     ...(props.body.communityId !== undefined && {
       community_id: props.body.communityId,
@@ -35,21 +35,24 @@ export async function patchRedditLikeModerators(props: {
       can_add_moderators: props.body.canAddModerators,
     }),
   } satisfies Prisma.reddit_like_moderatorsWhereInput;
-  const moderators = await MyGlobal.prisma.reddit_like_moderators.findMany({
-    where,
-    skip,
-    take: limit,
-    orderBy: { created_at: "desc" },
-    ...RedditLikeModeratorAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.reddit_like_moderators.count({
-    where,
-  });
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.reddit_like_moderators.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: { created_at: "desc" },
+      ...RedditLikeModeratorAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.reddit_like_moderators.count({
+      where: whereInput,
+    }),
+  ]);
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    RedditLikeModeratorAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      moderators,
-      RedditLikeModeratorAtSummaryTransformer.transform,
-    ),
+    data: transformedData,
     pagination: {
       current: page,
       limit: limit,

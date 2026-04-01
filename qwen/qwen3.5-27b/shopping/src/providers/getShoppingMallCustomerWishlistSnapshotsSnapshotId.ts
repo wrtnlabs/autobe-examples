@@ -10,6 +10,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { ShoppingMallWishlistItemSnapshotTransformer } from "../transformers/ShoppingMallWishlistItemSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,30 +22,12 @@ export async function getShoppingMallCustomerWishlistSnapshotsSnapshotId(props: 
     await MyGlobal.prisma.shopping_mall_wishlist_item_snapshots.findUniqueOrThrow(
       {
         where: { id: props.snapshotId },
-        select: {
-          id: true,
-          snapshot_data: true,
-          created_at: true,
-          wishlistItem: {
-            select: {
-              id: true,
-              shopping_mall_customer_id: true,
-              created_at: true,
-            },
-          },
-        },
+        ...ShoppingMallWishlistItemSnapshotTransformer.select(),
       },
     );
-  if (snapshot.wishlistItem.shopping_mall_customer_id !== props.customer.id) {
+  // Verify customer owns the wishlist item
+  if (snapshot.wishlistItem.customer.id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return {
-    id: snapshot.id,
-    wishlistItem: {
-      id: snapshot.wishlistItem.id,
-      created_at: snapshot.wishlistItem.created_at.toISOString(),
-    },
-    snapshotData: snapshot.snapshot_data,
-    createdAt: snapshot.created_at.toISOString(),
-  };
+  return await ShoppingMallWishlistItemSnapshotTransformer.transform(snapshot);
 }

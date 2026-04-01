@@ -23,14 +23,18 @@ export async function postShoppingMallAdminOrdersOrderIdItemsItemIdForceCancel(p
   itemId: string & tags.Format<"uuid">;
   body: IShoppingMallOrderItem.IForceCancel;
 }): Promise<IShoppingMallOrderItem> {
-  // Verify order exists
-  await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
+  // Verify order exists and is not deleted
+  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
     where: {
       id: props.orderId,
       deleted_at: null,
     },
+    select: {
+      id: true,
+      status: true,
+    },
   });
-  // Verify order item exists and belongs to the order
+  // Verify order item exists, belongs to order, and is not deleted
   const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: {
@@ -38,44 +42,52 @@ export async function postShoppingMallAdminOrdersOrderIdItemsItemIdForceCancel(p
         shopping_mall_order_id: props.orderId,
         deleted_at: null,
       },
+      select: {
+        id: true,
+        status: true,
+        quantity: true,
+      },
     });
-  // Check if already cancelled or refunded
+  // Check if item is already cancelled or refunded
   if (orderItem.status === "cancelled" || orderItem.status === "refunded") {
-    throw new HttpException("Order item is already cancelled or refunded", 400);
+    throw new HttpException(
+      `Order item is already ${orderItem.status} and cannot be force-cancelled again`,
+      400,
+    );
   }
+  const previousStatus = orderItem.status;
+  const now = new Date();
   // Update order item status to cancelled
   await MyGlobal.prisma.shopping_mall_order_items.update({
-    where: {
-      id: props.itemId,
-    },
+    where: { id: props.itemId },
     data: {
       status: "cancelled",
-      updated_at: new Date(),
+      updated_at: now,
     },
   });
   // Create cancellation snapshot for admin force cancellation
   const snapshotId = v4();
+  const fakeRequestId = v4();
   await MyGlobal.prisma.shopping_mall_cancellation_snapshots.create({
     data: {
       id: snapshotId,
-      shopping_mall_cancellation_request_id: props.itemId,
+      shopping_mall_cancellation_request_id: fakeRequestId,
       snapshot_data: JSON.stringify({
         order_item_id: props.itemId,
         order_id: props.orderId,
-        previous_status: orderItem.status,
+        previous_status: previousStatus,
         new_status: "cancelled",
-        cancellation_type: "admin_force_cancel",
         admin_id: props.admin.id,
-        admin_session_id: props.admin.session_id,
-        reason: props.body.reason,
-        notes: props.body.notes ?? null,
-        cancelled_at: new Date().toISOString(),
+        admin_reason: props.body.reason,
+        admin_notes: props.body.notes ?? null,
+        cancelled_at: now.toISOString(),
+        cancellation_type: "admin_force_cancel",
       }),
-      created_at: new Date(),
+      created_at: now,
     },
   });
-  // Recalculate order status based on all item statuses
-  const orderItems = await MyGlobal.prisma.shopping_mall_order_items.findMany({
+  // Recalculate order status based on all items
+  const allItems = await MyGlobal.prisma.shopping_mall_order_items.findMany({
     where: {
       shopping_mall_order_id: props.orderId,
       deleted_at: null,
@@ -84,25 +96,50 @@ export async function postShoppingMallAdminOrdersOrderIdItemsItemIdForceCancel(p
       status: true,
     },
   });
-  const allCancelled = orderItems.every((item) => item.status === "cancelled");
-  if (allCancelled) {
+  const allCancelled = allItems.every((item) => item.status === "cancelled");
+  const allRefunded = allItems.every((item) => item.status === "refunded");
+  const hasAnyActive = allItems.some(
+    (item) =>
+      item.status === "paid" ||
+      item.status === "shipped" ||
+      item.status === "delivered",
+  );
+  if (allCancelled && order.status !== "cancelled") {
     await MyGlobal.prisma.shopping_mall_orders.update({
-      where: {
-        id: props.orderId,
-      },
+      where: { id: props.orderId },
       data: {
         status: "cancelled",
-        updated_at: new Date(),
+        updated_at: now,
+      },
+    });
+  } else if (allRefunded && order.status !== "refunded") {
+    await MyGlobal.prisma.shopping_mall_orders.update({
+      where: { id: props.orderId },
+      data: {
+        status: "refunded",
+        updated_at: now,
+      },
+    });
+  } else if (
+    hasAnyActive &&
+    allItems.some(
+      (item) => item.status === "cancelled" || item.status === "refunded",
+    ) &&
+    order.status !== "partially_completed"
+  ) {
+    await MyGlobal.prisma.shopping_mall_orders.update({
+      where: { id: props.orderId },
+      data: {
+        status: "partially_completed",
+        updated_at: now,
       },
     });
   }
   // Return updated order item using transformer
-  const updated =
+  const updatedItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
-      where: {
-        id: props.itemId,
-      },
+      where: { id: props.itemId },
       ...ShoppingMallOrderItemTransformer.select(),
     });
-  return await ShoppingMallOrderItemTransformer.transform(updated);
+  return await ShoppingMallOrderItemTransformer.transform(updatedItem);
 }

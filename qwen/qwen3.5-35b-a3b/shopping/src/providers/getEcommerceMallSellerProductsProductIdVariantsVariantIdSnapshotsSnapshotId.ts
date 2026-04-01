@@ -12,6 +12,8 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { EcommerceMallProductAtSummaryTransformer } from "../transformers/EcommerceMallProductAtSummaryTransformer";
+import { EcommerceMallProductVariantAtSummaryTransformer } from "../transformers/EcommerceMallProductVariantAtSummaryTransformer";
 import { EcommerceMallProductVariantSnapshotTransformer } from "../transformers/EcommerceMallProductVariantSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -22,30 +24,41 @@ export async function getEcommerceMallSellerProductsProductIdVariantsVariantIdSn
   variantId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallProductVariantSnapshot> {
-  const snapshot =
-    await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findUniqueOrThrow(
-      {
-        where: { id: props.snapshotId },
-        ...EcommerceMallProductVariantSnapshotTransformer.select(),
-      },
-    );
-  if (snapshot.productVariant.id !== props.variantId) {
-    throw new HttpException(
-      "Snapshot does not belong to the specified variant",
-      404,
-    );
-  }
   const product =
     await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
       where: { id: props.productId },
       select: { id: true, seller_id: true },
     });
   if (product.seller_id !== props.seller.id) {
-    throw new HttpException(
-      "Forbidden: This product does not belong to you",
-      403,
-    );
+    throw new HttpException("Forbidden", 403);
   }
+  const variant =
+    await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
+      where: { id: props.variantId, product_id: props.productId },
+      select: { id: true },
+    });
+  const snapshot =
+    await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findUniqueOrThrow(
+      {
+        where: {
+          id: props.snapshotId,
+          product_id: props.productId,
+          product_variant_id: props.variantId,
+        },
+        select: {
+          id: true,
+          sku_code: true,
+          options: true,
+          price: true,
+          stock_quantity: true,
+          status: true,
+          created_at: true,
+          product: EcommerceMallProductAtSummaryTransformer.select(),
+          productVariant:
+            EcommerceMallProductVariantAtSummaryTransformer.select(),
+        },
+      },
+    );
   return await EcommerceMallProductVariantSnapshotTransformer.transform(
     snapshot,
   );

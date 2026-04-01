@@ -15,90 +15,83 @@ export async function deleteHrmsMemberOrganizationMembersOrganizationMemberId(pr
   member: MemberPayload;
   organizationMemberId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const targetMember =
-    await MyGlobal.prisma.hrms_organization_members.findUniqueOrThrow({
-      where: { id: props.organizationMemberId },
-      select: {
-        id: true,
-        hrms_organization_id: true,
-        hrms_organization_role_id: true,
-        deleted_at: true,
-        hrms_member_id: true,
-        member: { select: { id: true } },
-        organization: { select: { id: true, owner_id: true } },
-        organizationRole: {
-          select: { id: true, name: true, is_builtin: true },
-        },
-      },
-    });
-  if (targetMember.deleted_at !== null) {
-    throw new HttpException("Organization member already deleted", 404);
-  }
-  const requestingMemberSession =
-    await MyGlobal.prisma.hrms_member_sessions.findFirst({
-      where: {
-        hrms_member_id: props.member.id,
-        id: props.member.session_id,
-        expired_at: { gt: new Date() },
-      },
-    });
-  if (requestingMemberSession === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const requestingActiveMember =
+  const organizationMember =
     await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
-        hrms_organization_id: targetMember.organization.id,
-        hrms_member_id: props.member.id,
+        id: props.organizationMemberId,
         deleted_at: null,
       },
+      include: {
+        member: true,
+        organization: true,
+        organizationRole: true,
+      },
     });
-  if (requestingActiveMember === null) {
-    throw new HttpException("Forbidden", 403);
+  if (organizationMember === null) {
+    throw new HttpException("Not found", 404);
   }
-  const requestingRole =
-    await MyGlobal.prisma.hrms_organization_roles.findFirst({
-      where: { id: requestingActiveMember.hrms_organization_role_id },
+  const requestingMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        hrms_member_id: props.member.id,
+        hrms_organization_id: organizationMember.organization.id,
+        deleted_at: null,
+      },
+      include: {
+        organizationRole: true,
+      },
     });
-  if (requestingRole === null) {
+  if (requestingMember === null) {
     throw new HttpException("Forbidden", 403);
   }
-  if (requestingRole.name !== "Owner" && requestingRole.name !== "Manager") {
+  const requestingPermissions =
+    await MyGlobal.prisma.hrms_organization_role_permissions.findMany({
+      where: {
+        hrms_organization_role_id: requestingMember.hrms_organization_role_id,
+      },
+    });
+  const hasOwnership =
+    requestingMember.organizationRole.name === "Owner" &&
+    requestingMember.organizationRole.is_builtin;
+  const hasEmployeeManagement = requestingPermissions.some(
+    (p) => p.permission === "employee:manage",
+  );
+  if (!hasOwnership && !hasEmployeeManagement) {
     throw new HttpException("Forbidden", 403);
   }
-  if (requestingRole.name === "Owner") {
-    const ownerRoleId = targetMember.organizationRole.id;
+  if (organizationMember.organizationRole.name === "Owner") {
     const ownerMembers =
       await MyGlobal.prisma.hrms_organization_members.findMany({
         where: {
-          hrms_organization_id: targetMember.organization.id,
-          hrms_organization_role_id: ownerRoleId,
+          hrms_organization_id: organizationMember.organization.id,
+          hrms_organization_role_id: organizationMember.organizationRole.id,
           deleted_at: null,
         },
-        select: { id: true, hrms_member_id: true },
       });
     if (ownerMembers.length <= 1) {
-      throw new HttpException(
-        "Cannot delete the last owner of an organization",
-        409,
-      );
+      throw new HttpException("Cannot remove the sole owner", 409);
     }
   }
-  const deletedAt = new Date();
   await MyGlobal.prisma.hrms_organization_members.update({
-    where: { id: props.organizationMemberId },
-    data: { deleted_at: deletedAt },
+    where: {
+      id: props.organizationMemberId,
+    },
+    data: {
+      deleted_at: new Date(),
+    },
   });
+  const now = new Date();
   await MyGlobal.prisma.hrms_activity_logs.create({
     data: {
       id: v4(),
-      organization_id: targetMember.organization.id,
+      organization_id: organizationMember.organization.id,
       performed_by_id: props.member.id,
-      action_type: "delete_organization_member",
-      target_entity: "hrms_organization_members",
+      action_type: "employee.deactivated",
+      target_entity: "organization_member",
       target_id: props.organizationMemberId,
-      created_at: deletedAt,
-      updated_at: deletedAt,
+      details: "Member removed from organization",
+      created_at: now,
+      updated_at: now,
     },
   });
 }

@@ -16,38 +16,67 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getEcommerceMallAdminSearchHealth(props: {
   admin: AdminPayload;
 }): Promise<ISearchHealthStatus> {
-  const indices = await MyGlobal.prisma.ecommerce_mall_search_indices.findMany({
-    select: {
-      id: true,
-      updated_at: true,
-      deleted_at: true,
-    },
-  });
-  const lastUpdatedDate =
-    indices.length > 0
-      ? new Date(Math.max(...indices.map((i) => i.updated_at.getTime())))
-      : new Date(0);
-  const lastUpdated = toISOStringSafe(lastUpdatedDate) as string &
-    tags.Format<"date-time">;
-  const totalIndexedCount = indices.filter((i) => !i.deleted_at).length;
-  const freshnessHours = lastUpdated
-    ? Math.floor(
-        (Date.now() - new Date(lastUpdated).getTime()) / (1000 * 60 * 60),
-      )
-    : null;
-  const status: "healthy" | "degraded" | "unhealthy" =
-    !lastUpdated || freshnessHours === null || freshnessHours > 24
-      ? "unhealthy"
-      : freshnessHours < 1
-        ? "healthy"
-        : "degraded";
+  let status: "healthy" | "degraded" | "unhealthy";
+  let lastUpdated: string = "";
+  let metrics: ISearchHealthMetric | null = null;
+  try {
+    // Query the most recent updated_at timestamp and count of active records
+    const healthData = (await MyGlobal.prisma.$queryRawUnsafe(`SELECT 
+        MAX(updated_at) as max_updated_at,
+        COUNT(*) FILTER (WHERE deleted_at IS NULL) as total_count
+      FROM ecommerce_mall_search_indices`)) as {
+      max_updated_at: string | null;
+      total_count: bigint;
+    }[];
+    const row = healthData[0];
+    const maxUpdatedAt = row.max_updated_at;
+    const totalCount = Number(row.total_count);
+    if (maxUpdatedAt) {
+      lastUpdated = maxUpdatedAt;
+      // Calculate hours since last update
+      const lastUpdateDate = new Date(maxUpdatedAt);
+      const now = new Date();
+      const hoursDiff =
+        (now.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60);
+      // Round to 2 decimal places for reasonable precision
+      const roundedHours = Math.round(hoursDiff * 100) / 100;
+      // Determine status based on freshness
+      if (roundedHours < 1) {
+        status = "healthy";
+      } else if (roundedHours <= 24) {
+        status = "degraded";
+      } else {
+        status = "unhealthy";
+      }
+      // Build metrics object
+      metrics = {
+        totalIndexedCount: totalCount,
+        availabilityStatus: "available",
+        freshnessHours: roundedHours,
+      } satisfies ISearchHealthMetric;
+    } else {
+      // Table accessible but no data
+      status = "unhealthy";
+      lastUpdated = "";
+      metrics = {
+        totalIndexedCount: 0,
+        availabilityStatus: "available",
+        freshnessHours: null,
+      } satisfies ISearchHealthMetric;
+    }
+  } catch (error) {
+    // Table inaccessible - health check failed
+    status = "unhealthy";
+    lastUpdated = "";
+    metrics = {
+      totalIndexedCount: 0,
+      availabilityStatus: "unavailable",
+      freshnessHours: null,
+    } satisfies ISearchHealthMetric;
+  }
   return {
     status,
-    lastUpdated: lastUpdated as string & tags.Format<"date-time">,
-    metrics: {
-      totalIndexedCount,
-      availabilityStatus: "available",
-      freshnessHours,
-    } satisfies ISearchHealthMetric,
+    lastUpdated,
+    metrics,
   } satisfies ISearchHealthStatus;
 }

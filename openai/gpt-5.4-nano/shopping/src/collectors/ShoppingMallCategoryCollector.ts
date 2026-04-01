@@ -11,9 +11,8 @@ export namespace ShoppingMallCategoryCollector {
   export async function collect(props: {
     body: IShoppingMallCategory.ICreate;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       name: props.body.name,
       description: props.body.description,
       slug: props.body.slug,
@@ -23,11 +22,12 @@ export namespace ShoppingMallCategoryCollector {
       updated_at: new Date(),
       deleted_at: null,
       parentCategory:
-        props.body.parent_category_id != null
+        props.body.parent_category_id !== undefined &&
+        props.body.parent_category_id !== null
           ? { connect: { id: props.body.parent_category_id } }
           : undefined,
-      // Reverse relations are intentionally omitted on create:
-      // childCategories, products
+      childCategories: undefined,
+      products: undefined,
     } satisfies Prisma.shopping_mall_categoriesCreateInput;
   }
 }

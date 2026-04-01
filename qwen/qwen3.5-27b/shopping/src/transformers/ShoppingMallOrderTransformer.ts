@@ -6,8 +6,10 @@ import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IS
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
 import { ShoppingMallOrderItemTransformer } from "./ShoppingMallOrderItemTransformer";
@@ -24,10 +26,10 @@ export namespace ShoppingMallOrderTransformer {
         shipping_address_snapshot: true,
         total_price: true,
         status: true,
+        orderItems: ShoppingMallOrderItemTransformer.select(),
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        orderItems: ShoppingMallOrderItemTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_ordersFindManyArgs;
   }

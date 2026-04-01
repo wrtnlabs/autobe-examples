@@ -11,8 +11,9 @@ export namespace ErpHrmTimeTrackingActivityLogEntrySnapshotCollector {
   export async function collect(props: {
     body: IErpHrmTimeTrackingActivityLogEntrySnapshot.ICreate;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       snapshot_action_type: props.body.snapshotActionType,
       snapshot_action_summary: props.body.snapshotActionSummary,
       performer_type: props.body.performerType,

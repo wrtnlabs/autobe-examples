@@ -39,13 +39,13 @@ export namespace HrmPlatformContractSnapshotTransformer {
       contract: await HrmPlatformContractAtSummaryTransformer.transform(
         input.contract,
       ),
-      start_date: toISOStringSafe(input.start_date),
-      end_date: input.end_date ? toISOStringSafe(input.end_date) : null,
+      start_date: input.start_date.toISOString(),
+      end_date: input.end_date?.toISOString() ?? null,
       pay_rate: input.pay_rate,
       pay_period: input.pay_period,
       working_hours_per_week: input.working_hours_per_week,
-      notes: input.notes ?? null,
-      created_at: toISOStringSafe(input.created_at),
+      notes: input.notes,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

@@ -16,29 +16,25 @@ export async function getErpHrmTimeTrackingReportDefinitionsReportDefinitionIdFi
   reportDefinitionId: string & tags.Format<"uuid">;
   filterId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingReportDefinitionFilter> {
-  // Scope to the requested report definition (and ensure it is not soft-deleted)
-  // so that filter lookup cannot escape the definition.
-  const reportDefinition =
-    await MyGlobal.prisma.erp_hrm_time_tracking_report_definitions.findFirstOrThrow(
-      {
-        where: {
-          id: props.reportDefinitionId,
-          deleted_at: null,
-        } satisfies Prisma.erp_hrm_time_tracking_report_definitionsWhereInput,
-        select: {
-          id: true,
-        },
+  // Query 1: ensure report definition exists and is active (scoped by tenant in service layer / middleware)
+  await MyGlobal.prisma.erp_hrm_time_tracking_report_definitions.findFirstOrThrow(
+    {
+      where: {
+        id: props.reportDefinitionId,
+        deleted_at: null,
       },
-    );
-  // Load the filter within the same report definition (and ensure it is not soft-deleted)
+      select: { id: true },
+    },
+  );
+  // Query 2: fetch the filter row under the given report definition (active only)
   const filter =
     await MyGlobal.prisma.erp_hrm_time_tracking_report_definition_filters.findFirstOrThrow(
       {
         where: {
           id: props.filterId,
-          erp_hrm_time_tracking_report_definition_id: reportDefinition.id,
+          erp_hrm_time_tracking_report_definition_id: props.reportDefinitionId,
           deleted_at: null,
-        } satisfies Prisma.erp_hrm_time_tracking_report_definition_filtersWhereInput,
+        },
         ...ErpHrmTimeTrackingReportDefinitionFilterTransformer.select(),
       },
     );

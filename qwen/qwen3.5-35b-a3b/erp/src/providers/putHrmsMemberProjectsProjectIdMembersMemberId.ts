@@ -21,53 +21,27 @@ export async function putHrmsMemberProjectsProjectIdMembersMemberId(props: {
   memberId: string & tags.Format<"uuid">;
   body: IHrmsProjectMember.IUpdate;
 }): Promise<IHrmsProjectMember> {
-  const session = await MyGlobal.prisma.hrms_member_sessions.findFirstOrThrow({
-    where: {
-      hrms_member_id: props.member.id,
-      id: props.member.session_id,
-      expired_at: { gt: new Date() },
-    },
-  });
-  const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
-    where: { id: props.projectId },
-    select: {
-      id: true,
-      hrms_organization_id: true,
-      name: true,
-      status: true,
-      color_code: true,
-      description: true,
-      budget_hours: true,
-      start_date: true,
-      end_date: true,
-      created_at: true,
-      updated_at: true,
-    },
-  });
-  const organizationMember =
-    await MyGlobal.prisma.hrms_organization_members.findFirstOrThrow({
-      where: {
-        hrms_member_id: session.hrms_member_id,
-        hrms_organization_id: project.hrms_organization_id,
-      },
-    });
-  const hasPermission =
-    (await MyGlobal.prisma.hrms_organization_role_permissions.findFirst({
-      where: {
-        hrms_organization_role_id: organizationMember.hrms_organization_role_id,
-        permission: "project:manage",
-      },
-    })) !== null;
-  if (!hasPermission) {
-    throw new HttpException("Forbidden", 403);
+  const { member, projectId, memberId, body } = props;
+  // Validate at least one field is provided for update
+  if (body.role === undefined && body.status === undefined) {
+    throw new HttpException(
+      "At least one of role or status must be provided",
+      400,
+    );
   }
+  // Fetch project to validate it exists and get organization context
+  const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
+    where: { id: projectId },
+    select: { id: true, hrms_organization_id: true },
+  });
+  // Fetch the project membership to validate it exists, belongs to project, and get state
   const membership =
     await MyGlobal.prisma.hrms_project_members.findUniqueOrThrow({
-      where: { id: props.memberId },
+      where: { id: memberId },
       select: {
         id: true,
-        employee_id: true,
         project_id: true,
+        employee_id: true,
         role: true,
         status: true,
         created_at: true,
@@ -75,39 +49,57 @@ export async function putHrmsMemberProjectsProjectIdMembersMemberId(props: {
         deleted_at: true,
       },
     });
-  if (membership.project_id !== props.projectId) {
-    throw new HttpException("Not found", 404);
+  // Validate membership belongs to the specified project
+  if (membership.project_id !== projectId) {
+    throw new HttpException(
+      "Project member does not belong to the specified project",
+      404,
+    );
   }
+  // Validate membership is not soft-deleted
   if (membership.deleted_at !== null) {
-    throw new HttpException("Not found", 404);
+    throw new HttpException("Cannot update a soft-deleted membership", 400);
   }
+  // Validate user has project:manage permission (organization manager)
+  const hasPermission =
+    (await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        hrms_organization_id: project.hrms_organization_id,
+        hrms_member_id: member.id,
+        role: "manager",
+      } as Prisma.hrms_organization_membersWhereInput,
+    })) !== null;
+  if (!hasPermission) {
+    throw new HttpException(
+      "Forbidden: You do not have project:manage permission",
+      403,
+    );
+  }
+  // Build update data with conditional assignment
   const updateData: {
-    role?: "member" | "project-lead";
-    status?: "active" | "inactive";
+    role?: "member" | "project-lead" | undefined;
+    status?: "active" | "inactive" | undefined;
     updated_at: Date;
   } = {
     updated_at: new Date(),
   };
-  if (props.body.role !== undefined) {
-    if (props.body.role !== "member" && props.body.role !== "project-lead") {
-      throw new HttpException("Invalid role", 400);
-    }
-    updateData.role = props.body.role;
+  if (body.role !== undefined) {
+    updateData.role = body.role;
   }
-  if (props.body.status !== undefined) {
-    if (props.body.status !== "active" && props.body.status !== "inactive") {
-      throw new HttpException("Invalid status", 400);
-    }
-    updateData.status = props.body.status;
+  if (body.status !== undefined) {
+    updateData.status = body.status;
   }
+  // Perform update
   await MyGlobal.prisma.hrms_project_members.update({
-    where: { id: props.memberId },
+    where: { id: memberId },
     data: updateData,
   });
-  const updatedMembership =
+  // Fetch updated record with full structure for transformation
+  const fetchedMembership =
     await MyGlobal.prisma.hrms_project_members.findUniqueOrThrow({
-      where: { id: props.memberId },
+      where: { id: memberId },
       ...HrmsProjectMemberTransformer.select(),
     });
-  return await HrmsProjectMemberTransformer.transform(updatedMembership);
+  // Transform and return
+  return await HrmsProjectMemberTransformer.transform(fetchedMembership);
 }

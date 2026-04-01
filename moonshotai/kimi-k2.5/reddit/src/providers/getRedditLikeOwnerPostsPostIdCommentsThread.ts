@@ -17,23 +17,25 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditLikeOwnerPostsPostIdCommentsThread(props: {
   owner: OwnerPayload;
   postId: string & tags.Format<"uuid">;
-}): Promise<IRedditLikeComment.IThread[]> {
+}): Promise<IRedditLikeComment.IThread> {
   // Verify post exists
   await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
     where: { id: props.postId },
   });
-  // Fetch all top-level comments for the post with recursive replies
+  // Get top-level comments for this post
   const comments = await MyGlobal.prisma.reddit_like_comments.findMany({
     where: {
       post_id: props.postId,
       parent_id: null,
     },
-    orderBy: { created_at: "desc" },
     ...RedditLikeCommentAtThreadTransformer.select(),
+    orderBy: {
+      vote_score: "desc",
+    },
   });
-  // Transform to DTO format with recursive replies
-  return await ArrayUtil.asyncMap(
-    comments,
-    RedditLikeCommentAtThreadTransformer.transform,
-  );
+  if (comments.length === 0) {
+    throw new HttpException("No comments found for this post", 404);
+  }
+  // Return the first (highest voted) comment thread
+  return await RedditLikeCommentAtThreadTransformer.transform(comments[0]);
 }

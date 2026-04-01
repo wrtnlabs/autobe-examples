@@ -25,11 +25,26 @@ export async function getShoppingMallSellerSellerApprovalRequestsRequestId(props
           id: props.requestId,
           deleted_at: null,
         },
+        select: {
+          id: true,
+          shopping_mall_seller_id: true,
+        },
+      },
+    );
+  if (request.shopping_mall_seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const fullRequest =
+    await MyGlobal.prisma.shopping_mall_seller_approval_requests.findUniqueOrThrow(
+      {
+        where: {
+          id: props.requestId,
+          deleted_at: null,
+        },
         ...ShoppingMallSellerApprovalRequestTransformer.select(),
       },
     );
-  if (request.seller.id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  return await ShoppingMallSellerApprovalRequestTransformer.transform(request);
+  return await ShoppingMallSellerApprovalRequestTransformer.transform(
+    fullRequest,
+  );
 }

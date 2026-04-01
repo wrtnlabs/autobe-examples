@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -39,42 +40,55 @@ export namespace ShoppingMallOrderAtSummaryTransformer {
         },
         orderItems: {
           select: {
-            quantity: true,
             seller_price_at_purchase: true,
+            quantity: true,
             line_item_status: true,
           },
-        },
+        } satisfies Prisma.shopping_mall_order_itemsFindManyArgs,
         shipments: {
           select: {
             status: true,
           },
-        },
+        } satisfies Prisma.shopping_mall_shipmentsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_ordersFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallOrder.ISummary> {
-    const orderItems = input.orderItems ?? [];
-    const shipments = input.shipments ?? [];
-    const totalPrice = orderItems.reduce((sum, item) => {
-      const qty = Number(item.quantity);
-      const price = Number(item.seller_price_at_purchase);
-      return sum + price * qty;
-    }, 0);
-    const shipmentStatus = shipments[0]?.status;
-    const itemStatus = orderItems[0]?.line_item_status;
+    const totalPrice = input.orderItems.reduce(
+      (sum, item) =>
+        sum + Number(item.seller_price_at_purchase) * item.quantity,
+      0,
+    );
+    let overallStatus = "empty";
+    if (input.orderItems.length > 0) {
+      const itemStatuses = input.orderItems.map((i) => i.line_item_status);
+      const shipmentStatuses = input.shipments.map((s) => s.status);
+      if (itemStatuses.includes("refunded")) overallStatus = "refunded";
+      else if (itemStatuses.includes("refund_requested"))
+        overallStatus = "refund_requested";
+      else if (itemStatuses.includes("cancelled")) overallStatus = "cancelled";
+      else if (itemStatuses.includes("cancellation_requested"))
+        overallStatus = "cancellation_requested";
+      else {
+        const shipmentDelivered = shipmentStatuses.includes("delivered");
+        const shipmentShipped = shipmentStatuses.includes("shipped");
+        if (shipmentDelivered || itemStatuses.includes("delivered"))
+          overallStatus = "delivered";
+        else if (shipmentShipped || itemStatuses.includes("shipped"))
+          overallStatus = "shipped";
+        else if (itemStatuses.includes("created")) overallStatus = "created";
+        else overallStatus = itemStatuses[0] ?? "created";
+      }
+    }
     return {
       id: input.id,
       orderCode: input.order_code,
       placedAt: input.placed_at.toISOString(),
       totalPrice,
-      overallStatus: shipmentStatus
-        ? String(shipmentStatus)
-        : itemStatus
-          ? String(itemStatus)
-          : "",
-      deletedAt: input.deleted_at ? input.deleted_at.toISOString() : null,
-    } satisfies IShoppingMallOrder.ISummary;
+      overallStatus,
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    };
   }
 }

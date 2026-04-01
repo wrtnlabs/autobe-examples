@@ -4,8 +4,10 @@ import { IRedditLikeCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeAttachmentAtSummaryTransformer } from "./RedditLikeAttachmentAtSummaryTransformer";
 import { RedditLikeMemberAtSummaryTransformer } from "./RedditLikeMemberAtSummaryTransformer";
@@ -25,11 +27,11 @@ export namespace RedditLikeCommunityTransformer {
         deleted_at: true,
         owner: RedditLikeMemberAtSummaryTransformer.select(),
         iconAttachment: RedditLikeAttachmentAtSummaryTransformer.select(),
-        _count: {
+        subscriptions: {
           select: {
-            subscriptions: true,
+            id: true,
           },
-        },
+        } satisfies Prisma.reddit_like_community_subscriptionsFindManyArgs,
       },
     } satisfies Prisma.reddit_like_communitiesFindManyArgs;
   }
@@ -46,7 +48,7 @@ export namespace RedditLikeCommunityTransformer {
             input.iconAttachment,
           )
         : null,
-      subscriber_count: input._count.subscriptions,
+      subscriber_count: input.subscriptions.length,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,

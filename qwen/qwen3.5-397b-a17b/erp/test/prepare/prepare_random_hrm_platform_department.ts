@@ -9,16 +9,11 @@ export function prepare_random_hrm_platform_department(
   input?: DeepPartial<IHrmPlatformDepartment.ICreate>,
 ): IHrmPlatformDepartment.ICreate {
   return {
-    name:
-      input?.name ??
-      RandomGenerator.paragraph({ sentences: 1, wordMin: 2, wordMax: 4 }),
+    name: input?.name ?? RandomGenerator.name(),
     description:
-      input?.description ??
-      RandomGenerator.content({
-        paragraphs: 1,
-        sentenceMin: 2,
-        sentenceMax: 4,
-      }),
-    parent_id: input?.parent_id ?? typia.random<string & tags.Format<"uuid">>(),
+      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
+    parent_department_id:
+      input?.parent_department_id ??
+      typia.random<string & tags.Format<"uuid">>(),
   };
 }

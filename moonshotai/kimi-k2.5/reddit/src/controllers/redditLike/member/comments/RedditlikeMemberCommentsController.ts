@@ -4,8 +4,8 @@ import typia from "typia";
 
 import { IPageIRedditLikeComment } from "../../../../api/structures/IPageIRedditLikeComment";
 import { IRedditLikeComment } from "../../../../api/structures/IRedditLikeComment";
-import { AdminAuth } from "../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { patchRedditLikeMemberComments } from "../../../../providers/patchRedditLikeMemberComments";
 
 @Controller("/redditLike/member/comments")
@@ -52,8 +52,8 @@ export class RedditlikeMemberCommentsController {
    */
   @TypedRoute.Patch()
   public async index(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedBody()
     body: IRedditLikeComment.IRequest,
   ): Promise<IPageIRedditLikeComment.ISummary> {

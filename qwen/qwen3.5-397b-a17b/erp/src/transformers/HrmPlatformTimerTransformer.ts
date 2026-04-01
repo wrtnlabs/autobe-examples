@@ -1,6 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
+import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
@@ -23,7 +25,6 @@ export namespace HrmPlatformTimerTransformer {
       select: {
         id: true,
         started_at: true,
-        stopped_at: true,
         description: true,
         created_at: true,
         updated_at: true,
@@ -43,14 +44,15 @@ export namespace HrmPlatformTimerTransformer {
       project: await HrmPlatformProjectAtSummaryTransformer.transform(
         input.project,
       ),
-      task: input.task
-        ? await HrmPlatformTaskAtSummaryTransformer.transform(input.task)
-        : null,
+      task:
+        input.task !== null
+          ? await HrmPlatformTaskAtSummaryTransformer.transform(input.task)
+          : null,
       started_at: input.started_at.toISOString(),
-      stopped_at: input.stopped_at?.toISOString() ?? null,
       description: input.description ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

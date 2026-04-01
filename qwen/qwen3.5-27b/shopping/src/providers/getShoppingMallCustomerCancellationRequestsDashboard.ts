@@ -20,7 +20,7 @@ export async function getShoppingMallCustomerCancellationRequestsDashboard(props
   customer: CustomerPayload;
 }): Promise<IShoppingMallCancellationRequest.IDashboard> {
   const customerId = props.customer.id;
-  // Query summary statistics sequentially
+  // Calculate summary statistics
   const pendingCount =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.count({
       where: {
@@ -52,7 +52,7 @@ export async function getShoppingMallCustomerCancellationRequestsDashboard(props
         deleted_at: null,
       },
     });
-  // Query recent cancellation requests
+  // Fetch recent cancellation requests (limit 20)
   const recentRequests =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.findMany({
       where: {
@@ -71,11 +71,11 @@ export async function getShoppingMallCustomerCancellationRequestsDashboard(props
   );
   return {
     summary: {
-      pendingCount,
       approvedCount,
+      pendingCount,
       rejectedCount,
       totalCount,
-    } satisfies IShoppingMallCancellationRequest.IDashboard["summary"],
+    },
     recentRequests: transformedRequests,
   };
 }

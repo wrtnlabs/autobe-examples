@@ -23,49 +23,65 @@ export async function postShoppingMallAdminSellersBulkUnban(props: {
   let succeeded = 0;
   let failed = 0;
   for (const sellerId of sellerIds) {
-    const seller = await MyGlobal.prisma.shopping_mall_sellers.findUnique({
-      where: {
-        id: sellerId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        status: true,
-      },
-    });
-    if (seller === null) {
+    try {
+      // Find the seller record
+      const seller = await MyGlobal.prisma.shopping_mall_sellers.findUnique({
+        where: { id: sellerId },
+        select: { id: true, status: true, deleted_at: true },
+      });
+      if (seller === null) {
+        // Seller not found
+        details.push({
+          sellerId: sellerId,
+          success: false,
+          errorReason: "not_found",
+        });
+        failed++;
+        continue;
+      }
+      if (seller.deleted_at !== null) {
+        // Seller is deleted
+        details.push({
+          sellerId: sellerId,
+          success: false,
+          errorReason: "not_found",
+        });
+        failed++;
+        continue;
+      }
+      if (seller.status !== "banned") {
+        // Seller is not in banned status
+        details.push({
+          sellerId: sellerId,
+          success: false,
+          errorReason: "not_banned",
+        });
+        failed++;
+        continue;
+      }
+      // Update seller status from banned to active
+      await MyGlobal.prisma.shopping_mall_sellers.update({
+        where: { id: sellerId },
+        data: {
+          status: "active",
+          updated_at: new Date(),
+        },
+      });
+      details.push({
+        sellerId: sellerId,
+        success: true,
+        errorReason: null,
+      });
+      succeeded++;
+    } catch (error) {
+      // Database error or other exception
       details.push({
         sellerId: sellerId,
         success: false,
-        errorReason: "not_found",
+        errorReason: "database_error",
       });
       failed++;
-      continue;
     }
-    if (seller.status !== "banned") {
-      details.push({
-        sellerId: sellerId,
-        success: false,
-        errorReason: "not_banned",
-      });
-      failed++;
-      continue;
-    }
-    await MyGlobal.prisma.shopping_mall_sellers.update({
-      where: {
-        id: sellerId,
-      },
-      data: {
-        status: "active",
-        updated_at: new Date(),
-      },
-    });
-    details.push({
-      sellerId: sellerId,
-      success: true,
-      errorReason: null,
-    });
-    succeeded++;
   }
   return {
     total: total,

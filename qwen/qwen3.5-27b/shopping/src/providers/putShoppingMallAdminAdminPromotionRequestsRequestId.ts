@@ -19,19 +19,13 @@ export async function putShoppingMallAdminAdminPromotionRequestsRequestId(props:
   requestId: string & tags.Format<"uuid">;
   body: IShoppingMallAdminPromotionRequest.IApproveOrReject;
 }): Promise<IShoppingMallAdminPromotionRequest> {
-  // Verify the requesting admin has 'super' grade level
-  const requestingAdmin =
+  // Verify requesting admin has 'super' grade
+  const adminRecord =
     await MyGlobal.prisma.shopping_mall_admins.findUniqueOrThrow({
-      where: {
-        id: props.admin.id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        grade: true,
-      },
+      where: { id: props.admin.id },
+      select: { id: true, grade: true },
     });
-  if (requestingAdmin.grade !== "super") {
+  if (adminRecord.grade !== "super") {
     throw new HttpException(
       "Only super administrators can approve or reject promotion requests",
       403,
@@ -41,76 +35,74 @@ export async function putShoppingMallAdminAdminPromotionRequestsRequestId(props:
   const request =
     await MyGlobal.prisma.shopping_mall_admin_promotion_requests.findUniqueOrThrow(
       {
-        where: {
-          id: props.requestId,
-          deleted_at: null,
-        },
-        select: {
-          id: true,
-          shopping_mall_admin_id: true,
-          status: true,
-        },
+        where: { id: props.requestId },
+        select: { id: true, status: true, shopping_mall_admin_id: true },
       },
     );
-  // Validate that the request status is 'pending'
+  // Validate request status is 'pending'
   if (request.status !== "pending") {
     throw new HttpException(
       "Only pending promotion requests can be approved or rejected",
       400,
     );
   }
-  // Validate the action parameter
+  // Validate action parameter
   if (props.body.action !== "approve" && props.body.action !== "reject") {
     throw new HttpException("Action must be either 'approve' or 'reject'", 400);
   }
-  // If action is 'reject', validate that rejectionReason is provided
+  // If rejecting, validate rejectionReason is provided
   if (
     props.body.action === "reject" &&
-    (!props.body.rejectionReason || props.body.rejectionReason.trim() === "")
+    (!props.body.rejectionReason ||
+      props.body.rejectionReason.trim().length === 0)
   ) {
     throw new HttpException(
       "Rejection reason is required when rejecting a promotion request",
       400,
     );
   }
-  // Begin database transaction
+  // Update the promotion request and optionally the admin record
   const now = new Date();
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Update the promotion request
-    await tx.shopping_mall_admin_promotion_requests.update({
-      where: {
-        id: props.requestId,
-      },
+  if (props.body.action === "approve") {
+    // Update promotion request and admin grade
+    await MyGlobal.prisma.$transaction([
+      MyGlobal.prisma.shopping_mall_admin_promotion_requests.update({
+        where: { id: props.requestId },
+        data: {
+          status: "approved",
+          responded_at: now,
+          updated_at: now,
+        },
+      }),
+      MyGlobal.prisma.shopping_mall_admins.update({
+        where: { id: request.shopping_mall_admin_id },
+        data: {
+          grade: "regular",
+          status: "active",
+          updated_at: now,
+        },
+      }),
+    ]);
+  } else {
+    // Just update the promotion request (reject)
+    await MyGlobal.prisma.shopping_mall_admin_promotion_requests.update({
+      where: { id: props.requestId },
       data: {
-        status: props.body.action === "approve" ? "approved" : "rejected",
+        status: "rejected",
         responded_at: now,
         updated_at: now,
       },
     });
-    // If action is 'approve', update the admin's grade to 'regular' and status to 'active'
-    if (props.body.action === "approve") {
-      await tx.shopping_mall_admins.update({
-        where: {
-          id: request.shopping_mall_admin_id,
-        },
-        data: {
-          grade: "regular",
-          status: "active",
-        },
-      });
-    }
-  });
-  // Fetch the updated request with full details for response
-  const finalRequest =
+  }
+  // Fetch and return the updated promotion request
+  const updatedRequest =
     await MyGlobal.prisma.shopping_mall_admin_promotion_requests.findUniqueOrThrow(
       {
-        where: {
-          id: props.requestId,
-        },
+        where: { id: props.requestId },
         ...ShoppingMallAdminPromotionRequestTransformer.select(),
       },
     );
   return await ShoppingMallAdminPromotionRequestTransformer.transform(
-    finalRequest,
+    updatedRequest,
   );
 }

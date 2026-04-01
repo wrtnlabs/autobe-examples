@@ -2,8 +2,10 @@ import { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallSuperAdminAtSummaryTransformer {
@@ -23,11 +25,11 @@ export namespace EcommerceMallSuperAdminAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: true,
-        passwordResets: true,
-        activityLogs: true,
-        notificationReferences: true,
-        refundRequestSnapshotOfSuperAdmins: true,
+        sessions: {},
+        passwordResets: {},
+        activityLogs: {},
+        notificationReferences: {},
+        refundRequestSnapshotOfSuperAdmins: {},
       },
     } satisfies Prisma.ecommerce_mall_super_adminsFindManyArgs;
   }

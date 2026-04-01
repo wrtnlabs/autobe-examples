@@ -117,7 +117,7 @@ Phase | Generated | FCSR | Token Consumption | Elapsed Time
 ✅ database | namespaces: 14, models: 68 | 81.20 % | 9,341,574 | 1634 sec
 ✅ interface | operations: 196, schemas: 217 | 69.27 % | 182,486,008 | 7693 sec
 ✅ test | functions: 462 | 83.28 % | 86,270,582 | 5414 sec
-❌ realize | functions: 284, errors: 4 | 77.70 % | 50,063,264 | 5079 sec
+❌ realize | functions: 287, errors: 4 | 65.73 % | 43,390,419 | 7817 sec
 
 This table shows the comprehensive metrics for each phase of the AutoBE generation pipeline. For each phase (Analyze, Database, Interface, Test, Realize), it tracks:
 
@@ -133,7 +133,7 @@ These aggregate metrics provide visibility into the computational cost and time 
 
 Type | Trial | Validation Failure | JSON Parse Error | Success | Success Rate
 :----|------:|-------------------:|-----------------:|---------:|-------------:
-total | 6,183 | 1,387 | 0 | 4,765 | 77.07 %
+total | 6,410 | 1,626 | 0 | 4,759 | 74.24 %
 analyzeScenario | 4 | 1 | 0 | 3 | 75.00 %
 analyzeScenarioReview | 3 | 1 | 0 | 2 | 66.67 %
 analyzeWriteUnit | 5 | 0 | 0 | 5 | 100.00 %
@@ -164,11 +164,11 @@ testScenario | 257 | 59 | 0 | 196 | 76.26 %
 testScenarioReview | 684 | 126 | 0 | 547 | 79.97 %
 testWrite | 512 | 41 | 0 | 471 | 91.99 %
 testCorrect | 598 | 102 | 0 | 494 | 82.61 %
-realizeAuthorizationWrite | 10 | 2 | 0 | 8 | 80.00 %
-realizeAuthorizationCorrect | 32 | 3 | 0 | 29 | 90.63 %
-realizePlan | 109 | 0 | 0 | 109 | 100.00 %
-realizeWrite | 467 | 77 | 0 | 375 | 80.30 %
-realizeCorrect | 678 | 188 | 0 | 486 | 71.68 %
+realizeAuthorizationWrite | 11 | 3 | 0 | 8 | 72.73 %
+realizeAuthorizationCorrect | 42 | 13 | 0 | 29 | 69.05 %
+realizePlan | 112 | 3 | 0 | 109 | 97.32 %
+realizeWrite | 601 | 174 | 0 | 415 | 69.05 %
+realizeCorrect | 757 | 316 | 0 | 440 | 58.12 %
 
 This table shows the reliability and quality metrics for AI agent function calling operations across all phases. Each row represents a specific operation type (e.g., `analyzeScenario`, `prismaSchema`, `realizeWrite`), tracking:
 

@@ -11,7 +11,7 @@ export function prepare_random_shopping_mall_product(
   return {
     name:
       input?.name ??
-      RandomGenerator.paragraph({ sentences: 1, wordMin: 2, wordMax: 4 }),
+      RandomGenerator.paragraph({ sentences: 1, wordMin: 2, wordMax: 5 }),
     description:
       input?.description ??
       RandomGenerator.content({
@@ -19,9 +19,8 @@ export function prepare_random_shopping_mall_product(
         sentenceMin: 3,
         sentenceMax: 5,
       }),
-    shopping_category_id:
-      input?.shopping_category_id ??
-      typia.random<string & tags.Format<"uuid">>(),
+    category_id:
+      input?.category_id ?? typia.random<string & tags.Format<"uuid">>(),
     base_price:
       input?.base_price ??
       typia.random<

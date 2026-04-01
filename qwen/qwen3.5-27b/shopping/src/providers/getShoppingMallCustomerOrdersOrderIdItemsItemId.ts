@@ -31,7 +31,16 @@ export async function getShoppingMallCustomerOrdersOrderIdItemsItemId(props: {
       },
       ...ShoppingMallOrderItemTransformer.select(),
     });
-  if (orderItem.order.customer.id !== props.customer.id) {
+  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
+    where: {
+      id: props.orderId,
+      deleted_at: null,
+    },
+    select: {
+      shopping_mall_customer_id: true,
+    },
+  });
+  if (order.shopping_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await ShoppingMallOrderItemTransformer.transform(orderItem);

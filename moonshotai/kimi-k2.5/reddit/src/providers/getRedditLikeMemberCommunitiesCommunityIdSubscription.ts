@@ -11,33 +11,31 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeCommunitySubscriptionTransformer } from "../transformers/RedditLikeCommunitySubscriptionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getRedditLikeMemberCommunitiesCommunityIdSubscription(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeCommunitySubscription> {
-  // Verify community exists first
+  // Verify community exists
   await MyGlobal.prisma.reddit_like_communities.findUniqueOrThrow({
     where: { id: props.communityId },
   });
-  // Query subscription by composite unique key
+  // Query for active subscription
   const subscription =
-    await MyGlobal.prisma.reddit_like_community_subscriptions.findUnique({
+    await MyGlobal.prisma.reddit_like_community_subscriptions.findFirst({
       where: {
-        reddit_like_member_id_reddit_like_community_id: {
-          reddit_like_member_id: props.member.id,
-          reddit_like_community_id: props.communityId,
-        },
+        reddit_like_member_id: props.member.id,
+        reddit_like_community_id: props.communityId,
+        deleted_at: null,
       },
       ...RedditLikeCommunitySubscriptionTransformer.select(),
     });
-  // Return 404 if not subscribed (no record or soft-deleted)
-  if (subscription === null || subscription.deleted_at !== null) {
-    throw new HttpException("Not subscribed to this community", 404);
+  if (subscription === null) {
+    throw new HttpException("Subscription not found", 404);
   }
   return await RedditLikeCommunitySubscriptionTransformer.transform(
     subscription,

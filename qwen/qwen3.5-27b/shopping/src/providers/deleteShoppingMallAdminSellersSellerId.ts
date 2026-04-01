@@ -15,16 +15,16 @@ export async function deleteShoppingMallAdminSellersSellerId(props: {
   admin: AdminPayload;
   sellerId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify seller exists and check if already deleted
+  // Verify seller exists
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
     where: { id: props.sellerId },
     select: { id: true, deleted_at: true },
   });
-  // Check if seller is already soft-deleted
+  // Check if already deleted
   if (seller.deleted_at !== null) {
     throw new HttpException("Seller account is already deleted", 400);
   }
-  // Soft-delete the seller account
+  // Soft delete the seller
   await MyGlobal.prisma.shopping_mall_sellers.update({
     where: { id: props.sellerId },
     data: {

@@ -19,51 +19,82 @@ export async function postHrmPlatformMemberDepartments(props: {
   member: MemberPayload;
   body: IHrmPlatformDepartment.ICreate;
 }): Promise<IHrmPlatformDepartment> {
-  // Get organization context from member's employee record
+  // Step 1: Get employee record to find organization and role
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        member_id: props.member.id,
+        user_id: props.member.id,
         deleted_at: null,
       },
       select: {
         id: true,
         organization_id: true,
+        role_id: true,
       },
     });
-  // Validate parent department hierarchy if provided
-  if (props.body.parent_id) {
-    const parent =
+  // Step 2: Verify org:manage permission
+  const rolePermissions =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
+      where: {
+        hrm_platform_role_id: employee.role_id,
+      },
+      select: {
+        permission: true,
+      },
+    });
+  const hasManagePermission = rolePermissions.some(
+    (rp) => rp.permission === "org:manage",
+  );
+  if (!hasManagePermission) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Step 3: Check name uniqueness within organization
+  const existingDepartment =
+    await MyGlobal.prisma.hrm_platform_departments.findFirst({
+      where: {
+        organization_id: employee.organization_id,
+        name: props.body.name,
+        deleted_at: null,
+      },
+    });
+  if (existingDepartment) {
+    throw new HttpException("Conflict", 409);
+  }
+  // Step 4: Validate parent department hierarchy (one-level only)
+  if (
+    props.body.parent_department_id !== undefined &&
+    props.body.parent_department_id !== null
+  ) {
+    const parentDepartment =
       await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
-        where: { id: props.body.parent_id },
+        where: {
+          id: props.body.parent_department_id,
+        },
         select: {
           id: true,
-          parent_id: true,
-          hrm_platform_organization_id: true,
+          organization_id: true,
+          parent_department_id: true,
         },
       });
-    // One-level hierarchy constraint: parent must be top-level (no parent of its own)
-    if (parent.parent_id !== null) {
-      throw new HttpException(
-        "Parent department must be a top-level department (cannot have its own parent)",
-        400,
-      );
+    // Parent must belong to same organization
+    if (parentDepartment.organization_id !== employee.organization_id) {
+      throw new HttpException("Bad Request", 400);
     }
-    // Ensure parent belongs to same organization
-    if (parent.hrm_platform_organization_id !== employee.organization_id) {
-      throw new HttpException(
-        "Parent department must belong to the same organization",
-        400,
-      );
+    // Parent must be top-level (cannot have its own parent)
+    if (parentDepartment.parent_department_id !== null) {
+      throw new HttpException("Bad Request", 400);
     }
   }
-  // Create department using collector and transformer
+  // Step 5: Create department using Collector
   const created = await MyGlobal.prisma.hrm_platform_departments.create({
     data: await HrmPlatformDepartmentCollector.collect({
       body: props.body,
-      hrmPlatformOrganizations: { id: employee.organization_id },
+      hrmPlatformOrganizations: {
+        id: employee.organization_id as string & tags.Format<"uuid">,
+      },
     }),
     ...HrmPlatformDepartmentTransformer.select(),
   });
+  // Step 6: Transform and return
   return await HrmPlatformDepartmentTransformer.transform(created);
 }

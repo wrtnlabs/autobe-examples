@@ -16,7 +16,5 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postErpHrmTimeTrackingReportDefinitions(props: {
   body: IErpHrmTimeTrackingReportDefinition.ICreate;
 }): Promise<IErpHrmTimeTrackingReportDefinition> {
-  // Minimal implementation to satisfy compiler: return provided payload.
-  // (Business/DB logic intentionally omitted in this template.)
-  return props.body as unknown as IErpHrmTimeTrackingReportDefinition;
+  throw new HttpException("Not implemented", 501);
 }

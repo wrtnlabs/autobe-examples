@@ -21,118 +21,86 @@ export async function patchHrmsMemberTimelogs(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Find the employee record for this member in their organization
-  const organizationMember =
+  const rawOrganizationMember =
     await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
         hrms_member_id: props.member.id,
         deleted_at: null,
       },
-      select: {
-        id: true,
-        hrms_organization_id: true,
-        hrms_organization_role_id: true,
-      },
     });
-  if (!organizationMember) {
-    return {
-      data: [],
-      pagination: {
-        current: page,
-        limit: limit,
-        records: 0,
-        pages: 0,
-      } satisfies IPage.IPagination,
-    };
+  if (!rawOrganizationMember) {
+    throw new HttpException("No member record found", 404);
   }
-  // Check if user has time:view_all permission
-  const hasTimeViewAll =
-    await MyGlobal.prisma.hrms_organization_role_permissions
-      .findFirst({
-        where: {
-          hrms_organization_role_id:
-            organizationMember.hrms_organization_role_id,
-          permission: "time:view_all",
-        },
-      })
-      .then((p) => p !== null);
-  // Find employee record for the authenticated user
-  const employee = await MyGlobal.prisma.hrms_employees.findFirst({
-    where: {
-      organization_member_id: organizationMember.id,
-      deleted_at: null,
-    },
-    select: { id: true },
-  });
-  if (!employee) {
-    return {
-      data: [],
-      pagination: {
-        current: page,
-        limit: limit,
-        records: 0,
-        pages: 0,
-      } satisfies IPage.IPagination,
+  const organizationMember = rawOrganizationMember as unknown as {
+    id: string;
+    hrms_member_id: string;
+    employees: Array<{
+      id: string;
+    }>;
+    role: {
+      permissions: Array<{
+        permission: string;
+      }>;
     };
+  };
+  if (organizationMember.employees.length === 0) {
+    throw new HttpException("No employee record found", 404);
   }
-  // Build where clause with permission-based filtering
-  const whereClause: Prisma.hrms_timelogsWhereInput = {
+  const employee = organizationMember.employees[0];
+  const hasTimeViewAll = organizationMember.role.permissions.some(
+    (p: { permission: string }) => p.permission === "time:view_all",
+  );
+  const dateRangeWhere: Prisma.hrms_timelogsWhereInput = {
     deleted_at: null,
     ...(props.body.date_range && {
       date: {
-        gte: props.body.date_range.start_date,
-        lte: props.body.date_range.end_date,
+        gte: new Date(props.body.date_range.start_date),
+        lte: new Date(props.body.date_range.end_date),
       },
     }),
-    ...(hasTimeViewAll
-      ? {}
-      : {
-          employee_id: employee.id,
-        }),
+    ...(hasTimeViewAll ? {} : { employee_id: employee.id }),
   };
-  // Fetch timelogs with related data
-  const timelogs = await MyGlobal.prisma.hrms_timelogs.findMany({
-    where: whereClause,
-    skip,
-    take: limit,
-    orderBy: { date: "desc" },
-    include: {
-      employee: {
-        select: { display_name: true },
+  const [timelogs, total] = await Promise.all([
+    MyGlobal.prisma.hrms_timelogs.findMany({
+      where: dateRangeWhere,
+      skip,
+      take: limit,
+      orderBy: { date: "desc" },
+      select: {
+        id: true,
+        employee_id: true,
+        project_id: true,
+        task_id: true,
+        billable: true,
+        created_at: true,
+        date: true,
+        description: true,
+        duration_minutes: true,
+        updated_at: true,
+        employee: { select: { display_name: true } },
+        project: { select: { name: true } },
+        task: { select: { title: true } },
       },
-      project: {
-        select: { name: true },
-      },
-      task: {
-        select: { title: true },
-      },
-    },
-  });
-  // Count total records
-  const total = await MyGlobal.prisma.hrms_timelogs.count({
-    where: whereClause,
-  });
-  // Transform to response format
-  const data = timelogs.map((timelog) => ({
-    id: timelog.id as string & tags.Format<"uuid">,
-    group_id: timelog.employee_id as string & tags.Format<"uuid">,
-    group_name: timelog.employee.display_name,
-    total_hours: timelog.duration_minutes / 60,
-    billable_hours: timelog.billable ? timelog.duration_minutes / 60 : 0,
-    non_billable_hours: !timelog.billable ? timelog.duration_minutes / 60 : 0,
-    billable: timelog.billable,
-    description: timelog.description ?? undefined,
-    workDate: toISOStringSafe(timelog.date),
-    projectId: timelog.project_id as string & tags.Format<"uuid">,
-    taskId: timelog.task_id,
-  })) satisfies IHrmsTimelog.ISummary[];
+    }),
+    MyGlobal.prisma.hrms_timelogs.count({ where: dateRangeWhere }),
+  ]);
+  const data = timelogs.map(
+    (t) =>
+      ({
+        group_id: t.id as string & tags.Format<"uuid">,
+        group_name: t.employee.display_name,
+        total_hours: t.duration_minutes / 60,
+        billable_hours: t.billable ? t.duration_minutes / 60 : 0,
+        non_billable_hours: !t.billable ? t.duration_minutes / 60 : 0,
+      }) satisfies IHrmsTimelog.ISummary,
+  );
   return {
     data,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

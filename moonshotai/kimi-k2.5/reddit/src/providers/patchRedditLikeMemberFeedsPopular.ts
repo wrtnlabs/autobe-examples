@@ -13,94 +13,84 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikePostAtSummaryTransformer } from "../transformers/RedditLikePostAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditLikeMemberFeedsPopular(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   body: IRedditLikePost.IRequest;
 }): Promise<IPageIRedditLikePost.ISummary> {
-  const body = props.body;
-  // Pagination with defaults
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 20;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   // Build base where clause
-  const whereInput: Prisma.reddit_like_postsWhereInput = {
+  const baseWhere: Prisma.reddit_like_postsWhereInput = {
     is_deleted: false,
+    ...(props.body.communityId !== undefined && {
+      community_id: props.body.communityId,
+    }),
+    ...(props.body.authorId !== undefined && {
+      author_id: props.body.authorId,
+    }),
+    ...(props.body.postType !== undefined && {
+      post_type: props.body.postType,
+    }),
+    ...(props.body.search !== undefined && {
+      title: {
+        contains: props.body.search,
+        mode: "insensitive" as const,
+      },
+    }),
   };
-  // Community filter
-  if (body.communityId !== undefined) {
-    whereInput.community_id = body.communityId;
+  // Handle date range filtering
+  const dateFilter: Prisma.DateTimeFilter = {};
+  if (props.body.createdAfter !== undefined) {
+    dateFilter.gte = new Date(props.body.createdAfter);
   }
-  // Author filter
-  if (body.authorId !== undefined) {
-    whereInput.author_id = body.authorId;
+  if (props.body.createdBefore !== undefined) {
+    dateFilter.lte = new Date(props.body.createdBefore);
   }
-  // Post type filter
-  if (body.postType !== undefined) {
-    whereInput.post_type = body.postType;
-  }
-  // Search filter on title (case-insensitive contains)
-  if (body.search !== undefined && body.search.length > 0) {
-    whereInput.title = {
-      contains: body.search,
-      mode: "insensitive",
-    };
-  }
-  const sort = body.sort ?? "hot";
-  // Handle date filtering for time-based queries
+  // Apply time filter for 'top' and 'controversial' sorting
+  const sort = props.body.sort ?? "hot";
+  const timeFilter = props.body.timeFilter;
   if (
-    body.createdAfter !== undefined ||
-    body.createdBefore !== undefined ||
-    ((sort === "top" || sort === "controversial") &&
-      body.timeFilter !== undefined &&
-      body.timeFilter !== "all_time")
+    (sort === "top" || sort === "controversial") &&
+    timeFilter !== undefined &&
+    timeFilter !== "all_time"
   ) {
-    whereInput.created_at = {};
-    if (body.createdAfter !== undefined) {
-      whereInput.created_at.gte = body.createdAfter;
+    const now = new Date();
+    let cutoffDate: Date;
+    switch (timeFilter) {
+      case "today":
+        cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case "week":
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "month":
+        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case "year":
+        cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        cutoffDate = new Date(0);
     }
-    if (body.createdBefore !== undefined) {
-      whereInput.created_at.lte = body.createdBefore;
-    }
-    // Time filter for top/controversial sorting
-    if (
-      (sort === "top" || sort === "controversial") &&
-      body.timeFilter !== undefined &&
-      body.timeFilter !== "all_time"
-    ) {
-      const now = Date.now();
-      const oneDay = 24 * 60 * 60 * 1000;
-      let cutoffTimestamp: number;
-      switch (body.timeFilter) {
-        case "today":
-          cutoffTimestamp = now - oneDay;
-          break;
-        case "week":
-          cutoffTimestamp = now - 7 * oneDay;
-          break;
-        case "month":
-          cutoffTimestamp = now - 30 * oneDay;
-          break;
-        case "year":
-          cutoffTimestamp = now - 365 * oneDay;
-          break;
-        default:
-          cutoffTimestamp = 0;
-      }
-      const date = new Date(cutoffTimestamp);
-      whereInput.created_at.gte = date.toISOString();
-    }
+    dateFilter.gte = cutoffDate;
   }
-  // Determine order by based on sort strategy
+  const where: Prisma.reddit_like_postsWhereInput = {
+    ...baseWhere,
+    ...(Object.keys(dateFilter).length > 0 && { created_at: dateFilter }),
+  };
+  // Build order by based on sort parameter
   let orderBy:
     | Prisma.reddit_like_postsOrderByWithRelationInput
     | Prisma.reddit_like_postsOrderByWithRelationInput[];
-  if (body.sortBy !== undefined && body.sortOrder !== undefined) {
-    orderBy = { [body.sortBy]: body.sortOrder };
+  if (props.body.sortBy !== undefined && props.body.sortOrder !== undefined) {
+    // Custom field sorting
+    orderBy = { [props.body.sortBy]: props.body.sortOrder };
   } else {
     switch (sort) {
       case "new":
@@ -109,44 +99,39 @@ export async function patchRedditLikeMemberFeedsPopular(props: {
       case "top":
         orderBy = { vote_score: "desc" };
         break;
+      case "controversial":
+        // Controversial: high engagement (vote_score absolute value close to 0 with high comment count)
+        // Using comment_count as proxy for engagement
+        orderBy = [{ comment_count: "desc" }, { vote_score: "asc" }];
+        break;
       case "hot":
+      default:
+        // Hot: weighted combination - vote_score primary, recency secondary
         orderBy = [{ vote_score: "desc" }, { created_at: "desc" }];
         break;
-      case "controversial":
-        whereInput.vote_score = {
-          gte: -10,
-          lte: 10,
-        };
-        orderBy = { comment_count: "desc" };
-        break;
-      default:
-        orderBy = { created_at: "desc" };
     }
   }
-  // Query posts
+  // Execute queries sequentially
   const posts = await MyGlobal.prisma.reddit_like_posts.findMany({
-    where: whereInput,
-    orderBy: orderBy,
-    skip: skip,
+    where,
+    skip,
     take: limit,
+    orderBy,
     ...RedditLikePostAtSummaryTransformer.select(),
   });
-  // Count total matching records
-  const total = await MyGlobal.prisma.reddit_like_posts.count({
-    where: whereInput,
-  });
-  // Transform posts to summary format
-  const data = await ArrayUtil.asyncMap(
+  const total = await MyGlobal.prisma.reddit_like_posts.count({ where });
+  // Transform results
+  const transformedPosts = await ArrayUtil.asyncMap(
     posts,
     RedditLikePostAtSummaryTransformer.transform,
   );
   return {
-    data: data,
+    data: transformedPosts,
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
   };
 }

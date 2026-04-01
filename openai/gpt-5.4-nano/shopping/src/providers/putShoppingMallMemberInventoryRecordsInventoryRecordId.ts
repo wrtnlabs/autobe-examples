@@ -18,80 +18,150 @@ export async function putShoppingMallMemberInventoryRecordsInventoryRecordId(pro
   inventoryRecordId: string & tags.Format<"uuid">;
   body: IShoppingMallInventoryRecord.IUpdate;
 }): Promise<IShoppingMallInventoryRecord> {
-  await MyGlobal.prisma.shopping_mall_inventory_records.findUniqueOrThrow({
-    where: { id: props.inventoryRecordId },
-    select: {
-      id: true,
-      shopping_mall_product_variant_id: true,
-      stock_quantity: true,
-      reserved_quantity: true,
-      available_quantity: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
+  const member = await MyGlobal.prisma.shopping_mall_members.findFirst({
+    where: {
+      id: props.member.id,
+      deleted_at: null,
     },
+    select: { id: true },
   });
+  if (member === null) {
+    throw new HttpException("Forbidden", 403);
+  }
   const existing =
     await MyGlobal.prisma.shopping_mall_inventory_records.findUniqueOrThrow({
       where: { id: props.inventoryRecordId },
-      select: ShoppingMallInventoryRecordTransformer.select().select,
+      select: {
+        id: true,
+        shopping_mall_product_variant_id: true,
+        stock_quantity: true,
+        reserved_quantity: true,
+        available_quantity: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
     });
-  if (existing.deleted_at !== null) throw new HttpException("Gone", 410);
-  const nextStockQuantity =
-    props.body.stock_quantity ?? existing.stock_quantity;
-  const nextReservedQuantity =
-    props.body.reserved_quantity ?? existing.reserved_quantity;
-  const nextAvailableQuantity =
-    props.body.available_quantity ?? existing.available_quantity;
+  if (existing.deleted_at !== null) {
+    throw new HttpException("Gone", 410);
+  }
+  const nextDeletedAt: (string & tags.Format<"date-time">) | null =
+    props.body.deleted_at === undefined
+      ? existing.deleted_at
+      : props.body.deleted_at;
+  const nextStockQuantity: number =
+    props.body.stock_quantity === undefined
+      ? existing.stock_quantity
+      : props.body.stock_quantity;
+  const nextReservedQuantity: number =
+    props.body.reserved_quantity === undefined
+      ? existing.reserved_quantity
+      : props.body.reserved_quantity;
+  const nextAvailableQuantity: number =
+    props.body.available_quantity === undefined
+      ? existing.available_quantity
+      : props.body.available_quantity;
+  const nextUpdatedAt: string & tags.Format<"date-time"> =
+    props.body.updated_at === undefined
+      ? existing.updated_at.toISOString()
+      : props.body.updated_at;
+  const isValidIntNonNegative = (v: number) => Number.isInteger(v) && v >= 0;
   if (
-    nextStockQuantity < 0 ||
-    nextReservedQuantity < 0 ||
-    nextAvailableQuantity < 0
-  )
-    throw new HttpException("Invalid inventory quantities", 400);
-  const toUpdate: Prisma.shopping_mall_inventory_recordsUpdateInput = {
-    ...(props.body.stock_quantity !== undefined && {
-      stock_quantity: props.body.stock_quantity,
-    }),
-    ...(props.body.reserved_quantity !== undefined && {
-      reserved_quantity: props.body.reserved_quantity,
-    }),
-    ...(props.body.available_quantity !== undefined && {
-      available_quantity: props.body.available_quantity,
-    }),
-    ...(props.body.updated_at !== undefined && {
-      updated_at: new Date(props.body.updated_at),
-    }),
-    ...(props.body.deleted_at !== undefined && {
-      deleted_at:
-        props.body.deleted_at === null ? null : new Date(props.body.deleted_at),
-    }),
-  };
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    const affected = await tx.shopping_mall_inventory_records.findMany({
+    !isValidIntNonNegative(nextStockQuantity) ||
+    !isValidIntNonNegative(nextReservedQuantity) ||
+    !isValidIntNonNegative(nextAvailableQuantity)
+  ) {
+    throw new HttpException("Invalid quantities", 400);
+  }
+  if (nextReservedQuantity > nextStockQuantity) {
+    throw new HttpException("Reserved quantity exceeds stock", 400);
+  }
+  const expectedAvailable = nextStockQuantity - nextReservedQuantity;
+  if (nextAvailableQuantity !== expectedAvailable) {
+    throw new HttpException("Inventory inconsistency", 400);
+  }
+  const variantId = existing.shopping_mall_product_variant_id;
+  const activeRecords =
+    await MyGlobal.prisma.shopping_mall_inventory_records.findMany({
       where: {
-        shopping_mall_product_variant_id:
-          existing.shopping_mall_product_variant_id,
+        shopping_mall_product_variant_id: variantId,
         deleted_at: null,
       },
-      select: { id: true, stock_quantity: true },
+      select: {
+        id: true,
+        stock_quantity: true,
+        reserved_quantity: true,
+        available_quantity: true,
+      },
     });
-    const computedStock = affected.reduce(
-      (sum, r) =>
-        sum + (r.id === existing.id ? nextStockQuantity : r.stock_quantity),
-      0,
-    );
-    if (computedStock < 0)
-      throw new HttpException("Inventory inconsistency", 400);
-    await tx.shopping_mall_inventory_records.update({
-      where: { id: props.inventoryRecordId },
-      data: toUpdate,
-    });
+  const replacedRecords = activeRecords.map((r) => {
+    if (r.id !== existing.id) return r;
+    return {
+      id: r.id,
+      stock_quantity: nextStockQuantity,
+      reserved_quantity: nextReservedQuantity,
+      available_quantity: nextAvailableQuantity,
+    };
   });
-  const updated =
-    await MyGlobal.prisma.shopping_mall_inventory_records.findUniqueOrThrow({
-      where: { id: props.inventoryRecordId },
+  const resultingActive =
+    nextDeletedAt === null
+      ? replacedRecords
+      : replacedRecords.filter((r) => r.id !== existing.id);
+  const totalStock = resultingActive.reduce(
+    (sum, r) => sum + r.stock_quantity,
+    0,
+  );
+  const totalReserved = resultingActive.reduce(
+    (sum, r) => sum + r.reserved_quantity,
+    0,
+  );
+  const totalAvailable = resultingActive.reduce(
+    (sum, r) => sum + r.available_quantity,
+    0,
+  );
+  if (
+    !isValidIntNonNegative(totalStock) ||
+    !isValidIntNonNegative(totalReserved) ||
+    !isValidIntNonNegative(totalAvailable)
+  ) {
+    throw new HttpException("Invalid inventory totals", 400);
+  }
+  if (totalReserved > totalStock) {
+    throw new HttpException("Inventory inconsistency", 400);
+  }
+  if (totalAvailable !== totalStock - totalReserved) {
+    throw new HttpException("Inventory inconsistency", 400);
+  }
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.shopping_mall_inventory_records.update({
+      where: { id: existing.id },
+      data: {
+        ...(props.body.stock_quantity !== undefined && {
+          stock_quantity: nextStockQuantity,
+        }),
+        ...(props.body.reserved_quantity !== undefined && {
+          reserved_quantity: nextReservedQuantity,
+        }),
+        ...(props.body.available_quantity !== undefined && {
+          available_quantity: nextAvailableQuantity,
+        }),
+        ...(props.body.updated_at !== undefined && {
+          updated_at: nextUpdatedAt,
+        }),
+        ...(props.body.deleted_at !== undefined && {
+          deleted_at: nextDeletedAt,
+        }),
+      },
+    });
+    return tx.shopping_mall_inventory_records.findUniqueOrThrow({
+      where: { id: existing.id },
       ...ShoppingMallInventoryRecordTransformer.select(),
     });
-  return await ShoppingMallInventoryRecordTransformer.transform(updated);
+  });
+  const refreshed =
+    await MyGlobal.prisma.shopping_mall_inventory_records.findUniqueOrThrow({
+      where: { id: existing.id },
+      ...ShoppingMallInventoryRecordTransformer.select(),
+    });
+  return await ShoppingMallInventoryRecordTransformer.transform(refreshed);
 }

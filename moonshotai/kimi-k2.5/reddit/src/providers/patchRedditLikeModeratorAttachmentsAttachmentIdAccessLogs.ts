@@ -21,65 +21,76 @@ export async function patchRedditLikeModeratorAttachmentsAttachmentIdAccessLogs(
   attachmentId: string & tags.Format<"uuid">;
   body: IRedditLikeAttachmentAccessLog.IRequest;
 }): Promise<IPageIRedditLikeAttachmentAccessLog.ISummary> {
-  const page = (props.body.page ?? 1) satisfies number &
-    tags.Type<"int32"> &
-    tags.Minimum<0> as number;
-  const limit = (props.body.limit ?? 100) satisfies number &
-    tags.Type<"int32"> &
-    tags.Minimum<1> &
-    tags.Maximum<100> as number;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const where = {
-    reddit_like_attachment_id: props.attachmentId,
+  const whereInput: Prisma.reddit_like_attachment_access_logsWhereInput = {
+    reddit_like_attachment_id: props.attachmentId satisfies string as string,
     deleted_at: null,
-    ...(props.body.actorType !== undefined &&
-      props.body.actorType !== null && {
-        actor_type: props.body.actorType,
-      }),
-    ...(props.body.actorId !== undefined &&
-      props.body.actorId !== null && {
-        actor_id: props.body.actorId,
-      }),
-    ...(props.body.accessType !== undefined && {
-      access_type: props.body.accessType,
-    }),
-    ...(props.body.ipAddress !== undefined &&
-      props.body.ipAddress !== null && {
-        ip_address: { contains: props.body.ipAddress },
-      }),
-    ...(props.body.userAgent !== undefined &&
-      props.body.userAgent !== null && {
-        user_agent: { contains: props.body.userAgent },
-      }),
-    ...(props.body.createdAfter !== undefined && {
-      created_at: { gte: new Date(props.body.createdAfter) },
-    }),
-    ...(props.body.createdBefore !== undefined && {
-      created_at: { lte: new Date(props.body.createdBefore) },
-    }),
-  } satisfies Prisma.reddit_like_attachment_access_logsWhereInput;
+  };
+  if (props.body.actorType !== undefined && props.body.actorType !== null) {
+    whereInput.actor_type = props.body.actorType;
+  }
+  if (props.body.actorId !== undefined && props.body.actorId !== null) {
+    whereInput.actor_id = props.body.actorId satisfies string as string;
+  }
+  if (props.body.accessType !== undefined && props.body.accessType !== null) {
+    whereInput.access_type = props.body.accessType;
+  }
+  if (props.body.ipAddress !== undefined && props.body.ipAddress !== null) {
+    whereInput.ip_address = { contains: props.body.ipAddress };
+  }
+  if (props.body.userAgent !== undefined && props.body.userAgent !== null) {
+    whereInput.user_agent = { contains: props.body.userAgent };
+  }
+  const createdAtFilter: {
+    gte?: Date;
+    lte?: Date;
+  } = {};
+  if (
+    props.body.createdAfter !== undefined &&
+    props.body.createdAfter !== null
+  ) {
+    createdAtFilter.gte = new Date(props.body.createdAfter);
+  }
+  if (
+    props.body.createdBefore !== undefined &&
+    props.body.createdBefore !== null
+  ) {
+    createdAtFilter.lte = new Date(props.body.createdBefore);
+  }
+  if (createdAtFilter.gte !== undefined || createdAtFilter.lte !== undefined) {
+    whereInput.created_at = createdAtFilter;
+  }
   const data =
     await MyGlobal.prisma.reddit_like_attachment_access_logs.findMany({
-      where,
+      where: whereInput,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
       ...RedditLikeAttachmentAccessLogAtSummaryTransformer.select(),
-    } satisfies Prisma.reddit_like_attachment_access_logsFindManyArgs);
+    });
   const total = await MyGlobal.prisma.reddit_like_attachment_access_logs.count({
-    where,
+    where: whereInput,
   });
-  const transformed = await ArrayUtil.asyncMap(
-    data,
-    RedditLikeAttachmentAccessLogAtSummaryTransformer.transform,
-  );
   return {
-    data: transformed,
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditLikeAttachmentAccessLogAtSummaryTransformer.transform,
+    ),
     pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      current: page satisfies number as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+      limit: limit satisfies number as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+      records: total satisfies number as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+      pages: Math.ceil(total / limit) satisfies number as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
     } satisfies IPage.IPagination,
   };
 }

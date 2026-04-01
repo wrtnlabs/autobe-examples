@@ -19,7 +19,8 @@ export async function patchErpHrmTimeTrackingMemberProjectsProjectIdTaskTree(pro
   projectId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingTask.IRequest;
 }): Promise<IErpHrmTimeTrackingTask> {
-  // Minimal implementation to satisfy return type and avoid unsafe Prisma/typia assertions.
-  // This repository function should be completed with actual persistence logic.
-  return props.body as unknown as IErpHrmTimeTrackingTask;
+  // ...
+  return (await (async () => {
+    throw new Error("not implemented");
+  })()) as any;
 }

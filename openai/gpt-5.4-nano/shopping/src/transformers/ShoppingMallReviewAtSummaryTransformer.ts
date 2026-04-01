@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -34,7 +35,7 @@ export namespace ShoppingMallReviewAtSummaryTransformer {
       shoppingMallProductId: input.shopping_mall_product_id,
       shoppingMallOrderItemId: input.shopping_mall_order_item_id,
       shoppingMallCustomerId: input.shopping_mall_customer_id,
-      rating: Number(input.rating),
+      rating: input.rating,
       body: input.body ?? null,
       isPublic: input.is_public,
       deletedAt: input.deleted_at?.toISOString() ?? null,

@@ -4,8 +4,10 @@ import { IShoppingMallSellerApprovalRequest } from "@ORGANIZATION/PROJECT-api/li
 import { IShoppingMallSellerApprovalSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerApprovalSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallSellerApprovalRequestAtSummaryTransformer } from "./ShoppingMallSellerApprovalRequestAtSummaryTransformer";
 

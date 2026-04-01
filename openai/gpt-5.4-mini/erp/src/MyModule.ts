@@ -1,84 +1,88 @@
 import { Module } from "@nestjs/common";
 
-import { HrmtimetrackingAuthGuestController } from "./controllers/hrmTimeTracking/auth/guest/HrmtimetrackingAuthGuestController";
-import { HrmtimetrackingAuthMemberController } from "./controllers/hrmTimeTracking/auth/member/HrmtimetrackingAuthMemberController";
-import { HrmtimetrackingGuestGuestsController } from "./controllers/hrmTimeTracking/guest/guests/HrmtimetrackingGuestGuestsController";
-import { HrmtimetrackingGuestSessionsController } from "./controllers/hrmTimeTracking/guest/sessions/HrmtimetrackingGuestSessionsController";
-import { HrmtimetrackingMemberActivity_recordsController } from "./controllers/hrmTimeTracking/member/activity-records/HrmtimetrackingMemberActivity_recordsController";
-import { HrmtimetrackingMemberDashboardController } from "./controllers/hrmTimeTracking/member/dashboard/HrmtimetrackingMemberDashboardController";
-import { HrmtimetrackingMemberDepartmentsController } from "./controllers/hrmTimeTracking/member/departments/HrmtimetrackingMemberDepartmentsController";
-import { HrmtimetrackingMemberEmail_verificationsController } from "./controllers/hrmTimeTracking/member/email-verifications/HrmtimetrackingMemberEmail_verificationsController";
-import { HrmtimetrackingMemberEmployeesController } from "./controllers/hrmTimeTracking/member/employees/HrmtimetrackingMemberEmployeesController";
-import { HrmtimetrackingMemberEmployeesContractsController } from "./controllers/hrmTimeTracking/member/employees/contracts/HrmtimetrackingMemberEmployeesContractsController";
-import { HrmtimetrackingMemberEmployeesRolesController } from "./controllers/hrmTimeTracking/member/employees/roles/HrmtimetrackingMemberEmployeesRolesController";
-import { HrmtimetrackingMemberHrmtimetrackingActivity_recordsController } from "./controllers/hrmTimeTracking/member/hrmTimeTracking/activity-records/HrmtimetrackingMemberHrmtimetrackingActivity_recordsController";
-import { HrmtimetrackingMemberInvitationsController } from "./controllers/hrmTimeTracking/member/invitations/HrmtimetrackingMemberInvitationsController";
-import { HrmtimetrackingMemberMeDashboardController } from "./controllers/hrmTimeTracking/member/me/dashboard/HrmtimetrackingMemberMeDashboardController";
-import { HrmtimetrackingMemberMeTimelogsController } from "./controllers/hrmTimeTracking/member/me/timelogs/HrmtimetrackingMemberMeTimelogsController";
-import { HrmtimetrackingMemberMeTimer_sessionController } from "./controllers/hrmTimeTracking/member/me/timer-session/HrmtimetrackingMemberMeTimer_sessionController";
-import { HrmtimetrackingMemberMeTimer_sessionStartController } from "./controllers/hrmTimeTracking/member/me/timer-session/start/HrmtimetrackingMemberMeTimer_sessionStartController";
-import { HrmtimetrackingMemberMeTimesheetsDraftController } from "./controllers/hrmTimeTracking/member/me/timesheets/draft/HrmtimetrackingMemberMeTimesheetsDraftController";
-import { HrmtimetrackingMemberMembersController } from "./controllers/hrmTimeTracking/member/members/HrmtimetrackingMemberMembersController";
-import { HrmtimetrackingMemberOrganizationsController } from "./controllers/hrmTimeTracking/member/organizations/HrmtimetrackingMemberOrganizationsController";
-import { HrmtimetrackingMemberPassword_resetsController } from "./controllers/hrmTimeTracking/member/password-resets/HrmtimetrackingMemberPassword_resetsController";
-import { HrmtimetrackingMemberProfileController } from "./controllers/hrmTimeTracking/member/profile/HrmtimetrackingMemberProfileController";
-import { HrmtimetrackingMemberProjectsController } from "./controllers/hrmTimeTracking/member/projects/HrmtimetrackingMemberProjectsController";
-import { HrmtimetrackingMemberProjectsAssignedController } from "./controllers/hrmTimeTracking/member/projects/assigned/HrmtimetrackingMemberProjectsAssignedController";
-import { HrmtimetrackingMemberProjectsMembersController } from "./controllers/hrmTimeTracking/member/projects/members/HrmtimetrackingMemberProjectsMembersController";
-import { HrmtimetrackingMemberProjectsTasksController } from "./controllers/hrmTimeTracking/member/projects/tasks/HrmtimetrackingMemberProjectsTasksController";
-import { HrmtimetrackingMemberProjectsTasksStatusController } from "./controllers/hrmTimeTracking/member/projects/tasks/status/HrmtimetrackingMemberProjectsTasksStatusController";
-import { HrmtimetrackingMemberProjectsTasksTask_historiesController } from "./controllers/hrmTimeTracking/member/projects/tasks/task-histories/HrmtimetrackingMemberProjectsTasksTask_historiesController";
-import { HrmtimetrackingMemberReportsTimeController } from "./controllers/hrmTimeTracking/member/reports/time/HrmtimetrackingMemberReportsTimeController";
-import { HrmtimetrackingMemberReportsWeekly_summaryController } from "./controllers/hrmTimeTracking/member/reports/weekly-summary/HrmtimetrackingMemberReportsWeekly_summaryController";
-import { HrmtimetrackingMemberRolesController } from "./controllers/hrmTimeTracking/member/roles/HrmtimetrackingMemberRolesController";
-import { HrmtimetrackingMemberRolesPermissionsController } from "./controllers/hrmTimeTracking/member/roles/permissions/HrmtimetrackingMemberRolesPermissionsController";
-import { HrmtimetrackingMemberTimelogsController } from "./controllers/hrmTimeTracking/member/timelogs/HrmtimetrackingMemberTimelogsController";
-import { HrmtimetrackingMemberTimelogsOrganization_viewController } from "./controllers/hrmTimeTracking/member/timelogs/organization-view/HrmtimetrackingMemberTimelogsOrganization_viewController";
-import { HrmtimetrackingMemberTimer_sessionsController } from "./controllers/hrmTimeTracking/member/timer-sessions/HrmtimetrackingMemberTimer_sessionsController";
-import { HrmtimetrackingMemberTimesheetsController } from "./controllers/hrmTimeTracking/member/timesheets/HrmtimetrackingMemberTimesheetsController";
-import { HrmtimetrackingMemberTimesheetsSubmitController } from "./controllers/hrmTimeTracking/member/timesheets/submit/HrmtimetrackingMemberTimesheetsSubmitController";
-import { HrmtimetrackingMemberTimesheetsTimelogsController } from "./controllers/hrmTimeTracking/member/timesheets/timelogs/HrmtimetrackingMemberTimesheetsTimelogsController";
+import { ErphrmtimeAuthGuestController } from "./controllers/erpHrmTime/auth/guest/ErphrmtimeAuthGuestController";
+import { ErphrmtimeAuthMemberController } from "./controllers/erpHrmTime/auth/member/ErphrmtimeAuthMemberController";
+import { ErphrmtimeGuestProfileController } from "./controllers/erpHrmTime/guest/profile/ErphrmtimeGuestProfileController";
+import { ErphrmtimeGuestSessionsController } from "./controllers/erpHrmTime/guest/sessions/ErphrmtimeGuestSessionsController";
+import { ErphrmtimeMemberActivity_log_entriesController } from "./controllers/erpHrmTime/member/activity-log-entries/ErphrmtimeMemberActivity_log_entriesController";
+import { ErphrmtimeMemberDepartmentsController } from "./controllers/erpHrmTime/member/departments/ErphrmtimeMemberDepartmentsController";
+import { ErphrmtimeMemberEmployee_dashboard_summaryController } from "./controllers/erpHrmTime/member/employee-dashboard-summary/ErphrmtimeMemberEmployee_dashboard_summaryController";
+import { ErphrmtimeMemberEmployeeContractsHistoryController } from "./controllers/erpHrmTime/member/employee/contracts/history/ErphrmtimeMemberEmployeeContractsHistoryController";
+import { ErphrmtimeMemberEmployeesController } from "./controllers/erpHrmTime/member/employees/ErphrmtimeMemberEmployeesController";
+import { ErphrmtimeMemberEmployeesContractsController } from "./controllers/erpHrmTime/member/employees/contracts/ErphrmtimeMemberEmployeesContractsController";
+import { ErphrmtimeMemberEmployeesDeactivateController } from "./controllers/erpHrmTime/member/employees/deactivate/ErphrmtimeMemberEmployeesDeactivateController";
+import { ErphrmtimeMemberEmployeesInvitationsController } from "./controllers/erpHrmTime/member/employees/invitations/ErphrmtimeMemberEmployeesInvitationsController";
+import { ErphrmtimeMemberOrganizationmembershipsController } from "./controllers/erpHrmTime/member/organizationMemberships/ErphrmtimeMemberOrganizationmembershipsController";
+import { ErphrmtimeMemberOrganizationsController } from "./controllers/erpHrmTime/member/organizations/ErphrmtimeMemberOrganizationsController";
+import { ErphrmtimeMemberOrganizationsMembershipsController } from "./controllers/erpHrmTime/member/organizations/memberships/ErphrmtimeMemberOrganizationsMembershipsController";
+import { ErphrmtimeMemberOrganizationsOwnership_transferController } from "./controllers/erpHrmTime/member/organizations/ownership-transfer/ErphrmtimeMemberOrganizationsOwnership_transferController";
+import { ErphrmtimeMemberOrganizationsSettingsController } from "./controllers/erpHrmTime/member/organizations/settings/ErphrmtimeMemberOrganizationsSettingsController";
+import { ErphrmtimeMemberPermissionsController } from "./controllers/erpHrmTime/member/permissions/ErphrmtimeMemberPermissionsController";
+import { ErphrmtimeMemberProjectsController } from "./controllers/erpHrmTime/member/projects/ErphrmtimeMemberProjectsController";
+import { ErphrmtimeMemberProjectsMembershipsController } from "./controllers/erpHrmTime/member/projects/memberships/ErphrmtimeMemberProjectsMembershipsController";
+import { ErphrmtimeMemberProjectsTaskhistoriesController } from "./controllers/erpHrmTime/member/projects/taskHistories/ErphrmtimeMemberProjectsTaskhistoriesController";
+import { ErphrmtimeMemberProjectsTasksController } from "./controllers/erpHrmTime/member/projects/tasks/ErphrmtimeMemberProjectsTasksController";
+import { ErphrmtimeMemberProjectsTasksHistoryController } from "./controllers/erpHrmTime/member/projects/tasks/history/ErphrmtimeMemberProjectsTasksHistoryController";
+import { ErphrmtimeMemberProjectsTasksHistoryentriesController } from "./controllers/erpHrmTime/member/projects/tasks/historyEntries/ErphrmtimeMemberProjectsTasksHistoryentriesController";
+import { ErphrmtimeMemberReportsOrganization_dashboard_summariesController } from "./controllers/erpHrmTime/member/reports/organization-dashboard-summaries/ErphrmtimeMemberReportsOrganization_dashboard_summariesController";
+import { ErphrmtimeMemberReportsProject_budget_report_rowsController } from "./controllers/erpHrmTime/member/reports/project-budget-report-rows/ErphrmtimeMemberReportsProject_budget_report_rowsController";
+import { ErphrmtimeMemberReportsTime_report_rowsController } from "./controllers/erpHrmTime/member/reports/time-report-rows/ErphrmtimeMemberReportsTime_report_rowsController";
+import { ErphrmtimeMemberReportsWeekly_summary_report_rowsController } from "./controllers/erpHrmTime/member/reports/weekly-summary-report-rows/ErphrmtimeMemberReportsWeekly_summary_report_rowsController";
+import { ErphrmtimeMemberRolesController } from "./controllers/erpHrmTime/member/roles/ErphrmtimeMemberRolesController";
+import { ErphrmtimeMemberRolesDeletion_checkController } from "./controllers/erpHrmTime/member/roles/deletion-check/ErphrmtimeMemberRolesDeletion_checkController";
+import { ErphrmtimeMemberRolesPermissionsController } from "./controllers/erpHrmTime/member/roles/permissions/ErphrmtimeMemberRolesPermissionsController";
+import { ErphrmtimeMemberRolesPermissionsEffectiveController } from "./controllers/erpHrmTime/member/roles/permissions/effective/ErphrmtimeMemberRolesPermissionsEffectiveController";
+import { ErphrmtimeMemberTimelogsController } from "./controllers/erpHrmTime/member/timelogs/ErphrmtimeMemberTimelogsController";
+import { ErphrmtimeMemberTimersController } from "./controllers/erpHrmTime/member/timers/ErphrmtimeMemberTimersController";
+import { ErphrmtimeMemberTimersCurrentController } from "./controllers/erpHrmTime/member/timers/current/ErphrmtimeMemberTimersCurrentController";
+import { ErphrmtimeMemberTimersDiscardController } from "./controllers/erpHrmTime/member/timers/discard/ErphrmtimeMemberTimersDiscardController";
+import { ErphrmtimeMemberTimersStartController } from "./controllers/erpHrmTime/member/timers/start/ErphrmtimeMemberTimersStartController";
+import { ErphrmtimeMemberTimesheetsController } from "./controllers/erpHrmTime/member/timesheets/ErphrmtimeMemberTimesheetsController";
+import { ErphrmtimeMemberTimesheetsDraftController } from "./controllers/erpHrmTime/member/timesheets/draft/ErphrmtimeMemberTimesheetsDraftController";
+import { ErphrmtimeMemberTimesheetsTimelogsController } from "./controllers/erpHrmTime/member/timesheets/timelogs/ErphrmtimeMemberTimesheetsTimelogsController";
 
 @Module({
   controllers: [
-    HrmtimetrackingAuthGuestController,
-    HrmtimetrackingAuthMemberController,
-    HrmtimetrackingGuestGuestsController,
-    HrmtimetrackingGuestSessionsController,
-    HrmtimetrackingMemberMembersController,
-    HrmtimetrackingMemberPassword_resetsController,
-    HrmtimetrackingMemberEmail_verificationsController,
-    HrmtimetrackingMemberOrganizationsController,
-    HrmtimetrackingMemberProfileController,
-    HrmtimetrackingMemberInvitationsController,
-    HrmtimetrackingMemberDepartmentsController,
-    HrmtimetrackingMemberEmployeesController,
-    HrmtimetrackingMemberEmployeesContractsController,
-    HrmtimetrackingMemberRolesController,
-    HrmtimetrackingMemberRolesPermissionsController,
-    HrmtimetrackingMemberEmployeesRolesController,
-    HrmtimetrackingMemberProjectsController,
-    HrmtimetrackingMemberProjectsTasksController,
-    HrmtimetrackingMemberTimelogsController,
-    HrmtimetrackingMemberTimesheetsController,
-    HrmtimetrackingMemberTimer_sessionsController,
-    HrmtimetrackingMemberHrmtimetrackingActivity_recordsController,
-    HrmtimetrackingMemberDashboardController,
-    HrmtimetrackingMemberProjectsAssignedController,
-    HrmtimetrackingMemberProjectsMembersController,
-    HrmtimetrackingMemberProjectsTasksStatusController,
-    HrmtimetrackingMemberProjectsTasksTask_historiesController,
-    HrmtimetrackingMemberMeTimelogsController,
-    HrmtimetrackingMemberTimelogsOrganization_viewController,
-    HrmtimetrackingMemberMeTimesheetsDraftController,
-    HrmtimetrackingMemberTimesheetsTimelogsController,
-    HrmtimetrackingMemberTimesheetsSubmitController,
-    HrmtimetrackingMemberMeTimer_sessionController,
-    HrmtimetrackingMemberMeTimer_sessionStartController,
-    HrmtimetrackingMemberReportsTimeController,
-    HrmtimetrackingMemberReportsWeekly_summaryController,
-    HrmtimetrackingMemberMeDashboardController,
-    HrmtimetrackingMemberActivity_recordsController,
+    ErphrmtimeAuthGuestController,
+    ErphrmtimeAuthMemberController,
+    ErphrmtimeGuestSessionsController,
+    ErphrmtimeGuestProfileController,
+    ErphrmtimeMemberOrganizationsController,
+    ErphrmtimeMemberOrganizationsSettingsController,
+    ErphrmtimeMemberOrganizationsMembershipsController,
+    ErphrmtimeMemberOrganizationmembershipsController,
+    ErphrmtimeMemberEmployeesController,
+    ErphrmtimeMemberEmployeesContractsController,
+    ErphrmtimeMemberDepartmentsController,
+    ErphrmtimeMemberRolesController,
+    ErphrmtimeMemberPermissionsController,
+    ErphrmtimeMemberRolesPermissionsController,
+    ErphrmtimeMemberProjectsController,
+    ErphrmtimeMemberProjectsMembershipsController,
+    ErphrmtimeMemberProjectsTasksController,
+    ErphrmtimeMemberProjectsTasksHistoryentriesController,
+    ErphrmtimeMemberTimelogsController,
+    ErphrmtimeMemberTimersController,
+    ErphrmtimeMemberTimesheetsController,
+    ErphrmtimeMemberTimesheetsTimelogsController,
+    ErphrmtimeMemberReportsTime_report_rowsController,
+    ErphrmtimeMemberReportsProject_budget_report_rowsController,
+    ErphrmtimeMemberReportsWeekly_summary_report_rowsController,
+    ErphrmtimeMemberReportsOrganization_dashboard_summariesController,
+    ErphrmtimeMemberEmployee_dashboard_summaryController,
+    ErphrmtimeMemberActivity_log_entriesController,
+    ErphrmtimeMemberOrganizationsOwnership_transferController,
+    ErphrmtimeMemberEmployeesInvitationsController,
+    ErphrmtimeMemberEmployeesDeactivateController,
+    ErphrmtimeMemberEmployeeContractsHistoryController,
+    ErphrmtimeMemberRolesDeletion_checkController,
+    ErphrmtimeMemberRolesPermissionsEffectiveController,
+    ErphrmtimeMemberProjectsTaskhistoriesController,
+    ErphrmtimeMemberProjectsTasksHistoryController,
+    ErphrmtimeMemberTimersStartController,
+    ErphrmtimeMemberTimersDiscardController,
+    ErphrmtimeMemberTimersCurrentController,
+    ErphrmtimeMemberTimesheetsDraftController,
   ],
 })
 export class MyModule {}

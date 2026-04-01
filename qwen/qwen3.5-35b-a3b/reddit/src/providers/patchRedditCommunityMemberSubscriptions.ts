@@ -14,7 +14,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { RedditCommunityCommunityAtSummaryTransformer } from "../transformers/RedditCommunityCommunityAtSummaryTransformer";
+import { RedditCommunitySubscriptionAtSummaryTransformer } from "../transformers/RedditCommunitySubscriptionAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -27,59 +27,53 @@ export async function patchRedditCommunityMemberSubscriptions(props: {
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * pageSize;
   const whereInput: Prisma.reddit_community_subscriptionsWhereInput = {
-    deleted_at: null,
     reddit_community_member_id: props.member.id,
-    ...(props.body.minCreatedAt !== undefined && {
-      created_at: { gte: new Date(props.body.minCreatedAt) },
+    deleted_at: null,
+    ...(props.body.minCreatedAt && {
+      created_at: {
+        gte: new Date(props.body.minCreatedAt),
+      },
     }),
-    ...(props.body.maxCreatedAt !== undefined && {
-      created_at: { lte: new Date(props.body.maxCreatedAt) },
+    ...(props.body.maxCreatedAt && {
+      created_at: {
+        lte: new Date(props.body.maxCreatedAt),
+      },
     }),
-    ...(props.body.communityName !== undefined && {
+    ...(props.body.communityName && {
       community: {
         name: props.body.communityName,
       },
     }),
   } satisfies Prisma.reddit_community_subscriptionsWhereInput;
-  const orderByInput: Prisma.reddit_community_subscriptionsOrderByWithRelationInput[] =
+  const orderByInput = (
     props.body.sortBy === "community_name"
-      ? [
-          {
-            community: {
-              name: props.body.sortDirection === "ASC" ? "asc" : "desc",
-            },
+      ? {
+          community: {
+            name: props.body.sortDirection === "ASC" ? "asc" : "desc",
           },
-        ]
-      : props.body.sortBy === "created_at"
-        ? [{ created_at: props.body.sortDirection === "ASC" ? "asc" : "desc" }]
-        : [{ created_at: "desc" }];
-  const data = await MyGlobal.prisma.reddit_community_subscriptions.findMany({
-    where: whereInput,
-    orderBy: orderByInput,
-    skip,
-    take: Math.min(pageSize, limit),
-    select: {
-      id: true,
-      created_at: true,
-      community: RedditCommunityCommunityAtSummaryTransformer.select(),
-    },
-  });
-  const total = await MyGlobal.prisma.reddit_community_subscriptions.count({
-    where: whereInput,
-  });
+        }
+      : { created_at: props.body.sortDirection === "ASC" ? "asc" : "desc" }
+  ) satisfies Prisma.reddit_community_subscriptionsOrderByWithRelationInput;
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.reddit_community_subscriptions.findMany({
+      where: whereInput,
+      orderBy: orderByInput,
+      skip,
+      take: pageSize,
+      ...RedditCommunitySubscriptionAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.reddit_community_subscriptions.count({ where: whereInput }),
+  ]);
   return {
-    data: await ArrayUtil.asyncMap(data, async (sub) => ({
-      id: sub.id as string & tags.Format<"uuid">,
-      created_at: toISOStringSafe(sub.created_at),
-      community: await RedditCommunityCommunityAtSummaryTransformer.transform(
-        sub.community,
-      ),
-    })),
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditCommunitySubscriptionAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: pageSize,
       records: total,
       pages: Math.ceil(total / pageSize),
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIRedditCommunitySubscription.ISummary;
 }

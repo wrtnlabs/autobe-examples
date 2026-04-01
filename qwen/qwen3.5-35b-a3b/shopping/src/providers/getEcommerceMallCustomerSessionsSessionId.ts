@@ -10,6 +10,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { EcommerceMallCustomerAtSummaryTransformer } from "../transformers/EcommerceMallCustomerAtSummaryTransformer";
 import { EcommerceMallCustomerSessionTransformer } from "../transformers/EcommerceMallCustomerSessionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -21,10 +22,21 @@ export async function getEcommerceMallCustomerSessionsSessionId(props: {
   const session =
     await MyGlobal.prisma.ecommerce_mall_customer_sessions.findUniqueOrThrow({
       where: { id: props.sessionId },
-      ...EcommerceMallCustomerSessionTransformer.select(),
+      select: {
+        id: true,
+        access_token: true,
+        refresh_token: true,
+        ip: true,
+        href: true,
+        referrer: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        expired_at: true,
+        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
+        activityLogs: true,
+        notificationReferences: true,
+      },
     });
-  if (session.customer.id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
   return await EcommerceMallCustomerSessionTransformer.transform(session);
 }

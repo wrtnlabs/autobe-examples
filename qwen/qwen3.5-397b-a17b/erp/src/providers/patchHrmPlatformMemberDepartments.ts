@@ -19,33 +19,37 @@ export async function patchHrmPlatformMemberDepartments(props: {
   member: MemberPayload;
   body: IHrmPlatformDepartment.IRequest;
 }): Promise<IPageIHrmPlatformDepartment.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        member_id: props.member.id,
+        user_id: props.member.id,
         deleted_at: null,
       },
-      select: { organization_id: true },
+      select: {
+        organization_id: true,
+      },
     });
-  const whereInput: Prisma.hrm_platform_departmentsWhereInput = {
-    hrm_platform_organization_id: employee.organization_id,
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const whereInput = {
+    organization_id: employee.organization_id,
     deleted_at: null,
-    ...(props.body.search !== undefined &&
-      props.body.search !== "" && {
-        name: { contains: props.body.search },
-      }),
-    ...(props.body.parent_id !== undefined && {
-      parent_id: props.body.parent_id,
+    ...(props.body.search && {
+      OR: [
+        { name: { contains: props.body.search } },
+        { description: { contains: props.body.search } },
+      ],
+    }),
+    ...(props.body.parent_department_id !== undefined && {
+      parent_department_id: props.body.parent_department_id,
     }),
   } satisfies Prisma.hrm_platform_departmentsWhereInput;
   const data = await MyGlobal.prisma.hrm_platform_departments.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { name: "asc" },
+    orderBy: [{ parent_department_id: "asc" }, { name: "asc" }],
     ...HrmPlatformDepartmentAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.hrm_platform_departments.count({

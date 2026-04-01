@@ -27,6 +27,13 @@ export async function getShoppingMallAdminAdminOrderItemsOrderItemId(props: {
   if (props.admin.type !== "admin") {
     throw new HttpException("Forbidden", 403);
   }
+  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+    where: { id: props.admin.id, deleted_at: null },
+    select: { id: true },
+  });
+  if (admin === null) {
+    throw new HttpException("You're not enrolled", 403);
+  }
   const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: { id: props.orderItemId },

@@ -7,9 +7,12 @@ import { IHrmsTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsTi
 import { IWeekRange } from "@ORGANIZATION/PROJECT-api/lib/structures/IWeekRange";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { HrmsMemberAtSummaryTransformer } from "./HrmsMemberAtSummaryTransformer";
 
 export namespace HrmsTimesheetTransformer {
   export type Payload = Prisma.hrms_timesheetsGetPayload<
@@ -19,37 +22,6 @@ export namespace HrmsTimesheetTransformer {
     return {
       select: {
         id: true,
-        employee: {
-          select: {
-            id: true,
-            display_name: true,
-            position: true,
-            department_id: true,
-            status: true,
-            _count: {
-              select: {
-                timelogs: true,
-              },
-            },
-          },
-        } satisfies Prisma.hrms_employeesFindManyArgs,
-        reviewer: {
-          select: {
-            id: true,
-            email: true,
-            display_name: true,
-            avatar_uri: true,
-            phone_number: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-            _count: {
-              select: {
-                organizationMembers: true,
-              },
-            },
-          },
-        } satisfies Prisma.hrms_membersFindManyArgs,
         week_start_date: true,
         week_end_date: true,
         status: true,
@@ -60,57 +32,48 @@ export namespace HrmsTimesheetTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        employee: true,
+        reviewer: HrmsMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrms_timesheetsFindManyArgs;
   }
   export async function transform(input: Payload): Promise<IHrmsTimesheet> {
-    const employeeData = input.employee;
+    const timelogsPayload = await MyGlobal.prisma.hrms_timelogs.findMany({
+      where: {
+        date: {
+          gte: input.week_start_date,
+          lte: input.week_end_date,
+        },
+        employee_id: input.employee.id,
+      },
+      include: {
+        project: true,
+        task: true,
+      },
+    });
     return {
       id: input.id,
       employee: {
-        id: employeeData.id,
-        display_name: employeeData.display_name,
-        position: employeeData.position ?? undefined,
-        department_id:
-          employeeData.department_id ?? "00000000-0000-0000-0000-000000000000",
-        status: employeeData.status,
-        total_hours_logged: 0,
-        timelog_count: employeeData._count.timelogs,
-        timesheets_submitted: 0,
-        timesheets_approved: 0,
-        timesheets_pending: 0,
-      },
+        id: input.employee.id,
+        display_name: input.employee.display_name,
+        position: input.employee.position ?? undefined,
+        department_id: input.employee.department_id,
+        status: input.employee.status,
+      } satisfies IHrmsEmployee.ISummary,
       reviewer: input.reviewer
-        ? {
-            id: input.reviewer.id,
-            email: input.reviewer.email,
-            display_name: input.reviewer.display_name,
-            avatar_uri: input.reviewer.avatar_uri ?? null,
-            phone_number: input.reviewer.phone_number ?? null,
-            organization_membership_count:
-              input.reviewer._count.organizationMembers,
-            created_at: toISOStringSafe(input.reviewer.created_at),
-            updated_at: toISOStringSafe(input.reviewer.updated_at),
-            deleted_at: input.reviewer.deleted_at
-              ? toISOStringSafe(input.reviewer.deleted_at)
-              : null,
-          }
+        ? await HrmsMemberAtSummaryTransformer.transform(input.reviewer)
         : null,
-      timelogs: [],
-      week_start_date: toISOStringSafe(input.week_start_date),
-      week_end_date: toISOStringSafe(input.week_end_date),
+      timelogs: [] as IHrmsTimelog[],
+      week_start_date: input.week_start_date.toISOString(),
+      week_end_date: input.week_end_date.toISOString(),
       status: input.status,
-      total_hours: Number(input.total_hours),
-      submitted_at: input.submitted_at
-        ? toISOStringSafe(input.submitted_at)
-        : undefined,
-      reviewed_at: input.reviewed_at
-        ? toISOStringSafe(input.reviewed_at)
-        : undefined,
-      rejection_reason: input.rejection_reason,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      total_hours: input.total_hours,
+      submitted_at: input.submitted_at?.toISOString() ?? null,
+      reviewed_at: input.reviewed_at?.toISOString() ?? null,
+      rejection_reason: input.rejection_reason ?? undefined,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

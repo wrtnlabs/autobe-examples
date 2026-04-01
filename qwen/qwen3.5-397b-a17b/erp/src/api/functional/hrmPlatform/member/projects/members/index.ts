@@ -10,42 +10,32 @@ import { IHrmPlatformProjectMember } from "../../../../../structures/IHrmPlatfor
 import { IPageIHrmPlatformProjectMember } from "../../../../../structures/IPageIHrmPlatformProjectMember";
 
 /**
- * Assign an employee to a project by creating a new project membership record.
+ * Create a project membership record to assign an employee to a project within the organization.
  *
- * This operation establishes an employee's access rights to a specific project, enabling them to view project details, log time against the project, and work on assigned tasks. The assigning user must have project management permission within the organization.
+ * This operation creates a new entry in the hrm_platform_project_members junction table, linking an employee to a specific project. The assigned role determines the employee's permissions: 'member' for standard participation (view project, log time, access tasks) or 'project-lead' for elevated authority (manage tasks, assign work, edit project tasks).
  *
- * The role field determines the employee's capability level within the project: 'member' grants standard access to view project information and log time, while 'project-lead' includes all member privileges plus additional task management capabilities such as creating tasks, editing existing tasks, and changing task status within the project.
+ * Only users with project:manage permission can create project memberships. The employee must be active and belong to the same organization as the project. The system enforces a unique constraint preventing duplicate memberships—an employee can only have one membership record per project.
  *
- * Only employees who belong to the same organization as the project can be assigned. The system enforces a unique constraint on the employee-project combination, preventing duplicate assignments. If the employee is already assigned to the project, the operation will fail with a conflict error.
- *
- * Upon successful assignment, the employee immediately gains access to the project and can begin logging time and viewing tasks. This operation is commonly used during project setup or when team composition changes.
+ * Upon successful creation, the employee gains access to the project's tasks and can log time against the project. Project leads receive additional task management capabilities within their assigned project.
  *
  * @param props.connection
- * @param props.projectId Target project's UUID identifier
- * @param props.body Project assignment details including employee reference and role designation
+ * @param props.projectId Project identifier (UUID format)
+ * @param props.body Project membership assignment data containing employee reference and role designation
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new project membership record linking an employee to a project.
+ * @x-autobe-specification Create a new project membership record in hrm_platform_project_members table.
  *
- * Implementation steps:
- * 1. Validate the requesting user has project:manage permission in the organization
- * 2. Verify the project exists and belongs to the user's organization
- * 3. Verify the project is not soft-deleted (deleted_at is null)
- * 4. Validate the employee exists and belongs to the same organization
- * 5. Verify the employee is active (status is 'active', not deactivated)
- * 6. Check for existing membership: query project_members where hrm_platform_employee_id and hrm_platform_project_id match
- * 7. If membership exists, return 409 Conflict error
- * 8. Validate role value is either 'member' or 'project-lead'
- * 9. Create new project_members record with: id (UUID), hrm_platform_employee_id, hrm_platform_project_id, role, created_at, updated_at
- * 10. Log activity: record 'project_member_assigned' action in activity_logs with user, organization, target entity (project_member), and details (employee name, project name, role)
- * 11. Return the created membership record with employee and project information joined
+ * Validate that the requesting user has project:manage permission in the organization.
+ * Validate that the project exists and is not soft-deleted.
+ * Validate that the employee exists, is active, and belongs to the same organization as the project.
+ * Check unique constraint: verify no existing membership record for this employee-project pair (hrm_platform_employee_id + hrm_platform_project_id).
+ * Validate role is either 'member' or 'project-lead'.
  *
- * Edge cases:
- * - Employee already assigned to project: return 409 Conflict
- * - Employee is deactivated: return 400 Bad Request
- * - Project is archived or completed: still allow assignment (historical projects may need team members)
- * - User lacks project:manage permission: return 403 Forbidden
- * - Employee belongs to different organization: return 400 Bad Request
+ * Insert new record with: hrm_platform_project_id from path parameter, hrm_platform_employee_id from request body, role from request body, created_at and updated_at set to current timestamp, deleted_at as null.
+ *
+ * Return the created membership record with employee and project relations included.
+ *
+ * Handle errors: 404 if project or employee not found, 409 if duplicate membership exists, 400 if invalid role value, 403 if insufficient permissions.
  * @path /hrmPlatform/member/projects/:projectId/members
  * @accessor api.functional.hrmPlatform.member.projects.members.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -75,12 +65,12 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Target project's UUID identifier
+     * Project identifier (UUID format)
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
-     * Project assignment details including employee reference and role designation
+     * Project membership assignment data containing employee reference and role designation
      */
     body: IHrmPlatformProjectMember.ICreate;
   };
@@ -131,30 +121,18 @@ export namespace create {
 }
 
 /**
- * Retrieve a filtered and paginated list of project members for a specific project.
+ * Retrieve a filtered and paginated list of employee memberships for a specific project.
  *
- * This operation provides access to all employees assigned to a project, including their role designation (member or project-lead). Project leads have additional permissions to manage tasks within their assigned project, while regular members can contribute time and view project information based on their organizational permissions.
+ * This operation queries the project membership junction table to list all employees assigned to a project. Each membership record includes the employee's role (member or project-lead), profile information, and assignment metadata. The project-lead role grants task management authority within the project.
  *
- * The endpoint supports filtering by role to distinguish between project leads and regular members, and supports text search to find specific employees by name. Results are returned with pagination to handle projects with large team sizes efficiently.
- *
- * Access to this endpoint requires the user to have project viewing permissions within the organization. The project must exist and be accessible within the user's organization context. Soft-deleted project membership records are automatically excluded from the results.
- *
- * Related operations include GET /projects/{projectId} for retrieving project details, and POST /projects/{projectId}/members for assigning new employees to the project.
+ * Supports filtering by role type, employee name search, and employment status. Results are paginated for efficient team roster displays. Only active membership records are returned (excludes soft-deleted entries). Requires project:view or project:manage permission for the target project's organization.
  *
  * @param props.connection
- * @param props.projectId Target project's ID (UUID format)
+ * @param props.projectId Project identifier (UUID format). Specifies which project's members to retrieve.
  * @param props.body Search criteria and pagination parameters for filtering project members
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query hrm_platform_project_members table filtered by hrm_platform_project_id matching the path parameter.
- *
- * Join with hrm_platform_employees to retrieve employee information including user reference, department, position, and employment status. Join with hrm_platform_users to access employee display names for search functionality.
- *
- * Apply role filter if provided (member or project-lead). Apply text search on employee display name if search query provided. Exclude records where deleted_at is not null (soft-deleted memberships).
- *
- * Implement cursor-based or offset pagination with configurable page size. Sort results by created_at descending by default, or by employee name if specified.
- *
- * Return paginated response with project member summaries including employee ID, employee name, role, and membership creation timestamp.
+ * @x-autobe-specification Query hrm_platform_project_members table filtered by hrm_platform_project_id. Join with hrm_platform_employees to include employee details (name, email, department, position). Join with hrm_platform_users for display name and avatar. Filter by role (member/project-lead), employee search text, and employment status. Apply pagination with cursor-based or offset-based strategy. Sort by created_at or employee name. Exclude soft-deleted membership records (deleted_at IS NULL). Validate projectId exists and is not deleted. Return 404 if project not found. Enforce organization context - user must have project:view or project:manage permission for the project's organization.
  * @path /hrmPlatform/member/projects/:projectId/members
  * @accessor api.functional.hrmPlatform.member.projects.members.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -184,7 +162,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Target project's ID (UUID format)
+     * Project identifier (UUID format). Specifies which project's members to retrieve.
      */
     projectId: string & tags.Format<"uuid">;
 
@@ -240,34 +218,20 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific project membership assignment.
+ * Retrieve a specific project membership record by its unique identifier.
  *
- * This operation returns complete details of an employee's assignment to a project, including their role designation (member or project-lead), which determines their task management permissions within the project. Project leads have additional capabilities to create, edit, and manage tasks, while regular members can only view project information and log time.
+ * This operation returns detailed information about an employee's assignment to a project, including their role (member or project-lead) and assignment metadata. The nested path structure validates that the membership belongs to the specified project, providing an additional layer of access control.
  *
- * The membership record includes the associated employee and project references, enabling clients to understand the relationship context. This endpoint is useful for displaying membership details in project management interfaces and verifying an employee's role before performing role-restricted operations.
+ * The response includes the complete membership record with related employee and project information as defined in the IHrmPlatformProjectMember type. This enables clients to display comprehensive project team member information without requiring additional API calls.
  *
- * Access to this endpoint requires the requesting user to have appropriate project view permissions within the organization. The project ID in the path ensures the membership belongs to the specified project, providing an additional validation layer.
- *
- * Related operations include PATCH /projects/{projectId}/members for listing all project members, POST /projects/{projectId}/members for assigning new employees to the project, and PUT /projects/{projectId}/members/{membershipId} for updating the membership role.
+ * Access to this endpoint requires project:view or project:manage permission within the organization. The system validates that the membership belongs to the specified project and that the caller has appropriate permissions before returning data.
  *
  * @param props.connection
- * @param props.projectId Target project's UUID identifier
- * @param props.membershipId Target project membership record's UUID identifier
+ * @param props.projectId Project UUID (scoped to organization)
+ * @param props.membershipId Project membership UUID (unique identifier)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the hrm_platform_project_members table by the membership ID.
- *
- * Validate that the membership record exists and belongs to the specified project by checking hrm_platform_project_id matches the projectId path parameter.
- *
- * Join with hrm_platform_employees to include employee information (display_name, position, employment_type, status) for the response.
- *
- * Join with hrm_platform_projects to verify project context and include project name in response if needed.
- *
- * Check soft delete status (deleted_at is null) - return 404 if the membership has been soft deleted.
- *
- * Verify the requesting user has permission to view this project membership (either project:view permission or is the employee themselves).
- *
- * Return the complete membership record with role, timestamps, and related entity references.
+ * @x-autobe-specification Query hrm_platform_project_members table by membership ID. Validate that the membership's hrm_platform_project_id matches the provided projectId parameter (return 404 if mismatch). Join with hrm_platform_employees to include employee details (user reference, display name, role). Join with hrm_platform_projects to include project details (name, color code, status). Exclude soft-deleted records (deleted_at IS NULL). Verify caller has project:view or project:manage permission for the organization. Return 403 if user lacks permission. Return 404 if membership not found or doesn't belong to specified project.
  * @path /hrmPlatform/member/projects/:projectId/members/:membershipId
  * @accessor api.functional.hrmPlatform.member.projects.members.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -296,12 +260,12 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Target project's UUID identifier
+     * Project UUID (scoped to organization)
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
-     * Target project membership record's UUID identifier
+     * Project membership UUID (unique identifier)
      */
     membershipId: string & tags.Format<"uuid">;
   };
@@ -350,26 +314,40 @@ export namespace at {
 /**
  * Update an existing project membership record to modify the employee's role within the project.
  *
- * This operation allows users with project management permission to change an employee's role from member to project-lead or vice versa. The role designation determines the employee's task management capabilities within the project - project-leads can create, edit, and manage tasks while regular members can only view and work on assigned tasks.
+ * This operation allows authorized users to change a project member's role between 'member' and 'project-lead' in the hrm_platform_project_members table. Project leads have task management authority within their assigned project, including creating, editing, and assigning tasks. Regular members can only view and work on assigned tasks.
  *
- * The membership record links an employee to a specific project with a role assignment. Only the role field can be updated; the employee and project associations are immutable after creation. The updated membership record is returned with the new role assignment.
+ * The membership ID (UUID) must correspond to an active membership record where deleted_at is null. The project ID in the path is validated against the membership's hrm_platform_project_id field to ensure consistency. Only users with project:manage permission can perform this operation.
  *
- * Authorization requires the member actor to have project:manage permission within the organization. The projectId in the path ensures the membership belongs to the correct project context for validation purposes.
+ * Upon successful update, the operation returns the complete updated membership record including hrm_platform_employee_id, hrm_platform_project_id, role, and timestamps.
  *
  * @param props.connection
- * @param props.projectId Target project's UUID identifier (global scope)
- * @param props.membershipId Target project membership record's UUID identifier
- * @param props.body Role update information for the project membership
+ * @param props.projectId Project UUID (scoped to organization)
+ * @param props.membershipId Project membership UUID
+ * @param props.body Updated role assignment for the project member
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Validate that the membershipId exists and belongs to the specified projectId.
- * Verify the requesting user has project:manage permission in the organization.
- * Check that the membership record is not soft-deleted (deleted_at is null).
- * Update only the role field to either 'member' or 'project-lead'.
- * Update the updated_at timestamp to current time.
- * Return the complete updated membership record including employee and project relationships.
- * Handle concurrent modification by checking updated_at if optimistic locking is implemented.
- * Log the role change in hrm_platform_activity_logs for audit trail.
+ * @x-autobe-specification Validate that the authenticated user has project:manage permission within the organization.
+ *
+ * Query hrm_platform_project_members table by membershipId (UUID).
+ * Verify the membership record exists and is not soft-deleted (deleted_at is null).
+ * Verify the membership's hrm_platform_project_id matches the projectId path parameter.
+ * Verify the membership's associated employee belongs to the same organization as the project.
+ *
+ * Validate request body:
+ * - role must be either 'member' or 'project-lead'
+ * - No other fields are accepted in the update payload
+ *
+ * Update the role field in hrm_platform_project_members table.
+ * Set updated_at to current timestamp.
+ *
+ * Return the updated membership record with:
+ * - id, hrm_platform_employee_id, hrm_platform_project_id, role, created_at, updated_at
+ *
+ * Error handling:
+ * - 404 if membership not found or soft-deleted
+ * - 400 if projectId doesn't match membership's project
+ * - 403 if user lacks project:manage permission
+ * - 400 if role value is invalid
  * @path /hrmPlatform/member/projects/:projectId/members/:membershipId
  * @accessor api.functional.hrmPlatform.member.projects.members.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -399,17 +377,17 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Target project's UUID identifier (global scope)
+     * Project UUID (scoped to organization)
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
-     * Target project membership record's UUID identifier
+     * Project membership UUID
      */
     membershipId: string & tags.Format<"uuid">;
 
     /**
-     * Role update information for the project membership
+     * Updated role assignment for the project member
      */
     body: IHrmPlatformProjectMember.IUpdate;
   };
@@ -461,36 +439,29 @@ export namespace update {
 }
 
 /**
- * Remove an employee's membership from a project by soft deleting the project membership record.
+ * Remove an employee's membership from a project, revoking their access to project resources and tasks.
  *
- * This operation removes an employee's access to a specific project by marking their membership record as deleted. The employee will no longer be able to log time against this project or view tasks within it. However, all historical data including timelogs and task assignments made while the employee was a member are preserved for audit and reporting purposes.
+ * This operation performs a soft delete on the project membership record by setting the deleted_at timestamp. The employee immediately loses access to log time against the project and view or be assigned to tasks within the project. All existing task assignments to the employee within this project are automatically cleared.
  *
- * The project membership uses soft deletion, meaning the record is marked with a deleted_at timestamp rather than being permanently removed from the database. This ensures complete audit trail for compliance and allows potential recovery if needed.
+ * Historical data is preserved: all timelogs the employee created while assigned to the project remain intact for reporting and audit purposes. The employee's membership in other projects is unaffected.
  *
- * Only users with project:manage permission can remove employees from projects. The membership ID must correspond to a valid membership record within the specified project. Attempting to remove a membership that doesn't exist or belongs to a different project will result in an error.
- *
- * After removal, the employee's personal dashboard and project list will no longer include this project. Any active timers running against this project should be stopped automatically.
+ * Requires project:manage permission in the organization. Returns 404 if the membership does not exist, is already deleted, or does not belong to the specified project.
  *
  * @param props.connection
- * @param props.projectId Target project's ID (UUID format)
- * @param props.membershipId Target project membership record's ID (UUID format)
+ * @param props.projectId Project ID (UUID format, scoped to organization)
+ * @param props.membershipId Project membership ID (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate the requesting user has project:manage permission within the organization
- * 2. Verify the project exists and belongs to the user's organization
- * 3. Verify the membership record exists with the given membershipId
- * 4. Verify the membership belongs to the specified project (security check)
- * 5. Check if membership is already deleted (idempotency)
- * 6. Set deleted_at timestamp to current time in a transaction
- * 7. Log the removal action to hrm_platform_activity_logs with action type 'project_member_removed'
- * 8. Return success response
+ * @x-autobe-specification Soft delete the project membership by setting deleted_at timestamp to current time.
  *
- * Edge cases:
- * - Membership already deleted: return success (idempotent)
- * - Membership not found: return 404
- * - Project not found: return 404
- * - Insufficient permission: return 403
- * - Membership belongs to different project: return 404 (don't leak existence)
+ * 1. Verify user has project:manage permission in the organization
+ * 2. Validate membership exists and belongs to the specified project
+ * 3. Check membership is not already deleted (deleted_at is null)
+ * 4. Set deleted_at to current timestamp
+ * 5. Remove any task assignments to this employee within the project (set task.assigned_employee_id to null where task.hrm_platform_project_id matches and task.assigned_employee_id matches the membership's employee)
+ * 6. Return 204 No Content on success
+ * 7. Return 404 if membership not found or doesn't belong to project
+ * 8. Return 403 if user lacks project:manage permission
  * @path /hrmPlatform/member/projects/:projectId/members/:membershipId
  * @accessor api.functional.hrmPlatform.member.projects.members.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -519,12 +490,12 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Target project's ID (UUID format)
+     * Project ID (UUID format, scoped to organization)
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
-     * Target project membership record's ID (UUID format)
+     * Project membership ID (UUID format)
      */
     membershipId: string & tags.Format<"uuid">;
   };

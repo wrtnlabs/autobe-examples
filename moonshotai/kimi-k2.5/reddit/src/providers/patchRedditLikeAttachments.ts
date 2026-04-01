@@ -11,46 +11,43 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditLikeAttachmentAtSummaryTransformer } from "../transformers/RedditLikeAttachmentAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditLikeAttachments(props: {
   body: IRedditLikeAttachment.IRequest;
 }): Promise<IPageIRedditLikeAttachment.ISummary> {
-  const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
+  const page = props.body.page ?? 1;
   const skip = (page - 1) * limit;
-  // Build where conditions dynamically
-  const whereConditions: Prisma.reddit_like_attachmentsWhereInput = {
+  // Build where clause with filters
+  const whereInput: Prisma.reddit_like_attachmentsWhereInput = {
     deleted_at: null,
-    ...(props.body.uploadedByMemberId !== null && {
+    ...(props.body.uploadedByMemberId && {
       uploaded_by_member_id: props.body.uploadedByMemberId,
     }),
-    ...(props.body.mimeType !== null && {
-      mime_type: props.body.mimeType,
-    }),
-    ...(props.body.originalFilename !== null && {
+    ...(props.body.originalFilename && {
       original_filename: {
         contains: props.body.originalFilename,
-        mode: "insensitive" as const,
+        mode: "insensitive",
       },
     }),
+    ...(props.body.mimeType && {
+      mime_type: props.body.mimeType,
+    }),
   };
-  // If referenceType filter is provided, we need to join with attachment_references
-  let attachmentIds: string[] | undefined;
-  if (props.body.referenceType !== null) {
+  // Handle referenceType filter by joining with attachment_references
+  if (props.body.referenceType) {
     const references =
       await MyGlobal.prisma.reddit_like_attachment_references.findMany({
         where: {
           reference_type: props.body.referenceType,
         },
-        select: {
-          attachment_id: true,
-        },
+        select: { attachment_id: true },
       });
-    attachmentIds = references.map((r) => r.attachment_id);
+    const attachmentIds = references.map((r) => r.attachment_id);
     if (attachmentIds.length === 0) {
-      // No attachments match the reference type filter
       return {
         data: [],
         pagination: {
@@ -61,62 +58,26 @@ export async function patchRedditLikeAttachments(props: {
         } satisfies IPage.IPagination,
       };
     }
-    whereConditions.id = {
-      in: attachmentIds,
-    };
+    whereInput.id = { in: attachmentIds };
   }
-  // Get total count
-  const total = await MyGlobal.prisma.reddit_like_attachments.count({
-    where: whereConditions,
-  });
-  // Fetch attachments with member info
+  // Query attachments with pagination
   const attachments = await MyGlobal.prisma.reddit_like_attachments.findMany({
-    where: whereConditions,
+    where: whereInput,
     skip,
     take: limit,
-    orderBy: {
-      created_at: "desc",
-    },
-    select: {
-      id: true,
-      original_filename: true,
-      mime_type: true,
-      file_size_bytes: true,
-      created_at: true,
-      uploadedByMember: {
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          email_verified: true,
-          created_at: true,
-        } satisfies Prisma.reddit_like_membersSelect,
-      },
-    },
+    orderBy: { created_at: "desc" },
+    ...RedditLikeAttachmentAtSummaryTransformer.select(),
   });
-  // Transform to response format
-  const data: IRedditLikeAttachment.ISummary[] = attachments.map(
-    (attachment) =>
-      ({
-        id: attachment.id as string & tags.Format<"uuid">,
-        originalFilename: attachment.original_filename,
-        mimeType: attachment.mime_type,
-        fileSizeBytes: attachment.file_size_bytes as number &
-          tags.Type<"int32"> &
-          tags.Minimum<0>,
-        uploadedByMember: {
-          id: attachment.uploadedByMember.id as string & tags.Format<"uuid">,
-          email: attachment.uploadedByMember.email as string &
-            tags.Format<"email">,
-          username: attachment.uploadedByMember.username,
-          emailVerified: attachment.uploadedByMember.email_verified,
-          createdAt: toISOStringSafe(attachment.uploadedByMember.created_at),
-        } satisfies IRedditLikeMember.ISummary,
-        createdAt: toISOStringSafe(attachment.created_at),
-      }) satisfies IRedditLikeAttachment.ISummary,
+  const total = await MyGlobal.prisma.reddit_like_attachments.count({
+    where: whereInput,
+  });
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    attachments,
+    RedditLikeAttachmentAtSummaryTransformer.transform,
   );
   return {
-    data,
+    data: transformedData,
     pagination: {
       current: page,
       limit: limit,

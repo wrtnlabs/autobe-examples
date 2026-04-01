@@ -5,8 +5,10 @@ import { IHrmsMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsMembe
 import { IHrmsOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsFileTransformer } from "./HrmsFileTransformer";
 import { HrmsMemberAtSummaryTransformer } from "./HrmsMemberAtSummaryTransformer";
@@ -20,6 +22,9 @@ export namespace HrmsFileUploadTransformer {
     return {
       select: {
         id: true,
+        organization_id: true,
+        member_id: true,
+        file_id: true,
         original_filename: true,
         file_type: true,
         file_size: true,
@@ -40,9 +45,9 @@ export namespace HrmsFileUploadTransformer {
   export async function transform(input: Payload): Promise<IHrmsFileUpload> {
     return {
       id: input.id,
-      organization_id: input.organization.id,
-      member_id: input.member.id,
-      file_id: input.file?.id ?? undefined,
+      organization_id: input.organization_id,
+      member_id: input.member_id,
+      file_id: input.file_id ?? undefined,
       original_filename: input.original_filename,
       file_type: input.file_type,
       file_size: input.file_size,
@@ -53,12 +58,14 @@ export namespace HrmsFileUploadTransformer {
       error_message: input.error_message ?? undefined,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at?.toISOString() ?? undefined,
       organization: await HrmsOrganizationAtSummaryTransformer.transform(
         input.organization,
       ),
       member: await HrmsMemberAtSummaryTransformer.transform(input.member),
-      file: input.file ? await HrmsFileTransformer.transform(input.file) : null,
-    } satisfies IHrmsFileUpload;
+      file: input.file
+        ? await HrmsFileTransformer.transform(input.file)
+        : undefined,
+    };
   }
 }

@@ -22,96 +22,119 @@ export async function putHrmPlatformMemberEmployeesEmployeeId(props: {
   employeeId: string & tags.Format<"uuid">;
   body: IHrmPlatformEmployee.IUpdate;
 }): Promise<IHrmPlatformEmployee> {
-  // Fetch employee with all relations for response
+  // Verify employee exists and get organization context
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
       where: { id: props.employeeId },
-      ...HrmPlatformEmployeeTransformer.select(),
+      select: { id: true, organization_id: true, user_id: true },
     });
-  // Validate employee belongs to caller's organization context
-  // Get the organization ID from the loaded employee record
-  const organizationId = employee.organization.id;
+  // Verify the member has access to this employee's organization
+  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
+    {
+      where: {
+        user_id: props.member.id,
+        organization_id: employee.organization_id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        role: {
+          select: {
+            id: true,
+            rolePermissions: {
+              select: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
+    },
+  );
+  if (!memberEmployee) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Check employee:manage permission
+  const hasManagePermission =
+    memberEmployee.role?.rolePermissions?.some(
+      (rp: { permission: string }) => rp.permission === "employee:manage",
+    ) ?? false;
+  if (!hasManagePermission) {
+    throw new HttpException("Forbidden", 403);
+  }
   // Validate role_id if provided
   if (props.body.role_id !== undefined) {
-    const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
-      where: { id: props.body.role_id },
-      select: { id: true, organization_id: true },
+    const roleExists = await MyGlobal.prisma.hrm_platform_roles.findFirst({
+      where: {
+        id: props.body.role_id,
+        organization_id: employee.organization_id,
+        deleted_at: null,
+      },
     });
-    if (!role || role.organization_id !== organizationId) {
-      throw new HttpException("Role does not exist in your organization", 400);
+    if (!roleExists) {
+      throw new HttpException("Invalid role_id", 400);
     }
   }
-  // Validate department_id if provided
-  if (props.body.department_id !== undefined) {
-    if (props.body.department_id !== null) {
-      const department =
-        await MyGlobal.prisma.hrm_platform_departments.findUnique({
-          where: { id: props.body.department_id },
-          select: { id: true, hrm_platform_organization_id: true },
-        });
-      if (
-        !department ||
-        department.hrm_platform_organization_id !== organizationId
-      ) {
-        throw new HttpException(
-          "Department does not exist in your organization",
-          400,
-        );
-      }
+  // Validate department_id if provided (can be null to remove association)
+  if (
+    props.body.department_id !== undefined &&
+    props.body.department_id !== null
+  ) {
+    const departmentExists =
+      await MyGlobal.prisma.hrm_platform_departments.findFirst({
+        where: {
+          id: props.body.department_id,
+          organization_id: employee.organization_id,
+          deleted_at: null,
+        },
+      });
+    if (!departmentExists) {
+      throw new HttpException("Invalid department_id", 400);
     }
   }
-  // Validate employment_type enum if provided
+  // Validate employment_type if provided
   if (props.body.employment_type !== undefined) {
-    const validEmploymentTypes: readonly string[] = [
+    const validEmploymentTypes = [
       "full-time",
       "part-time",
       "contractor",
       "intern",
     ];
     if (!validEmploymentTypes.includes(props.body.employment_type)) {
-      throw new HttpException("Invalid employment type", 400);
+      throw new HttpException("Invalid employment_type", 400);
     }
   }
-  // Validate status enum if provided
+  // Validate status if provided
   if (props.body.status !== undefined) {
-    const validStatuses: readonly string[] = ["active", "deactivated"];
+    const validStatuses = ["active", "deactivated"];
     if (!validStatuses.includes(props.body.status)) {
       throw new HttpException("Invalid status", 400);
     }
   }
-  // Build update data
+  // Build update data object with only provided fields
   const updateData: Prisma.hrm_platform_employeesUpdateInput = {
-    updated_at: new Date(),
-    ...(props.body.display_name !== undefined && {
-      display_name: props.body.display_name,
+    ...(props.body.role_id !== undefined && {
+      role: { connect: { id: props.body.role_id } },
+    }),
+    ...(props.body.department_id !== undefined && {
+      department:
+        props.body.department_id === null
+          ? { disconnect: true }
+          : { connect: { id: props.body.department_id } },
     }),
     ...(props.body.position !== undefined && { position: props.body.position }),
     ...(props.body.employment_type !== undefined && {
       employment_type: props.body.employment_type,
     }),
     ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.role_id !== undefined && {
-      role: { connect: { id: props.body.role_id } },
-    }),
-    ...(props.body.department_id !== undefined && {
-      department:
-        props.body.department_id !== null
-          ? { connect: { id: props.body.department_id } }
-          : { disconnect: true },
-    }),
+    updated_at: new Date(),
   };
-  // Handle deleted_at based on status change
-  if (props.body.status === "deactivated") {
-    updateData.deleted_at = new Date();
-  } else if (props.body.status === "active") {
-    updateData.deleted_at = null;
-  }
-  // Perform update
+  // Perform the update
   await MyGlobal.prisma.hrm_platform_employees.update({
     where: { id: props.employeeId },
     data: updateData,
   });
-  // Fetch updated employee with all relations
+  // Fetch and return the updated employee
   const updated =
     await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
       where: { id: props.employeeId },

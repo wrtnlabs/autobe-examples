@@ -21,17 +21,8 @@ export async function patchEcommerceMallSellerApprovalRequests(props: {
   body: IEcommerceMallSellerApprovalRequest.IRequest;
 }): Promise<IPageIEcommerceMallSellerApprovalRequest.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.pageSize ?? 100, 100);
-  const skip = (page - 1) * limit;
-  const sortBy = props.body.sortBy ?? "created_at";
-  const sortOrder = props.body.sortOrder ?? "desc";
-  const orderByInput = (
-    sortBy === "status"
-      ? { status: sortOrder as "asc" | "desc" }
-      : sortBy === "created_at"
-        ? { created_at: sortOrder as "asc" | "desc" }
-        : { updated_at: sortOrder as "asc" | "desc" }
-  ) satisfies Prisma.ecommerce_mall_seller_approval_requestsOrderByWithRelationInput;
+  const limit = props.body.limit ?? 100;
+  const offset = (page - 1) * limit;
   const whereInput: Prisma.ecommerce_mall_seller_approval_requestsWhereInput = {
     deleted_at: null,
     ...(props.body.status !== undefined && { status: props.body.status }),
@@ -47,12 +38,19 @@ export async function patchEcommerceMallSellerApprovalRequests(props: {
     ...(props.body.updated_before !== undefined && {
       updated_at: { lt: new Date(props.body.updated_before) },
     }),
-  };
+  } satisfies Prisma.ecommerce_mall_seller_approval_requestsWhereInput;
+  const orderByInput = (
+    props.body.sortBy === "created_at"
+      ? { created_at: props.body.sortOrder === "asc" ? "asc" : "desc" }
+      : props.body.sortBy === "updated_at"
+        ? { updated_at: props.body.sortOrder === "asc" ? "asc" : "desc" }
+        : { status: props.body.sortOrder === "asc" ? "asc" : "desc" }
+  ) satisfies Prisma.ecommerce_mall_seller_approval_requestsOrderByWithRelationInput;
   const data =
     await MyGlobal.prisma.ecommerce_mall_seller_approval_requests.findMany({
       where: whereInput,
       orderBy: orderByInput,
-      skip,
+      skip: offset,
       take: limit,
       ...EcommerceMallSellerApprovalRequestAtSummaryTransformer.select(),
     });
@@ -61,15 +59,15 @@ export async function patchEcommerceMallSellerApprovalRequests(props: {
       where: whereInput,
     });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallSellerApprovalRequestAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallSellerApprovalRequestAtSummaryTransformer.transform,
+    ),
+  } satisfies IPageIEcommerceMallSellerApprovalRequest.ISummary;
 }

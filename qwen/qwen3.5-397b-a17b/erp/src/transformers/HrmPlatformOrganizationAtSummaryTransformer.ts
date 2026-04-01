@@ -16,19 +16,9 @@ export namespace HrmPlatformOrganizationAtSummaryTransformer {
         id: true,
         name: true,
         description: true,
-        logo_url: true,
+        logo: true,
         currency: true,
         timezone: true,
-        fiscal_start_month: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        owner: true,
-        employees: true,
-        departments: true,
-        roles: true,
-        projects: true,
-        activityLogs: true,
       },
     } satisfies Prisma.hrm_platform_organizationsFindManyArgs;
   }
@@ -38,12 +28,10 @@ export namespace HrmPlatformOrganizationAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? null,
-      logo_url: input.logo_url ?? null,
+      description: input.description ?? undefined,
+      logo: input.logo ?? undefined,
       currency: input.currency,
       timezone: input.timezone,
-      fiscal_start_month: input.fiscal_start_month,
-      created_at: input.created_at.toISOString(),
     };
   }
 }

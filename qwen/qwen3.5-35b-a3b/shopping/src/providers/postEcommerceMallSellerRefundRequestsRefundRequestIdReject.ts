@@ -13,6 +13,8 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { EcommerceMallCustomerAtSummaryTransformer } from "../transformers/EcommerceMallCustomerAtSummaryTransformer";
+import { EcommerceMallOrderItemAtSummaryTransformer } from "../transformers/EcommerceMallOrderItemAtSummaryTransformer";
 import { EcommerceMallRefundRequestTransformer } from "../transformers/EcommerceMallRefundRequestTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -22,102 +24,120 @@ export async function postEcommerceMallSellerRefundRequestsRefundRequestIdReject
   refundRequestId: string & tags.Format<"uuid">;
   body: IEcommerceMallRefundRequest.IReject;
 }): Promise<IEcommerceMallRefundRequest> {
-  const now = toISOStringSafe(new Date());
-  const existing =
+  const rejectionReason = props.body.rejection_reason;
+  if (
+    rejectionReason === null ||
+    rejectionReason === undefined ||
+    rejectionReason.length < 10 ||
+    rejectionReason.length > 500
+  ) {
+    throw new HttpException(
+      "Rejection reason must be provided and between 10-500 characters",
+      400,
+    );
+  }
+  const refundRequest =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findUniqueOrThrow({
       where: { id: props.refundRequestId },
       select: {
         id: true,
         status: true,
         seller_response: true,
-        rejection_reason: true,
-        decision_at: true,
-        ecommerce_mall_order_item_id: true,
+        orderItem: {
+          select: {
+            seller_snapshot_id: true,
+            sellerSnapshot: {
+              select: {
+                actor_id: true,
+              },
+            },
+          },
+        },
       },
     });
-  if (existing.status !== "pending") {
-    throw new HttpException("Refund request is not pending", 409);
-  }
-  if (existing.seller_response !== null) {
-    throw new HttpException("Refund request already responded", 409);
-  }
-  const orderItem =
-    await MyGlobal.prisma.ecommerce_mall_order_items.findUniqueOrThrow({
-      where: { id: existing.ecommerce_mall_order_item_id },
-      select: { ecommerce_mall_order_id: true },
-    });
-  const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
-    where: { id: orderItem.ecommerce_mall_order_id },
-    select: { customer_id: true },
-  });
-  const rejectionReasonValue:
-    | (string & tags.MinLength<10> & tags.MaxLength<500>)
-    | null
-    | undefined = props.body.rejection_reason;
-  if (
-    rejectionReasonValue === null ||
-    rejectionReasonValue === undefined ||
-    (typeof rejectionReasonValue === "string" &&
-      rejectionReasonValue.trim().length < 10)
-  ) {
+  if (refundRequest.status !== "pending") {
     throw new HttpException(
-      "Rejection reason must be at least 10 characters",
-      400,
+      "Refund request is not in pending status - cannot reject",
+      409,
     );
   }
-  if (
-    typeof rejectionReasonValue === "string" &&
-    rejectionReasonValue.length > 500
-  ) {
+  const orderItemSellerId = refundRequest.orderItem.sellerSnapshot.actor_id;
+  if (orderItemSellerId !== props.seller.id) {
     throw new HttpException(
-      "Rejection reason must be at most 500 characters",
-      400,
+      "You can only reject refund requests for products you own",
+      403,
     );
   }
-  const rejectionReason:
-    | (string & tags.MinLength<10> & tags.MaxLength<500>)
-    | null = rejectionReasonValue;
-  const result = await MyGlobal.prisma.ecommerce_mall_refund_requests.update({
-    where: { id: props.refundRequestId },
-    data: {
-      status: "rejected" as const,
-      seller_response: rejectionReason,
-      rejection_reason: rejectionReason,
-      decision_at: new Date(now),
-      updated_at: new Date(now),
-    },
-  });
-  const snapshot: string & tags.Format<"uuid"> = v4();
-  await MyGlobal.prisma.ecommerce_mall_refund_request_snapshots.create({
-    data: {
-      id: snapshot,
-      refund_request_id: props.refundRequestId,
-      actor_type: "seller" as const,
-      action_type: "rejected" as const,
-      status_before: "pending" as const,
-      status_after: "rejected" as const,
-      response_before: null as string | null,
-      response_after: rejectionReason,
-      created_at: new Date(now),
-    },
-  });
-  const snapshotOfSeller: string & tags.Format<"uuid"> = v4();
-  await MyGlobal.prisma.ecommerce_mall_refund_request_snapshot_of_sellers.create(
-    {
-      data: {
-        id: snapshotOfSeller,
-        refund_request_snapshot_id: snapshot,
-        seller_id: props.seller.id,
-        seller_session_id: props.seller.session_id,
-        created_at: new Date(now),
-        updated_at: new Date(now),
-      },
+  const currentSellerResponse = refundRequest.seller_response;
+  const [updatedRefundRequest] = await MyGlobal.prisma.$transaction(
+    async (tx) => {
+      const updated = await tx.ecommerce_mall_refund_requests.update({
+        where: { id: props.refundRequestId },
+        data: {
+          status: "rejected",
+          rejection_reason: rejectionReason,
+          seller_response: rejectionReason,
+          decision_at: new Date(),
+        },
+        include: {
+          orderItem: {
+            include: {
+              productSnapshot: true,
+            },
+          },
+        },
+      });
+      const snapshot = await tx.ecommerce_mall_refund_request_snapshots.create({
+        data: {
+          id: v4(),
+          refund_request_id: props.refundRequestId,
+          actor_type: "seller",
+          action_type: "rejected",
+          status_before: "pending",
+          status_after: "rejected",
+          response_before: currentSellerResponse,
+          response_after: rejectionReason,
+          created_at: new Date(),
+        },
+      });
+      await tx.ecommerce_mall_refund_request_snapshot_of_sellers.create({
+        data: {
+          id: v4(),
+          refund_request_snapshot_id: snapshot.id,
+          seller_id: props.seller.id,
+          seller_session_id: props.seller.session_id,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      });
+      return [updated] as const;
     },
   );
-  const updated =
+  const fullRefundRequest =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findUniqueOrThrow({
       where: { id: props.refundRequestId },
-      ...EcommerceMallRefundRequestTransformer.select(),
+      select: {
+        id: true,
+        refund_code: true,
+        status: true,
+        reason: true,
+        evidence_description: true,
+        seller_response: true,
+        rejection_reason: true,
+        delivery_date: true,
+        submitted_at: true,
+        decision_at: true,
+        processed_at: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
+        orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
+        inventoryRecords: true,
+        snapshots: true,
+      },
     });
-  return await EcommerceMallRefundRequestTransformer.transform(updated);
+  return await EcommerceMallRefundRequestTransformer.transform(
+    fullRefundRequest,
+  );
 }

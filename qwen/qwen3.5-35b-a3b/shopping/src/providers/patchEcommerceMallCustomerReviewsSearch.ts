@@ -25,7 +25,7 @@ export async function patchEcommerceMallCustomerReviewsSearch(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.ecommerce_mall_reviewsWhereInput = {
+  const where: Prisma.ecommerce_mall_reviewsWhereInput = {
     deleted_at: null,
     ...(props.body.customer_id !== undefined && {
       customer_id: props.body.customer_id,
@@ -33,7 +33,9 @@ export async function patchEcommerceMallCustomerReviewsSearch(props: {
     ...(props.body.product_id !== undefined && {
       product_id: props.body.product_id,
     }),
-    ...(props.body.order_id !== undefined && { order_id: props.body.order_id }),
+    ...(props.body.order_id !== undefined && {
+      order_id: props.body.order_id,
+    }),
     ...(props.body.min_rating !== undefined && {
       rating: { gte: props.body.min_rating },
     }),
@@ -43,33 +45,28 @@ export async function patchEcommerceMallCustomerReviewsSearch(props: {
     ...(props.body.is_verified_purchase !== undefined && {
       is_verified_purchase: props.body.is_verified_purchase,
     }),
-    ...(props.body.from_created_at !== undefined && {
-      created_at: { gte: new Date(props.body.from_created_at) },
+    ...(props.body.search !== undefined && {
+      body: {
+        contains: props.body.search,
+        mode: "insensitive",
+      },
     }),
-    ...(props.body.to_created_at !== undefined && {
-      created_at: { lte: new Date(props.body.to_created_at) },
+  };
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_reviews.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy:
+        props.body.sort_by === "rating"
+          ? {
+              rating: props.body.direction === "asc" ? "asc" : "desc",
+            }
+          : { created_at: props.body.direction === "asc" ? "asc" : "desc" },
+      ...EcommerceMallReviewAtSummaryTransformer.select(),
     }),
-    ...(props.body.search !== undefined &&
-      props.body.search.length >= 2 && {
-        body: { contains: props.body.search },
-      }),
-  } satisfies Prisma.ecommerce_mall_reviewsWhereInput;
-  const direction: "asc" | "desc" = props.body.direction ?? "desc";
-  const orderByInput: Prisma.ecommerce_mall_reviewsOrderByWithRelationInput = (
-    props.body.sort_by === "rating"
-      ? { rating: direction }
-      : { created_at: direction }
-  ) satisfies Prisma.ecommerce_mall_reviewsOrderByWithRelationInput;
-  const data = await MyGlobal.prisma.ecommerce_mall_reviews.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...EcommerceMallReviewAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.ecommerce_mall_reviews.count({
-    where: whereInput,
-  });
+    MyGlobal.prisma.ecommerce_mall_reviews.count({ where }),
+  ]);
   return {
     data: await ArrayUtil.asyncMap(
       data,
@@ -77,9 +74,9 @@ export async function patchEcommerceMallCustomerReviewsSearch(props: {
     ),
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIEcommerceMallReview.ISummary;
 }

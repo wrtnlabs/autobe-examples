@@ -27,22 +27,5 @@ export async function getRedditLikePostsPostIdCommentsCommentId(props: {
   if (comment.post_id !== props.postId) {
     throw new HttpException("Comment not found for this post", 404);
   }
-  const replies = await MyGlobal.prisma.reddit_like_comments.findMany({
-    where: {
-      parent_id: props.commentId,
-      is_deleted: false,
-    },
-    ...RedditLikeCommentTransformer.select(),
-    orderBy: { created_at: "asc" },
-  });
-  const transformedComment =
-    await RedditLikeCommentTransformer.transform(comment);
-  const transformedReplies = await ArrayUtil.asyncMap(
-    replies,
-    RedditLikeCommentTransformer.transform,
-  );
-  return {
-    ...transformedComment,
-    replies: transformedReplies,
-  };
+  return await RedditLikeCommentTransformer.transform(comment);
 }

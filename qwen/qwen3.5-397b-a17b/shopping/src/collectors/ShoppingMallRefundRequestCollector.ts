@@ -10,39 +10,22 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallRefundRequestCollector {
   export async function collect(props: {
     body: IShoppingMallRefundRequest.ICreate;
+    shoppingMallOrderItems: IEntity;
     shoppingMallCustomers: IEntity;
   }) {
-    const id: string = v4();
-    // Query order item with shipment to get delivered_at timestamp
-    const orderItem =
-      await MyGlobal.prisma.shopping_mall_order_items.findFirstOrThrow({
-        where: { id: props.body.order_item_id },
-        include: {
-          shipmentItem: {
-            include: {
-              shipment: true,
-            },
-          },
-        },
-      });
     return {
-      // Scalar fields
-      id,
+      id: v4(),
       reason: props.body.reason,
-      status: "PENDING",
-      delivered_at:
-        orderItem.shipmentItem?.shipment?.delivered_at ?? new Date(),
+      status: "pending",
+      response_reason: null,
       requested_at: new Date(),
       responded_at: null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relations
-      orderItem: { connect: { id: props.body.order_item_id } },
+      orderItem: { connect: { id: props.shoppingMallOrderItems.id } },
       customer: { connect: { id: props.shoppingMallCustomers.id } },
-      respondedBySeller: undefined,
-      // HasMany relations
-      snapshots: undefined,
+      seller: undefined,
     } satisfies Prisma.shopping_mall_refund_requestsCreateInput;
   }
 }

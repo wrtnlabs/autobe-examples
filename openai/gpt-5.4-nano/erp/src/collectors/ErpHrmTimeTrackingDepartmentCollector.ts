@@ -12,11 +12,10 @@ export namespace ErpHrmTimeTrackingDepartmentCollector {
     body: IErpHrmTimeTrackingDepartment.ICreate;
     organization: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       name: props.body.name,
-      description: props.body.description ?? null,
+      description: props.body.description,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

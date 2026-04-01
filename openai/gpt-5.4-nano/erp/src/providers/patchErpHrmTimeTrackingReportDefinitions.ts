@@ -18,6 +18,5 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchErpHrmTimeTrackingReportDefinitions(props: {
   body: IErpHrmTimeTrackingReportDefinition.IRequest;
 }): Promise<IPageIErpHrmTimeTrackingReportDefinition.ISummary> {
-  // placeholder
-  throw new Error("Not implemented");
+  throw new HttpException("Not implemented", 501);
 }

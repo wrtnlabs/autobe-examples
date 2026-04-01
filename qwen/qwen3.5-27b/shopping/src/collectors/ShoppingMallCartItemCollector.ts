@@ -11,11 +11,9 @@ export namespace ShoppingMallCartItemCollector {
   export async function collect(props: {
     body: IShoppingMallCartItem.ICreate;
     shoppingMallCustomers: IEntity;
-    shoppingMallCustomerSessions: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       quantity: props.body.quantity,
       created_at: new Date(),
       updated_at: new Date(),

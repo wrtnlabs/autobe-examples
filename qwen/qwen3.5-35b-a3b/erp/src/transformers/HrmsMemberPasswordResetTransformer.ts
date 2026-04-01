@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmsMemberPasswordReset } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsMemberPasswordReset";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace HrmsMemberPasswordResetTransformer {
@@ -15,11 +17,13 @@ export namespace HrmsMemberPasswordResetTransformer {
       select: {
         id: true,
         token: true,
+        member: {
+          select: { id: true },
+        } satisfies Prisma.hrms_membersFindManyArgs,
         expires_at: true,
         used_at: true,
         created_at: true,
         updated_at: true,
-        member: true,
       },
     } satisfies Prisma.hrms_member_password_resetsFindManyArgs;
   }

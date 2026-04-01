@@ -19,7 +19,8 @@ export namespace HrmPlatformTaskHistoryTransformer {
         old_status: true,
         new_status: true,
         created_at: true,
-        user: HrmPlatformMemberAtSummaryTransformer.select(),
+        task: true,
+        member: HrmPlatformMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_task_historiesFindManyArgs;
   }
@@ -28,10 +29,12 @@ export namespace HrmPlatformTaskHistoryTransformer {
   ): Promise<IHrmPlatformTaskHistory> {
     return {
       id: input.id,
-      old_status: input.old_status,
-      new_status: input.new_status,
-      created_at: input.created_at.toISOString(),
-      user: await HrmPlatformMemberAtSummaryTransformer.transform(input.user),
+      oldStatus: input.old_status,
+      newStatus: input.new_status,
+      createdAt: input.created_at.toISOString(),
+      member: await HrmPlatformMemberAtSummaryTransformer.transform(
+        input.member,
+      ),
     };
   }
 }

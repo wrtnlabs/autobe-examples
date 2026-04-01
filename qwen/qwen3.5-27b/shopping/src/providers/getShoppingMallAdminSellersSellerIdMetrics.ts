@@ -17,46 +17,54 @@ export async function getShoppingMallAdminSellersSellerIdMetrics(props: {
   admin: AdminPayload;
   sellerId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallSeller.IMetric> {
-  // Verify seller exists
+  // 1. Verify seller exists
   await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
-    where: {
-      id: props.sellerId,
-      deleted_at: null,
-    },
+    where: { id: props.sellerId },
   });
-  // Query order items for stats and revenue calculation
-  const orderItems = await MyGlobal.prisma.shopping_mall_order_items.findMany({
-    where: {
-      shopping_mall_seller_id: props.sellerId,
-      deleted_at: null,
-    },
-    select: {
-      status: true,
-      quantity: true,
-      price: true,
-      created_at: true,
-    },
-  });
-  // Calculate order items stats by status
-  const order_items_stats = {
-    paid: orderItems.filter((item) => item.status === "paid").length as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    shipped: orderItems.filter((item) => item.status === "shipped")
-      .length as number & tags.Type<"int32"> & tags.Minimum<0>,
-    delivered: orderItems.filter((item) => item.status === "delivered")
-      .length as number & tags.Type<"int32"> & tags.Minimum<0>,
-    cancelled: orderItems.filter((item) => item.status === "cancelled")
-      .length as number & tags.Type<"int32"> & tags.Minimum<0>,
-    refunded: orderItems.filter((item) => item.status === "refunded")
-      .length as number & tags.Type<"int32"> & tags.Minimum<0>,
+  // 2. Query order items stats by status
+  const orderItemsByStatus =
+    await MyGlobal.prisma.shopping_mall_order_items.groupBy({
+      by: ["status"],
+      where: {
+        shopping_mall_seller_id: props.sellerId,
+        deleted_at: null,
+      },
+      _count: {
+        id: true,
+      },
+    });
+  const orderItemsStats = {
+    paid: 0,
+    shipped: 0,
+    delivered: 0,
+    cancelled: 0,
+    refunded: 0,
   };
-  // Calculate total revenue (sum of quantity * price for each item)
-  const total_revenue = orderItems.reduce(
+  for (const row of orderItemsByStatus) {
+    const status = row.status;
+    if (status === "paid") orderItemsStats.paid = row._count.id;
+    else if (status === "shipped") orderItemsStats.shipped = row._count.id;
+    else if (status === "delivered") orderItemsStats.delivered = row._count.id;
+    else if (status === "cancelled") orderItemsStats.cancelled = row._count.id;
+    else if (status === "refunded") orderItemsStats.refunded = row._count.id;
+  }
+  // 3. Calculate total revenue (quantity * price for each order item)
+  const orderItemsForRevenue =
+    await MyGlobal.prisma.shopping_mall_order_items.findMany({
+      where: {
+        shopping_mall_seller_id: props.sellerId,
+        deleted_at: null,
+      },
+      select: {
+        quantity: true,
+        price: true,
+      },
+    });
+  const totalRevenue = orderItemsForRevenue.reduce(
     (sum, item) => sum + item.quantity * item.price,
     0,
-  ) as number & tags.Minimum<0>;
-  // Query shipment stats
+  );
+  // 4. Query shipment stats
   const shipments = await MyGlobal.prisma.shopping_mall_shipments.findMany({
     where: {
       seller_id: props.sellerId,
@@ -66,91 +74,89 @@ export async function getShoppingMallAdminSellersSellerIdMetrics(props: {
       delivery_confirmed: true,
     },
   });
-  const total_shipments = shipments.length as number &
-    tags.Type<"int32"> &
-    tags.Minimum<0>;
-  const confirmed_deliveries = shipments.filter(
+  const totalShipments = shipments.length;
+  const confirmedDeliveries = shipments.filter(
     (s) => s.delivery_confirmed,
   ).length;
-  const delivery_confirmation_rate =
-    total_shipments > 0
-      ? ((confirmed_deliveries / total_shipments) as number &
-          tags.Minimum<0> &
-          tags.Maximum<1>)
-      : (0 as number & tags.Minimum<0> & tags.Maximum<1>);
-  const shipment_stats = {
-    total_shipments,
-    delivery_confirmation_rate,
+  const deliveryConfirmationRate =
+    totalShipments > 0 ? confirmedDeliveries / totalShipments : 0;
+  const shipmentStats = {
+    total_shipments: totalShipments,
+    delivery_confirmation_rate: deliveryConfirmationRate,
   };
-  // Query cancellation request stats
-  const cancellationRequests =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.findMany({
+  // 5. Query cancellation request stats by joining with order_items
+  const cancellationRequestsByStatus =
+    await MyGlobal.prisma.shopping_mall_cancellation_requests.groupBy({
+      by: ["status"],
       where: {
         deleted_at: null,
         orderItem: {
           shopping_mall_seller_id: props.sellerId,
-          deleted_at: null,
         },
       },
-      select: {
-        status: true,
+      _count: {
+        id: true,
       },
     });
-  const cancellation_request_stats = {
-    pending: cancellationRequests.filter((r) => r.status === "pending")
-      .length as number & tags.Type<"int32"> & tags.Minimum<0>,
-    approved: cancellationRequests.filter((r) => r.status === "approved")
-      .length as number & tags.Type<"int32"> & tags.Minimum<0>,
-    rejected: cancellationRequests.filter((r) => r.status === "rejected")
-      .length as number & tags.Type<"int32"> & tags.Minimum<0>,
+  const cancellationRequestStats = {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
   };
-  // Query refund request stats
-  const refundRequests =
-    await MyGlobal.prisma.shopping_mall_refund_requests.findMany({
+  for (const row of cancellationRequestsByStatus) {
+    const status = row.status;
+    if (status === "pending") cancellationRequestStats.pending = row._count.id;
+    else if (status === "approved")
+      cancellationRequestStats.approved = row._count.id;
+    else if (status === "rejected")
+      cancellationRequestStats.rejected = row._count.id;
+  }
+  // 6. Query refund request stats by joining with order_items
+  const refundRequestsByStatus =
+    await MyGlobal.prisma.shopping_mall_refund_requests.groupBy({
+      by: ["status"],
       where: {
         deleted_at: null,
         orderItem: {
           shopping_mall_seller_id: props.sellerId,
-          deleted_at: null,
         },
       },
-      select: {
-        status: true,
+      _count: {
+        id: true,
       },
     });
-  const refund_request_stats = {
-    pending: refundRequests.filter((r) => r.status === "pending")
-      .length as number & tags.Type<"int32"> & tags.Minimum<0>,
-    approved: refundRequests.filter((r) => r.status === "approved")
-      .length as number & tags.Type<"int32"> & tags.Minimum<0>,
-    rejected: refundRequests.filter((r) => r.status === "rejected")
-      .length as number & tags.Type<"int32"> & tags.Minimum<0>,
+  const refundRequestStats = {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
   };
-  // Query reviews for average rating and total count
-  const reviews = await MyGlobal.prisma.shopping_mall_reviews.findMany({
+  for (const row of refundRequestsByStatus) {
+    const status = row.status;
+    if (status === "pending") refundRequestStats.pending = row._count.id;
+    else if (status === "approved") refundRequestStats.approved = row._count.id;
+    else if (status === "rejected") refundRequestStats.rejected = row._count.id;
+  }
+  // 7. Query reviews for average rating and count by joining with order_items
+  const reviewsResult = await MyGlobal.prisma.shopping_mall_reviews.aggregate({
     where: {
       deleted_at: null,
       orderItem: {
         shopping_mall_seller_id: props.sellerId,
-        deleted_at: null,
       },
     },
-    select: {
+    _avg: {
       rating: true,
     },
+    _count: {
+      id: true,
+    },
   });
-  const total_reviews = reviews.length as number &
-    tags.Type<"int32"> &
-    tags.Minimum<0>;
-  const average_rating =
-    reviews.length > 0
-      ? ((reviews.reduce((sum, r) => sum + r.rating, 0) /
-          reviews.length) as number & tags.Minimum<1> & tags.Maximum<5>)
-      : null;
-  // Query monthly order trends (last 12 months)
+  const averageRating = reviewsResult._avg.rating ?? null;
+  const totalReviews = reviewsResult._count.id;
+  // 8. Query monthly order trends (last 12 months)
   const twelveMonthsAgo = new Date();
   twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-  const monthlyTrends =
+  const monthlyOrderItems =
     await MyGlobal.prisma.shopping_mall_order_items.findMany({
       where: {
         shopping_mall_seller_id: props.sellerId,
@@ -168,7 +174,7 @@ export async function getShoppingMallAdminSellersSellerIdMetrics(props: {
         created_at: "asc",
       },
     });
-  // Group by month and calculate stats
+  // Group by month (YYYY-MM format)
   const monthlyMap = new Map<
     string,
     {
@@ -176,48 +182,43 @@ export async function getShoppingMallAdminSellersSellerIdMetrics(props: {
       revenue: number;
     }
   >();
-  for (const item of monthlyTrends) {
-    const monthDate = item.created_at;
-    const month = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`;
+  for (const item of monthlyOrderItems) {
+    const month = item.created_at.toISOString().substring(0, 7);
     const existing = monthlyMap.get(month) ?? { count: 0, revenue: 0 };
-    existing.count += 1;
+    existing.count += item.quantity;
     existing.revenue += item.quantity * item.price;
     monthlyMap.set(month, existing);
   }
-  const monthly_order_trends: IShoppingMallSellerMonthlyOrderTrend[] =
-    Array.from(monthlyMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, data]) => ({
-        month: month as string & tags.Pattern<"^[0-9]{4}-[0-9]{2}$">,
-        orderItemCount: data.count as number &
-          tags.Type<"int32"> &
-          tags.Minimum<0>,
-        revenue: data.revenue as number & tags.Minimum<0>,
-      }))
-      .slice(-12);
-  // Calculate derived metrics
-  const delivered_count = order_items_stats.delivered as unknown as number;
-  const cancellation_rate =
-    delivered_count > 0
-      ? (((cancellation_request_stats.approved as unknown as number) /
-          delivered_count) as number & tags.Minimum<0> & tags.Maximum<1>)
-      : (0 as number & tags.Minimum<0> & tags.Maximum<1>);
-  const refund_rate =
-    delivered_count > 0
-      ? (((refund_request_stats.approved as unknown as number) /
-          delivered_count) as number & tags.Minimum<0> & tags.Maximum<1>)
-      : (0 as number & tags.Minimum<0> & tags.Maximum<1>);
+  const monthlyOrderTrends: IShoppingMallSellerMonthlyOrderTrend[] = Array.from(
+    monthlyMap.entries(),
+  )
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, data]) => ({
+      month: month,
+      orderItemCount: data.count,
+      revenue: data.revenue,
+    }));
+  // 9. Calculate derived metrics
+  const cancellationRate =
+    orderItemsStats.delivered > 0
+      ? cancellationRequestStats.approved / orderItemsStats.delivered
+      : 0;
+  const refundRate =
+    orderItemsStats.delivered > 0
+      ? refundRequestStats.approved / orderItemsStats.delivered
+      : 0;
+  // 10. Return complete metrics object
   return {
-    order_items_stats,
-    total_revenue,
-    shipment_stats,
-    cancellation_request_stats,
-    refund_request_stats,
-    average_rating,
-    total_reviews,
-    monthly_order_trends,
-    cancellation_rate,
-    refund_rate,
-    delivery_confirmation_rate,
+    order_items_stats: orderItemsStats,
+    total_revenue: totalRevenue,
+    shipment_stats: shipmentStats,
+    cancellation_request_stats: cancellationRequestStats,
+    refund_request_stats: refundRequestStats,
+    average_rating: averageRating,
+    total_reviews: totalReviews,
+    monthly_order_trends: monthlyOrderTrends,
+    cancellation_rate: cancellationRate,
+    refund_rate: refundRate,
+    delivery_confirmation_rate: deliveryConfirmationRate,
   };
 }

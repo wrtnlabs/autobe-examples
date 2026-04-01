@@ -16,11 +16,11 @@ export async function getRedditLikeMembersMemberId(props: {
   memberId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeMember> {
   const member = await MyGlobal.prisma.reddit_like_members.findUniqueOrThrow({
-    where: {
-      id: props.memberId,
-      deleted_at: null,
-    },
+    where: { id: props.memberId },
     ...RedditLikeMemberTransformer.select(),
   });
+  if (member.deleted_at !== null) {
+    throw new HttpException("Member not found", 404);
+  }
   return await RedditLikeMemberTransformer.transform(member);
 }

@@ -23,94 +23,65 @@ export async function patchShoppingMallCustomerShipmentsShipmentIdItems(props: {
   shipmentId: string & tags.Format<"uuid">;
   body: IShoppingMallShipmentItem.IRequest;
 }): Promise<IPageIShoppingMallShipmentItem.ISummary> {
-  // Verify shipment exists
-  await MyGlobal.prisma.shopping_mall_shipments.findUniqueOrThrow({
-    where: {
-      id: props.shipmentId,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-    },
-  });
-  // Get shipment item IDs for authorization check
-  const shipmentItems =
-    await MyGlobal.prisma.shopping_mall_shipment_items.findMany({
+  const shipment =
+    await MyGlobal.prisma.shopping_mall_shipments.findUniqueOrThrow({
       where: {
-        shopping_mall_shipment_id: props.shipmentId,
+        id: props.shipmentId,
+        deleted_at: null,
       },
       select: {
-        shopping_mall_order_item_id: true,
+        id: true,
+        seller_id: true,
+        shipmentItems: {
+          select: {
+            orderItem: {
+              select: {
+                order: {
+                  select: { shopping_mall_customer_id: true },
+                },
+              },
+            },
+          },
+        },
       },
     });
-  const orderItemIds = shipmentItems.map(
-    (item) => item.shopping_mall_order_item_id,
+  const hasCustomerAccess = shipment.shipmentItems.some(
+    (item) =>
+      item.orderItem.order.shopping_mall_customer_id === props.customer.id,
   );
-  // Get order IDs from order items for authorization
-  const orderItems = await MyGlobal.prisma.shopping_mall_order_items.findMany({
-    where: {
-      id: {
-        in: orderItemIds,
-      },
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      shopping_mall_order_id: true,
-    },
-  });
-  const orderIds = [
-    ...new Set(orderItems.map((item) => item.shopping_mall_order_id)),
-  ];
-  // Verify customer owns all orders
-  const orders = await MyGlobal.prisma.shopping_mall_orders.findMany({
-    where: {
-      id: {
-        in: orderIds,
-      },
-      shopping_mall_customer_id: props.customer.id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-    },
-  });
-  if (orders.length !== orderIds.length) {
+  if (!hasCustomerAccess) {
     throw new HttpException("Forbidden", 403);
   }
-  // Pagination
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause
-  const whereInput = {
+  const whereInput: Prisma.shopping_mall_shipment_itemsWhereInput = {
     shopping_mall_shipment_id: props.shipmentId,
-    orderItem: {
-      deleted_at: null,
-      ...(props.body.status && { status: props.body.status }),
-    },
-  } satisfies Prisma.shopping_mall_shipment_itemsWhereInput;
-  // Query data
+    ...(props.body.status && {
+      orderItem: {
+        status: props.body.status,
+      },
+    }),
+  };
+  const orderByInput: Prisma.shopping_mall_shipment_itemsOrderByWithRelationInput =
+    props.body.sort === "created_at asc"
+      ? { created_at: "asc" as const }
+      : { created_at: "desc" as const };
   const data = await MyGlobal.prisma.shopping_mall_shipment_items.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: {
-      created_at: "desc" as const,
-    },
+    orderBy: orderByInput,
     ...ShoppingMallShipmentItemAtSummaryTransformer.select(),
   });
-  // Count total
   const total = await MyGlobal.prisma.shopping_mall_shipment_items.count({
     where: whereInput,
   });
-  // Transform data
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    ShoppingMallShipmentItemAtSummaryTransformer.transform,
-  );
   return {
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallShipmentItemAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,

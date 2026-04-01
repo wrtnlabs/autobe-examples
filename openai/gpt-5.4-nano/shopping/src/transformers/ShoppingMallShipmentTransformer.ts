@@ -4,6 +4,7 @@ import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -33,6 +34,7 @@ export namespace ShoppingMallShipmentTransformer {
             tracking_number: true,
             carrier_name: true,
             note: true,
+            deleted_at: true,
           },
         },
       },
@@ -41,6 +43,18 @@ export namespace ShoppingMallShipmentTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallShipment> {
+    const tracking =
+      input.shipmentConfirmation &&
+      input.shipmentConfirmation.deleted_at === null
+        ? {
+            confirmationType: null,
+            confirmedAt: null,
+            trackingUrl: null,
+            trackingNumber: null,
+            carrierName: null,
+            note: null,
+          }
+        : null;
     return {
       id: input.id,
       order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
@@ -50,18 +64,9 @@ export namespace ShoppingMallShipmentTransformer {
         input.orderItems,
         ShoppingMallOrderItemAtSummaryTransformer.transform,
       ),
-      tracking: input.shipmentConfirmation
-        ? {
-            confirmationType: null,
-            confirmedAt: null,
-            trackingUrl: null,
-            trackingNumber: null,
-            carrierName: null,
-            note: null,
-          }
-        : null,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
+      tracking,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
     };
   }
 }

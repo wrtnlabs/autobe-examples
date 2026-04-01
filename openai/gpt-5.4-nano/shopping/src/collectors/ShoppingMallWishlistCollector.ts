@@ -12,32 +12,27 @@ import { ShoppingMallWishlistItemCollector } from "./ShoppingMallWishlistItemCol
 export namespace ShoppingMallWishlistCollector {
   export async function collect(props: {
     body: IShoppingMallWishlist.ICreate;
-    shoppingMallMembers: IEntity;
+    member: IEntity;
   }) {
-    const id: string = v4();
-    const now: Date = new Date();
-    const items: Prisma.shopping_mall_wishlistsCreateInput["items"] = props.body
-      .items?.length
-      ? {
-          create: await ArrayUtil.asyncMap(
-            props.body.items,
-            async (item: IShoppingMallWishlistItem.ICreate) =>
-              ShoppingMallWishlistItemCollector.collect({
-                body: item,
-                wishlist: { id } as IEntity,
-              }),
-          ),
-        }
-      : undefined;
+    const now = new Date();
     return {
-      id,
+      id: v4(),
       created_at: now,
       updated_at: now,
       deleted_at: null,
-      member: {
-        connect: { id: props.shoppingMallMembers.id },
-      },
-      items,
+      member: { connect: { id: props.member.id } },
+      items:
+        props.body.items && props.body.items.length > 0
+          ? {
+              create: await ArrayUtil.asyncMap(props.body.items, (item, i) =>
+                ShoppingMallWishlistItemCollector.collect({
+                  body: item,
+                  sequence: i,
+                  wishlist: { id: undefined as never },
+                } as any),
+              ),
+            }
+          : undefined,
     } satisfies Prisma.shopping_mall_wishlistsCreateInput;
   }
 }

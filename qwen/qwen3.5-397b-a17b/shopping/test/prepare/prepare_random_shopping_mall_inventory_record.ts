@@ -9,6 +9,8 @@ export function prepare_random_shopping_mall_inventory_record(
   input?: DeepPartial<IShoppingMallInventoryRecord.ICreate>,
 ): IShoppingMallInventoryRecord.ICreate {
   return {
+    product_variant_id:
+      input?.product_variant_id ?? typia.random<string & tags.Format<"uuid">>(),
     quantity_change:
       input?.quantity_change ??
       typia.random<
@@ -17,18 +19,11 @@ export function prepare_random_shopping_mall_inventory_record(
     reason:
       input?.reason ??
       RandomGenerator.pick([
-        "RESTOCK",
-        "ORDER",
-        "ADJUSTMENT",
-        "CANCELLATION",
-        "REFUND",
-        "LOSS",
+        "restock",
+        "adjustment",
+        "loss",
+        "damage",
+        "correction",
       ] as const),
-    reference_id:
-      input?.reference_id !== undefined
-        ? input.reference_id
-        : Math.random() < 0.5
-          ? typia.random<string & tags.Format<"uuid">>()
-          : null,
   };
 }

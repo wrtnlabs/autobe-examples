@@ -23,21 +23,31 @@ export async function patchEcommerceMallCustomerOrders(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.ecommerce_mall_ordersWhereInput = {
+  const whereInput = {
     customer_id: props.customer.id,
     deleted_at: null,
-    ...(props.body.status && { status: props.body.status }),
-    ...(props.body.search && {
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.search !== undefined && {
       OR: [
         { order_number: { contains: props.body.search } },
-        { customer: { email: { contains: props.body.search } } },
+        {
+          customer: {
+            email: { contains: props.body.search },
+          },
+        },
       ],
     }),
-    ...(props.body.created_since && {
+    ...(props.body.created_since !== undefined && {
       created_at: { gte: new Date(props.body.created_since) },
     }),
-    ...(props.body.created_before && {
+    ...(props.body.created_before !== undefined && {
       created_at: { lt: new Date(props.body.created_before) },
+    }),
+    ...(props.body.updated_since !== undefined && {
+      updated_at: { gte: new Date(props.body.updated_since) },
+    }),
+    ...(props.body.updated_before !== undefined && {
+      updated_at: { lt: new Date(props.body.updated_before) },
     }),
     ...(props.body.total_price_min !== undefined && {
       total_price: { gte: props.body.total_price_min },
@@ -46,26 +56,39 @@ export async function patchEcommerceMallCustomerOrders(props: {
       total_price: { lte: props.body.total_price_max },
     }),
   } satisfies Prisma.ecommerce_mall_ordersWhereInput;
-  const orderByInput = (
-    props.body.sort === "status"
-      ? { status: "asc" as const }
-      : props.body.sort === "total_price"
-        ? { total_price: "asc" as const }
-        : props.body.sort === "customer_email"
-          ? { customer: { email: "asc" as const } }
-          : props.body.sort === "order_number"
-            ? { order_number: "asc" as const }
-            : { created_at: "desc" as const }
-  ) satisfies Prisma.ecommerce_mall_ordersOrderByWithRelationInput;
+  const orderByInput:
+    | Prisma.ecommerce_mall_ordersOrderByWithRelationInput[]
+    | Prisma.ecommerce_mall_ordersOrderByWithRelationInput = (() => {
+    if (props.body.sort === "status") {
+      return { status: "asc" };
+    }
+    if (props.body.sort === "total_price") {
+      return { total_price: "desc" };
+    }
+    if (props.body.sort === "customer_email") {
+      return {
+        customer: { email: "asc" },
+      } satisfies Prisma.ecommerce_mall_ordersOrderByWithRelationInput;
+    }
+    if (props.body.sort === "created_at") {
+      return { created_at: "desc" };
+    }
+    if (props.body.sort === "order_number") {
+      return { order_number: "desc" };
+    }
+    return { created_at: "desc" };
+  })();
   const [data, total] = await Promise.all([
     MyGlobal.prisma.ecommerce_mall_orders.findMany({
       where: whereInput,
-      orderBy: orderByInput,
-      skip,
       take: limit,
+      skip: skip,
+      orderBy: orderByInput,
       ...EcommerceMallOrderAtSummaryTransformer.select(),
     }),
-    MyGlobal.prisma.ecommerce_mall_orders.count({ where: whereInput }),
+    MyGlobal.prisma.ecommerce_mall_orders.count({
+      where: whereInput,
+    }),
   ]);
   return {
     data: await ArrayUtil.asyncMap(

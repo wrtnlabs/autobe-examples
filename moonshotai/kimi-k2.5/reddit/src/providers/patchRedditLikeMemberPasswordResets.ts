@@ -10,38 +10,61 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { RedditLikeMemberPasswordResetAtSummaryTransformer } from "../transformers/RedditLikeMemberPasswordResetAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditLikeMemberPasswordResets(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   body: IRedditLikeMemberPasswordReset.IRequest;
 }): Promise<IPageIRedditLikeMemberPasswordReset.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const now = new Date().toISOString();
-  const whereInput: Prisma.reddit_like_member_password_resetsWhereInput = {
+  const whereInput = {
     reddit_like_member_id: props.member.id,
     ...(props.body.createdAtFrom !== undefined &&
-      props.body.createdAtFrom !== null && {
-        created_at: { gte: props.body.createdAtFrom },
+      props.body.createdAtFrom !== null &&
+      props.body.createdAtTo !== undefined &&
+      props.body.createdAtTo !== null && {
+        created_at: {
+          gte: new Date(props.body.createdAtFrom),
+          lte: new Date(props.body.createdAtTo),
+        },
+      }),
+    ...(props.body.createdAtFrom !== undefined &&
+      props.body.createdAtFrom !== null &&
+      (props.body.createdAtTo === undefined ||
+        props.body.createdAtTo === null) && {
+        created_at: {
+          gte: new Date(props.body.createdAtFrom),
+        },
       }),
     ...(props.body.createdAtTo !== undefined &&
-      props.body.createdAtTo !== null && {
-        created_at: { lte: props.body.createdAtTo },
+      props.body.createdAtTo !== null &&
+      (props.body.createdAtFrom === undefined ||
+        props.body.createdAtFrom === null) && {
+        created_at: {
+          lte: new Date(props.body.createdAtTo),
+        },
       }),
     ...(props.body.status === "PENDING" && {
       used_at: null,
-      expires_at: { gt: now },
+      expires_at: {
+        gt: new Date(),
+      },
     }),
     ...(props.body.status === "USED" && {
-      used_at: { not: null },
+      NOT: {
+        used_at: null,
+      },
     }),
     ...(props.body.status === "EXPIRED" && {
       used_at: null,
-      expires_at: { lte: now },
+      expires_at: {
+        lte: new Date(),
+      },
     }),
   } satisfies Prisma.reddit_like_member_password_resetsWhereInput;
   const records =
@@ -49,42 +72,25 @@ export async function patchRedditLikeMemberPasswordResets(props: {
       where: whereInput,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
+      orderBy: {
+        created_at: "desc",
+      },
+      ...RedditLikeMemberPasswordResetAtSummaryTransformer.select(),
     });
-  const totalRecords =
-    await MyGlobal.prisma.reddit_like_member_password_resets.count({
-      where: whereInput,
-    });
-  const data = records.map((record) => {
-    const expiresAtStr = toISOStringSafe(record.expires_at);
-    const usedAtStr =
-      record.used_at !== null ? toISOStringSafe(record.used_at) : null;
-    let status: "pending" | "used" | "expired";
-    if (usedAtStr !== null) {
-      status = "used";
-    } else if (expiresAtStr > now) {
-      status = "pending";
-    } else {
-      status = "expired";
-    }
-    return {
-      id: record.id,
-      status,
-      createdAt: toISOStringSafe(record.created_at),
-      expiresAt: expiresAtStr,
-      usedAt: usedAtStr,
-      ipAddress: record.ip_address,
-      userAgent: record.user_agent,
-    } satisfies IRedditLikeMemberPasswordReset.ISummary;
+  const total = await MyGlobal.prisma.reddit_like_member_password_resets.count({
+    where: whereInput,
   });
-  const pages = Math.ceil(totalRecords / limit);
+  const data = await ArrayUtil.asyncMap(
+    records,
+    RedditLikeMemberPasswordResetAtSummaryTransformer.transform,
+  );
   return {
     data,
     pagination: {
       current: page,
       limit: limit,
-      records: totalRecords,
-      pages: pages,
+      records: total,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIRedditLikeMemberPasswordReset.ISummary;
+  };
 }

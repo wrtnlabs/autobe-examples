@@ -31,20 +31,11 @@ export async function patchShoppingMallCustomerCartItems(props: {
   const whereInput = {
     shopping_mall_customer_id: props.customer.id,
     deleted_at: null,
-    ...(props.body.variantId && {
-      variant: {
-        id: props.body.variantId,
-      },
-    }),
     ...(props.body.minQuantity !== undefined && {
-      quantity: {
-        gte: props.body.minQuantity,
-      },
+      quantity: { gte: props.body.minQuantity },
     }),
     ...(props.body.maxQuantity !== undefined && {
-      quantity: {
-        lte: props.body.maxQuantity,
-      },
+      quantity: { lte: props.body.maxQuantity },
     }),
   } satisfies Prisma.shopping_mall_cart_itemsWhereInput;
   const orderByInput = {

@@ -13,7 +13,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { EcommerceMallReviewCollector } from "../collectors/EcommerceMallReviewCollector";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
 import { EcommerceMallReviewTransformer } from "../transformers/EcommerceMallReviewTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -23,45 +22,58 @@ export async function postEcommerceMallCustomerReviews(props: {
   customer: CustomerPayload;
   body: IEcommerceMallReview.ICreate;
 }): Promise<IEcommerceMallReview> {
-  // Validate order exists for purchase verification
-  const orderItem = await MyGlobal.prisma.ecommerce_mall_order_items.findFirst({
-    where: {
-      ecommerce_mall_order_id: props.body.order_id,
-    },
-    select: { id: true },
+  const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
+    where: { id: props.body.order_id },
+    select: { status: true, deleted_at: true },
   });
-  if (orderItem === null) {
-    throw new HttpException("Order does not exist for this review", 400);
+  if (order.deleted_at !== null) {
+    throw new HttpException("Order is deleted", 400);
   }
-  // Validate uniqueness - one review per product per order
+  if (order.status !== "delivered") {
+    throw new HttpException(
+      "Cannot create review for non-delivered order",
+      400,
+    );
+  }
   const existingReview = await MyGlobal.prisma.ecommerce_mall_reviews.findFirst(
     {
       where: {
         customer_id: props.customer.id,
         product_id: props.body.product_id,
-        order_id: props.body.order_id,
         deleted_at: null,
       },
+      select: { id: true },
     },
   );
   if (existingReview !== null) {
     throw new HttpException(
-      "Customer has already written a review for this product in this order",
+      "Customer already has a review for this product",
       409,
     );
   }
-  // Create review in transaction
-  const created = await MyGlobal.prisma.$transaction(async (tx) => {
-    return await tx.ecommerce_mall_reviews.create({
-      data: await EcommerceMallReviewCollector.collect({
-        body: props.body,
-        ecommerceMallCustomers: {
-          id: props.customer.id,
-        },
-      }),
-      ...EcommerceMallReviewTransformer.select(),
+  const customer =
+    await MyGlobal.prisma.ecommerce_mall_customers.findUniqueOrThrow({
+      where: {
+        id: props.customer.id,
+        deleted_at: null,
+      },
+      select: { id: true },
     });
+  const created = await MyGlobal.prisma.ecommerce_mall_reviews.create({
+    data: {
+      id: v4(),
+      customer: { connect: { id: props.customer.id } },
+      product: { connect: { id: props.body.product_id } },
+      order: { connect: { id: props.body.order_id } },
+      rating: props.body.rating,
+      title: props.body.title ?? null,
+      body: props.body.body,
+      is_verified_purchase: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+    },
+    ...EcommerceMallReviewTransformer.select(),
   });
-  // Transform to response DTO
   return await EcommerceMallReviewTransformer.transform(created);
 }

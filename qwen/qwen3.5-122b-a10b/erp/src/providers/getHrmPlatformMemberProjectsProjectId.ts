@@ -17,7 +17,7 @@ export async function getHrmPlatformMemberProjectsProjectId(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformProject> {
-  // Get member's current organization from their employee record
+  // Find the employee record for this member to get organization and role
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
@@ -26,33 +26,27 @@ export async function getHrmPlatformMemberProjectsProjectId(props: {
     select: {
       hrm_platform_organization_id: true,
       hrm_platform_role_id: true,
-    } satisfies Prisma.hrm_platform_employeesSelect,
+    },
   });
-  if (employee === null) {
-    throw new HttpException("Not a member of any organization", 403);
+  if (!employee) {
+    throw new HttpException("You're not enrolled in any organization", 403);
   }
-  // Check project:view permission from role
-  const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
-    where: { id: employee.hrm_platform_role_id },
-    select: {
-      permissions: {
-        select: {
-          permission: {
-            select: {
-              id: true,
-            },
-          },
+  // Check if the member's role has project:view permission
+  const hasPermission =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
+      where: {
+        hrm_platform_role_id: employee.hrm_platform_role_id,
+        deleted_at: null,
+        permission: {
+          code: "project:view",
+          deleted_at: null,
         },
       },
-    } satisfies Prisma.hrm_platform_rolesSelect,
-  });
-  const hasProjectViewPermission = role?.permissions.some(
-    (rp) => rp.permission.id === "project:view",
-  );
-  if (!hasProjectViewPermission) {
+    });
+  if (!hasPermission) {
     throw new HttpException("Forbidden", 403);
   }
-  // Query project with organization verification
+  // Query the project with organization ownership and soft-delete validation
   const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
     {
       where: {

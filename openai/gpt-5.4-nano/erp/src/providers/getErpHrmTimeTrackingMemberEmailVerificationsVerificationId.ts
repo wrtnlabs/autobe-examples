@@ -17,18 +17,19 @@ export async function getErpHrmTimeTrackingMemberEmailVerificationsVerificationI
   member: MemberPayload;
   verificationId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingMemberEmailVerification> {
+  await MyGlobal.prisma.erp_hrm_time_tracking_members.findFirstOrThrow({
+    where: { id: props.member.id, deleted_at: null },
+    select: { id: true },
+  });
   const verification =
     await MyGlobal.prisma.erp_hrm_time_tracking_member_email_verifications.findFirstOrThrow(
       {
         where: {
           id: props.verificationId,
-          deleted_at: null,
-          member: {
-            id: props.member.id,
-          },
+          erp_hrm_time_tracking_member_id: props.member.id,
         },
         ...ErpHrmTimeTrackingMemberEmailVerificationTransformer.select(),
-      } as any,
+      },
     );
   return await ErpHrmTimeTrackingMemberEmailVerificationTransformer.transform(
     verification,

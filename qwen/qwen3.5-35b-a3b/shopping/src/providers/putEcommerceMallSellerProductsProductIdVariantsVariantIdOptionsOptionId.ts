@@ -23,38 +23,46 @@ export async function putEcommerceMallSellerProductsProductIdVariantsVariantIdOp
   optionId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductVariantOption.IUpdate;
 }): Promise<IEcommerceMallProductVariantOption> {
-  // Step 1: Verify product exists and seller owns it
+  // Step 1: Verify seller owns the product
   const product =
     await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
       where: { id: props.productId },
-      select: { id: true, seller_id: true },
+      select: { id: true, seller_id: true, deleted_at: true },
     });
+  if (product.deleted_at !== null) {
+    throw new HttpException("Product not found", 404);
+  }
   if (product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Step 2: Verify variant exists and belongs to the product
+  // Step 2: Verify variant belongs to product
   const variant =
     await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
-      where: { id: props.variantId },
-      select: { id: true, product_id: true },
+      where: { id: props.variantId, product_id: props.productId },
+      select: { id: true, product_id: true, deleted_at: true },
     });
-  if (variant.product_id !== props.productId) {
-    throw new HttpException("Variant does not belong to product", 400);
+  if (variant.deleted_at !== null) {
+    throw new HttpException("Variant not found", 404);
   }
-  // Step 3: Verify option exists and belongs to the variant
+  // Step 3: Verify option exists and belongs to variant
   const existingOption =
     await MyGlobal.prisma.ecommerce_mall_product_variant_options.findUniqueOrThrow(
       {
         where: { id: props.optionId },
         select: {
           id: true,
-          productVariant: { select: { id: true } },
+          product_variant_id: true,
           key: true,
+          value: true,
+          deleted_at: true,
         },
       },
     );
-  if (existingOption.productVariant.id !== props.variantId) {
-    throw new HttpException("Option does not belong to variant", 400);
+  if (existingOption.deleted_at !== null) {
+    throw new HttpException("Option not found", 404);
+  }
+  if (existingOption.product_variant_id !== props.variantId) {
+    throw new HttpException("Option not found", 404);
   }
   // Step 4: Validate at least one of key or value is provided
   if (props.body.key === undefined && props.body.value === undefined) {
@@ -63,45 +71,38 @@ export async function putEcommerceMallSellerProductsProductIdVariantsVariantIdOp
       400,
     );
   }
-  // Step 5: If key is being changed, validate no conflict with existing options for same variant
+  // Step 5: Check key uniqueness if key is being changed
   if (props.body.key !== undefined && props.body.key !== existingOption.key) {
-    const duplicate =
+    const duplicateOption =
       await MyGlobal.prisma.ecommerce_mall_product_variant_options.findFirst({
         where: {
           product_variant_id: props.variantId,
           key: props.body.key,
           deleted_at: null,
-          id: {
-            not: props.optionId,
-          },
-        } satisfies Prisma.ecommerce_mall_product_variant_optionsWhereInput,
+          id: { not: props.optionId },
+        },
+        select: { id: true },
       });
-    if (duplicate !== null) {
+    if (duplicateOption !== null) {
       throw new HttpException(
-        "Option key already exists for this variant",
+        "Option key must be unique within a variant",
         409,
       );
     }
   }
-  // Step 6: Update the option record
-  const updateData = {
-    ...(props.body.key !== undefined && { key: props.body.key }),
-    ...(props.body.value !== undefined && { value: props.body.value }),
-    updated_at: new Date(),
-  } satisfies Prisma.ecommerce_mall_product_variant_optionsUpdateInput;
-  await MyGlobal.prisma.ecommerce_mall_product_variant_options.update({
-    where: { id: props.optionId },
-    data: updateData,
-  });
-  // Step 7: Return updated option with full data via transformer
-  const fullOption =
-    await MyGlobal.prisma.ecommerce_mall_product_variant_options.findUniqueOrThrow(
-      {
-        where: { id: props.optionId },
-        ...EcommerceMallProductVariantOptionTransformer.select(),
+  // Step 6: Update option
+  const updatedOption =
+    await MyGlobal.prisma.ecommerce_mall_product_variant_options.update({
+      where: { id: props.optionId },
+      data: {
+        key: props.body.key ?? existingOption.key,
+        value: props.body.value ?? existingOption.value,
+        updated_at: toISOStringSafe(new Date()),
       },
-    );
+      ...EcommerceMallProductVariantOptionTransformer.select(),
+    });
+  // Step 7: Transform and return
   return await EcommerceMallProductVariantOptionTransformer.transform(
-    fullOption,
+    updatedOption,
   );
 }

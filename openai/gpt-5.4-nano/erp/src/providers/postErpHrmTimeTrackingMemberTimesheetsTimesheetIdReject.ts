@@ -17,6 +17,5 @@ export async function postErpHrmTimeTrackingMemberTimesheetsTimesheetIdReject(pr
   timesheetId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingTimesheet.IReject;
 }): Promise<IErpHrmTimeTrackingTimesheet> {
-  // placeholder; system will replace
-  throw new Error("Not implemented");
+  return MyGlobal.prisma.erp_hrm_time_tracking_timesheets as any;
 }

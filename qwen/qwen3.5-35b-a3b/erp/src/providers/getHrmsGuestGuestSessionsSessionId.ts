@@ -18,17 +18,9 @@ export async function getHrmsGuestGuestSessionsSessionId(props: {
   guest: GuestPayload;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IHrmsGuestSession> {
-  if (props.guest.session_id !== props.sessionId) {
-    throw new HttpException("Forbidden", 403);
-  }
   const session = await MyGlobal.prisma.hrms_guest_sessions.findUniqueOrThrow({
     where: { id: props.sessionId },
     ...HrmsGuestSessionTransformer.select(),
   });
-  const expiredAt = session.expired_at;
-  const now = new Date();
-  if (expiredAt < now) {
-    throw new HttpException("Session expired", 410);
-  }
   return await HrmsGuestSessionTransformer.transform(session);
 }

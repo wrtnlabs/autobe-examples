@@ -4,8 +4,10 @@ import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 
@@ -30,6 +32,9 @@ export namespace EcommerceMallProductVariantAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         product: EcommerceMallProductAtSummaryTransformer.select(),
+        variantSnapshots: true,
+        variantOptions: true,
+        inventoryRecords: true,
       },
     } satisfies Prisma.ecommerce_mall_product_variantsFindManyArgs;
   }
@@ -41,7 +46,7 @@ export namespace EcommerceMallProductVariantAtSummaryTransformer {
       sku: input.sku,
       options: JSON.parse(input.options),
       basePrice: Number(input.base_price),
-      salePrice: input.sale_price ? Number(input.sale_price) : null,
+      salePrice: input.sale_price != null ? Number(input.sale_price) : null,
       stockQuantity: input.stock_quantity,
       reservedQuantity: input.reserved_quantity,
       status: input.status,
@@ -50,9 +55,10 @@ export namespace EcommerceMallProductVariantAtSummaryTransformer {
       product: await EcommerceMallProductAtSummaryTransformer.transform(
         input.product,
       ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt:
+        input.deleted_at != null ? toISOStringSafe(input.deleted_at) : null,
+    } satisfies IEcommerceMallProductVariant.ISummary;
   }
 }

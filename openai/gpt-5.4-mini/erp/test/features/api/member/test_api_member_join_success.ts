@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmTimeTrackingMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingMember";
+import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -17,22 +17,22 @@ export async function test_api_member_join_success(
 ): Promise<void> {
   const memberConnection: api.IConnection = { host: connection.host };
   const email = typia.random<string & tags.Format<"email">>();
-  const password = RandomGenerator.alphaNumeric(16);
-  const output = await authorize_member_join(memberConnection, {
-    body: {
-      email,
-      password,
-    } satisfies IHrmTimeTrackingMember.IJoin,
+  const password = `Passw0rd!${RandomGenerator.alphabets(8)}`;
+  const name = RandomGenerator.name();
+  const body = {
+    email,
+    password,
+    name,
+    href: "https://example.com/signup",
+    referrer: "https://example.com/landing",
+    ip: typia.random<string & tags.Format<"ipv4">>(),
+  } satisfies IErpHrmTimeMember.IJoin;
+  const authorized = await authorize_member_join(memberConnection, { body });
+  typia.assert(authorized);
+  TestValidator.equals("member email", authorized.email, email);
+  TestValidator.equals("member display name", authorized.displayName, name);
+  await TestValidator.error("duplicate member join must fail", async () => {
+    const duplicateConnection: api.IConnection = { host: connection.host };
+    await authorize_member_join(duplicateConnection, { body });
   });
-  typia.assert(output);
-  TestValidator.equals("member email matches input", output.email, email);
-  TestValidator.predicate("member account is active", output.isActive === true);
-  TestValidator.predicate(
-    "access token issued",
-    output.token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token issued",
-    output.token.refresh.length > 0,
-  );
 }

@@ -8,6 +8,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { HrmsTaskCollector } from "../collectors/HrmsTaskCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -17,65 +18,77 @@ export async function postHrmsMemberProjectsProjectIdTasks(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmsTask.ICreate;
 }): Promise<IHrmsTask> {
-  // Validate project exists
+  // 1. Validate projectId exists
   const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
-    where: {
-      id: props.projectId,
-      deleted_at: null,
-    },
+    where: { id: props.projectId, deleted_at: null },
     select: { id: true, hrms_organization_id: true },
   });
-  const organizationId = project.hrms_organization_id;
-  // Check if user has project membership
-  const membership = await MyGlobal.prisma.hrms_project_members.findFirst({
+  // 2. Verify user is member of project (member or project-lead role)
+  const projectMember = await MyGlobal.prisma.hrms_project_members.findFirst({
     where: {
       project_id: props.projectId,
-      employee_id: props.member.id,
-      deleted_at: null,
-    },
-    select: { role: true, id: true, employee_id: true },
-  });
-  // Check if user has organization-level project:manage permission
-  const organizationMember =
-    await MyGlobal.prisma.hrms_organization_members.findUnique({
-      where: {
-        hrms_organization_id_hrms_member_id: {
-          hrms_organization_id: organizationId,
+      employee: {
+        organizationMember: {
           hrms_member_id: props.member.id,
+          deleted_at: null,
         },
+      },
+    },
+    select: { role: true },
+  });
+  if (
+    projectMember === null ||
+    (projectMember.role !== "member" && projectMember.role !== "project-lead")
+  ) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // 3. Validate parent task (if provided, must exist and belong to same project)
+  let hrmsTaskId: (string & tags.Format<"uuid">) | null = null;
+  if (
+    props.body.hrms_task_id !== undefined &&
+    props.body.hrms_task_id !== null
+  ) {
+    const parentTask = await MyGlobal.prisma.hrms_tasks.findUnique({
+      where: {
+        id: props.body.hrms_task_id,
+        hrms_project_id: props.projectId,
+        deleted_at: null,
       },
       select: { id: true },
     });
-  let hasProjectManage = false;
-  if (organizationMember) {
-    // Need to check role permissions - will need hrms_organization_role_permissions schema
-    hasProjectManage = false; // placeholder
+    if (parentTask === null) {
+      throw new HttpException(
+        "Parent task not found or does not belong to this project",
+        400,
+      );
+    }
+    hrmsTaskId = props.body.hrms_task_id;
   }
-  // Verify user has permission (project-lead role OR project:manage permission)
-  if (!membership && !hasProjectManage) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (membership && membership.role !== "project-lead" && !hasProjectManage) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Create task with proper data structure
-  const created = await MyGlobal.prisma.hrms_tasks.create({
-    data: {
-      id: v4(),
-      title: props.body.title,
-      description: props.body.description ?? null,
-      status: props.body.status ?? "open",
-      priority: props.body.priority ?? "medium",
-      estimated_hours: props.body.estimated_hours ?? null,
-      due_date: props.body.due_date ? new Date(props.body.due_date) : null,
-      billable: props.body.billable ?? null,
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
-      project: { connect: { id: props.projectId } },
-    },
+  // 4. Prepare create data
+  const createData: IHrmsTask.ICreate = {
+    title: props.body.title,
+    description: props.body.description,
+    status: props.body.status ?? "open",
+    priority: props.body.priority ?? "medium",
+    estimated_hours: props.body.estimated_hours,
+    due_date: props.body.due_date,
+    billable: props.body.billable,
+    hrms_employee_id: props.body.hrms_employee_id ?? undefined,
+    hrms_task_id: hrmsTaskId ?? undefined,
+  };
+  // 5. Create task
+  const task = await MyGlobal.prisma.hrms_tasks.create({
+    data: await HrmsTaskCollector.collect({
+      body: createData,
+      hrmsProjects: {
+        id: project.id,
+      },
+    }),
     select: {
       id: true,
+      hrms_project_id: true,
+      hrms_employee_id: true,
+      hrms_task_id: true,
       title: true,
       description: true,
       status: true,
@@ -83,38 +96,57 @@ export async function postHrmsMemberProjectsProjectIdTasks(props: {
       estimated_hours: true,
       due_date: true,
       billable: true,
-      hrms_project_id: true,
-      hrms_employee_id: true,
-      hrms_task_id: true,
       created_at: true,
       updated_at: true,
       deleted_at: true,
     },
   });
-  // Log activity for task creation
-  await MyGlobal.prisma.hrms_activity_logs.create({
+  // 6. Insert task_status_history record
+  await MyGlobal.prisma.hrms_task_status_histories.create({
     data: {
       id: v4(),
-      organization_id: organizationId,
-      performed_by_id: props.member.id,
-      action_type: "task.status_changed",
-      target_entity: "task",
-      target_id: created.id,
-      details: JSON.stringify({
-        task_id: created.id,
-        title: created.title,
-        project_id: project.id,
-      }),
+      hrms_task_id: task.id,
+      hrms_member_id: props.member.id,
+      old_status: "",
+      new_status: task.status,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
     },
   });
-  // IHrmsTask is analytics DTO, return matching structure
+  // 7. Log activity
+  await MyGlobal.prisma.hrms_activity_logs.create({
+    data: {
+      id: v4(),
+      organization_id: project.hrms_organization_id,
+      performed_by_id: props.member.id,
+      action_type: "task.status_changed",
+      target_entity: "task",
+      target_id: task.id,
+      details: JSON.stringify({ title: task.title }),
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+    },
+  });
+  // 8. Return response
   return {
-    analytics: [],
-    total_projects: 0 as number & tags.Type<"int32">,
-    total_budget_hours: null,
-    total_logged_hours: null,
-  } satisfies IHrmsTask;
+    id: task.id as string & tags.Format<"uuid">,
+    project_id: task.hrms_project_id as string & tags.Format<"uuid">,
+    hrms_employee_id: task.hrms_employee_id as
+      | (string & tags.Format<"uuid">)
+      | null,
+    hrms_task_id: task.hrms_task_id as (string & tags.Format<"uuid">) | null,
+    title: task.title,
+    description: task.description,
+    status: task.status,
+    priority: task.priority,
+    estimated_hours: task.estimated_hours,
+    due_date: task.due_date !== null ? toISOStringSafe(task.due_date) : null,
+    billable: task.billable,
+    created_at: toISOStringSafe(task.created_at),
+    updated_at: toISOStringSafe(task.updated_at),
+    deleted_at:
+      task.deleted_at !== null ? toISOStringSafe(task.deleted_at) : null,
+  } as unknown as IHrmsTask;
 }

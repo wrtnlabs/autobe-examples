@@ -30,44 +30,78 @@ export async function postHrmsMemberTimesheetsTimesheetIdReject(props: {
   ) {
     throw new HttpException("Rejection reason is required", 400);
   }
-  // Fetch timesheet with required fields
+  // Retrieve the timesheet
   const timesheet = await MyGlobal.prisma.hrms_timesheets.findUniqueOrThrow({
     where: { id: props.timesheetId },
-    select: {
-      id: true,
-      hrms_employee_id: true,
-      reviewed_by: true,
-      status: true,
-      submitted_at: true,
-    },
   });
-  // Validate status is 'submitted'
+  // Validate timesheet is in submitted status
   if (timesheet.status !== "submitted") {
     throw new HttpException("Timesheet is not in submitted state", 409);
   }
-  // Validate timesheet is not already reviewed
-  if (timesheet.reviewed_by !== null) {
+  // Validate timesheet is not already reviewed (approved or rejected)
+  if (timesheet.reviewed_at !== null) {
     throw new HttpException("Timesheet has already been reviewed", 409);
   }
-  // Update timesheet with rejection
-  // Per Section 155: rejected status and reason recorded
-  const updatedTimesheet = await MyGlobal.prisma.hrms_timesheets.update({
+  // Retrieve the employee for this timesheet
+  const employee = await MyGlobal.prisma.hrms_employees.findUniqueOrThrow({
+    where: { id: timesheet.hrms_employee_id },
+  });
+  // Retrieve the employee's organization member record (not deleted)
+  const employeeOrgMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        id: employee.organization_member_id,
+        deleted_at: null,
+      },
+    });
+  if (!employeeOrgMember) {
+    throw new HttpException("Employee organization member not found", 404);
+  }
+  // Retrieve member's organization member record
+  const memberOrgMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        hrms_member_id: props.member.id,
+        deleted_at: null,
+      },
+      include: {
+        organizationRole: {
+          include: {
+            permissions: true,
+          },
+        },
+      },
+    });
+  if (!memberOrgMember) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Verify member is in the same organization as the timesheet's employee
+  if (
+    memberOrgMember.hrms_organization_id !==
+    employeeOrgMember.hrms_organization_id
+  ) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Check if member has time:approve permission or is organization owner
+  const hasApprovalPermission =
+    memberOrgMember.organizationRole.permissions.some(
+      (p: { permission: string }) => p.permission === "time:approve",
+    );
+  if (!hasApprovalPermission) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Update the timesheet with rejection details
+  const updated = await MyGlobal.prisma.hrms_timesheets.update({
     where: { id: props.timesheetId },
     data: {
       status: "rejected",
       rejection_reason: props.body.rejectionReason,
       reviewed_by: props.member.id,
-      reviewed_at: new Date(),
-      updated_at: new Date(),
+      reviewed_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
     },
+    ...HrmsTimesheetTransformer.select(),
   });
-  // Fetch updated timesheet with full details for response
-  // Re-fetch to ensure we have the latest data including all relations
-  const fullTimesheet = await MyGlobal.prisma.hrms_timesheets.findUniqueOrThrow(
-    {
-      where: { id: props.timesheetId },
-      ...HrmsTimesheetTransformer.select(),
-    },
-  );
-  return HrmsTimesheetTransformer.transform(fullTimesheet);
+  // Transform and return
+  return await HrmsTimesheetTransformer.transform(updated);
 }

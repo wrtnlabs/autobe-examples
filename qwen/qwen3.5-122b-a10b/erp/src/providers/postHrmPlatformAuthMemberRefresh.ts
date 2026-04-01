@@ -19,7 +19,7 @@ export async function postHrmPlatformAuthMemberRefresh(props: {
   let decoded: {
     id: string;
     session_id: string;
-    type: "member";
+    type: string;
     created_at: string;
   };
   try {
@@ -35,7 +35,11 @@ export async function postHrmPlatformAuthMemberRefresh(props: {
   if (decoded.type !== "member") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session exists and is active
+  // Validate required fields exist
+  if (!decoded.id || !decoded.session_id) {
+    throw new HttpException("Invalid token payload", 401);
+  }
+  // 3. Look up session
   const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
     where: {
       id: decoded.session_id,
@@ -43,10 +47,11 @@ export async function postHrmPlatformAuthMemberRefresh(props: {
     },
   });
   if (!session) {
-    throw new HttpException("Session not found", 401);
+    throw new HttpException("Session not found or revoked", 401);
   }
   // 4. Verify session is not expired
-  if (session.expired_at <= new Date()) {
+  const now = new Date();
+  if (session.expired_at <= now) {
     throw new HttpException("Session expired", 401);
   }
   // 5. Verify member account is not soft-deleted
@@ -54,34 +59,39 @@ export async function postHrmPlatformAuthMemberRefresh(props: {
     where: { id: decoded.id },
   });
   if (!member) {
-    throw new HttpException("Member not found", 401);
+    throw new HttpException("Member account not found", 401);
   }
   if (member.deleted_at !== null) {
     throw new HttpException("Member account has been deleted", 403);
   }
-  // 6. Generate new access and refresh tokens
+  // 6. Generate new tokens
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const accessToken = jwt.sign(
-    {
-      id: decoded.id,
-      session_id: decoded.session_id,
-      type: "member",
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      id: decoded.id,
-      session_id: decoded.session_id,
-      type: "member",
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
+  const token: IAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  };
   // 7. Update session expiration
   await MyGlobal.prisma.hrm_platform_member_sessions.update({
     where: { id: decoded.session_id },
@@ -89,18 +99,13 @@ export async function postHrmPlatformAuthMemberRefresh(props: {
   });
   // 8. Return IAuthorized response
   return {
-    id: member.id,
+    id: member.id as string & tags.Format<"uuid">,
     displayName: member.display_name,
-    avatarImage: member.avatar_image,
-    phoneNumber: member.phone_number,
+    avatarImage: member.avatar_image ?? null,
+    phoneNumber: member.phone_number ?? null,
     createdAt: toISOStringSafe(member.created_at),
     updatedAt: toISOStringSafe(member.updated_at),
-    email: member.email,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    },
-  };
+    email: member.email as string & tags.Format<"email">,
+    token,
+  } satisfies IHrmPlatformMember.IAuthorized;
 }

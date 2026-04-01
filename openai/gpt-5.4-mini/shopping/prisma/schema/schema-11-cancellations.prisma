@@ -1,0 +1,136 @@
+/// Stores cancellation requests submitted for a single order item, including
+/// the requester’s reason, current review state, and reviewer outcome.
+///
+/// Each request belongs to exactly one order item and records the state
+/// needed for seller or administrator review. Immutable history is handled
+/// by a separate snapshot table, which is managed in another component and
+/// is not recreated here.
+///
+/// @namespace Cancellations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mall_platform_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Target order item's {@link mall_platform_order_items.id}.
+  mall_platform_order_item_id String
+  
+  /// Reviewer account's {@link mall_platform_administrators.id} or {@link
+  /// mall_platform_sellers.id}, depending on the actor who handled the
+  /// request.
+  reviewer_id String?
+  
+  /// Customer-provided explanation for requesting cancellation.
+  reason String
+  
+  /// Current request state such as pending, approved, or rejected.
+  status String
+  
+  /// Timestamp when the request was reviewed.
+  reviewed_at DateTime?
+  
+  /// Outcome text recorded when the request is approved or rejected.
+  review_result String?
+  
+  /// Optional reviewer note explaining the decision.
+  reviewer_note String?
+  
+  /// Timestamp when the request was created.
+  created_at DateTime
+  
+  /// Timestamp when the request was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, if the request is removed from active use.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem mall_platform_order_items @relation(fields: [mall_platform_order_item_id], references: [id], onDelete: Cascade)
+  reviewer mall_platform_administrators? @relation(fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots mall_platform_cancellation_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reviewer_id])
+  // spellchecker: ignore-next-line
+  @@unique([mall_platform_order_item_id], map: "mall_platform_cancellation_requests_mall_platform_orde_02617f81")
+  @@index([status, created_at])
+  @@index([reviewed_at])
+}
+
+/// Immutable audit snapshots for {@link mall_platform_cancellation_requests}
+/// that preserve cancellation request state changes for dispute review and
+/// historical reconstruction.
+///
+/// Each row captures a point-in-time representation of the request after a
+/// meaningful change, including the preserved status, reviewer outcome,
+/// reason text, and audit context needed to understand what changed and
+/// when. These records are append-only and are not intended to be edited or
+/// deleted in normal operation.
+///
+/// @namespace Cancellations
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model mall_platform_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Original cancellation request {@link
+  /// mall_platform_cancellation_requests.id}.
+  mall_platform_cancellation_request_id String
+  
+  /// Preserved cancellation request status at the time this snapshot was
+  /// recorded.
+  snapshot_status String
+  
+  /// Preserved reviewer outcome or decision associated with the cancellation
+  /// request state at this moment.
+  review_result String?
+  
+  /// Preserved cancellation reason text or reviewer note captured in the
+  /// snapshot.
+  reason String?
+  
+  /// The business timestamp when the captured cancellation request state
+  /// became effective.
+  changed_at DateTime
+  
+  /// Timestamp when this immutable snapshot record was created.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot row was last updated in storage, if ever
+  /// required by infrastructure.
+  updated_at DateTime
+  
+  /// Soft delete marker. Snapshot rows are normally retained permanently and
+  /// this value should remain null.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest mall_platform_cancellation_requests @relation(fields: [mall_platform_cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([mall_platform_cancellation_request_id, created_at], map: "mall_platform_cancellation_request_snapshots_mall_plat_1b1247bc")
+  // spellchecker: ignore-next-line
+  @@index([mall_platform_cancellation_request_id, changed_at], map: "mall_platform_cancellation_request_snapshots_mall_plat_9185e8bb")
+}

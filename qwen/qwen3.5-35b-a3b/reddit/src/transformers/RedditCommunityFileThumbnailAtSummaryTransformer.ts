@@ -3,8 +3,10 @@ import { IRedditCommunityFile } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IRedditCommunityFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityFileThumbnail";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityFileAtSummaryTransformer } from "./RedditCommunityFileAtSummaryTransformer";
 
@@ -16,6 +18,7 @@ export namespace RedditCommunityFileThumbnailAtSummaryTransformer {
     return {
       select: {
         id: true,
+        file: RedditCommunityFileAtSummaryTransformer.select(),
         thumbnail_url: true,
         width: true,
         height: true,
@@ -24,7 +27,6 @@ export namespace RedditCommunityFileThumbnailAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        file: RedditCommunityFileAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_community_file_thumbnailsFindManyArgs;
   }

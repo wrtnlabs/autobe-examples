@@ -18,31 +18,23 @@ export async function postShoppingMallMemberCarts(props: {
   member: MemberPayload;
   body: IShoppingMallCart.ICreate;
 }): Promise<IShoppingMallCart> {
-  const memberEntity =
-    await MyGlobal.prisma.shopping_mall_members.findUniqueOrThrow({
-      where: { id: props.member.id },
-      select: {
-        id: true,
-      } satisfies Prisma.shopping_mall_membersFindUniqueArgs["select"],
-    });
-  return MyGlobal.prisma.$transaction(async (tx) => {
+  const member = await MyGlobal.prisma.shopping_mall_members.findFirst({
+    where: { id: props.member.id, deleted_at: null },
+  });
+  if (member === null) throw new HttpException("You're not enrolled", 403);
+  return await MyGlobal.prisma.$transaction(async (tx) => {
     const existing = await tx.shopping_mall_carts.findFirst({
       where: { shopping_mall_member_id: props.member.id, deleted_at: null },
       ...ShoppingMallCartTransformer.select(),
     });
-    if (existing !== null) {
-      return await ShoppingMallCartTransformer.transform(existing);
-    }
+    if (existing) return await ShoppingMallCartTransformer.transform(existing);
     const created = await tx.shopping_mall_carts.create({
       data: await ShoppingMallCartCollector.collect({
         body: props.body,
-        shoppingMallMembers: memberEntity as unknown as IEntity,
+        member,
       }),
-    });
-    const refreshed = await tx.shopping_mall_carts.findUniqueOrThrow({
-      where: { id: created.id },
       ...ShoppingMallCartTransformer.select(),
     });
-    return await ShoppingMallCartTransformer.transform(refreshed);
+    return await ShoppingMallCartTransformer.transform(created);
   });
 }

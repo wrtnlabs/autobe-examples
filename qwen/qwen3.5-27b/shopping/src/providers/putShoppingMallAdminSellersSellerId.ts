@@ -18,31 +18,27 @@ export async function putShoppingMallAdminSellersSellerId(props: {
   sellerId: string & tags.Format<"uuid">;
   body: IShoppingMallSeller.IUpdate;
 }): Promise<IShoppingMallSeller> {
-  // Find the seller to verify it exists
   await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
-    where: {
-      id: props.sellerId,
-      deleted_at: null,
-    },
+    where: { id: props.sellerId },
   });
-  // Update the seller profile
   await MyGlobal.prisma.shopping_mall_sellers.update({
-    where: {
-      id: props.sellerId,
-    },
+    where: { id: props.sellerId },
     data: {
       shop_name: props.body.shop_name,
-      shop_description: props.body.shop_description ?? null,
-      logo_image: props.body.logo_image ?? null,
+      ...(props.body.shop_description !== undefined && {
+        shop_description: props.body.shop_description,
+      }),
+      ...(props.body.logo_image !== undefined && {
+        logo_image: props.body.logo_image,
+      }),
       updated_at: new Date(),
     },
   });
-  // Fetch and return the updated seller
-  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
-    where: {
-      id: props.sellerId,
+  const updated = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow(
+    {
+      where: { id: props.sellerId },
+      ...ShoppingMallSellerTransformer.select(),
     },
-    ...ShoppingMallSellerTransformer.select(),
-  });
-  return await ShoppingMallSellerTransformer.transform(seller);
+  );
+  return await ShoppingMallSellerTransformer.transform(updated);
 }

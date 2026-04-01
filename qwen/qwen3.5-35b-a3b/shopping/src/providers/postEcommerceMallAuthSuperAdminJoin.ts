@@ -16,28 +16,28 @@ export async function postEcommerceMallAuthSuperAdminJoin(props: {
   ip: string;
   body: IEcommerceMallSuperAdmin.IJoin;
 }): Promise<IEcommerceMallSuperAdmin.IAuthorized> {
-  // 1. Check for existing email
+  // 1. Check for duplicate email
   const existing = await MyGlobal.prisma.ecommerce_mall_super_admins.findFirst({
     where: { email: props.body.email },
   });
-  if (existing) {
+  if (existing !== undefined) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Create super administrator account
-  const now = new Date();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const admin = await MyGlobal.prisma.ecommerce_mall_super_admins.create({
+  // 2. Hash password using PasswordUtil
+  const passwordHash: string = await PasswordUtil.hash(props.body.password);
+  // 3. Create super admin record
+  const superAdminId: string & tags.Format<"uuid"> = v4();
+  const superAdmin = await MyGlobal.prisma.ecommerce_mall_super_admins.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: superAdminId,
       email: props.body.email,
-      password_hash: await PasswordUtil.hash(props.body.password),
+      password_hash: passwordHash,
       full_name: props.body.display_name,
       display_name: props.body.display_name,
-      grade: 0,
+      grade: 1,
       status: "active",
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
     },
     select: {
@@ -50,68 +50,72 @@ export async function postEcommerceMallAuthSuperAdminJoin(props: {
       created_at: true,
       updated_at: true,
       deleted_at: true,
-    },
+    } satisfies Prisma.ecommerce_mall_super_adminsSelect,
   });
-  // 3. Create session
+  // 4. Create session
+  const sessionId: string & tags.Format<"uuid"> = v4();
+  const accessExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 60 * 60 * 1000,
+  ).toISOString();
+  const refreshExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
   const session =
     await MyGlobal.prisma.ecommerce_mall_super_admin_sessions.create({
       data: {
-        id: v4() as string & tags.Format<"uuid">,
-        super_admin_id: admin.id,
+        id: sessionId,
+        super_admin_id: superAdmin.id,
         ip: props.ip,
         href: "",
         referrer: "",
-        created_at: now,
-        updated_at: now,
+        created_at: new Date(),
+        updated_at: new Date(),
         deleted_at: null,
-        expired_at: toISOStringSafe(accessExpires),
-      },
-      select: {
-        id: true,
-        super_admin_id: true,
+        expired_at: new Date(accessExpires),
       },
     });
-  // 4. Generate JWT tokens
-  const access = jwt.sign(
+  // 5. Generate JWT tokens
+  const now: string & tags.Format<"date-time"> = new Date().toISOString();
+  const access: string = jwt.sign(
     {
-      type: "superAdmin",
-      id: admin.id,
+      type: "super_admin",
+      id: superAdmin.id,
       session_id: session.id,
-      created_at: toISOStringSafe(now),
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const refresh = jwt.sign(
+  const refresh: string = jwt.sign(
     {
-      type: "superAdmin",
-      id: admin.id,
+      type: "super_admin",
+      id: superAdmin.id,
       session_id: session.id,
       tokenType: "refresh",
-      created_at: toISOStringSafe(now),
+      created_at: now,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 5. Return authorized response
+  // 6. Return IAuthorized
   return {
-    id: admin.id,
-    email: admin.email,
-    fullName: admin.full_name,
-    displayName: admin.display_name,
-    grade: admin.grade,
-    status: admin.status,
-    createdAt: toISOStringSafe(admin.created_at),
-    updatedAt: toISOStringSafe(admin.updated_at),
-    deletedAt: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    id: superAdmin.id,
+    email: superAdmin.email,
+    fullName: superAdmin.full_name,
+    displayName: superAdmin.display_name,
+    grade: superAdmin.grade,
+    status: superAdmin.status,
+    createdAt: superAdmin.created_at.toISOString(),
+    updatedAt: superAdmin.updated_at.toISOString(),
+    deletedAt: superAdmin.deleted_at?.toISOString() ?? null,
     access,
     refresh,
-    expired_at: toISOStringSafe(accessExpires),
+    expired_at: accessExpires,
     token: {
       access,
       refresh,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    },
-  };
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    } satisfies IAuthorizationToken,
+  } satisfies IEcommerceMallSuperAdmin.IAuthorized;
 }

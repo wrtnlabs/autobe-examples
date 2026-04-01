@@ -25,63 +25,70 @@ export async function patchRedditCommunityMemberVotes(props: {
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
   // Build filter conditions
-  const whereInput: Prisma.reddit_community_votesWhereInput = {
-    member_id: props.body.memberId,
+  const whereConditions: Prisma.reddit_community_votesWhereInput = {
     deleted_at: null,
-    ...(props.body.postId !== null && { target_post_id: props.body.postId }),
-    ...(props.body.commentId !== null && {
-      target_comment_id: props.body.commentId,
-    }),
-    ...(props.body.voteType && { vote_type: props.body.voteType }),
-    ...(props.body.startDate && {
-      created_at: {
-        gte: new Date(props.body.startDate),
-      },
-    }),
-    ...(props.body.endDate && {
-      created_at: {
-        lte: new Date(props.body.endDate),
-      },
-    }),
-  } satisfies Prisma.reddit_community_votesWhereInput;
-  // Build ORDER BY
-  const orderByInput = (
-    props.body.sortBy === "voteType"
-      ? [{ vote_type: "asc" as const }]
-      : props.body.sortBy === "directionImpact"
-        ? [{ created_at: "asc" as const }] // directionImpact not available directly, use createdAt
-        : [{ created_at: "desc" as const }]
-  ) satisfies Prisma.reddit_community_votesOrderByWithRelationInput[];
-  // Query votes with member join
-  const data = await MyGlobal.prisma.reddit_community_votes.findMany({
-    where: whereInput,
-    orderBy: orderByInput,
+  };
+  // Add filters conditionally
+  if (props.body.memberId !== undefined) {
+    whereConditions.member_id = props.body.memberId;
+  }
+  if (props.body.postId !== null) {
+    whereConditions.target_post_id = props.body.postId;
+  }
+  if (props.body.commentId !== null) {
+    whereConditions.target_comment_id = props.body.commentId;
+  }
+  if (props.body.voteType !== undefined) {
+    whereConditions.vote_type = props.body.voteType;
+  }
+  // Add date range filters - use DateTimeFilter for WHERE clauses, not DateTimeFieldUpdateOperationsInput
+  const dateCondition: Prisma.DateTimeFilter<"reddit_community_votes"> = {};
+  if (props.body.startDate !== undefined) {
+    dateCondition.gte = props.body.startDate as unknown as Date;
+  }
+  if (props.body.endDate !== undefined) {
+    dateCondition.lte = props.body.endDate as unknown as Date;
+  }
+  if (dateCondition.gte || dateCondition.lte) {
+    whereConditions.created_at = dateCondition;
+  }
+  // Build order by clause
+  let orderByCondition: Prisma.reddit_community_votesOrderByWithRelationInput =
+    {
+      created_at: "desc",
+    };
+  if (props.body.sortBy === "createdAt") {
+    orderByCondition = { created_at: "desc" };
+  } else if (props.body.sortBy === "voteType") {
+    orderByCondition = { vote_type: "asc" };
+  } else if (props.body.sortBy === "directionImpact") {
+    // directionImpact requires custom calculation - use vote_type as proxy
+    orderByCondition = { vote_type: "asc", created_at: "desc" };
+  }
+  // Query votes
+  const votes = await MyGlobal.prisma.reddit_community_votes.findMany({
+    where: whereConditions as Prisma.reddit_community_votesWhereInput,
     skip,
     take: limit,
-    include: {
-      member: {
-        include: {
-          karma: true,
-        },
-      },
-    },
+    orderBy: orderByCondition,
+    ...RedditCommunityVoteAtSummaryTransformer.select(),
   });
-  // Count total
+  // Get total count
   const total = await MyGlobal.prisma.reddit_community_votes.count({
-    where: whereInput,
+    where: whereConditions as Prisma.reddit_community_votesWhereInput,
   });
-  // Transform
+  // Transform results
   const transformedData = await ArrayUtil.asyncMap(
-    data,
+    votes,
     RedditCommunityVoteAtSummaryTransformer.transform,
   );
   return {
     data: transformedData,
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIRedditCommunityVote.ISummary;
 }

@@ -16,71 +16,88 @@ export async function postEcommerceMallAuthSellerJoin(props: {
   ip: string;
   body: IEcommerceMallSeller.IJoin;
 }): Promise<IEcommerceMallSeller.IAuthorized> {
+  // Validate email uniqueness
   const existing = await MyGlobal.prisma.ecommerce_mall_sellers.findFirst({
     where: { email: props.body.email },
   });
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const now = new Date();
-  const seller = await MyGlobal.prisma.ecommerce_mall_sellers.create({
+  // Generate UUID for seller
+  const sellerId: string & tags.Format<"uuid"> = v4();
+  // Create seller account (PasswordUtil handles hashing internally)
+  const createdSeller = await MyGlobal.prisma.ecommerce_mall_sellers.create({
     data: {
-      id: v4(),
+      id: sellerId,
       email: props.body.email,
       password_hash: await PasswordUtil.hash(props.body.password),
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
     },
   });
-  const sessionId = v4();
-  const access = jwt.sign(
-    {
-      type: "seller",
-      id: seller.id,
-      session_id: sessionId,
-      created_at: now.toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refresh = jwt.sign(
-    {
-      type: "seller",
-      id: seller.id,
-      session_id: sessionId,
-      created_at: now.toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  const session = await MyGlobal.prisma.ecommerce_mall_seller_sessions.create({
-    data: {
-      id: sessionId,
-      seller_id: seller.id,
-      access_token: access,
-      refresh_token: refresh,
-      ip: props.body.ip ?? props.ip,
-      referrer: props.body.referrer,
-      href: props.body.href,
-      created_at: now,
-      expired_at: accessExpires,
-    },
-  });
+  // Generate session ID
+  const sessionId: string & tags.Format<"uuid"> = v4();
+  // Calculate token expiration times
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // Create session record
+  const createdSession =
+    await MyGlobal.prisma.ecommerce_mall_seller_sessions.create({
+      data: {
+        id: sessionId,
+        seller_id: sellerId,
+        access_token: "",
+        refresh_token: "",
+        ip: props.body.ip ?? props.ip,
+        href: props.body.href,
+        referrer: props.body.referrer,
+        created_at: new Date(),
+        expired_at: accessExpires,
+      },
+    });
+  // Generate JWT tokens
   const token: IAuthorizationToken = {
-    access,
-    refresh,
+    access: jwt.sign(
+      {
+        type: "seller",
+        id: sellerId,
+        session_id: sessionId,
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "seller",
+        id: sellerId,
+        session_id: sessionId,
+        tokenType: "refresh",
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
     expired_at: accessExpires.toISOString(),
     refreshable_until: refreshExpires.toISOString(),
   };
-  return {
-    id: seller.id,
-    email: seller.email,
-    created_at: seller.created_at.toISOString(),
-    updated_at: seller.updated_at.toISOString(),
-    deleted_at: seller.deleted_at?.toISOString() ?? null,
+  // Update session with tokens
+  await MyGlobal.prisma.ecommerce_mall_seller_sessions.update({
+    where: { id: sessionId },
+    data: {
+      access_token: token.access,
+      refresh_token: token.refresh,
+    },
+  });
+  // Build response with proper type conversions
+  const response: IEcommerceMallSeller.IAuthorized = {
+    id: createdSeller.id,
+    email: createdSeller.email,
+    created_at: createdSeller.created_at.toISOString(),
+    updated_at: createdSeller.updated_at.toISOString(),
+    deleted_at: createdSeller.deleted_at?.toISOString() ?? null,
     token,
-  } satisfies IEcommerceMallSeller.IAuthorized;
+  };
+  return response;
 }

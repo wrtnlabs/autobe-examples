@@ -17,86 +17,87 @@ export async function postRedditCommunityAuthMemberLogin(props: {
   body: IRedditCommunityMember.ILogin;
 }): Promise<IRedditCommunityMember.IAuthorized> {
   const member = await MyGlobal.prisma.reddit_community_members.findFirst({
-    where: { email: props.body.email },
+    where: { email: props.body.email, deleted_at: null },
     select: {
       id: true,
-      username: true,
       email: true,
-      password_hash: true,
+      username: true,
       created_at: true,
       updated_at: true,
-      deleted_at: true,
+      password_hash: true,
     },
   });
   if (!member) {
     throw new HttpException("Invalid credentials", 401);
   }
-  if (member.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 401);
-  }
-  const passwordMatch = await PasswordUtil.verify(
+  const isValid = await PasswordUtil.verify(
     props.body.password,
     member.password_hash,
   );
-  if (!passwordMatch) {
+  if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const session: {
-    id: string;
-    created_at: Date;
-  } = await MyGlobal.prisma.reddit_community_member_sessions.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      member_id: member.id,
-      access_token: "",
-      refresh_token: "",
-      ip: props.ip,
-      href: "",
-      referrer: "",
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
-      expired_at: accessExpires,
-    },
-  });
-  const accessToken: string = jwt.sign(
+  const accessExpiresTime: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 60 * 60 * 1000,
+  ).toISOString() as string & tags.Format<"date-time">;
+  const refreshExpiresTime: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString() as string & tags.Format<"date-time">;
+  const nowTime: string & tags.Format<"date-time"> =
+    new Date().toISOString() as string & tags.Format<"date-time">;
+  const sessionId: string & tags.Format<"uuid"> = v4() as string &
+    tags.Format<"uuid">;
+  const session = await MyGlobal.prisma.reddit_community_member_sessions.create(
     {
-      type: "member",
-      id: member.id,
-      session_id: session.id,
-      created_at: new Date().toISOString(),
+      data: {
+        id: sessionId,
+        member_id: member.id,
+        access_token: "",
+        refresh_token: "",
+        ip: props.ip,
+        href: "",
+        referrer: "",
+        created_at: nowTime,
+        updated_at: nowTime,
+        expired_at: accessExpiresTime,
+      },
     },
+  );
+  const payloadForAccess = {
+    type: "member" as const,
+    id: member.id,
+    session_id: sessionId,
+    created_at: nowTime,
+  };
+  const payloadForRefresh = {
+    type: "member" as const,
+    id: member.id,
+    session_id: sessionId,
+    tokenType: "refresh" as const,
+    created_at: nowTime,
+  };
+  const access: string = jwt.sign(
+    payloadForAccess,
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const refreshToken: string = jwt.sign(
-    {
-      type: "member",
-      id: member.id,
-      session_id: session.id,
-      tokenType: "refresh",
-      created_at: new Date().toISOString(),
-    },
+  const refresh: string = jwt.sign(
+    payloadForRefresh,
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
   await MyGlobal.prisma.reddit_community_member_sessions.update({
     where: { id: session.id },
     data: {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      updated_at: new Date(),
+      access_token: access,
+      refresh_token: refresh,
     },
   });
   const token: IAuthorizationToken = {
-    access: accessToken,
-    refresh: refreshToken,
-    expired_at: toISOStringSafe(accessExpires) as string &
-      tags.Format<"date-time">,
-    refreshable_until: toISOStringSafe(refreshExpires) as string &
-      tags.Format<"date-time">,
+    access,
+    refresh,
+    expired_at: accessExpiresTime,
+    refreshable_until: refreshExpiresTime,
   };
   return {
     token,

@@ -27,77 +27,70 @@ export async function patchHrmPlatformMemberProjectsProjectIdTasksTaskIdStatus(p
 }): Promise<IHrmPlatformTask> {
   // Verify task exists and belongs to the specified project
   const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
-    where: {
-      id: props.taskId,
-      hrm_platform_projects_id: props.projectId,
-      deleted_at: null,
-    },
+    where: { id: props.taskId },
     select: {
       id: true,
-      status: true,
       hrm_platform_projects_id: true,
-      hrm_platform_employees_id: true,
+      status: true,
     },
   });
-  // Verify authorization - member must be project lead or have project:manage permission
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      hrm_platform_user_id: props.member.id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      hrm_platform_role_id: true,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Forbidden", 403);
+  if (task.hrm_platform_projects_id !== props.projectId) {
+    throw new HttpException(
+      "Task does not belong to the specified project",
+      404,
+    );
   }
-  // Check if member is project lead for this project
+  // Verify member is a project member
   const projectMember =
     await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
         hrm_platform_project_id: props.projectId,
-        hrm_platform_employee_id: employee.id,
-        deleted_at: null,
+        employee: {
+          hrm_platform_user_id: props.member.id,
+        },
       },
       select: {
         role: true,
+        hrm_platform_employee_id: true,
       },
     });
-  let hasPermission = false;
-  if (projectMember && projectMember.role === "project-lead") {
-    hasPermission = true;
-  } else {
-    // Check for project:manage permission via role
-    const permission = await MyGlobal.prisma.hrm_platform_permissions.findFirst(
-      {
-        where: {
-          code: "project:manage",
-          deleted_at: null,
-        },
-        select: {
-          id: true,
-        },
+  if (!projectMember) {
+    throw new HttpException("You are not a member of this project", 403);
+  }
+  // Check if member has project-lead role or project:manage permission
+  let hasPermission = projectMember.role === "project-lead";
+  if (!hasPermission) {
+    // Fetch employee role via hrm_platform_employee_id
+    const employee = await MyGlobal.prisma.hrm_platform_employees.findUnique({
+      where: { id: projectMember.hrm_platform_employee_id },
+      select: {
+        hrm_platform_role_id: true,
       },
-    );
-    if (permission) {
-      const rolePermission =
-        await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
+    });
+    if (employee?.hrm_platform_role_id) {
+      const rolePermissions =
+        await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
           where: {
             hrm_platform_role_id: employee.hrm_platform_role_id,
-            hrm_platform_permission_id: permission.id,
-            deleted_at: null,
+          },
+          select: {
+            permission: {
+              select: { code: true },
+            },
           },
         });
-      if (rolePermission) {
-        hasPermission = true;
-      }
+      hasPermission = rolePermissions.some(
+        (rp) => rp.permission.code === "project:manage",
+      );
     }
   }
   if (!hasPermission) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException(
+      "You do not have permission to update task status",
+      403,
+    );
   }
+  const oldStatus = task.status;
   // Update task status
   await MyGlobal.prisma.hrm_platform_tasks.update({
     where: { id: props.taskId },
@@ -107,26 +100,24 @@ export async function patchHrmPlatformMemberProjectsProjectIdTasksTaskIdStatus(p
     },
   });
   // Create history entry
-  const historyId = v4() as string & tags.Format<"uuid">;
-  const changedAt = new Date();
+  const historyId = v4();
+  const now = new Date();
   await MyGlobal.prisma.hrm_platform_task_histories.create({
     data: {
-      id: historyId,
+      id: historyId as string & tags.Format<"uuid">,
       hrm_platform_task_id: props.taskId,
       hrm_platform_member_id: props.member.id,
-      changed_at: toISOStringSafe(changedAt),
-      old_status: task.status,
+      created_at: now,
+      updated_at: now,
+      changed_at: now,
+      old_status: oldStatus,
       new_status: props.body.status,
-      created_at: toISOStringSafe(changedAt),
-      updated_at: toISOStringSafe(changedAt),
-      deleted_at: null,
     },
   });
-  // Fetch updated task with all relations
-  const updatedTask =
-    await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
-      where: { id: props.taskId },
-      ...HrmPlatformTaskTransformer.select(),
-    });
-  return await HrmPlatformTaskTransformer.transform(updatedTask);
+  // Return updated task
+  const updated = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
+    where: { id: props.taskId },
+    ...HrmPlatformTaskTransformer.select(),
+  });
+  return await HrmPlatformTaskTransformer.transform(updated);
 }

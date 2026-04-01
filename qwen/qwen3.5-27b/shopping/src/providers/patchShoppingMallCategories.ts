@@ -22,91 +22,87 @@ export async function patchShoppingMallCategories(props: {
   const sortBy = props.body.sortBy ?? "createdAt";
   const sortOrder = props.body.sortOrder ?? "asc";
   const includeSubcategories = props.body.includeSubcategories ?? false;
-  // Build base where clause
-  const baseWhereInput: Prisma.shopping_mall_categoriesWhereInput = {
+  const skip = (page - 1) * limit;
+  const orderByInput = (
+    sortBy === "name"
+      ? { name: sortOrder === "asc" ? "asc" : "desc" }
+      : sortBy === "updatedAt"
+        ? { updated_at: sortOrder === "asc" ? "asc" : "desc" }
+        : { created_at: sortOrder === "asc" ? "asc" : "desc" }
+  ) satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput;
+  const whereInput: Prisma.shopping_mall_categoriesWhereInput = {
     deleted_at: null,
   };
-  if (props.body.name) {
-    baseWhereInput.name = {
+  if (props.body.name !== undefined) {
+    whereInput.name = {
       contains: props.body.name,
     };
   }
-  // Build order by
-  const orderByInput =
-    sortBy === "name"
-      ? { name: sortOrder as "asc" | "desc" }
-      : sortBy === "updatedAt"
-        ? { updated_at: sortOrder as "asc" | "desc" }
-        : { created_at: sortOrder as "asc" | "desc" };
-  let categories: Prisma.shopping_mall_categoriesGetPayload<
-    ReturnType<typeof ShoppingMallCategoryAtSummaryTransformer.select>
-  >[];
-  let total: number;
-  if (includeSubcategories && props.body.parentId) {
-    // Get parent categories matching criteria
-    const parentWhere: Prisma.shopping_mall_categoriesWhereInput = {
-      ...baseWhereInput,
-      id: props.body.parentId,
-    };
-    const parentCategories =
-      await MyGlobal.prisma.shopping_mall_categories.findMany({
-        where: parentWhere,
-        orderBy: orderByInput,
-        ...ShoppingMallCategoryAtSummaryTransformer.select(),
-      });
-    // Get subcategories of the parent
-    const subcategoryWhere: Prisma.shopping_mall_categoriesWhereInput = {
-      deleted_at: null,
-      parent_id: props.body.parentId,
-    };
-    if (props.body.name) {
-      subcategoryWhere.name = {
-        contains: props.body.name,
-      };
-    }
-    const subcategories =
-      await MyGlobal.prisma.shopping_mall_categories.findMany({
-        where: subcategoryWhere,
-        orderBy: orderByInput,
-        ...ShoppingMallCategoryAtSummaryTransformer.select(),
-      });
-    // Combine and apply pagination manually
-    const allCategories = [...parentCategories, ...subcategories];
-    const skip = (page - 1) * limit;
-    categories = allCategories.slice(skip, skip + limit);
-    total = allCategories.length;
-  } else {
-    // Standard pagination query
-    const whereInput: Prisma.shopping_mall_categoriesWhereInput = {
-      ...baseWhereInput,
-    };
-    if (props.body.parentId !== undefined) {
+  if (props.body.parentId !== undefined) {
+    if (props.body.parentId === null) {
+      whereInput.parent_id = null;
+    } else {
       whereInput.parent_id = props.body.parentId;
     }
-    const skip = (page - 1) * limit;
-    categories = await MyGlobal.prisma.shopping_mall_categories.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      ...ShoppingMallCategoryAtSummaryTransformer.select(),
-    });
+  }
+  let data: IShoppingMallCategory.ISummary[];
+  let total: number;
+  if (includeSubcategories) {
+    const baseCategories =
+      await MyGlobal.prisma.shopping_mall_categories.findMany({
+        where: whereInput,
+        orderBy: orderByInput,
+        ...ShoppingMallCategoryAtSummaryTransformer.select(),
+      });
+    let combined = [...baseCategories];
+    if (baseCategories.length > 0) {
+      const baseIds = baseCategories.map((c) => c.id);
+      const subcategories =
+        await MyGlobal.prisma.shopping_mall_categories.findMany({
+          where: {
+            deleted_at: null,
+            parent_id: { in: baseIds },
+          },
+          orderBy: orderByInput,
+          ...ShoppingMallCategoryAtSummaryTransformer.select(),
+        });
+      const seen = new Set<string>();
+      combined = [...baseCategories, ...subcategories].filter((c) => {
+        if (seen.has(c.id)) return false;
+        seen.add(c.id);
+        return true;
+      });
+      combined.sort((a, b) => {
+        if (a.parent_id === null && b.parent_id !== null) return -1;
+        if (a.parent_id !== null && b.parent_id === null) return 1;
+        return 0;
+      });
+    }
+    const paginated = combined.slice(skip, skip + limit);
+    total = combined.length;
+    data =
+      await ShoppingMallCategoryAtSummaryTransformer.transformAll(paginated);
+  } else {
+    data = await ShoppingMallCategoryAtSummaryTransformer.transformAll(
+      await MyGlobal.prisma.shopping_mall_categories.findMany({
+        where: whereInput,
+        skip,
+        take: limit,
+        orderBy: orderByInput,
+        ...ShoppingMallCategoryAtSummaryTransformer.select(),
+      }),
+    );
     total = await MyGlobal.prisma.shopping_mall_categories.count({
       where: whereInput,
     });
   }
-  // Transform results
-  const transformed = await ArrayUtil.asyncMap(
-    categories,
-    ShoppingMallCategoryAtSummaryTransformer.transform,
-  );
   return {
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
-    data: transformed,
+    } satisfies IPage.IPagination,
+    data: data,
   };
 }

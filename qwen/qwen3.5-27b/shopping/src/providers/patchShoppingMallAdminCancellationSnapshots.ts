@@ -27,70 +27,68 @@ export async function patchShoppingMallAdminCancellationSnapshots(props: {
     whereInput.shopping_mall_cancellation_request_id =
       props.body.cancellationRequestId;
   }
-  const cancellationRequestFilter: any = {};
-  if (props.body.customerId !== undefined) {
-    cancellationRequestFilter.shopping_mall_customer_id = props.body.customerId;
-  }
-  if (props.body.sellerId !== undefined) {
-    cancellationRequestFilter.shopping_mall_seller_id = props.body.sellerId;
-  }
-  if (props.body.status !== undefined) {
-    cancellationRequestFilter.status = props.body.status;
-  }
-  if (props.body.orderId !== undefined) {
-    cancellationRequestFilter.orderItem = {
-      shopping_mall_order_id: props.body.orderId,
-    };
-  }
-  if (Object.keys(cancellationRequestFilter).length > 0) {
-    whereInput.cancellationRequest = cancellationRequestFilter;
+  if (
+    props.body.customerId !== undefined ||
+    props.body.sellerId !== undefined ||
+    props.body.status !== undefined ||
+    props.body.orderId !== undefined
+  ) {
+    whereInput.cancellationRequest =
+      {} as Prisma.shopping_mall_cancellation_requestsWhereInput;
+    if (props.body.customerId !== undefined) {
+      whereInput.cancellationRequest.shopping_mall_customer_id =
+        props.body.customerId;
+    }
+    if (props.body.sellerId !== undefined) {
+      whereInput.cancellationRequest.shopping_mall_seller_id =
+        props.body.sellerId;
+    }
+    if (props.body.status !== undefined) {
+      whereInput.cancellationRequest.status = props.body.status;
+    }
+    if (props.body.orderId !== undefined) {
+      whereInput.cancellationRequest.orderItem = {
+        shopping_mall_order_id: props.body.orderId,
+      } satisfies Prisma.shopping_mall_order_itemsWhereInput;
+    }
   }
   if (props.body.dateRange !== undefined) {
-    const dateConditions: Prisma.DateTimeFilter = {};
-    if (props.body.dateRange.from !== undefined) {
-      dateConditions.gte = new Date(props.body.dateRange.from);
+    const dateRange = props.body.dateRange;
+    const createdAtInput: Prisma.DateTimeFilter = {};
+    if (dateRange.from !== undefined) {
+      createdAtInput.gte = new Date(dateRange.from);
     }
-    if (props.body.dateRange.to !== undefined) {
-      dateConditions.lte = new Date(props.body.dateRange.to);
+    if (dateRange.to !== undefined) {
+      createdAtInput.lte = new Date(dateRange.to);
     }
-    whereInput.created_at = dateConditions;
+    whereInput.created_at = createdAtInput;
   }
   const orderByInput: Prisma.shopping_mall_cancellation_snapshotsOrderByWithRelationInput =
-    {};
-  if (props.body.sortBy !== undefined) {
-    const sortOrder = props.body.sortOrder ?? "desc";
-    if (props.body.sortBy === "id") {
-      orderByInput.id = sortOrder;
-    } else if (props.body.sortBy === "cancellationRequestId") {
-      orderByInput.shopping_mall_cancellation_request_id = sortOrder;
-    } else if (props.body.sortBy === "createdAt") {
-      orderByInput.created_at = sortOrder;
-    }
-  } else {
-    orderByInput.created_at = "desc";
-  }
-  const data =
-    await MyGlobal.prisma.shopping_mall_cancellation_snapshots.findMany({
+    props.body.sortBy !== undefined
+      ? { [props.body.sortBy]: props.body.sortOrder ?? "desc" }
+      : { created_at: "desc" };
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.shopping_mall_cancellation_snapshots.findMany({
       where: whereInput,
       skip,
       take: limit,
       orderBy: orderByInput,
       ...ShoppingMallCancellationSnapshotAtSummaryTransformer.select(),
-    });
-  const total =
-    await MyGlobal.prisma.shopping_mall_cancellation_snapshots.count({
+    }),
+    MyGlobal.prisma.shopping_mall_cancellation_snapshots.count({
       where: whereInput,
-    });
+    }),
+  ]);
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallCancellationSnapshotAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallCancellationSnapshotAtSummaryTransformer.transform,
+    ),
   };
 }

@@ -6,8 +6,10 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
@@ -67,7 +69,7 @@ export namespace EcommerceMallOrderSnapshotTransformer {
       shipping_state: input.shipping_state,
       shipping_postal_code: input.shipping_postal_code,
       shipping_country: input.shipping_country,
-      created_at: input.created_at.toISOString(),
+      created_at: toISOStringSafe(input.created_at),
       order: await EcommerceMallOrderAtSummaryTransformer.transform(
         input.order,
       ),

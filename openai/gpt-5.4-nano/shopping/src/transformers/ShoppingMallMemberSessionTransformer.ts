@@ -3,6 +3,7 @@ import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IS
 import { IShoppingMallMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMemberSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -15,16 +16,18 @@ export namespace ShoppingMallMemberSessionTransformer {
     return {
       select: {
         id: true,
-        shopping_mall_member_id: true,
         ip: true,
         href: true,
         referrer: true,
         created_at: true,
         expired_at: true,
-        // IShoppingMallMember.ISummary is currently an empty object type,
-        // so we only need the relation to exist for payload typing.
         member: {
-          select: {},
+          select: {
+            id: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
         },
       },
     } satisfies Prisma.shopping_mall_member_sessionsFindManyArgs;
@@ -39,8 +42,13 @@ export namespace ShoppingMallMemberSessionTransformer {
       referrer: input.referrer,
       created_at: input.created_at.toISOString(),
       expired_at: input.expired_at.toISOString(),
-      shoppingMallMemberId: input.shopping_mall_member_id,
-      member: {},
+      shoppingMallMemberId: input.member.id,
+      member: {
+        id: input.member.id,
+        created_at: input.member.created_at.toISOString(),
+        updated_at: input.member.updated_at.toISOString(),
+        deleted_at: input.member.deleted_at?.toISOString() ?? null,
+      } satisfies IShoppingMallMember.ISummary,
     };
   }
 }

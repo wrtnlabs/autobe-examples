@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -22,11 +23,6 @@ export namespace ShoppingMallRefundRequestTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        orderItem: {
-          select: {
-            id: true,
-          },
-        },
       },
     } satisfies Prisma.shopping_mall_refund_requestsFindManyArgs;
   }

@@ -22,6 +22,14 @@ export namespace HrmPlatformOrganizationAtSummaryTransformer {
         fiscal_start_month: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
+        snapshots: { select: { id: true } },
+        employees: { select: { id: true } },
+        departments: { select: { id: true } },
+        employeeSnapshots: { select: { id: true } },
+        projects: { select: { id: true } },
+        roles: { select: { id: true } },
+        activityLogs: { select: { id: true } },
       },
     } satisfies Prisma.hrm_platform_organizationsFindManyArgs;
   }

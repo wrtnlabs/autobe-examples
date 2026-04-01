@@ -20,27 +20,26 @@ export async function getHrmsMemberTimersTimerId(props: {
   member: MemberPayload;
   timerId: string & tags.Format<"uuid">;
 }): Promise<IHrmsTimer> {
-  // Find the employee associated with this member through organization membership
-  const employee = await MyGlobal.prisma.hrms_employees.findFirst({
+  const employee = await MyGlobal.prisma.hrms_employees.findFirstOrThrow({
     where: {
-      organizationMember: {
-        hrms_member_id: props.member.id,
-      },
+      id: props.member.id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
     },
   });
-  if (!employee) {
-    throw new HttpException("Employee not found", 404);
-  }
-  // Query timer with all relations needed for the response
-  // Ownership validation in WHERE clause ensures member can only access their own timers
   const timer = await MyGlobal.prisma.hrms_timers.findUniqueOrThrow({
     where: {
       id: props.timerId,
-      hrms_employee_id: employee.id,
-      deleted_at: null,
     },
     ...HrmsTimerTransformer.select(),
   });
-  // Transform database result to API response
+  if (timer.employee.id !== employee.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (timer.deleted_at !== null) {
+    throw new HttpException("Timer has been discarded", 404);
+  }
   return await HrmsTimerTransformer.transform(timer);
 }

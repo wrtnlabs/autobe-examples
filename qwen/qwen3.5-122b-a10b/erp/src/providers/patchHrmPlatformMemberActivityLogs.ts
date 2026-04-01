@@ -20,92 +20,42 @@ export async function patchHrmPlatformMemberActivityLogs(props: {
   member: MemberPayload;
   body: IHrmPlatformActivityLog.IRequest;
 }): Promise<IPageIHrmPlatformActivityLog.ISummary> {
-  // Get member's current organization from their employee record
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      hrm_platform_user_id: props.member.id,
-      deleted_at: null,
-    },
-    select: {
-      hrm_platform_organization_id: true,
-      hrm_platform_role_id: true,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Member not enrolled in any organization", 403);
-  }
-  const organizationId = employee.hrm_platform_organization_id;
-  const roleId = employee.hrm_platform_role_id;
-  // Validate org:manage permission
-  if (roleId) {
-    const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
-      where: { id: roleId },
-      select: {
-        permissions: {
-          where: {
-            permission: {
-              code: "org:manage",
-            },
-          },
-          select: { id: true },
-        },
-      },
-    });
-    if (!role || role.permissions.length === 0) {
-      throw new HttpException("Forbidden", 403);
-    }
-  } else {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Build where clause with filters
-  const whereInput: Prisma.hrm_platform_activity_logsWhereInput = {
-    organization_id: organizationId,
-    ...(props.body.action_type && {
-      action_type: props.body.action_type,
-    }),
-    ...(props.body.user_id && {
-      user_id: props.body.user_id,
-    }),
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const whereInput = {
+    user_id: props.member.id,
+    ...(props.body.action_type && { action_type: props.body.action_type }),
     ...(props.body.target_entity && {
       target_entity: props.body.target_entity,
     }),
-    ...(props.body.target_id && {
-      target_id: props.body.target_id,
-    }),
+    ...(props.body.target_id && { target_id: props.body.target_id }),
     ...(props.body.created_at_from && {
       created_at: {
-        gte: new Date(props.body.created_at_from),
+        gte: props.body.created_at_from,
       },
     }),
     ...(props.body.created_at_to && {
       created_at: {
-        lte: new Date(props.body.created_at_to),
+        lte: props.body.created_at_to,
       },
     }),
   } satisfies Prisma.hrm_platform_activity_logsWhereInput;
-  // Pagination parameters
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  // Fetch paginated activity logs
   const data = await MyGlobal.prisma.hrm_platform_activity_logs.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { created_at: "desc" },
+    orderBy: { created_at: "desc" as const },
     ...HrmPlatformActivityLogAtSummaryTransformer.select(),
-  } satisfies Prisma.hrm_platform_activity_logsFindManyArgs);
-  // Get total count
+  });
   const total = await MyGlobal.prisma.hrm_platform_activity_logs.count({
     where: whereInput,
   });
-  // Transform to DTO
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    HrmPlatformActivityLogAtSummaryTransformer.transform,
-  );
   return {
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmPlatformActivityLogAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,

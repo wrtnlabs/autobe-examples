@@ -17,8 +17,5 @@ export async function patchShoppingMallMemberSnapshotsSnapshotIdPayloads(props: 
   snapshotId: string & tags.Format<"uuid">;
   body: IShoppingMallSnapshotPayload.IUpdate;
 }): Promise<IShoppingMallSnapshotPayload> {
-  if (!props.member) {
-    throw new HttpException("member is required", 400);
-  }
   throw new HttpException("Not implemented", 501);
 }

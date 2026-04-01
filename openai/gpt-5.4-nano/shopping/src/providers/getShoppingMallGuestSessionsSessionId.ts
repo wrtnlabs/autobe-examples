@@ -15,50 +15,50 @@ export async function getShoppingMallGuestSessionsSessionId(props: {
   guest: GuestPayload;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const nowMs = Date.now();
-  const adminSession =
-    await MyGlobal.prisma.shopping_mall_admin_sessions.findUnique({
-      where: {
-        id: props.sessionId,
-      },
-    });
-  if (adminSession !== null && adminSession.deleted_at === null) {
-    const expiredAt = adminSession.expired_at;
-    const expiredMs = expiredAt.getTime();
-    if (expiredMs > nowMs) {
-      throw new HttpException("Forbidden", 403);
+  // Deterministic lookup: admin -> member -> guest.
+  const nowIso = toISOStringSafe(new Date());
+  const admin = await MyGlobal.prisma.shopping_mall_admin_sessions.findUnique({
+    where: { id: props.sessionId },
+    select: { id: true, expired_at: true, deleted_at: true },
+  });
+  if (admin !== null && admin.deleted_at === null) {
+    const expiredIso = toISOStringSafe(admin.expired_at);
+    if (expiredIso <= nowIso) {
+      throw new HttpException("Session expired", 403);
     }
-    throw new HttpException("Unauthorized", 401);
-  }
-  const memberSession =
-    await MyGlobal.prisma.shopping_mall_member_sessions.findUnique({
-      where: {
-        id: props.sessionId,
-      },
-    });
-  if (memberSession !== null) {
-    const expiredAt = memberSession.expired_at;
-    const expiredMs = expiredAt.getTime();
-    if (expiredMs > nowMs) {
-      throw new HttpException("Forbidden", 403);
-    }
-    throw new HttpException("Unauthorized", 401);
-  }
-  const guestSession =
-    await MyGlobal.prisma.shopping_mall_guest_sessions.findUnique({
-      where: {
-        id: props.sessionId,
-      },
-    });
-  if (guestSession === null || guestSession.deleted_at !== null) {
-    throw new HttpException("Unauthorized", 401);
-  }
-  const expiredAt = guestSession.expired_at;
-  const expiredMs = expiredAt.getTime();
-  if (expiredMs <= nowMs) {
-    throw new HttpException("Unauthorized", 401);
-  }
-  if (guestSession.shopping_mall_guest_id !== props.guest.id) {
     throw new HttpException("Forbidden", 403);
+  }
+  const member = await MyGlobal.prisma.shopping_mall_member_sessions.findUnique(
+    {
+      where: { id: props.sessionId },
+      select: { id: true, expired_at: true },
+    },
+  );
+  if (member !== null) {
+    const expiredIso = toISOStringSafe(member.expired_at);
+    if (expiredIso <= nowIso) {
+      throw new HttpException("Session expired", 403);
+    }
+    throw new HttpException("Forbidden", 403);
+  }
+  const guest = await MyGlobal.prisma.shopping_mall_guest_sessions.findUnique({
+    where: { id: props.sessionId },
+    select: {
+      id: true,
+      expired_at: true,
+      deleted_at: true,
+      shopping_mall_guest_id: true,
+    },
+  });
+  if (
+    guest === null ||
+    guest.deleted_at !== null ||
+    guest.shopping_mall_guest_id !== props.guest.id
+  ) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const expiredIso = toISOStringSafe(guest.expired_at);
+  if (expiredIso <= nowIso) {
+    throw new HttpException("Session expired", 403);
   }
 }

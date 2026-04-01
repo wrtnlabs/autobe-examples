@@ -16,74 +16,74 @@ export async function deleteHrmsMemberProjectsProjectIdMembersMemberId(props: {
   projectId: string & tags.Format<"uuid">;
   memberId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const membership =
-    await MyGlobal.prisma.hrms_project_members.findUniqueOrThrow({
-      where: { id: props.memberId },
-      select: {
-        id: true,
-        employee_id: true,
-        project_id: true,
-        employee: {
-          select: { organization_member_id: true },
-        },
-        project: {
-          select: {
-            id: true,
-            organization: {
-              select: { id: true },
-            },
-          },
+  const memberOrganization =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: { hrms_member_id: props.member.id, deleted_at: null },
+      include: {
+        organization: { select: { id: true } },
+        organizationRole: {
+          select: { id: true, name: true, is_builtin: true },
         },
       },
     });
-  const session = await MyGlobal.prisma.hrms_member_sessions.findFirst({
-    where: {
-      hrms_member_id: props.member.id,
-      id: props.member.session_id,
-      expired_at: { gt: new Date() },
-    },
+  if (memberOrganization === null) {
+    throw new HttpException("Member not enrolled in any organization", 403);
+  }
+  const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
+    where: { id: props.projectId },
+    select: { id: true, hrms_organization_id: true },
   });
-  if (session === null) {
-    throw new HttpException("You're not enrolled", 403);
-  }
-  const [memberOrgMember, projectOrgMember] = await Promise.all([
-    MyGlobal.prisma.hrms_organization_members.findFirst({
-      where: {
-        hrms_member_id: props.member.id,
-        hrms_organization_id: membership.project.organization.id,
-      },
-      include: { organizationRole: { include: { permissions: true } } },
-    }),
-    MyGlobal.prisma.hrms_organization_members.findFirst({
-      where: {
-        hrms_member_id: membership.employee.organization_member_id,
-        hrms_organization_id: membership.project.organization.id,
-        organizationRole: {
-          name: "Owner",
-        },
-      },
-    }),
-  ]);
-  if (
-    memberOrgMember === null ||
-    !memberOrgMember.organizationRole.permissions.some(
-      (p: { permission: string }) => p.permission === "project:manage",
-    )
-  ) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (projectOrgMember !== null) {
+  if (project.hrms_organization_id !== memberOrganization.organization.id) {
     throw new HttpException(
-      "Cannot remove organization owner from project",
+      "Project does not belong to your organization",
       403,
     );
   }
-  const currentTime = toISOStringSafe(new Date());
+  const membership =
+    await MyGlobal.prisma.hrms_project_members.findUniqueOrThrow({
+      where: { id: props.memberId },
+      include: { employee: { select: { organization_member_id: true } } },
+    });
+  if (membership.project_id !== props.projectId) {
+    throw new HttpException(
+      "Membership does not belong to the specified project",
+      403,
+    );
+  }
+  const deletingMemberOrganization =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: { hrms_member_id: props.member.id, deleted_at: null },
+      include: {
+        organizationRole: {
+          select: { id: true, name: true, is_builtin: true },
+        },
+      },
+    });
+  if (deletingMemberOrganization === null) {
+    throw new HttpException("Deleter not enrolled in any organization", 403);
+  }
+  if (
+    deletingMemberOrganization.organizationRole.is_builtin &&
+    deletingMemberOrganization.organizationRole.name === "Owner"
+  ) {
+    throw new HttpException(
+      "Cannot remove organization owner from projects",
+      403,
+    );
+  }
+  const hasProjectManagePermission =
+    await MyGlobal.prisma.hrms_organization_role_permissions.findFirst({
+      where: {
+        hrms_organization_role_id:
+          deletingMemberOrganization.organizationRole.id,
+        permission: "project:manage",
+      },
+    });
+  if (hasProjectManagePermission === null) {
+    throw new HttpException("Insufficient permissions to remove members", 403);
+  }
   await MyGlobal.prisma.hrms_project_members.update({
     where: { id: props.memberId },
-    data: {
-      deleted_at: currentTime,
-      updated_at: currentTime,
-    },
+    data: { deleted_at: new Date() },
   });
 }

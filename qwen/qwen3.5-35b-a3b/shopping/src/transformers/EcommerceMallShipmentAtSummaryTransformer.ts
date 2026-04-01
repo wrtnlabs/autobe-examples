@@ -4,8 +4,10 @@ import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
 
@@ -33,11 +35,7 @@ export namespace EcommerceMallShipmentAtSummaryTransformer {
         orderItems: true,
         snapshots: true,
         trackingUpdates: true,
-        _count: {
-          select: {
-            trackingCodes: true,
-          },
-        },
+        trackingCodes: true,
       },
     } satisfies Prisma.ecommerce_mall_shipmentsFindManyArgs;
   }
@@ -50,19 +48,14 @@ export namespace EcommerceMallShipmentAtSummaryTransformer {
       carrierPhone: input.carrier_phone ?? undefined,
       carrierWebsite: input.carrier_website ?? undefined,
       status: input.status,
-      shippedAt: toISOStringSafe(
-        input.shipped_at ?? new Date("1970-01-01T00:00:00.000Z"),
-      ),
-      deliveredAt: toISOStringSafe(
-        input.delivered_at ?? new Date("1970-01-01T00:00:00.000Z"),
-      ),
-      estimatedDeliveryAt: toISOStringSafe(
-        input.estimated_delivery_at ?? new Date("1970-01-01T00:00:00.000Z"),
-      ),
+      shippedAt: input.shipped_at?.toISOString() ?? undefined,
+      deliveredAt: input.delivered_at?.toISOString() ?? undefined,
+      estimatedDeliveryAt:
+        input.estimated_delivery_at?.toISOString() ?? undefined,
       order: await EcommerceMallOrderAtSummaryTransformer.transform(
         input.order,
       ),
-      trackingCount: input._count.trackingCodes,
+      trackingCount: input.trackingCodes.length,
     };
   }
 }

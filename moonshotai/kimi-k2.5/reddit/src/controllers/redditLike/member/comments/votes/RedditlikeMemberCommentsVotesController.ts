@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IRedditLikeVote } from "../../../../../api/structures/IRedditLikeVote";
-import { AdminAuth } from "../../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { postRedditLikeMemberCommentsCommentIdVotes } from "../../../../../providers/postRedditLikeMemberCommentsCommentIdVotes";
 
 @Controller("/redditLike/member/comments/:commentId/votes")
@@ -51,8 +51,8 @@ export class RedditlikeMemberCommentsVotesController {
    */
   @TypedRoute.Post()
   public async create(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("commentId")
     commentId: string & tags.Format<"uuid">,
     @TypedBody()

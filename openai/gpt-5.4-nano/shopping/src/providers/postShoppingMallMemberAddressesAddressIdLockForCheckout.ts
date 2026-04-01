@@ -15,7 +15,7 @@ export async function postShoppingMallMemberAddressesAddressIdLockForCheckout(pr
   member: MemberPayload;
   addressId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const nowIso = toISOStringSafe(new Date());
   await MyGlobal.prisma.$transaction(async (tx) => {
     const address = await tx.shopping_mall_addresses.findUniqueOrThrow({
       where: { id: props.addressId },
@@ -32,19 +32,18 @@ export async function postShoppingMallMemberAddressesAddressIdLockForCheckout(pr
         street_line2: true,
       },
     });
+    if (address.shopping_mall_customer_id !== props.member.id) {
+      throw new HttpException("Forbidden", 403);
+    }
     if (address.deleted_at !== null) {
       throw new HttpException(
         "Address is not eligible for checkout selection",
         409,
       );
     }
-    if (address.shopping_mall_customer_id !== props.member.id) {
-      throw new HttpException("Forbidden", 403);
-    }
-    const snapshotId: string & tags.Format<"uuid"> = v4();
     await tx.shopping_mall_address_snapshots.create({
       data: {
-        id: snapshotId,
+        id: v4() as unknown as string & tags.Format<"uuid">,
         shopping_mall_address_id: address.id,
         recipient_name: address.recipient_name,
         recipient_phone: address.phone_number,
@@ -53,8 +52,8 @@ export async function postShoppingMallMemberAddressesAddressIdLockForCheckout(pr
         region_line2: address.country,
         street_address_line1: address.street_line1,
         street_address_line2: address.street_line2 ?? "",
-        created_at: now,
-        updated_at: now,
+        created_at: new Date(nowIso),
+        updated_at: new Date(nowIso),
         deleted_at: null,
       },
     });

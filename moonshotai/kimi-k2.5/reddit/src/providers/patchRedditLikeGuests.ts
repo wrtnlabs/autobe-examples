@@ -10,7 +10,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditLikeGuestAtSummaryTransformer } from "../transformers/RedditLikeGuestAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,7 +19,7 @@ export async function patchRedditLikeGuests(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 10;
   const skip = (page - 1) * limit;
-  const whereInput = {
+  const whereInput: Prisma.reddit_like_guestsWhereInput = {
     ...(props.body.deviceFingerprint !== undefined && {
       device_fingerprint: { contains: props.body.deviceFingerprint },
     }),
@@ -43,35 +42,52 @@ export async function patchRedditLikeGuests(props: {
     ...(props.body.includeExpired !== true && {
       deleted_at: null,
     }),
-  } satisfies Prisma.reddit_like_guestsWhereInput;
-  const orderByInput = (
+  };
+  const orderByInput: Prisma.reddit_like_guestsOrderByWithRelationInput =
     props.body.sortBy === "deviceFingerprint"
       ? { device_fingerprint: props.body.sortOrder ?? "asc" }
       : props.body.sortBy === "updatedAt"
         ? { updated_at: props.body.sortOrder ?? "desc" }
-        : { created_at: props.body.sortOrder ?? "desc" }
-  ) satisfies Prisma.reddit_like_guestsOrderByWithRelationInput;
+        : { created_at: props.body.sortOrder ?? "desc" };
   const guests = await MyGlobal.prisma.reddit_like_guests.findMany({
     where: whereInput,
     skip,
     take: limit,
     orderBy: orderByInput,
-    ...RedditLikeGuestAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.reddit_like_guests.count({
     where: whereInput,
   });
-  const data = await ArrayUtil.asyncMap(
-    guests,
-    RedditLikeGuestAtSummaryTransformer.transform,
-  );
+  const data = await ArrayUtil.asyncMap(guests, async (guest) => {
+    const sessionCount = await MyGlobal.prisma.reddit_like_guest_sessions.count(
+      {
+        where: { reddit_like_guest_id: guest.id },
+      },
+    );
+    return {
+      id: guest.id as string & tags.Format<"uuid">,
+      device_fingerprint: guest.device_fingerprint,
+      created_at: guest.created_at.toISOString() as string &
+        tags.Format<"date-time">,
+      updated_at: guest.updated_at.toISOString() as string &
+        tags.Format<"date-time">,
+      deleted_at: guest.deleted_at?.toISOString() as
+        | (string & tags.Format<"date-time">)
+        | null,
+      session_count: sessionCount as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+    } satisfies IRedditLikeGuest.ISummary;
+  });
   return {
     data,
     pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
+      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
+      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
+      pages: Math.ceil(total / limit) as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
     } satisfies IPage.IPagination,
-  };
+  } satisfies IPageIRedditLikeGuest.ISummary;
 }

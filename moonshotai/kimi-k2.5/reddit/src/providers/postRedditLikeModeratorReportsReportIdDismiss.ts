@@ -26,7 +26,7 @@ export async function postRedditLikeModeratorReportsReportIdDismiss(props: {
   moderator: ModeratorPayload;
   reportId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeReport> {
-  // Step 1: Find the report and verify it exists
+  // Find the report with community relation
   const report = await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
     where: { id: props.reportId },
     select: {
@@ -35,47 +35,45 @@ export async function postRedditLikeModeratorReportsReportIdDismiss(props: {
       status: true,
     },
   });
-  // Step 2: Verify report is in pending status
+  // Verify moderator is authorized for this community
+  const moderatorRole = await MyGlobal.prisma.reddit_like_moderators.findFirst({
+    where: {
+      member_id: props.moderator.id,
+      community_id: report.community_id,
+      deleted_at: null,
+    },
+    select: { id: true },
+  });
+  if (moderatorRole === null) {
+    throw new HttpException("You are not a moderator of this community", 403);
+  }
+  // Verify report is pending
   if (report.status !== "pending") {
     throw new HttpException("Report is not in pending status", 400);
   }
-  // Step 3: Verify the caller is a moderator of the community
-  const moderatorRecord =
-    await MyGlobal.prisma.reddit_like_moderators.findFirst({
-      where: {
-        member_id: props.moderator.id,
-        community_id: report.community_id,
-        deleted_at: null,
-      },
-    });
-  if (moderatorRecord === null) {
-    throw new HttpException(
-      "Forbidden - Not a moderator of this community",
-      403,
-    );
-  }
-  // Step 4: Update the report status to dismissed
+  const now = new Date();
+  const snapshotId = v4() as string & tags.Format<"uuid">;
+  // Create snapshot for audit trail
+  await MyGlobal.prisma.reddit_like_report_snapshots.create({
+    data: {
+      id: snapshotId,
+      reddit_like_report_id: report.id,
+      status: "dismissed",
+      created_at: now,
+    },
+  });
+  // Update report status to dismissed
   await MyGlobal.prisma.reddit_like_reports.update({
     where: { id: props.reportId },
     data: {
       status: "dismissed",
-      updated_at: toISOStringSafe(new Date()),
+      updated_at: now,
     },
   });
-  // Step 5: Create a snapshot for audit trail
-  await MyGlobal.prisma.reddit_like_report_snapshots.create({
-    data: {
-      id: v4(),
-      reddit_like_report_id: props.reportId,
-      status: "dismissed",
-      created_at: toISOStringSafe(new Date()),
-    },
+  // Fetch full report with all relations for transformation
+  const updated = await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
+    where: { id: props.reportId },
+    ...RedditLikeReportTransformer.select(),
   });
-  // Step 6: Fetch the updated report with all relations and transform
-  const updatedReport =
-    await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
-      where: { id: props.reportId },
-      ...RedditLikeReportTransformer.select(),
-    });
-  return await RedditLikeReportTransformer.transform(updatedReport);
+  return await RedditLikeReportTransformer.transform(updated);
 }

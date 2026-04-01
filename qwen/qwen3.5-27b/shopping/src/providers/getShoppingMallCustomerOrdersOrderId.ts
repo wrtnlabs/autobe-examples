@@ -21,21 +21,6 @@ export async function getShoppingMallCustomerOrdersOrderId(props: {
   customer: CustomerPayload;
   orderId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallOrder> {
-  // Check if customer account is banned
-  const customerRecord =
-    await MyGlobal.prisma.shopping_mall_customers.findUnique({
-      where: {
-        id: props.customer.id,
-      },
-      select: {
-        status: true,
-      },
-    });
-  if (customerRecord?.status === "banned") {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Query order with customer ownership check and soft-delete filter
-  // findUniqueOrThrow automatically returns 404 if order not found or customer doesn't own it
   const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
     where: {
       id: props.orderId,

@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallSnapshotParty } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSnapshotParty";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -21,7 +22,6 @@ export namespace ShoppingMallSnapshotPartyTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        snapshot: true,
       },
     } satisfies Prisma.shopping_mall_snapshot_partiesFindManyArgs;
   }
@@ -36,7 +36,7 @@ export namespace ShoppingMallSnapshotPartyTransformer {
       can_view: input.can_view,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

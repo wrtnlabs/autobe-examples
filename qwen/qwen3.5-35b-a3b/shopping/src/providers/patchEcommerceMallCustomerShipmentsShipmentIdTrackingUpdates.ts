@@ -23,51 +23,45 @@ export async function patchEcommerceMallCustomerShipmentsShipmentIdTrackingUpdat
   shipmentId: string & tags.Format<"uuid">;
   body: IEcommerceMallShipmentTrackingUpdate.IRequest;
 }): Promise<IPageIEcommerceMallShipmentTrackingUpdate.ISummary> {
-  // Validate shipment exists and belongs to customer's order
+  // Verify shipment exists and is not soft deleted
   const shipment =
     await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
       where: { id: props.shipmentId, deleted_at: null },
-      select: {
-        id: true,
-        ecommerce_mall_order_id: true,
-        ecommerce_mall_seller_id: true,
-        status: true,
-        delivered_at: true,
-        deleted_at: true,
-        order: {
-          select: { customer_id: true },
-        },
-      },
+      select: { ecommerce_mall_order_id: true },
     });
-  // Verify shipment belongs to customer
-  if (shipment.order.customer_id !== props.customer.id) {
+  // Verify customer owns the order containing this shipment
+  const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
+    where: { id: shipment.ecommerce_mall_order_id },
+    select: { customer_id: true },
+  });
+  if (order.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Get pagination parameters
+  // Build filter conditions
+  const whereInput: Prisma.ecommerce_mall_shipment_tracking_updatesWhereInput =
+    {
+      shipment_id: props.shipmentId,
+      deleted_at: null,
+      ...(props.body.tracking_status !== undefined && {
+        tracking_status: props.body.tracking_status,
+      }),
+    };
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Build filter criteria from request body
-  const filterCriteria = {
-    shipment_id: props.shipmentId,
-    deleted_at: null,
-    ...(props.body.tracking_status !== undefined && {
-      tracking_status: props.body.tracking_status,
-    }),
-  } satisfies Prisma.ecommerce_mall_shipment_tracking_updatesWhereInput;
-  // Query tracking updates with transformation
+  // Query tracking updates with pagination
   const data =
     await MyGlobal.prisma.ecommerce_mall_shipment_tracking_updates.findMany({
-      where: filterCriteria,
+      where: whereInput,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
       ...EcommerceMallShipmentTrackingUpdateAtSummaryTransformer.select(),
     });
-  // Get total count
+  // Get total count for pagination metadata
   const total =
     await MyGlobal.prisma.ecommerce_mall_shipment_tracking_updates.count({
-      where: filterCriteria,
+      where: whereInput,
     });
   // Transform results
   const transformedData = await ArrayUtil.asyncMap(

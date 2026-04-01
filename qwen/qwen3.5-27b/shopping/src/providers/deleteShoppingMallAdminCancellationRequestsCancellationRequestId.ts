@@ -15,23 +15,16 @@ export async function deleteShoppingMallAdminCancellationRequestsCancellationReq
   admin: AdminPayload;
   cancellationRequestId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const cancellationRequest =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow(
-      {
-        where: {
-          id: props.cancellationRequestId,
-          deleted_at: null,
-        },
-      },
-    );
-  if (cancellationRequest.status !== "pending") {
-    throw new HttpException(
-      "Cancellation request has already been processed",
-      400,
-    );
-  }
+  await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow({
+    where: {
+      id: props.cancellationRequestId,
+      deleted_at: null,
+    },
+  });
   await MyGlobal.prisma.shopping_mall_cancellation_requests.update({
-    where: { id: props.cancellationRequestId },
+    where: {
+      id: props.cancellationRequestId,
+    },
     data: {
       deleted_at: new Date(),
     },

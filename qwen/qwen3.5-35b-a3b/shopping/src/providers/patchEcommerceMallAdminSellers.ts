@@ -19,90 +19,74 @@ export async function patchEcommerceMallAdminSellers(props: {
   admin: AdminPayload;
   body: IEcommerceMallSeller.IRequest;
 }): Promise<IPageIEcommerceMallSeller.ISummary> {
+  const page = props.body.page;
   const limit = props.body.limit ?? 100;
-  const page = props.body.page ?? "0";
-  const skip = page === "0" ? 0 : parseInt(page, 10);
-  const where: Prisma.ecommerce_mall_sellersWhereInput = {
+  // Build where clause for filtering
+  const whereInput: Prisma.ecommerce_mall_sellersWhereInput = {
     deleted_at: null,
     ...(props.body.email && {
       email: { contains: props.body.email, mode: "insensitive" },
     }),
+    ...(props.body.status && {
+      approvalRequests: {
+        some: {
+          status: props.body.status,
+        },
+      },
+    }),
     ...(props.body.createdAfter && {
-      created_at: { gte: new Date(props.body.createdAfter) },
+      created_at: {
+        gte: new Date(props.body.createdAfter),
+      },
     }),
     ...(props.body.createdBefore && {
-      created_at: { lte: new Date(props.body.createdBefore) },
+      created_at: {
+        lte: new Date(props.body.createdBefore),
+      },
     }),
   } satisfies Prisma.ecommerce_mall_sellersWhereInput;
-  const orderBy: Prisma.ecommerce_mall_sellersOrderByWithRelationInput[] = [];
-  const sortBy = props.body.sortBy ?? "createdAt";
-  const sortOrder = props.body.sortOrder ?? "desc";
-  if (sortBy === "email") {
-    orderBy.push({ email: sortOrder as "asc" | "desc" });
-  } else if (sortBy === "createdAt") {
-    orderBy.push({ created_at: sortOrder as "asc" | "desc" });
+  // Build orderBy clause
+  const orderByInput: Prisma.ecommerce_mall_sellersOrderByWithRelationInput[] =
+    [
+      {
+        ...(props.body.sortBy === "email"
+          ? { email: props.body.sortOrder === "asc" ? "asc" : "desc" }
+          : props.body.sortBy === "createdAt"
+            ? { created_at: props.body.sortOrder === "asc" ? "asc" : "desc" }
+            : props.body.sortBy === "status"
+              ? { created_at: "desc" }
+              : { created_at: "desc" }),
+      },
+    ] satisfies Prisma.ecommerce_mall_sellersOrderByWithRelationInput[];
+  // Handle cursor pagination
+  let skip: number | undefined;
+  if (page) {
+    skip = 1;
+    whereInput.id = {
+      gte: page,
+    };
   }
   const data = await MyGlobal.prisma.ecommerce_mall_sellers.findMany({
-    where,
-    orderBy,
+    where: whereInput,
     skip,
     take: limit,
+    orderBy: orderByInput,
     ...EcommerceMallSellerAtSummaryTransformer.select(),
   });
-  let filteredData = data;
-  if (props.body.status) {
-    filteredData = data.filter((seller) => {
-      const latestApproval =
-        seller.approvalRequests.length > 0
-          ? [...seller.approvalRequests].sort(
-              (a, b) =>
-                new Date(b.created_at).getTime() -
-                new Date(a.created_at).getTime(),
-            )[0]
-          : null;
-      const computedStatus = latestApproval
-        ? (latestApproval.status as "pending" | "approved" | "rejected")
-        : "pending";
-      return computedStatus === props.body.status;
-    });
-  }
-  // Sort in memory for status sortBy since it's computed
-  if (sortBy === "status") {
-    filteredData = filteredData.sort((a, b) => {
-      const getStatus = (seller: (typeof data)[0]) => {
-        const latestApproval =
-          seller.approvalRequests.length > 0
-            ? [...seller.approvalRequests].sort(
-                (x, y) =>
-                  new Date(y.created_at).getTime() -
-                  new Date(x.created_at).getTime(),
-              )[0]
-            : null;
-        return latestApproval
-          ? (latestApproval.status as "pending" | "approved" | "rejected")
-          : "pending";
-      };
-      const statusA = getStatus(a);
-      const statusB = getStatus(b);
-      const order = sortOrder === "asc" ? 1 : -1;
-      const statusOrder: Record<string, number> = {
-        approved: 1,
-        pending: 2,
-        rejected: 3,
-      };
-      return (statusOrder[statusA] - statusOrder[statusB]) * order;
-    });
-  }
-  const total = await MyGlobal.prisma.ecommerce_mall_sellers.count({ where });
+  const total = await MyGlobal.prisma.ecommerce_mall_sellers.count({
+    where: whereInput,
+  });
+  const nextCursor =
+    data.length === limit ? data[data.length - 1].id : undefined;
   return {
     data: await ArrayUtil.asyncMap(
-      filteredData,
+      data,
       EcommerceMallSellerAtSummaryTransformer.transform,
     ),
     pagination: {
-      current: skip + 1,
-      limit,
-      records: filteredData.length,
+      current: page ? parseInt(page, 10) : 1,
+      limit: limit,
+      records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };

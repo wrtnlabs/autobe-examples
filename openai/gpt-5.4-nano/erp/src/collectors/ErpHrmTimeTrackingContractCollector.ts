@@ -14,14 +14,6 @@ export namespace ErpHrmTimeTrackingContractCollector {
     organization: IEntity;
   }) {
     const id: string = v4();
-    const work_term_end_date: Date | null | undefined =
-      props.body.work_term_end_date === undefined
-        ? undefined
-        : props.body.work_term_end_date === null
-          ? null
-          : new Date(props.body.work_term_end_date);
-    const notes: string | null | undefined =
-      props.body.notes === undefined ? undefined : (props.body.notes ?? null);
     return {
       id,
       contract_number: props.body.contract_number,
@@ -29,9 +21,9 @@ export namespace ErpHrmTimeTrackingContractCollector {
       pay_amount: props.body.pay_amount,
       pay_currency: props.body.pay_currency,
       pay_frequency: props.body.pay_frequency,
-      work_term_start_date: new Date(props.body.work_term_start_date),
-      work_term_end_date,
-      notes,
+      work_term_start_date: props.body.work_term_start_date as unknown as Date,
+      work_term_end_date: props.body.work_term_end_date ?? null,
+      notes: props.body.notes ?? null,
       status: props.body.status,
       created_at: new Date(),
       updated_at: new Date(),

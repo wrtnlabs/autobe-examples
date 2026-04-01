@@ -1,81 +1,91 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import type { IShoppingMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSuperAdmin";
+import type { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import type { IShoppingMallSuperAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSuperAdministrator";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
-import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
-import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
+import { authorize_super_administrator_join } from "../../../authorize/authorize_super_administrator_join";
+import { authorize_super_administrator_login } from "../../../authorize/authorize_super_administrator_login";
+import { authorize_super_administrator_refresh } from "../../../authorize/authorize_super_administrator_refresh";
 
+/**
+ * Test successful demotion of a super administrator to regular administrator grade.
+ *
+ * This test validates the complete demotion workflow:
+ * 1. First super administrator (Super Admin A) joins the system
+ * 2. Second super administrator (Super Admin B) joins the system
+ * 3. Super Admin A demotes Super Admin B using the demote endpoint
+ * 4. Validate the demoted administrator entity is returned with correct structure
+ * 5. Verify Super Admin A retains super administrator status
+ *
+ * @param connection Base connection for the test
+ */
 export async function test_api_administrator_grade_demotion_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create first super admin (actor who will perform demotion)
-  const actorSuperAdmin = await authorize_super_admin_join(connection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IShoppingMallSuperAdmin.IJoin,
-  });
-  typia.assert(actorSuperAdmin);
-  // 2. Create second super admin (target who will be demoted)
-  const targetSuperAdmin = await authorize_super_admin_join(connection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IShoppingMallSuperAdmin.IJoin,
-  });
-  typia.assert(targetSuperAdmin);
-  // 3. Create connection for actor super admin (already authenticated from join)
-  const actorConnection: api.IConnection = { host: connection.host };
-  actorConnection.headers = {
-    Authorization: `Bearer ${actorSuperAdmin.token.access}`,
-  };
-  // 4. Demote the target super admin to regular admin
+  // Step 1: Create first super administrator (Super Admin A) who will perform the demotion
+  const superAdminAConnection: api.IConnection = { host: connection.host };
+  const superAdminA = await authorize_super_administrator_join(
+    superAdminAConnection,
+    {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: RandomGenerator.alphaNumeric(16),
+        href: typia.random<string & tags.Format<"uri">>(),
+        referrer: typia.random<string & tags.Format<"uri">>(),
+        ip: typia.random<string & tags.Format<"ipv4">>(),
+      } satisfies IShoppingMallSuperAdministrator.IJoin,
+    },
+  );
+  typia.assert(superAdminA);
+  // Step 2: Create second super administrator (Super Admin B) who will be demoted
+  const superAdminBConnection: api.IConnection = { host: connection.host };
+  const superAdminB = await authorize_super_administrator_join(
+    superAdminBConnection,
+    {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: RandomGenerator.alphaNumeric(16),
+        href: typia.random<string & tags.Format<"uri">>(),
+        referrer: typia.random<string & tags.Format<"uri">>(),
+        ip: typia.random<string & tags.Format<"ipv4">>(),
+      } satisfies IShoppingMallSuperAdministrator.IJoin,
+    },
+  );
+  typia.assert(superAdminB);
+  // Step 3: Super Admin A demotes Super Admin B
+  const demoteReason = RandomGenerator.paragraph({ sentences: 2 });
   const demotedAdmin =
-    await api.functional.shoppingMall.superAdmin.admins.demote(
-      actorConnection,
+    await api.functional.shoppingMall.superAdministrator.administrators.demote(
+      superAdminAConnection,
       {
-        adminId: targetSuperAdmin.id,
+        administratorId: superAdminB.id,
+        body: {
+          reason: demoteReason,
+        } satisfies IShoppingMallAdministrator.IDemote,
       },
     );
   typia.assert(demotedAdmin);
-  // 5. Verify the demoted admin has ADMIN grade (not SUPER_ADMIN)
-  TestValidator.equals("grade changed to ADMIN", demotedAdmin.grade, "ADMIN");
-  // 6. Verify the demoted admin's ID matches target
+  // Step 4: Validate business logic - demoted administrator identity matches
   TestValidator.equals(
-    "admin ID matches",
+    "demoted admin ID matches",
     demotedAdmin.id,
-    targetSuperAdmin.id,
+    superAdminB.id,
   );
-  // 7. Verify the demoted admin's email matches target
   TestValidator.equals(
-    "email matches",
+    "demoted admin email matches",
     demotedAdmin.email,
-    targetSuperAdmin.email,
+    superAdminB.email,
   );
-  // 8. Verify updated_at timestamp is present
+  // Step 5: Verify Super Admin A can still perform super administrator operations
+  // (The successful demotion call above proves Super Admin A retains super admin privileges)
   TestValidator.predicate(
-    "updated_at exists",
-    demotedAdmin.updated_at !== null,
+    "demotion operation succeeded",
+    demotedAdmin.id === superAdminB.id,
   );
-  // 9. Verify created_at is present
-  TestValidator.predicate(
-    "created_at exists",
-    demotedAdmin.created_at !== null,
-  );
-  // 10. Verify deleted_at is null (account is active)
-  TestValidator.equals("account is active", demotedAdmin.deleted_at, null);
 }

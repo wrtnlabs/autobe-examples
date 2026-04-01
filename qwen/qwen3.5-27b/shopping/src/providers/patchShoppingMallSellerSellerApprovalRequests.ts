@@ -23,47 +23,48 @@ export async function patchShoppingMallSellerSellerApprovalRequests(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  if (
+    props.body.submittedAfter &&
+    props.body.submittedBefore &&
+    new Date(props.body.submittedAfter) > new Date(props.body.submittedBefore)
+  ) {
+    throw new HttpException(
+      "submittedAfter must be before submittedBefore",
+      400,
+    );
+  }
   const whereInput: Prisma.shopping_mall_seller_approval_requestsWhereInput = {
     deleted_at: null,
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.submittedAfter !== undefined && {
+    ...(props.body.status && { status: props.body.status }),
+    ...(props.body.submittedAfter && {
       submitted_at: { gte: new Date(props.body.submittedAfter) },
     }),
-    ...(props.body.submittedBefore !== undefined && {
-      submitted_at: {
-        lte: new Date(props.body.submittedBefore),
-        ...(props.body.submittedAfter !== undefined && {
-          gte: new Date(props.body.submittedAfter),
-        }),
+    ...(props.body.submittedBefore && {
+      submitted_at: { lte: new Date(props.body.submittedBefore) },
+    }),
+    ...(props.body.sellerEmail && {
+      seller: {
+        email: { contains: props.body.sellerEmail },
       },
     }),
-    ...(props.body.sellerEmail !== undefined && {
+    ...(props.body.shopName && {
       seller: {
-        email: {
-          contains: props.body.sellerEmail,
-        },
-      },
-    }),
-    ...(props.body.shopName !== undefined && {
-      seller: {
-        shop_name: {
-          contains: props.body.shopName,
-        },
+        shop_name: { contains: props.body.shopName },
       },
     }),
   } satisfies Prisma.shopping_mall_seller_approval_requestsWhereInput;
-  const data =
-    await MyGlobal.prisma.shopping_mall_seller_approval_requests.findMany({
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.shopping_mall_seller_approval_requests.findMany({
       where: whereInput,
       skip,
       take: limit,
       orderBy: { submitted_at: "desc" },
       ...ShoppingMallSellerApprovalRequestAtSummaryTransformer.select(),
-    });
-  const total =
-    await MyGlobal.prisma.shopping_mall_seller_approval_requests.count({
+    }),
+    MyGlobal.prisma.shopping_mall_seller_approval_requests.count({
       where: whereInput,
-    });
+    }),
+  ]);
   return {
     data: await ArrayUtil.asyncMap(
       data,
@@ -74,6 +75,6 @@ export async function patchShoppingMallSellerSellerApprovalRequests(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
   } satisfies IPageIShoppingMallSellerApprovalRequest.ISummary;
 }

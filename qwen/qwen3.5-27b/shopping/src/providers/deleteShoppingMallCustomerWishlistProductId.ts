@@ -15,15 +15,18 @@ export async function deleteShoppingMallCustomerWishlistProductId(props: {
   customer: CustomerPayload;
   productId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const wishlistItem =
-    await MyGlobal.prisma.shopping_mall_wishlist_items.findFirstOrThrow({
-      where: {
-        shopping_mall_customer_id: props.customer.id,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
+  // Verify the wishlist item exists and belongs to the customer
+  await MyGlobal.prisma.shopping_mall_wishlist_items.findUniqueOrThrow({
+    where: {
+      id: props.productId,
+      shopping_mall_customer_id: props.customer.id,
+    },
+  });
+  // Permanently delete the wishlist item (no soft delete)
   await MyGlobal.prisma.shopping_mall_wishlist_items.delete({
-    where: { id: wishlistItem.id },
+    where: {
+      id: props.productId,
+      shopping_mall_customer_id: props.customer.id,
+    },
   });
 }

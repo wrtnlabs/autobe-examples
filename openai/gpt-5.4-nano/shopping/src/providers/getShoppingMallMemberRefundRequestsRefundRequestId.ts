@@ -18,15 +18,38 @@ export async function getShoppingMallMemberRefundRequestsRefundRequestId(props: 
   refundRequestId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallRefundRequest> {
   const refundRequest =
-    await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
-      where: { id: props.refundRequestId, deleted_at: null },
+    await MyGlobal.prisma.shopping_mall_refund_requests.findUnique({
+      where: { id: props.refundRequestId },
       select: {
-        ...ShoppingMallRefundRequestTransformer.select().select,
+        ...(ShoppingMallRefundRequestTransformer.select().select as any),
+        orderItem: {
+          select: {
+            shopping_mall_order: {
+              select: {
+                shopping_mall_customer_id: true,
+              },
+            },
+            shopping_mall_seller_id: true,
+          },
+        },
       },
     });
-  return ShoppingMallRefundRequestTransformer.transform(
-    refundRequest as Parameters<
-      typeof ShoppingMallRefundRequestTransformer.transform
-    >[0],
+  if (refundRequest === null || refundRequest.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
+  }
+  const orderItem = refundRequest.orderItem as unknown as {
+    shopping_mall_order: {
+      shopping_mall_customer_id: typeof props.member.id;
+    };
+    shopping_mall_seller_id: typeof props.member.id;
+  };
+  const isCustomer =
+    orderItem.shopping_mall_order.shopping_mall_customer_id === props.member.id;
+  const isSeller = orderItem.shopping_mall_seller_id === props.member.id;
+  if (!isCustomer && !isSeller) {
+    throw new HttpException("Forbidden", 403);
+  }
+  return await ShoppingMallRefundRequestTransformer.transform(
+    refundRequest as any,
   );
 }

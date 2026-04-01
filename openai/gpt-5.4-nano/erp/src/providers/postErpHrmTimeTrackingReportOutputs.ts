@@ -18,16 +18,5 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postErpHrmTimeTrackingReportOutputs(props: {
   body: IErpHrmTimeTrackingReportOutput.ICreate;
 }): Promise<IErpHrmTimeTrackingReportOutput> {
-  if (!props?.body) {
-    throw new HttpException("body is required", 400);
-  }
-  const body: IErpHrmTimeTrackingReportOutput.ICreate = props.body;
-  const normalized: Record<string, unknown> = { ...body };
-  for (const key of Object.keys(normalized)) {
-    const v = normalized[key];
-    if (v instanceof Date) {
-      normalized[key] = toISOStringSafe(v);
-    }
-  }
-  return normalized as unknown as IErpHrmTimeTrackingReportOutput;
+  return props.body as unknown as IErpHrmTimeTrackingReportOutput;
 }

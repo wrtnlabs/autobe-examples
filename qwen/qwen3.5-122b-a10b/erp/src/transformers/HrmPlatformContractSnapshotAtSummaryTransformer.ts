@@ -36,9 +36,9 @@ export namespace HrmPlatformContractSnapshotAtSummaryTransformer {
   ): Promise<IHrmPlatformContractSnapshot.ISummary> {
     return {
       id: input.id,
-      start_date: toISOStringSafe(input.start_date),
-      end_date: input.end_date ? toISOStringSafe(input.end_date) : null,
-      pay_rate: input.pay_rate,
+      start_date: input.start_date.toISOString(),
+      end_date: input.end_date?.toISOString() ?? null,
+      pay_rate: Number(input.pay_rate),
       pay_period: input.pay_period,
       working_hours_per_week: input.working_hours_per_week,
       contract: await HrmPlatformContractAtSummaryTransformer.transform(

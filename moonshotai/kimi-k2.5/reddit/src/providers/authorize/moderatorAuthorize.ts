@@ -14,8 +14,17 @@ export async function moderatorAuthorize(request: {
 
   const moderator = await MyGlobal.prisma.reddit_like_moderators.findFirst({
     where: {
-      member_id: payload.id,
+      id: payload.id,
       deleted_at: null,
+      sessions: {
+        some: {
+          id: payload.session_id,
+          OR: [
+            { expired_at: null },
+            { expired_at: { gt: new Date() } }
+          ]
+        }
+      }
     },
   });
 

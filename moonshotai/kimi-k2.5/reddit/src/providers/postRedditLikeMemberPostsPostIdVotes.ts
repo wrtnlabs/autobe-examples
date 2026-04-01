@@ -10,100 +10,109 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { RedditLikeVoteCollector } from "../collectors/RedditLikeVoteCollector";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeVoteTransformer } from "../transformers/RedditLikeVoteTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditLikeMemberPostsPostIdVotes(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   postId: string & tags.Format<"uuid">;
   body: IRedditLikeVote.ICreate;
 }): Promise<IRedditLikeVote> {
-  // Fetch post and verify it exists and is not deleted
+  // Validate post exists and is not deleted
   const post = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
     where: { id: props.postId },
     select: {
       id: true,
       author_id: true,
-      vote_score: true,
       is_deleted: true,
     },
   });
-  // Check post is not deleted
   if (post.is_deleted) {
-    throw new HttpException("Post not found", 404);
+    throw new HttpException("Post is deleted", 404);
   }
-  // Validate member is not voting on their own post
+  // Validate member is not the author (cannot vote on own content)
   if (post.author_id === props.member.id) {
     throw new HttpException("Cannot vote on your own post", 403);
   }
-  // Check for existing vote by this member on this post
-  const existingVote = await MyGlobal.prisma.reddit_like_post_votes.findFirst({
-    where: {
-      reddit_like_post_id: props.postId,
-      vote: {
-        member_id: props.member.id,
+  // Check for existing vote
+  const existingPostVote =
+    await MyGlobal.prisma.reddit_like_post_votes.findFirst({
+      where: {
+        post: { id: props.postId },
+        vote: { member: { id: props.member.id } },
       },
-    },
-    include: {
-      vote: true,
-    },
-  });
-  let voteId: string;
-  let voteScoreDelta: number;
-  if (existingVote) {
-    // Member already voted - update the vote type if different
-    const oldVoteType = existingVote.vote.vote_type;
-    const newVoteType = props.body.vote_type;
-    if (oldVoteType === newVoteType) {
-      // Same vote type - no change needed, just return existing
-      voteId = existingVote.vote.id;
-      voteScoreDelta = 0;
-    } else {
-      // Vote changed - update vote_type
-      voteId = existingVote.vote.id;
-      await MyGlobal.prisma.reddit_like_votes.update({
-        where: { id: voteId },
+      select: {
+        id: true,
+        vote: {
+          select: {
+            id: true,
+            vote_type: true,
+          },
+        },
+      },
+    });
+  if (existingPostVote !== null) {
+    // Update existing vote if vote_type changed
+    if (existingPostVote.vote.vote_type !== props.body.vote_type) {
+      // Calculate score delta: old vote was +1 or -1, new vote is opposite
+      const oldScoreDelta =
+        existingPostVote.vote.vote_type === "upvote" ? 1 : -1;
+      const newScoreDelta = props.body.vote_type === "upvote" ? 1 : -1;
+      const scoreChange = newScoreDelta - oldScoreDelta; // e.g., -1 - 1 = -2
+      // Update vote
+      const updatedVote = await MyGlobal.prisma.reddit_like_votes.update({
+        where: { id: existingPostVote.vote.id },
         data: {
-          vote_type: newVoteType,
+          vote_type: props.body.vote_type,
           updated_at: new Date(),
         },
+        ...RedditLikeVoteTransformer.select(),
       });
-      // Calculate deltas: reverse old vote + apply new vote
-      // old upvote (+1) -> new downvote (-1): score change = -2
-      // old downvote (-1) -> new upvote (+1): score change = +2
-      const oldValue = oldVoteType === "upvote" ? 1 : -1;
-      const newValue = newVoteType === "upvote" ? 1 : -1;
-      voteScoreDelta = newValue - oldValue;
+      // Update post vote_score
+      await MyGlobal.prisma.reddit_like_posts.update({
+        where: { id: props.postId },
+        data: {
+          vote_score: { increment: scoreChange },
+        },
+      });
+      return await RedditLikeVoteTransformer.transform(updatedVote);
     }
-  } else {
-    // New vote - create vote record
-    const newVote = await MyGlobal.prisma.reddit_like_votes.create({
-      data: await RedditLikeVoteCollector.collect({
-        body: props.body,
-        redditLikeMembers: { id: props.member.id },
-        redditLikePosts: { id: props.postId },
-      }),
-    });
-    voteId = newVote.id;
-    // Calculate deltas for new vote
-    voteScoreDelta = props.body.vote_type === "upvote" ? 1 : -1;
+    // Vote type unchanged, return existing vote
+    const existingVote =
+      await MyGlobal.prisma.reddit_like_votes.findUniqueOrThrow({
+        where: { id: existingPostVote.vote.id },
+        ...RedditLikeVoteTransformer.select(),
+      });
+    return await RedditLikeVoteTransformer.transform(existingVote);
   }
-  // Update post vote_score
-  if (voteScoreDelta !== 0) {
-    await MyGlobal.prisma.reddit_like_posts.update({
-      where: { id: props.postId },
-      data: {
-        vote_score: post.vote_score + voteScoreDelta,
-        updated_at: new Date(),
-      },
-    });
-  }
-  // Fetch and return the vote with transformer
-  const vote = await MyGlobal.prisma.reddit_like_votes.findUniqueOrThrow({
-    where: { id: voteId },
+  // Create new vote
+  const voteData = await RedditLikeVoteCollector.collect({
+    body: props.body,
+    redditLikeMembers: { id: props.member.id },
+  });
+  const newVote = await MyGlobal.prisma.reddit_like_votes.create({
+    data: voteData,
     ...RedditLikeVoteTransformer.select(),
   });
-  return await RedditLikeVoteTransformer.transform(vote);
+  // Create post_vote link
+  await MyGlobal.prisma.reddit_like_post_votes.create({
+    data: {
+      id: v4(),
+      vote: { connect: { id: newVote.id } },
+      post: { connect: { id: props.postId } },
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+  // Update post vote_score
+  const scoreDelta = props.body.vote_type === "upvote" ? 1 : -1;
+  await MyGlobal.prisma.reddit_like_posts.update({
+    where: { id: props.postId },
+    data: {
+      vote_score: { increment: scoreDelta },
+    },
+  });
+  return await RedditLikeVoteTransformer.transform(newVote);
 }

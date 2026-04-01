@@ -11,7 +11,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { ShoppingMallWishlistItemCollector } from "../collectors/ShoppingMallWishlistItemCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { ShoppingMallWishlistItemTransformer } from "../transformers/ShoppingMallWishlistItemTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -22,46 +21,49 @@ export async function postShoppingMallMemberWishlistsWishlistIdItems(props: {
   wishlistId: string & tags.Format<"uuid">;
   body: IShoppingMallWishlistItem.ICreate;
 }): Promise<IShoppingMallWishlistItem> {
-  const wishlist = await MyGlobal.prisma.shopping_mall_wishlists.findUnique({
-    where: { id: props.wishlistId },
-    select: {
-      id: true,
-      shopping_mall_member_id: true,
-      deleted_at: true,
+  const wishlist = await MyGlobal.prisma.shopping_mall_wishlists.findFirst({
+    where: {
+      id: props.wishlistId,
+      shopping_mall_member_id: props.member.id,
+      deleted_at: null,
     },
+    select: { id: true },
   });
-  if (wishlist === null || wishlist.deleted_at !== null) {
-    throw new HttpException("Wishlist not found", 404);
-  }
-  if (wishlist.shopping_mall_member_id !== props.member.id) {
+  if (!wishlist) {
     throw new HttpException("Forbidden", 403);
   }
-  const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
-    where: { id: props.body.shopping_mall_product_id },
-    select: {
-      id: true,
-      deleted_at: true,
-    },
+  const product = await MyGlobal.prisma.shopping_mall_products.findFirst({
+    where: { id: props.body.shopping_mall_product_id, deleted_at: null },
+    select: { id: true },
   });
-  if (product === null || product.deleted_at !== null) {
-    throw new HttpException("Product is not eligible for wishlist", 400);
+  if (!product) {
+    throw new HttpException("Product not found", 404);
   }
-  try {
-    const created = await MyGlobal.prisma.shopping_mall_wishlist_items.create({
-      data: await ShoppingMallWishlistItemCollector.collect({
-        body: props.body,
-        wishlist: { id: wishlist.id },
-      }),
-      ...ShoppingMallWishlistItemTransformer.select(),
-    });
-    return await ShoppingMallWishlistItemTransformer.transform(created);
-  } catch (e: unknown) {
-    if (
-      e instanceof Prisma.PrismaClientKnownRequestError &&
-      e.code === "P2002"
-    ) {
-      throw new HttpException("Wishlist item already exists", 409);
+  const nowIso = new Date().toISOString() as unknown as string &
+    tags.Format<"date-time">;
+  const created = await MyGlobal.prisma.$transaction(async (tx) => {
+    try {
+      const row = await tx.shopping_mall_wishlist_items.create({
+        data: {
+          id: v4(),
+          created_at: nowIso,
+          updated_at: nowIso,
+          deleted_at: null,
+          shopping_mall_wishlist_id: wishlist.id,
+          shopping_mall_product_id: props.body.shopping_mall_product_id,
+        },
+        ...ShoppingMallWishlistItemTransformer.select(),
+      });
+      return row;
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        throw new HttpException("Already added", 409);
+      }
+      throw e;
     }
-    throw e;
-  }
+  });
+  return await ShoppingMallWishlistItemTransformer.transform(created);
 }

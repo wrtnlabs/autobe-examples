@@ -21,14 +21,7 @@ export async function patchShoppingMallMemberSnapshots(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const createdAtFrom = props.body.createdAtFrom
-    ? new Date(props.body.createdAtFrom)
-    : undefined;
-  const createdAtTo = props.body.createdAtTo
-    ? new Date(props.body.createdAtTo)
-    : undefined;
   const where = {
-    deleted_at: null,
     ...(props.body.sourceType !== undefined && {
       source_type: props.body.sourceType,
     }),
@@ -56,30 +49,35 @@ export async function patchShoppingMallMemberSnapshots(props: {
     ...(props.body.createdByMemberId !== undefined && {
       created_by_member_id: props.body.createdByMemberId,
     }),
-    ...(createdAtFrom || createdAtTo
+    ...(props.body.createdAtFrom !== undefined ||
+    props.body.createdAtTo !== undefined
       ? {
           created_at: {
-            ...(createdAtFrom ? { gte: createdAtFrom } : {}),
-            ...(createdAtTo ? { lte: createdAtTo } : {}),
+            ...(props.body.createdAtFrom !== undefined && {
+              gte: new Date(props.body.createdAtFrom as any),
+            }),
+            ...(props.body.createdAtTo !== undefined && {
+              lte: new Date(props.body.createdAtTo as any),
+            }),
           },
         }
       : {}),
     snapshotParties: {
       some: {
         can_view: true,
-        party_type: "member",
+        party_type: "owner",
         party_id: props.member.id,
         deleted_at: null,
       },
     },
-  } satisfies Prisma.shopping_mall_snapshotsWhereInput;
-  const orderBy = (
-    props.body.sort === "created_at_asc"
-      ? { created_at: "asc" as const }
-      : { created_at: "desc" as const }
-  ) satisfies Prisma.shopping_mall_snapshotsOrderByWithRelationInput;
-  const [rows, total] = [
-    await MyGlobal.prisma.shopping_mall_snapshots.findMany({
+  };
+  const orderBy =
+    (props.body.sort ?? "created_at_desc") === "created_at_desc"
+      ? { created_at: "desc" as const }
+      : { created_at: "desc" as const };
+  const [records, items] = await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.shopping_mall_snapshots.count({ where }),
+    MyGlobal.prisma.shopping_mall_snapshots.findMany({
       where,
       orderBy,
       skip,
@@ -102,56 +100,31 @@ export async function patchShoppingMallMemberSnapshots(props: {
         deleted_at: true,
       },
     }),
-    await MyGlobal.prisma.shopping_mall_snapshots.count({ where }),
-  ];
-  const toUuid = (value: string): string & tags.Format<"uuid"> =>
-    typia.assert<string & tags.Format<"uuid">>(value);
-  const toDateTime = (value: string): string & tags.Format<"date-time"> =>
-    typia.assert<string & tags.Format<"date-time">>(value);
-  const data: IShoppingMallSnapshot.ISummary[] = rows.map(
-    (r) =>
-      ({
-        id: toUuid(r.id),
-        snapshot_code: r.snapshot_code,
-        source_type: r.source_type,
-        source_entity_id: toUuid(r.source_entity_id),
-        source_seller_id:
-          r.source_seller_id === null ? null : toUuid(r.source_seller_id),
-        source_order_id:
-          r.source_order_id === null ? null : toUuid(r.source_order_id),
-        source_order_item_id:
-          r.source_order_item_id === null
-            ? null
-            : toUuid(r.source_order_item_id),
-        source_review_id:
-          r.source_review_id === null ? null : toUuid(r.source_review_id),
-        source_cancellation_request_id:
-          r.source_cancellation_request_id === null
-            ? null
-            : toUuid(r.source_cancellation_request_id),
-        source_refund_request_id:
-          r.source_refund_request_id === null
-            ? null
-            : toUuid(r.source_refund_request_id),
-        created_by_member_id:
-          r.created_by_member_id === null
-            ? null
-            : toUuid(r.created_by_member_id),
-        reason: r.reason,
-        created_at: toDateTime(r.created_at.toISOString()),
-        updated_at: toDateTime(r.updated_at.toISOString()),
-        deleted_at:
-          r.deleted_at === null ? null : toDateTime(r.deleted_at.toISOString()),
-      }) satisfies IShoppingMallSnapshot.ISummary,
-  );
-  const pages = Math.ceil(total / limit);
+  ]);
   return {
-    data,
+    data: items.map((record) => ({
+      id: record.id,
+      snapshot_code: record.snapshot_code,
+      source_type: record.source_type,
+      source_entity_id: record.source_entity_id,
+      source_seller_id: record.source_seller_id,
+      source_order_id: record.source_order_id,
+      source_order_item_id: record.source_order_item_id,
+      source_review_id: record.source_review_id,
+      source_cancellation_request_id: record.source_cancellation_request_id,
+      source_refund_request_id: record.source_refund_request_id,
+      created_by_member_id: record.created_by_member_id,
+      reason: record.reason,
+      created_at: toISOStringSafe(record.created_at),
+      updated_at: toISOStringSafe(record.updated_at),
+      deleted_at:
+        record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
+    })),
     pagination: {
       current: page,
       limit,
-      records: total,
-      pages,
-    } satisfies IPage.IPagination,
+      records,
+      pages: Math.ceil(records / limit),
+    },
   };
 }

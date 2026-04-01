@@ -23,17 +23,6 @@ export async function patchShoppingMallAdminSellerApprovalRequests(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const sellerFilter: Prisma.shopping_mall_sellersWhereInput = {};
-  if (props.body.sellerEmail !== undefined) {
-    sellerFilter.email = {
-      contains: props.body.sellerEmail,
-    };
-  }
-  if (props.body.shopName !== undefined) {
-    sellerFilter.shop_name = {
-      contains: props.body.shopName,
-    };
-  }
   const whereInput: Prisma.shopping_mall_seller_approval_requestsWhereInput = {
     deleted_at: null,
     ...(props.body.status !== undefined && { status: props.body.status }),
@@ -45,11 +34,6 @@ export async function patchShoppingMallAdminSellerApprovalRequests(props: {
     ...(props.body.submittedBefore !== undefined && {
       submitted_at: {
         lte: new Date(props.body.submittedBefore),
-      },
-    }),
-    ...(Object.keys(sellerFilter).length > 0 && {
-      seller: {
-        ...sellerFilter,
       },
     }),
   };
@@ -65,16 +49,17 @@ export async function patchShoppingMallAdminSellerApprovalRequests(props: {
     await MyGlobal.prisma.shopping_mall_seller_approval_requests.count({
       where: whereInput,
     });
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    ShoppingMallSellerApprovalRequestAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallSellerApprovalRequestAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
+    data: transformedData,
   };
 }

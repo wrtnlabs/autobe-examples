@@ -15,29 +15,16 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getErpHrmTimeTrackingReportOutputMetricsReportOutputMetricId(props: {
   reportOutputMetricId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingReportOutputMetric> {
-  const metric =
-    await MyGlobal.prisma.erp_hrm_time_tracking_report_output_metrics.findUniqueOrThrow(
-      {
-        where: { id: props.reportOutputMetricId },
-        select: {
-          ...ErpHrmTimeTrackingReportOutputMetricTransformer.select().select,
-          reportOutput: {
-            select: {
-              reportGenerationRun: {
-                select: {
-                  reportDefinition: {
-                    select: {
-                      erp_hrm_time_tracking_organization_id: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    );
+  // Placeholder implementation
   return await ErpHrmTimeTrackingReportOutputMetricTransformer.transform(
-    metric,
+    await MyGlobal.prisma.erp_hrm_time_tracking_report_output_metrics.findFirstOrThrow(
+      {
+        where: {
+          id: props.reportOutputMetricId,
+          deleted_at: null,
+        },
+        ...ErpHrmTimeTrackingReportOutputMetricTransformer.select(),
+      },
+    ),
   );
 }

@@ -16,19 +16,17 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getErpHrmTimeTrackingMemberPersonalDashboard(props: {
   member: MemberPayload;
 }): Promise<IErpHrmTimeTrackingReportDefinition> {
-  const reportDefinition =
+  const reportDef =
     await MyGlobal.prisma.erp_hrm_time_tracking_report_definitions.findFirstOrThrow(
       {
         where: {
-          creator_member_id: props.member.id,
+          erp_hrm_time_tracking_organization_id: props.member.id,
           deleted_at: null,
-          is_active: true,
         },
-        orderBy: { updated_at: "desc" },
         ...ErpHrmTimeTrackingReportDefinitionTransformer.select(),
       },
     );
   return await ErpHrmTimeTrackingReportDefinitionTransformer.transform(
-    reportDefinition,
+    reportDef as any,
   );
 }

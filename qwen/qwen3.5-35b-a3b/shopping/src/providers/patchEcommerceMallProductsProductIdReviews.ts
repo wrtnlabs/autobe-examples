@@ -13,6 +13,8 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { EcommerceMallCustomerAtSummaryTransformer } from "../transformers/EcommerceMallCustomerAtSummaryTransformer";
+import { EcommerceMallProductAtSummaryTransformer } from "../transformers/EcommerceMallProductAtSummaryTransformer";
 import { EcommerceMallReviewAtSummaryTransformer } from "../transformers/EcommerceMallReviewAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -23,111 +25,95 @@ export async function patchEcommerceMallProductsProductIdReviews(props: {
 }): Promise<IPageIEcommerceMallReview.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
-  // Build WHERE clause
+  const skip = (page - 1) * limit;
+  const sortBy = props.body.sort_by ?? "created_at";
+  const direction = props.body.direction ?? "desc";
   const whereInput: Prisma.ecommerce_mall_reviewsWhereInput = {
     product_id: props.productId,
     deleted_at: null,
-  };
-  // Apply optional filters from body
-  if (props.body.customer_id) {
-    whereInput.customer_id = props.body.customer_id;
-  }
-  if (props.body.order_id) {
-    whereInput.order_id = props.body.order_id;
-  }
-  if (props.body.min_rating !== undefined) {
-    whereInput.rating = { gte: props.body.min_rating };
-  }
-  if (props.body.max_rating !== undefined) {
-    if (props.body.min_rating !== undefined) {
-      whereInput.rating = {
+    ...(props.body.customer_id !== undefined && {
+      customer_id: props.body.customer_id,
+    }),
+    ...(props.body.product_id !== undefined && {
+      product_id: props.body.product_id,
+    }),
+    ...(props.body.order_id !== undefined && {
+      order_id: props.body.order_id,
+    }),
+    ...(props.body.min_rating !== undefined && {
+      rating: {
         gte: props.body.min_rating,
+      },
+    }),
+    ...(props.body.max_rating !== undefined && {
+      rating: {
         lte: props.body.max_rating,
-      };
-    } else {
-      whereInput.rating = { lte: props.body.max_rating };
-    }
-  }
-  if (props.body.is_verified_purchase !== undefined) {
-    whereInput.is_verified_purchase = props.body.is_verified_purchase;
-  }
-  if (props.body.search) {
-    whereInput.body = {
-      contains: props.body.search,
-      mode: "insensitive",
-    };
-  }
-  if (props.body.from_created_at) {
-    whereInput.created_at = {
-      gte: new Date(props.body.from_created_at),
-    };
-  }
-  if (props.body.to_created_at) {
-    if (props.body.from_created_at) {
-      whereInput.created_at = {
+      },
+    }),
+    ...(props.body.is_verified_purchase !== undefined && {
+      is_verified_purchase: props.body.is_verified_purchase,
+    }),
+    ...(props.body.from_created_at !== undefined && {
+      created_at: {
         gte: new Date(props.body.from_created_at),
+      },
+    }),
+    ...(props.body.to_created_at !== undefined && {
+      created_at: {
         lte: new Date(props.body.to_created_at),
-      };
-    } else {
-      whereInput.created_at = { lte: new Date(props.body.to_created_at) };
-    }
-  }
-  // Build ORDER BY
-  const orderByInput: Prisma.ecommerce_mall_reviewsOrderByWithRelationInput =
-    props.body.sort_by === "rating"
-      ? { rating: props.body.direction ?? ("desc" as const) }
-      : { created_at: props.body.direction ?? ("desc" as const) };
-  // Cursor-based pagination
-  let cursorInput: Prisma.ecommerce_mall_reviewsWhereInput = { ...whereInput };
-  if (props.body.cursor) {
-    // Cursor format: created_at|id
-    const [cursorCreatedAt, cursorId] = props.body.cursor.split("|");
-    const andConditions: Prisma.ecommerce_mall_reviewsWhereInput[] = [
-      cursorInput,
-      {
-        created_at: {
-          lt: new Date(cursorCreatedAt),
-        },
       },
-    ];
-    // Handle same timestamp case
-    andConditions.push({
-      id: {
-        lt: cursorId,
+    }),
+    ...(props.body.search !== undefined && {
+      body: {
+        contains: props.body.search,
+        mode: "insensitive",
       },
-    });
-    cursorInput = {
-      AND: andConditions,
-    };
-  }
-  // Query reviews with cursor pagination
+    }),
+  } satisfies Prisma.ecommerce_mall_reviewsWhereInput;
+  const orderByInput =
+    sortBy === "created_at"
+      ? ({
+          created_at: direction as "asc" | "desc",
+        } satisfies Prisma.ecommerce_mall_reviewsOrderByWithRelationInput)
+      : ({
+          rating: direction as "asc" | "desc",
+        } satisfies Prisma.ecommerce_mall_reviewsOrderByWithRelationInput);
   const data = await MyGlobal.prisma.ecommerce_mall_reviews.findMany({
-    where: cursorInput,
-    take: limit + 1, // +1 to check if there's more
+    where: whereInput,
+    skip,
+    take: limit + 1,
     orderBy: orderByInput,
-    ...EcommerceMallReviewAtSummaryTransformer.select(),
+    select: {
+      id: true,
+      customer: EcommerceMallCustomerAtSummaryTransformer.select(),
+      product: EcommerceMallProductAtSummaryTransformer.select(),
+      order: true,
+      helpfulnessVotes: true,
+      rating: true,
+      title: true,
+      body: true,
+      is_verified_purchase: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      snapshots: true,
+    } satisfies Prisma.ecommerce_mall_reviewsSelect,
   });
-  // Check if we need next cursor
-  const hasMore = data.length > limit;
-  const finalData = hasMore ? data.slice(0, limit) : data;
-  // Count total records (without cursor filter for accurate total)
+  const hasNextPage = data.length > limit;
+  const actualData = hasNextPage ? data.slice(0, -1) : data;
   const total = await MyGlobal.prisma.ecommerce_mall_reviews.count({
     where: whereInput,
   });
-  // Build next cursor for last item
-  const nextCursor = hasMore
-    ? `${toISOStringSafe(finalData[limit - 1].created_at)}|${finalData[limit - 1].id}`
-    : undefined;
   return {
-    data: await ArrayUtil.asyncMap(
-      finalData,
-      EcommerceMallReviewAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      actualData,
+      EcommerceMallReviewAtSummaryTransformer.transform,
+    ),
   };
 }

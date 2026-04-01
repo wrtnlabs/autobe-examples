@@ -11,6 +11,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditCommunityReportCollector } from "../collectors/RedditCommunityReportCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditCommunityReportTransformer } from "../transformers/RedditCommunityReportTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -20,64 +21,70 @@ export async function postRedditCommunityMemberReports(props: {
   member: MemberPayload;
   body: IRedditCommunityReport.ICreate;
 }): Promise<IRedditCommunityReport> {
-  const reason = props.body.reason.trim();
-  // Validate target content exists and belongs to the specified community
-  const authorId: string = await (async () => {
-    if (props.body.target_type === "post") {
-      const post =
-        await MyGlobal.prisma.reddit_community_posts.findFirstOrThrow({
-          where: {
-            id: props.body.target_id,
-            deleted_at: null,
-            community_id: props.body.community_id,
-          },
-          select: { author_id: true },
-        });
-      return post.author_id;
-    } else {
-      const comment =
-        await MyGlobal.prisma.reddit_community_comments.findFirstOrThrow({
-          where: {
-            id: props.body.target_id,
-            deleted_at: null,
-          },
-          select: {
-            reddit_community_posts_id: true,
-            author: { select: { id: true } },
-          },
-        });
-      const post =
-        await MyGlobal.prisma.reddit_community_posts.findFirstOrThrow({
-          where: {
-            id: comment.reddit_community_posts_id,
-            community_id: props.body.community_id,
-            deleted_at: null,
-          },
-        });
-      return post.author_id;
-    }
-  })();
-  if (authorId === props.member.id) {
-    throw new HttpException("Cannot report your own content", 409);
-  }
-  const created = await MyGlobal.prisma.reddit_community_reports.create({
-    data: {
-      id: v4(),
-      reporter: { connect: { id: props.member.id } },
-      community: { connect: { id: props.body.community_id } },
-      target_type: props.body.target_type,
-      target_id: props.body.target_id,
-      reason,
-      status: "pending",
-      created_at: new Date(),
-      updated_at: new Date(),
+  const reporterId = props.member.id as string & tags.Format<"uuid">;
+  const communityId = props.body.community_id as string & tags.Format<"uuid">;
+  const targetType = props.body.target_type as "post" | "comment";
+  const targetId = props.body.target_id as string & tags.Format<"uuid">;
+  // Verify community exists
+  await MyGlobal.prisma.reddit_community_communities.findFirstOrThrow({
+    where: {
+      id: communityId,
       deleted_at: null,
     },
   });
-  const report =
-    await MyGlobal.prisma.reddit_community_reports.findUniqueOrThrow({
-      where: { id: created.id },
-      ...RedditCommunityReportTransformer.select(),
+  // Verify target content exists and belongs to the community
+  let authorId: string & tags.Format<"uuid">;
+  if (targetType === "post") {
+    const postText =
+      await MyGlobal.prisma.reddit_community_post_texts.findFirstOrThrow({
+        where: {
+          id: targetId,
+          deleted_at: null,
+          reddit_community_post_id: communityId,
+        },
+      });
+    const post = await MyGlobal.prisma.reddit_community_posts.findFirstOrThrow({
+      where: {
+        id: postText.reddit_community_post_id,
+        deleted_at: null,
+      },
+      select: {
+        author_id: true,
+      },
     });
-  return await RedditCommunityReportTransformer.transform(report);
+    authorId = post.author_id;
+  } else {
+    const comment =
+      await MyGlobal.prisma.reddit_community_comments.findFirstOrThrow({
+        where: {
+          id: targetId,
+          deleted_at: null,
+          reddit_community_posts_id: communityId,
+        },
+        select: {
+          reddit_community_members_id: true,
+        },
+      });
+    authorId = comment.reddit_community_members_id;
+  }
+  // Prevent self-reporting
+  if (authorId === reporterId) {
+    throw new HttpException("Cannot report your own content", 409);
+  }
+  // Create the report using collector and transformer
+  const created = await MyGlobal.prisma.reddit_community_reports.create({
+    data: await RedditCommunityReportCollector.collect({
+      body: {
+        community_id: communityId,
+        target_type: targetType,
+        target_id: targetId,
+        reason: props.body.reason,
+      },
+      reporter: {
+        id: reporterId,
+      } as IEntity,
+    }),
+    ...RedditCommunityReportTransformer.select(),
+  });
+  return await RedditCommunityReportTransformer.transform(created);
 }

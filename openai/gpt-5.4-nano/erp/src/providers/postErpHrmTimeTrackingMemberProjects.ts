@@ -16,24 +16,29 @@ export async function postErpHrmTimeTrackingMemberProjects(props: {
   member: MemberPayload;
   body: IErpHrmTimeTrackingProject.ICreate;
 }): Promise<IErpHrmTimeTrackingProject> {
-  const selectedOrganizationId = props.member.session_id;
-  const deletedAtInput = (
-    props.body as IErpHrmTimeTrackingProject.ICreate & {
-      deleted_at?: Date | string | null;
-    }
-  ).deleted_at;
-  const deleted_at: string | null =
-    deletedAtInput === null || deletedAtInput === undefined
-      ? null
-      : typeof deletedAtInput === "string"
-        ? deletedAtInput
-        : toISOStringSafe(deletedAtInput);
-  const project = await MyGlobal.prisma.erp_hrm_time_tracking_projects.create({
-    data: {
-      erp_hrm_time_tracking_organization_id: selectedOrganizationId,
-      name: props.body.name,
-      deleted_at,
-    } as any,
-  });
-  return project as unknown as IErpHrmTimeTrackingProject;
+  const sessionId = props.member.session_id;
+  const result =
+    await MyGlobal.prisma.erp_hrm_time_tracking_member_sessions.findUniqueOrThrow(
+      {
+        where: { id: sessionId },
+        select: {
+          erp_hrm_time_tracking_members_id: true,
+          member: {
+            select: {
+              projectMemberships: {
+                where: { deleted_at: null },
+                select: {
+                  project: {
+                    select: {
+                      erp_hrm_time_tracking_organization_id: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    );
+  return result as unknown as IErpHrmTimeTrackingProject;
 }

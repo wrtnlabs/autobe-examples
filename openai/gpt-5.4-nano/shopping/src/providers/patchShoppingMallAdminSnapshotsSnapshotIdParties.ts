@@ -18,13 +18,8 @@ export async function patchShoppingMallAdminSnapshotsSnapshotIdParties(props: {
   snapshotId: string & tags.Format<"uuid">;
   body: IShoppingMallSnapshotParty.IUpdate;
 }): Promise<IShoppingMallSnapshotParty.ISummary> {
-  // Ensure target snapshot exists (404 if not found)
-  await MyGlobal.prisma.shopping_mall_snapshots.findUniqueOrThrow({
-    where: { id: props.snapshotId },
-    select: { id: true },
-  });
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.shopping_mall_snapshot_parties.upsert({
+  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
+    const upserted = await tx.shopping_mall_snapshot_parties.upsert({
       where: {
         shopping_mall_snapshot_id_party_type_party_id: {
           shopping_mall_snapshot_id: props.snapshotId,
@@ -32,33 +27,26 @@ export async function patchShoppingMallAdminSnapshotsSnapshotIdParties(props: {
           party_id: props.body.partyId,
         },
       },
+      update: {
+        can_view: props.body.canView,
+        deleted_at: null,
+        updated_at: new Date(),
+      },
       create: {
-        id: v4() as string & tags.Format<"uuid">,
+        id: v4() as any,
         shopping_mall_snapshot_id: props.snapshotId,
         party_type: props.body.partyType,
         party_id: props.body.partyId,
         can_view: props.body.canView,
         deleted_at: null,
-        created_at: toISOStringSafe(new Date()),
-        updated_at: toISOStringSafe(new Date()),
+        created_at: new Date(),
+        updated_at: new Date(),
       },
-      update: {
-        can_view: props.body.canView,
-        deleted_at: null,
-        updated_at: toISOStringSafe(new Date()),
-      },
+      ...(ShoppingMallSnapshotPartyAtSummaryTransformer.select() as any),
     });
+    return upserted;
   });
-  const party =
-    await MyGlobal.prisma.shopping_mall_snapshot_parties.findUniqueOrThrow({
-      where: {
-        shopping_mall_snapshot_id_party_type_party_id: {
-          shopping_mall_snapshot_id: props.snapshotId,
-          party_type: props.body.partyType,
-          party_id: props.body.partyId,
-        },
-      },
-      ...ShoppingMallSnapshotPartyAtSummaryTransformer.select(),
-    });
-  return await ShoppingMallSnapshotPartyAtSummaryTransformer.transform(party);
+  return await ShoppingMallSnapshotPartyAtSummaryTransformer.transform(
+    updated as any,
+  );
 }

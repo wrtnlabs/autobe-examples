@@ -11,20 +11,39 @@ export namespace ShoppingMallSnapshotCollector {
   export async function collect(props: {
     body: IShoppingMallSnapshot.ICreate;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       snapshot_code: props.body.snapshot_code,
       source_type: props.body.source_type,
       source_entity_id: props.body.source_entity_id,
-      source_seller_id: props.body.source_seller_id ?? null,
-      source_order_id: props.body.source_order_id ?? null,
-      source_order_item_id: props.body.source_order_item_id ?? null,
-      source_review_id: props.body.source_review_id ?? null,
+      source_seller_id:
+        props.body.source_seller_id === undefined
+          ? undefined
+          : props.body.source_seller_id,
+      source_order_id:
+        props.body.source_order_id === undefined
+          ? undefined
+          : props.body.source_order_id,
+      source_order_item_id:
+        props.body.source_order_item_id === undefined
+          ? undefined
+          : props.body.source_order_item_id,
+      source_review_id:
+        props.body.source_review_id === undefined
+          ? undefined
+          : props.body.source_review_id,
       source_cancellation_request_id:
-        props.body.source_cancellation_request_id ?? null,
-      source_refund_request_id: props.body.source_refund_request_id ?? null,
-      created_by_member_id: props.body.created_by_member_id ?? null,
+        props.body.source_cancellation_request_id === undefined
+          ? undefined
+          : props.body.source_cancellation_request_id,
+      source_refund_request_id:
+        props.body.source_refund_request_id === undefined
+          ? undefined
+          : props.body.source_refund_request_id,
+      created_by_member_id:
+        props.body.created_by_member_id === undefined
+          ? undefined
+          : props.body.created_by_member_id,
       reason: props.body.reason,
       created_at: new Date(),
       updated_at: new Date(),

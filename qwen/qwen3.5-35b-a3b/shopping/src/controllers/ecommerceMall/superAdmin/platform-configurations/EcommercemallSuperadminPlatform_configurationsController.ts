@@ -5,7 +5,7 @@ import typia, { tags } from "typia";
 import { IEcommerceMallPlatformConfiguration } from "../../../../api/structures/IEcommerceMallPlatformConfiguration";
 import { IPageIEcommerceMallPlatformConfiguration } from "../../../../api/structures/IPageIEcommerceMallPlatformConfiguration";
 import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
 import { deleteEcommerceMallSuperAdminPlatformConfigurationsConfigId } from "../../../../providers/deleteEcommerceMallSuperAdminPlatformConfigurationsConfigId";
 import { getEcommerceMallSuperAdminPlatformConfigurationsConfigId } from "../../../../providers/getEcommerceMallSuperAdminPlatformConfigurationsConfigId";
 import { patchEcommerceMallSuperAdminPlatformConfigurations } from "../../../../providers/patchEcommerceMallSuperAdminPlatformConfigurations";
@@ -51,7 +51,7 @@ export class EcommercemallSuperadminPlatform_configurationsController {
   @TypedRoute.Post()
   public async create(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IEcommerceMallPlatformConfiguration.ICreate,
   ): Promise<IEcommerceMallPlatformConfiguration> {
@@ -97,7 +97,7 @@ export class EcommercemallSuperadminPlatform_configurationsController {
   @TypedRoute.Patch()
   public async index(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IEcommerceMallPlatformConfiguration.IRequest,
   ): Promise<IPageIEcommerceMallPlatformConfiguration.ISummary> {
@@ -150,7 +150,7 @@ export class EcommercemallSuperadminPlatform_configurationsController {
   @TypedRoute.Get(":configId")
   public async at(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedParam("configId")
     configId: string & tags.Format<"uuid">,
   ): Promise<IEcommerceMallPlatformConfiguration> {
@@ -195,7 +195,7 @@ export class EcommercemallSuperadminPlatform_configurationsController {
   @TypedRoute.Put(":configId")
   public async update(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedParam("configId")
     configId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -245,7 +245,7 @@ export class EcommercemallSuperadminPlatform_configurationsController {
   @TypedRoute.Delete(":configId")
   public async erase(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedParam("configId")
     configId: string & tags.Format<"uuid">,
   ): Promise<void> {

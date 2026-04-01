@@ -20,12 +20,13 @@ export async function getHrmsMemberUploadRequestsUploadRequestId(props: {
   member: MemberPayload;
   uploadRequestId: string & tags.Format<"uuid">;
 }): Promise<IHrmsFileUpload> {
-  const upload = await MyGlobal.prisma.hrms_file_uploads.findUniqueOrThrow({
-    where: { id: props.uploadRequestId },
-    ...HrmsFileUploadTransformer.select(),
-  });
-  if (upload.member.id !== props.member.id) {
+  const uploadRequest =
+    await MyGlobal.prisma.hrms_file_uploads.findUniqueOrThrow({
+      where: { id: props.uploadRequestId },
+      ...HrmsFileUploadTransformer.select(),
+    });
+  if (uploadRequest.member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return await HrmsFileUploadTransformer.transform(upload);
+  return await HrmsFileUploadTransformer.transform(uploadRequest);
 }

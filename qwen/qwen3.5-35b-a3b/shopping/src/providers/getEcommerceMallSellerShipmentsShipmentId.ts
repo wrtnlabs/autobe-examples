@@ -22,19 +22,14 @@ export async function getEcommerceMallSellerShipmentsShipmentId(props: {
 }): Promise<IEcommerceMallShipment> {
   const shipment =
     await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
-      where: { id: props.shipmentId },
-      select: {
-        id: true,
-        ecommerce_mall_seller_id: true,
+      where: {
+        id: props.shipmentId,
+        deleted_at: null,
       },
-    });
-  if (shipment.ecommerce_mall_seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const fullShipment =
-    await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
-      where: { id: props.shipmentId },
       ...EcommerceMallShipmentTransformer.select(),
     });
-  return await EcommerceMallShipmentTransformer.transform(fullShipment);
+  if (shipment.seller.id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  return await EcommerceMallShipmentTransformer.transform(shipment);
 }

@@ -6,8 +6,10 @@ import { IErpHrmTimeTrackingTask } from "@ORGANIZATION/PROJECT-api/lib/structure
 import { IErpHrmTimeTrackingTimerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTimerSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "./ErpHrmTimeTrackingMemberAtSummaryTransformer";
 import { ErpHrmTimeTrackingProjectAtSummaryTransformer } from "./ErpHrmTimeTrackingProjectAtSummaryTransformer";
@@ -56,12 +58,9 @@ export namespace ErpHrmTimeTrackingTimerSessionAtSummaryTransformer {
       project: await ErpHrmTimeTrackingProjectAtSummaryTransformer.transform(
         input.project,
       ),
-      task:
-        input.task == null
-          ? null
-          : await ErpHrmTimeTrackingTaskAtSummaryTransformer.transform(
-              input.task,
-            ),
+      task: input.task
+        ? await ErpHrmTimeTrackingTaskAtSummaryTransformer.transform(input.task)
+        : null,
     };
   }
 }

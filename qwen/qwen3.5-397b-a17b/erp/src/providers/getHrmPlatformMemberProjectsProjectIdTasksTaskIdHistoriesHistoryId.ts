@@ -10,7 +10,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { HrmPlatformMemberAtSummaryTransformer } from "../transformers/HrmPlatformMemberAtSummaryTransformer";
 import { HrmPlatformTaskHistoryTransformer } from "../transformers/HrmPlatformTaskHistoryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -24,26 +23,26 @@ export async function getHrmPlatformMemberProjectsProjectIdTasksTaskIdHistoriesH
   const history =
     await MyGlobal.prisma.hrm_platform_task_histories.findUniqueOrThrow({
       where: { id: props.historyId },
-      select: {
-        id: true,
-        old_status: true,
-        new_status: true,
-        created_at: true,
-        task_id: true,
-        task: {
-          select: {
-            id: true,
-            hrm_platform_project_id: true,
-          },
-        },
-        user: HrmPlatformMemberAtSummaryTransformer.select(),
-      },
+      ...HrmPlatformTaskHistoryTransformer.select(),
     });
-  if (history.task_id !== props.taskId) {
+  if (history.task.id !== props.taskId) {
     throw new HttpException("Not Found", 404);
   }
   if (history.task.hrm_platform_project_id !== props.projectId) {
     throw new HttpException("Not Found", 404);
   }
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
+    {
+      where: { id: props.projectId },
+      select: { organization_id: true },
+    },
+  );
+  await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+    where: {
+      user_id: props.member.id,
+      organization_id: project.organization_id,
+      deleted_at: null,
+    },
+  });
   return await HrmPlatformTaskHistoryTransformer.transform(history);
 }

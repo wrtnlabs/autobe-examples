@@ -20,25 +20,24 @@ export async function postShoppingMallAdminSnapshots(props: {
   admin: AdminPayload;
   body: IShoppingMallSnapshot.ICreate;
 }): Promise<IShoppingMallSnapshot> {
-  const prismaTx = MyGlobal.prisma.$transaction;
-  const snapshot = await prismaTx(async (tx) => {
-    try {
-      const created = await tx.shopping_mall_snapshots.create({
-        data: await ShoppingMallSnapshotCollector.collect({
-          body: props.body,
-        }),
+  try {
+    const created = await MyGlobal.prisma.$transaction(async (prisma) => {
+      const data = await ShoppingMallSnapshotCollector.collect({
+        body: props.body,
+      });
+      const snapshot = await prisma.shopping_mall_snapshots.create({
+        data,
         ...ShoppingMallSnapshotTransformer.select(),
       });
-      return created;
-    } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === "P2002"
-      ) {
-        throw new HttpException("snapshot_code already exists", 409);
+      return snapshot;
+    });
+    return await ShoppingMallSnapshotTransformer.transform(created);
+  } catch (err: unknown) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2002") {
+        throw new HttpException("Snapshot code already exists", 409);
       }
-      throw err;
     }
-  });
-  return await ShoppingMallSnapshotTransformer.transform(snapshot);
+    throw err;
+  }
 }

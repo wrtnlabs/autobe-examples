@@ -2,6 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -13,108 +14,74 @@ import { authorize_customer_login } from "../../../authorize/authorize_customer_
 import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
 
 /**
- * Test successful customer login with valid email and password credentials.
+ * Test successful customer login with valid credentials.
  *
- * This test validates the complete customer authentication flow:
- * 1. Registers a new customer account with valid credentials
- * 2. Logs in with the same credentials
- * 3. Verifies the response contains all required fields including JWT tokens
- * 4. Confirms customer information matches between registration and login
- * 5. Validates the access token is properly configured for authenticated requests
+ * This test verifies the complete customer authentication flow:
+ * 1. Register a new customer account with valid email and password
+ * 2. Login using the same credentials
+ * 3. Verify response contains valid JWT tokens, customer ID, email, and profile
+ * 4. Validate token structure and customer information integrity
  */
 export async function test_api_customer_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Prepare customer credentials
+  // Step 1: Generate credentials and register a new customer account
   const email = typia.random<string & tags.Format<"email">>();
   const password = RandomGenerator.alphaNumeric(16);
-  // 2. Register a new customer account
-  const customerConnection: api.IConnection = { host: connection.host };
-  const joinResult = await authorize_customer_join(customerConnection, {
+  const customerJoinResult = await authorize_customer_join(connection, {
     body: {
       email: email,
       password: password,
-      nickname: RandomGenerator.name(),
-      phone_number: RandomGenerator.mobile(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: null,
+      ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IShoppingMallCustomer.IJoin,
   });
-  typia.assert(joinResult);
-  // 3. Login with the same credentials
+  typia.assert(customerJoinResult);
+  // Step 2: Create a new connection for login and authenticate with same credentials
   const loginConnection: api.IConnection = { host: connection.host };
   const loginResult = await authorize_customer_login(loginConnection, {
     body: {
       email: email,
       password: password,
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: null,
     } satisfies IShoppingMallCustomer.ILogin,
   });
   typia.assert(loginResult);
-  // 4. Validate customer information matches
-  TestValidator.equals("customer ID matches", loginResult.id, joinResult.id);
-  TestValidator.equals("email matches", loginResult.email, joinResult.email);
+  // Step 3: Verify customer information matches between join and login
   TestValidator.equals(
-    "nickname matches",
-    loginResult.nickname,
-    joinResult.nickname,
+    "customer ID matches",
+    loginResult.id,
+    customerJoinResult.id,
   );
   TestValidator.equals(
-    "phone number matches",
-    loginResult.phone_number,
-    joinResult.phone_number,
+    "email matches",
+    loginResult.email,
+    customerJoinResult.email,
   );
-  // 5. Validate token structure
+  // Step 4: Validate token expiration timestamps are in future
   TestValidator.predicate(
-    "access token exists",
-    loginResult.token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token exists",
-    loginResult.token.refresh.length > 0,
-  );
-  TestValidator.predicate(
-    "expired_at is in future",
+    "access token expires in future",
     new Date(loginResult.token.expired_at) > new Date(),
   );
   TestValidator.predicate(
-    "refreshable_until is in future",
+    "refreshable until in future",
     new Date(loginResult.token.refreshable_until) > new Date(),
   );
-  // 6. Validate customer summary matches
+  // Step 5: Validate profile information
   TestValidator.equals(
-    "customer summary ID",
-    loginResult.customer.id,
-    loginResult.id,
+    "profile display name exists",
+    loginResult.profile.display_name.length > 0,
+    true,
   );
   TestValidator.equals(
-    "customer summary email",
-    loginResult.customer.email,
-    loginResult.email,
+    "profile phone number exists",
+    loginResult.profile.phone_number.length > 0,
+    true,
   );
+  // Step 6: Validate account is active (not soft deleted)
   TestValidator.equals(
-    "customer summary nickname",
-    loginResult.customer.nickname,
-    loginResult.nickname,
-  );
-  TestValidator.equals(
-    "customer summary phone",
-    loginResult.customer.phone_number,
-    loginResult.phone_number,
-  );
-  // 7. Validate account is active (not deleted)
-  TestValidator.equals("account not deleted", loginResult.deleted_at, null);
-  TestValidator.equals(
-    "customer summary not deleted",
-    loginResult.customer.deleted_at,
+    "deleted_at is null for active account",
+    loginResult.deleted_at,
     null,
-  );
-  // 8. Validate connection has authorization header set
-  TestValidator.predicate(
-    "authorization header set",
-    loginConnection.headers?.Authorization !== undefined,
   );
 }

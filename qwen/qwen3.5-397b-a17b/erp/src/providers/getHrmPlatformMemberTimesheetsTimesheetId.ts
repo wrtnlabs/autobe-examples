@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
@@ -26,42 +27,31 @@ export async function getHrmPlatformMemberTimesheetsTimesheetId(props: {
 }): Promise<IHrmPlatformTimesheet> {
   const timesheet =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-      where: {
-        id: props.timesheetId,
-        deleted_at: null,
-      },
+      where: { id: props.timesheetId },
       ...HrmPlatformTimesheetTransformer.select(),
     });
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      member_id: props.member.id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      role: {
-        select: {
-          id: true,
-          name: true,
-          built_in: true,
-          permissions: {
-            select: {
-              permission: true,
+  if (timesheet.deleted_at !== null) {
+    throw new HttpException("Timesheet has been deleted", 400);
+  }
+  const isOwner = timesheet.employee.user.id === props.member.id;
+  if (!isOwner) {
+    const employeeWithPermission =
+      await MyGlobal.prisma.hrm_platform_employees.findFirst({
+        where: {
+          user_id: props.member.id,
+          role: {
+            rolePermissions: {
+              some: {
+                permission: "time:approve",
+              },
             },
           },
         },
-      },
-    },
-  });
-  if (employee === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const hasPermission = employee.role.permissions.some(
-    (p: { permission: string }) =>
-      p.permission === "time:view_all" || p.permission === "time:approve",
-  );
-  if (!hasPermission && employee.id !== timesheet.employee.id) {
-    throw new HttpException("Forbidden", 403);
+        select: { id: true },
+      });
+    if (!employeeWithPermission) {
+      throw new HttpException("Forbidden", 403);
+    }
   }
   return await HrmPlatformTimesheetTransformer.transform(timesheet);
 }

@@ -19,39 +19,39 @@ export async function getShoppingMallMemberReviewsReviewIdSnapshotIndicesSnapsho
   snapshotIndexId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallReviewSnapshotsIndex> {
   const snapshotIndex =
-    await MyGlobal.prisma.shopping_mall_review_snapshots_indices.findFirstOrThrow(
-      {
-        where: {
-          id: props.snapshotIndexId,
-          review_id: props.reviewId,
-          deleted_at: null,
-        },
-        ...ShoppingMallReviewSnapshotsIndexTransformer.select(),
+    await MyGlobal.prisma.shopping_mall_review_snapshots_indices.findFirst({
+      where: {
+        id: props.snapshotIndexId,
+        review_id: props.reviewId,
       },
-    );
-  const snapshot =
-    await MyGlobal.prisma.shopping_mall_snapshots.findUniqueOrThrow({
-      where: { id: snapshotIndex.shopping_mall_snapshot_id },
-      select: {
-        id: true,
-        deleted_at: true,
-      },
+      ...ShoppingMallReviewSnapshotsIndexTransformer.select(),
     });
-  if (snapshot.deleted_at !== null) {
+  if (snapshotIndex === null) {
     throw new HttpException("Not Found", 404);
   }
-  const canView =
-    await MyGlobal.prisma.shopping_mall_snapshot_parties.findFirst({
-      where: {
-        shopping_mall_snapshot_id: snapshot.id,
-        party_id: props.member.id,
-        can_view: true,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
-  if (canView === null) {
-    throw new HttpException("Forbidden", 403);
+  const review = await MyGlobal.prisma.shopping_mall_reviews.findFirst({
+    where: {
+      id: props.reviewId,
+    },
+    select: {
+      shopping_mall_customer_id: true,
+    },
+  });
+  if (review === null || review.shopping_mall_customer_id !== props.member.id) {
+    throw new HttpException("Not Found", 404);
+  }
+  const snapshot = await MyGlobal.prisma.shopping_mall_snapshots.findFirst({
+    where: {
+      id: snapshotIndex.shopping_mall_snapshot_id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      deleted_at: true,
+    },
+  });
+  if (snapshot === null) {
+    throw new HttpException("Not Found", 404);
   }
   return await ShoppingMallReviewSnapshotsIndexTransformer.transform(
     snapshotIndex,

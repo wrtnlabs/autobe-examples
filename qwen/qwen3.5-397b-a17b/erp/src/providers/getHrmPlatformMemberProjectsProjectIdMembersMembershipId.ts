@@ -1,6 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
+import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProjectMember";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
@@ -26,15 +28,10 @@ export async function getHrmPlatformMemberProjectsProjectIdMembersMembershipId(p
     await MyGlobal.prisma.hrm_platform_project_members.findUniqueOrThrow({
       where: {
         id: props.membershipId,
+        hrm_platform_project_id: props.projectId,
         deleted_at: null,
       },
       ...HrmPlatformProjectMemberTransformer.select(),
     });
-  if (membership.project.id !== props.projectId) {
-    throw new HttpException(
-      "Membership does not belong to specified project",
-      404,
-    );
-  }
   return await HrmPlatformProjectMemberTransformer.transform(membership);
 }

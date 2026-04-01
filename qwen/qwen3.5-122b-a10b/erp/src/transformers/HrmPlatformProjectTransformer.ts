@@ -14,11 +14,6 @@ export namespace HrmPlatformProjectTransformer {
     return {
       select: {
         id: true,
-        organization: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.hrm_platform_organizationsFindManyArgs,
         name: true,
         description: true,
         color_code: true,
@@ -29,11 +24,36 @@ export namespace HrmPlatformProjectTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        projectMemberships: true,
-        tasks: true,
-        snapshots: true,
-        projectTimelogs: true,
-        timers: true,
+        organization: {
+          select: {
+            id: true,
+          },
+        },
+        projectMemberships: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_project_membersFindManyArgs,
+        tasks: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_tasksFindManyArgs,
+        snapshots: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_project_snapshotsFindManyArgs,
+        projectTimelogs: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_timelogsFindManyArgs,
+        timers: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_timersFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_projectsFindManyArgs;
   }
@@ -44,17 +64,15 @@ export namespace HrmPlatformProjectTransformer {
       id: input.id,
       hrm_platform_organization_id: input.organization.id,
       name: input.name,
-      description: input.description ?? undefined,
+      description: input.description ?? null,
       color_code: input.color_code,
-      status: typia.assert<"active" | "archived" | "completed">(input.status),
-      budget_hours: input.budget_hours ?? undefined,
-      start_date: input.start_date
-        ? toISOStringSafe(input.start_date)
-        : undefined,
-      end_date: input.end_date ? toISOStringSafe(input.end_date) : undefined,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      status: input.status as "active" | "archived" | "completed",
+      budget_hours: input.budget_hours ?? null,
+      start_date: input.start_date?.toISOString() ?? null,
+      end_date: input.end_date?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

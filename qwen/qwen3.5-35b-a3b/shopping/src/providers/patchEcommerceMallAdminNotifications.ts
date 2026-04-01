@@ -19,112 +19,116 @@ export async function patchEcommerceMallAdminNotifications(props: {
   body: IEcommerceMallNotification.IRequest;
 }): Promise<IPageIEcommerceMallNotification.ISummary> {
   const page = props.body.page ?? 1;
-  const per_page = props.body.per_page ?? 100;
-  const limit = props.body.limit ?? per_page;
-  const safe_limit = Math.min(Math.max(limit, 0), 100);
-  const safe_page = Math.max(page, 1);
-  const skip = (safe_page - 1) * safe_limit;
-  const recipientsWhereClause: Prisma.ecommerce_mall_notification_recipientsWhereInput =
-    {
+  const limit = props.body.limit ?? props.body.per_page ?? 100;
+  const skip = (page - 1) * limit;
+  // Verify admin exists and is active
+  const adminRecord = await MyGlobal.prisma.ecommerce_mall_admins.findUnique({
+    where: {
+      id: props.admin.id,
       deleted_at: null,
-    };
-  if (props.body.actor_type) {
-    recipientsWhereClause.recipient_type = props.body.actor_type;
-  }
-  if (props.body.actor_id) {
-    recipientsWhereClause.recipient_id = props.body.actor_id;
-  }
-  if (props.body.read_status) {
-    recipientsWhereClause.read_status = props.body.read_status;
-  }
-  const whereClause: Prisma.ecommerce_mall_notificationsWhereInput = {
-    deleted_at: null,
-  };
-  if (props.body.actor_type || props.body.actor_id || props.body.read_status) {
-    whereClause.recipients = {
-      some: recipientsWhereClause,
-    };
-  }
-  if (props.body.type) {
-    whereClause.type = props.body.type;
-  }
-  if (props.body.created_at_from) {
-    whereClause.created_at = {
-      gte: new Date(props.body.created_at_from),
-    };
-  }
-  if (props.body.created_at_to) {
-    if (
-      whereClause.created_at &&
-      typeof whereClause.created_at === "object" &&
-      "gte" in whereClause.created_at
-    ) {
-      whereClause.created_at = {
-        gte: whereClause.created_at.gte,
-        lte: new Date(props.body.created_at_to),
-      };
-    } else {
-      whereClause.created_at = {
-        lte: new Date(props.body.created_at_to),
-      };
-    }
-  }
-  if (props.body.search) {
-    whereClause.OR = [
-      { title: { contains: props.body.search, mode: "insensitive" } },
-      { body: { contains: props.body.search, mode: "insensitive" } },
-    ];
-  }
-  const orderByInput = (() => {
-    const sortField = props.body.sort ?? "created_at";
-    const order = (props.body.order as "asc" | "desc") ?? "desc";
-    if (sortField === "created_at") {
-      return {
-        created_at: order,
-      } satisfies Prisma.ecommerce_mall_notificationsOrderByWithRelationInput;
-    }
-    if (sortField === "title") {
-      return {
-        title: order,
-      } satisfies Prisma.ecommerce_mall_notificationsOrderByWithRelationInput;
-    }
-    return {
-      created_at: order,
-    } satisfies Prisma.ecommerce_mall_notificationsOrderByWithRelationInput;
-  })();
-  const data = await MyGlobal.prisma.ecommerce_mall_notifications.findMany({
-    where: whereClause,
-    take: safe_limit,
-    skip,
-    orderBy: orderByInput,
-    select: {
-      id: true,
-      title: true,
-      body: true,
-      type: true,
-      status: true,
-      created_at: true,
-      updated_at: true,
     },
   });
-  const total = await MyGlobal.prisma.ecommerce_mall_notifications.count({
-    where: whereClause,
+  if (adminRecord === null) {
+    throw new HttpException("Unauthorized", 401);
+  }
+  // Build WHERE clause with all filters
+  const whereInput: Prisma.ecommerce_mall_notificationsWhereInput = {
+    deleted_at: null,
+    ...(props.body.read_status !== undefined &&
+      props.body.read_status !== "" && {
+        status: props.body.read_status,
+      }),
+    ...(props.body.type !== undefined &&
+      props.body.type !== "" && {
+        type: props.body.type,
+      }),
+    ...(props.body.created_at_from !== undefined &&
+      props.body.created_at_from !== null && {
+        created_at: {
+          gte: new Date(props.body.created_at_from),
+        },
+      }),
+    ...(props.body.created_at_to !== undefined &&
+      props.body.created_at_to !== null && {
+        created_at: {
+          lte: new Date(props.body.created_at_to),
+        },
+      }),
+    ...(props.body.search !== undefined &&
+      props.body.search !== null &&
+      props.body.search.length > 0 && {
+        OR: [
+          { title: { contains: props.body.search, mode: "insensitive" } },
+          { body: { contains: props.body.search, mode: "insensitive" } },
+        ],
+      }),
+    // Polymorphic recipient filtering - admins can filter by any actor type
+    ...(props.body.actor_type !== undefined &&
+      props.body.actor_type !== null &&
+      props.body.actor_id !== undefined &&
+      props.body.actor_id !== null &&
+      props.body.actor_type.length > 0 && {
+        recipients: {
+          some: {
+            recipient_type: props.body.actor_type,
+            recipient_id: props.body.actor_id,
+          },
+        },
+      }),
+  } satisfies Prisma.ecommerce_mall_notificationsWhereInput;
+  // Build ORDER BY clause
+  const orderByInput: Prisma.ecommerce_mall_notificationsOrderByWithRelationInput[] =
+    (() => {
+      const sortField = props.body.sort ?? "created_at";
+      const sortOrder = (props.body.order ?? "desc") === "asc" ? "asc" : "desc";
+      switch (sortField) {
+        case "created_at":
+          return [
+            { created_at: sortOrder },
+            { id: sortOrder },
+          ] satisfies Prisma.ecommerce_mall_notificationsOrderByWithRelationInput[];
+        case "title":
+          return [
+            { title: sortOrder },
+            { id: sortOrder },
+          ] satisfies Prisma.ecommerce_mall_notificationsOrderByWithRelationInput[];
+        default:
+          return [
+            { created_at: sortOrder },
+            { id: sortOrder },
+          ] satisfies Prisma.ecommerce_mall_notificationsOrderByWithRelationInput[];
+      }
+    })();
+  // Query notifications with select for list display
+  const data = await MyGlobal.prisma.ecommerce_mall_notifications.findMany({
+    where: whereInput,
+    orderBy: orderByInput,
+    skip,
+    take: limit,
   });
+  // Get total count
+  const total = await MyGlobal.prisma.ecommerce_mall_notifications.count({
+    where: whereInput,
+  });
+  // Transform and return
   return {
-    data: data.map((item) => ({
-      id: item.id,
-      title: item.title,
-      body: item.body,
-      type: item.type,
-      status: item.status,
-      created_at: toISOStringSafe(item.created_at),
-      updated_at: toISOStringSafe(item.updated_at),
-    })),
     pagination: {
-      current: safe_page,
-      limit: safe_limit,
+      current: page,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / safe_limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIEcommerceMallNotification.ISummary;
+    data: await ArrayUtil.asyncMap(data, async (record) => {
+      const transformed: IEcommerceMallNotification.ISummary = {
+        id: record.id,
+        title: record.title,
+        body: record.body,
+        type: record.type,
+        status: record.status,
+        created_at: toISOStringSafe(record.created_at),
+        updated_at: toISOStringSafe(record.updated_at),
+      };
+      return transformed;
+    }),
+  };
 }

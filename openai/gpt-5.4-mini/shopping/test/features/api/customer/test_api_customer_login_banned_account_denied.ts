@@ -1,8 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -16,28 +15,17 @@ import { authorize_customer_refresh } from "../../../authorize/authorize_custome
 export async function test_api_customer_login_banned_account_denied(
   connection: api.IConnection,
 ): Promise<void> {
-  const email: string = `${RandomGenerator.alphabets(8)}@test.com`;
-  const password: string = RandomGenerator.alphaNumeric(12);
-  const joinConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_customer_join(joinConnection, {
-    body: {
-      email,
-      password,
-      href: "https://example.com/register",
-      referrer: "https://example.com/signup",
-    } satisfies IShoppingMallCustomer.IJoin,
-  });
-  typia.assert(authorized);
   const loginConnection: api.IConnection = { host: connection.host };
+  const credentials = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+  } satisfies IMallPlatformCustomer.ILogin;
   await TestValidator.httpError(
-    "customer login should be denied for invalid credentials",
-    [400, 401, 403],
+    "customer login should be denied for unavailable or banned-like account state",
+    [401, 403],
     async () => {
-      await authorize_customer_login(loginConnection, {
-        body: {
-          email,
-          password: `${password}x`,
-        } satisfies IShoppingMallCustomer.ILogin,
+      await api.functional.mallPlatform.auth.customer.login(loginConnection, {
+        body: credentials,
       });
     },
   );

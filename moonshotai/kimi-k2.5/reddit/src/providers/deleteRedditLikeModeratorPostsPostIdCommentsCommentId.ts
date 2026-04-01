@@ -16,17 +16,15 @@ export async function deleteRedditLikeModeratorPostsPostIdCommentsCommentId(prop
   postId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Fetch comment with post info to verify ownership and get community
+  // Find comment and verify it belongs to the post
   const comment = await MyGlobal.prisma.reddit_like_comments.findUnique({
     where: { id: props.commentId },
     select: {
       id: true,
       post_id: true,
-      author_id: true,
       is_deleted: true,
     },
   });
-  // Check if comment exists
   if (comment === null) {
     throw new HttpException("Comment not found", 404);
   }
@@ -38,37 +36,39 @@ export async function deleteRedditLikeModeratorPostsPostIdCommentsCommentId(prop
   if (comment.is_deleted) {
     throw new HttpException("Comment not found", 404);
   }
-  // Check if user is the author
-  const isAuthor = comment.author_id === props.moderator.id;
-  // If not author, check if moderator of the community
-  if (!isAuthor) {
-    // Get the community_id from the post
-    const post = await MyGlobal.prisma.reddit_like_posts.findUnique({
-      where: { id: props.postId },
-      select: { community_id: true },
-    });
-    if (post === null) {
-      throw new HttpException("Post not found", 404);
-    }
-    // Check if user is a moderator of this community
-    const moderatorRecord =
-      await MyGlobal.prisma.reddit_like_moderators.findFirst({
-        where: {
-          member_id: props.moderator.id,
-          community_id: post.community_id,
-          deleted_at: null,
-        },
-      });
-    if (moderatorRecord === null) {
-      throw new HttpException("Forbidden", 403);
-    }
+  // Get post to find community
+  const post = await MyGlobal.prisma.reddit_like_posts.findUnique({
+    where: { id: props.postId },
+    select: {
+      id: true,
+      community_id: true,
+    },
+  });
+  if (post === null) {
+    throw new HttpException("Post not found", 404);
   }
-  // Perform soft delete
+  // Verify moderator has privileges for this community
+  const moderator = await MyGlobal.prisma.reddit_like_moderators.findFirst({
+    where: {
+      member_id: props.moderator.id,
+      community_id: post.community_id,
+      deleted_at: null,
+    },
+  });
+  if (moderator === null) {
+    throw new HttpException(
+      "Forbidden - not a moderator of this community",
+      403,
+    );
+  }
+  // Soft delete the comment - use ISO string timestamp
+  const now: string & tags.Format<"date-time"> =
+    new Date().toISOString() as string & tags.Format<"date-time">;
   await MyGlobal.prisma.reddit_like_comments.update({
     where: { id: props.commentId },
     data: {
       is_deleted: true,
-      updated_at: new Date(),
+      updated_at: now,
     },
   });
 }

@@ -11,6 +11,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { HrmPlatformOrganizationAtSummaryTransformer } from "../transformers/HrmPlatformOrganizationAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,59 +20,46 @@ export async function patchHrmPlatformMemberOrganizations(props: {
   body: IHrmPlatformOrganization.IRequest;
 }): Promise<IPageIHrmPlatformOrganization.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const created_at: Prisma.DateTimeFilter = {};
-  if (props.body.created_at_from !== undefined) {
-    created_at.gte = props.body.created_at_from;
-  }
-  if (props.body.created_at_to !== undefined) {
-    created_at.lte = props.body.created_at_to;
-  }
-  const whereInput: Prisma.hrm_platform_organizationsWhereInput = {
-    deleted_at: null,
-    OR: [
-      { owner_id: props.member.id },
-      {
-        employees: {
-          some: {
-            member_id: props.member.id,
-            deleted_at: null,
-          },
-        },
+  const employeeRecords = await MyGlobal.prisma.hrm_platform_employees.findMany(
+    {
+      where: {
+        user_id: props.member.id,
+        deleted_at: null,
       },
-    ],
-    ...(props.body.search !== undefined && {
-      name: { contains: props.body.search, mode: "insensitive" },
+      select: {
+        organization_id: true,
+      },
+    },
+  );
+  const organizationIds = employeeRecords.map((emp) => emp.organization_id);
+  if (organizationIds.length === 0) {
+    return {
+      pagination: {
+        current: page,
+        limit: limit,
+        records: 0,
+        pages: 0,
+      } satisfies IPage.IPagination,
+      data: [],
+    };
+  }
+  const whereInput = {
+    id: { in: organizationIds },
+    deleted_at: null,
+    ...(props.body.search && {
+      name: { contains: props.body.search, mode: "insensitive" as const },
     }),
-    ...(props.body.owner_id !== undefined && {
-      owner_id: props.body.owner_id,
-    }),
-    ...(Object.keys(created_at).length > 0 && {
-      created_at: created_at,
-    }),
+    ...(props.body.currency && { currency: props.body.currency }),
+    ...(props.body.timezone && { timezone: props.body.timezone }),
   } satisfies Prisma.hrm_platform_organizationsWhereInput;
-  const orderByInput: Prisma.hrm_platform_organizationsOrderByWithRelationInput =
-    props.body.sort !== undefined
-      ? {
-          [props.body.sort]: props.body.order ?? "asc",
-        }
-      : { created_at: "desc" };
   const data = await MyGlobal.prisma.hrm_platform_organizations.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      logo_url: true,
-      currency: true,
-      timezone: true,
-      fiscal_start_month: true,
-      created_at: true,
-    } satisfies Prisma.hrm_platform_organizationsSelect,
+    orderBy: { created_at: "desc" },
+    ...HrmPlatformOrganizationAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.hrm_platform_organizations.count({
     where: whereInput,
@@ -83,18 +71,9 @@ export async function patchHrmPlatformMemberOrganizations(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: data.map(
-      (org) =>
-        ({
-          id: org.id,
-          name: org.name,
-          description: org.description,
-          logo_url: org.logo_url,
-          currency: org.currency,
-          timezone: org.timezone,
-          fiscal_start_month: org.fiscal_start_month,
-          created_at: toISOStringSafe(org.created_at),
-        }) satisfies IHrmPlatformOrganization.ISummary,
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmPlatformOrganizationAtSummaryTransformer.transform,
     ),
-  } satisfies IPageIHrmPlatformOrganization.ISummary;
+  };
 }

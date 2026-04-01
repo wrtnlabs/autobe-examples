@@ -19,7 +19,7 @@ export async function postShoppingMallSellerSellerApprovalRequests(props: {
   seller: SellerPayload;
   body: IShoppingMallSellerApprovalRequest.ICreate;
 }): Promise<IShoppingMallSellerApprovalRequest> {
-  const existing =
+  const existingPending =
     await MyGlobal.prisma.shopping_mall_seller_approval_requests.findFirst({
       where: {
         shopping_mall_seller_id: props.seller.id,
@@ -27,8 +27,11 @@ export async function postShoppingMallSellerSellerApprovalRequests(props: {
         deleted_at: null,
       },
     });
-  if (existing !== null) {
-    throw new HttpException("A pending approval request already exists", 400);
+  if (existingPending !== null) {
+    throw new HttpException(
+      "A pending approval request already exists for this seller.",
+      400,
+    );
   }
   const created =
     await MyGlobal.prisma.shopping_mall_seller_approval_requests.create({

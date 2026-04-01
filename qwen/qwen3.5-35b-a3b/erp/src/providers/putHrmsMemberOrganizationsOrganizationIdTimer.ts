@@ -19,152 +19,52 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function putHrmsMemberOrganizationsOrganizationIdTimer(props: {
   member: MemberPayload;
   organizationId: string & tags.Format<"uuid">;
+  timerId: string & tags.Format<"uuid">;
   body: IHrmsTimer.IUpdate;
 }): Promise<IHrmsTimer> {
-  const session = await MyGlobal.prisma.hrms_member_sessions.findFirst({
+  const member = await MyGlobal.prisma.hrms_members.findFirst({
     where: {
-      hrms_member_id: props.member.id,
-      id: props.member.session_id,
-      expired_at: { gt: new Date() },
+      id: props.member.id,
+      deleted_at: null,
     },
   });
-  if (session === null) {
-    throw new HttpException("You're not enrolled", 403);
+  if (member === null) {
+    throw new HttpException("Member not found", 404);
   }
   const orgMember = await MyGlobal.prisma.hrms_organization_members.findFirst({
     where: {
       hrms_member_id: props.member.id,
       hrms_organization_id: props.organizationId,
+      deleted_at: null,
     },
   });
   if (orgMember === null) {
-    throw new HttpException("Organization access denied", 403);
+    throw new HttpException("Organization membership not found", 404);
   }
   const employee = await MyGlobal.prisma.hrms_employees.findFirst({
     where: {
       organization_member_id: orgMember.id,
+      deleted_at: null,
     },
   });
   if (employee === null) {
     throw new HttpException("Employee record not found", 404);
   }
-  const timerWhere: Prisma.hrms_timersWhereInput = {
-    hrms_employee_id: employee.id,
-    deleted_at: null,
-  };
-  if (props.body.hrms_project_id !== undefined) {
-    timerWhere.hrms_project_id = props.body.hrms_project_id;
-  }
-  const timer = await MyGlobal.prisma.hrms_timers.findFirst({
-    where: timerWhere,
-    include: {
-      employee: { select: { id: true } },
-      project: { select: { id: true, hrms_organization_id: true } },
-      task: { select: { id: true, hrms_project_id: true } },
-    },
+  const timer = await MyGlobal.prisma.hrms_timers.findUniqueOrThrow({
+    where: { id: props.timerId },
   });
-  if (timer === null) {
-    throw new HttpException("Timer not found", 404);
+  if (timer.deleted_at !== null || timer.hrms_employee_id !== employee.id) {
+    throw new HttpException("Timer not found or not owned by employee", 404);
   }
-  if (timer.hrms_employee_id !== employee.id) {
-    throw new HttpException("Forbidden", 403);
+  const updates: Prisma.hrms_timersUpdateInput = {};
+  if (props.body.description !== undefined) {
+    updates.description = props.body.description;
   }
-  if (props.body.hrms_project_id !== undefined) {
-    const project = await MyGlobal.prisma.hrms_projects.findUnique({
-      where: {
-        id: props.body.hrms_project_id,
-        hrms_organization_id: props.organizationId,
-      },
-    });
-    if (project === null) {
-      throw new HttpException("Project not found", 404);
-    }
-    const projectMember = await MyGlobal.prisma.hrms_project_members.findFirst({
-      where: {
-        employee_id: employee.id,
-        project_id: props.body.hrms_project_id,
-      },
-    });
-    if (projectMember === null) {
-      throw new HttpException("Employee not assigned to project", 404);
-    }
-  }
-  if (props.body.hrms_task_id !== undefined) {
-    const taskProjectId = props.body.hrms_project_id ?? timer.hrms_project_id;
-    if (props.body.hrms_task_id === null) {
-      // Task being removed, no validation needed
-    } else {
-      const task = await MyGlobal.prisma.hrms_tasks.findUnique({
-        where: {
-          id: props.body.hrms_task_id,
-          hrms_project_id: taskProjectId,
-        },
-      });
-      if (task === null) {
-        throw new HttpException("Task not found", 404);
-      }
-      const projectMember =
-        await MyGlobal.prisma.hrms_project_members.findFirst({
-          where: {
-            employee_id: employee.id,
-            project_id: task.hrms_project_id,
-          },
-        });
-      if (projectMember === null) {
-        throw new HttpException("Employee not assigned to task's project", 404);
-      }
-    }
-  }
-  const updateData: Prisma.hrms_timersUpdateInput = {
-    description: props.body.description,
-    updated_at: new Date(),
-  };
-  if (props.body.hrms_project_id !== undefined) {
-    updateData.project = {
-      connect: { id: props.body.hrms_project_id },
-    };
-  }
-  if (props.body.hrms_task_id !== undefined) {
-    updateData.task =
-      props.body.hrms_task_id === null
-        ? { disconnect: true }
-        : { connect: { id: props.body.hrms_task_id } };
-  }
+  updates.updated_at = new Date();
   const updatedTimer = await MyGlobal.prisma.hrms_timers.update({
     where: { id: timer.id },
-    data: updateData,
-    include: {
-      employee: {
-        select: {
-          id: true,
-          display_name: true,
-          department_id: true,
-          position: true,
-          status: true,
-        },
-      },
-      project: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          color_code: true,
-          hrms_organization_id: true,
-          status: true,
-          budget_hours: true,
-          start_date: true,
-          end_date: true,
-          created_at: true,
-          updated_at: true,
-        },
-      },
-      task: {
-        select: {
-          id: true,
-          hrms_project_id: true,
-        },
-      },
-    },
+    data: updates,
+    ...HrmsTimerTransformer.select(),
   });
-  return HrmsTimerTransformer.transform(updatedTimer);
+  return await HrmsTimerTransformer.transform(updatedTimer);
 }

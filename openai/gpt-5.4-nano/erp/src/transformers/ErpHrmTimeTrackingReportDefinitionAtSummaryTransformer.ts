@@ -4,8 +4,10 @@ import { IErpHrmTimeTrackingOrganization } from "@ORGANIZATION/PROJECT-api/lib/s
 import { IErpHrmTimeTrackingReportDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingReportDefinition";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "./ErpHrmTimeTrackingMemberAtSummaryTransformer";
 
@@ -14,26 +16,6 @@ export namespace ErpHrmTimeTrackingReportDefinitionAtSummaryTransformer {
     Prisma.erp_hrm_time_tracking_report_definitionsGetPayload<
       ReturnType<typeof select>
     >;
-  export async function transform(
-    input: Payload,
-  ): Promise<IErpHrmTimeTrackingReportDefinition.ISummary> {
-    return {
-      id: input.id,
-      code: input.code,
-      name: input.name,
-      description: input.description ?? null,
-      report_type: input.report_type,
-      is_active: input.is_active,
-      organization: {},
-      creatorMember:
-        await ErpHrmTimeTrackingMemberAtSummaryTransformer.transform(
-          input.creatorMember,
-        ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
-  }
   export function select() {
     return {
       select: {
@@ -46,18 +28,48 @@ export namespace ErpHrmTimeTrackingReportDefinitionAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: { select: {} },
+        organization: {
+          select: {
+            id: true,
+          },
+        },
         creatorMember: ErpHrmTimeTrackingMemberAtSummaryTransformer.select(),
         reportGenerationRuns: {
-          select: {},
-        } satisfies Prisma.erp_hrm_time_tracking_report_generation_runsFindManyArgs,
+          select: {
+            id: true,
+          },
+        },
         definitionDimensions: {
-          select: {},
-        } satisfies Prisma.erp_hrm_time_tracking_report_definition_dimensionsFindManyArgs,
+          select: {
+            id: true,
+          },
+        },
         definitionFilters: {
-          select: {},
-        } satisfies Prisma.erp_hrm_time_tracking_report_definition_filtersFindManyArgs,
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.erp_hrm_time_tracking_report_definitionsFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IErpHrmTimeTrackingReportDefinition.ISummary> {
+    return {
+      id: input.id,
+      code: input.code,
+      name: input.name,
+      description: input.description,
+      report_type: input.report_type,
+      is_active: input.is_active,
+      organization: {} as IErpHrmTimeTrackingOrganization.ISummary,
+      creatorMember:
+        await ErpHrmTimeTrackingMemberAtSummaryTransformer.transform(
+          input.creatorMember,
+        ),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+    };
   }
 }

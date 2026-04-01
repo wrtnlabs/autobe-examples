@@ -15,6 +15,7 @@ export async function ownerAuthorize(request: {
   const owner = await MyGlobal.prisma.reddit_like_owners.findFirst({
     where: {
       id: payload.id,
+      is_active: true,
       deleted_at: null,
     },
   });

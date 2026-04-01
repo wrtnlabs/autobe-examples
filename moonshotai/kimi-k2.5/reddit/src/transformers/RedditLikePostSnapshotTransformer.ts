@@ -7,8 +7,10 @@ import { IRedditLikePostSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structure
 import { IRedditLikePostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikePostTextContent";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikePostImageContentTransformer } from "./RedditLikePostImageContentTransformer";
 import { RedditLikePostLinkContentTransformer } from "./RedditLikePostLinkContentTransformer";
@@ -18,35 +20,12 @@ export namespace RedditLikePostSnapshotTransformer {
   export type Payload = Prisma.reddit_like_post_snapshotsGetPayload<
     ReturnType<typeof select>
   >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        title: true,
-        content_type: true,
-        author_id: true,
-        community_id: true,
-        vote_score: true,
-        comment_count: true,
-        is_deleted: true,
-        created_at: true,
-        post: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.reddit_like_postsFindManyArgs,
-        textContent: RedditLikePostTextContentTransformer.select(),
-        linkContent: RedditLikePostLinkContentTransformer.select(),
-        imageContent: RedditLikePostImageContentTransformer.select(),
-      },
-    } satisfies Prisma.reddit_like_post_snapshotsFindManyArgs;
-  }
   export async function transform(
     input: Payload,
   ): Promise<IRedditLikePostSnapshot> {
     return {
       id: input.id,
-      postId: input.post.id,
+      postId: input.reddit_like_post_id,
       title: input.title,
       textContent: input.textContent
         ? await RedditLikePostTextContentTransformer.transform(
@@ -68,5 +47,30 @@ export namespace RedditLikePostSnapshotTransformer {
       createdAt: input.created_at.toISOString(),
       deletedAt: input.is_deleted ? input.created_at.toISOString() : null,
     };
+  }
+  export function select() {
+    return {
+      select: {
+        id: true,
+        reddit_like_post_id: true,
+        title: true,
+        content_type: true,
+        author_id: true,
+        community_id: true,
+        vote_score: true,
+        comment_count: true,
+        is_deleted: true,
+        created_at: true,
+        textContent: {
+          select: RedditLikePostTextContentTransformer.select().select,
+        } satisfies Prisma.reddit_like_post_text_contentsFindManyArgs,
+        linkContent: {
+          select: RedditLikePostLinkContentTransformer.select().select,
+        } satisfies Prisma.reddit_like_post_link_contentsFindManyArgs,
+        imageContent: {
+          select: RedditLikePostImageContentTransformer.select().select,
+        } satisfies Prisma.reddit_like_post_image_contentsFindManyArgs,
+      },
+    } satisfies Prisma.reddit_like_post_snapshotsFindManyArgs;
   }
 }

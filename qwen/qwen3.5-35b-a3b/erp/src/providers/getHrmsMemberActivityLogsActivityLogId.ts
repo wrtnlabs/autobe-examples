@@ -19,56 +19,45 @@ export async function getHrmsMemberActivityLogsActivityLogId(props: {
   member: MemberPayload;
   activityLogId: string & tags.Format<"uuid">;
 }): Promise<IHrmsActivityLog> {
-  // 1. Query the activity log with full data including organization and performedBy joins
-  const activityLog =
-    await MyGlobal.prisma.hrms_activity_logs.findUniqueOrThrow({
-      where: { id: props.activityLogId },
-      ...HrmsActivityLogTransformer.select(),
-    });
-  // 2. Verify the activity log belongs to the member's selected organization
-  // We need to get the member's organization context from their session
   const session = await MyGlobal.prisma.hrms_member_sessions.findFirst({
-    where: {
-      id: props.member.session_id,
-      hrms_member_id: props.member.id,
-      expired_at: { gt: new Date() },
-    },
+    where: { id: props.member.session_id },
   });
   if (session === null) {
-    throw new HttpException("Unauthorized", 401);
+    throw new HttpException("Session expired", 403);
   }
-  // Check if activity log's organization matches member's selected organization
-  if (activityLog.organization.id !== session.current_organization_id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // 3. Check that member has org:manage permission for this organization
-  const memberOrg = await MyGlobal.prisma.hrms_organization_members.findFirst({
-    where: {
-      hrms_member_id: props.member.id,
-      hrms_organization_id: activityLog.organization.id,
-    },
+  const activityLog = await MyGlobal.prisma.hrms_activity_logs.findFirst({
+    where: { id: props.activityLogId },
+    ...HrmsActivityLogTransformer.select(),
   });
-  if (memberOrg === null) {
-    throw new HttpException("Forbidden", 403);
+  if (activityLog === null) {
+    throw new HttpException("Not found", 404);
   }
-  // Get member's role and check for org:manage permission
-  const role = await MyGlobal.prisma.hrms_organization_roles.findFirst({
-    where: {
-      id: memberOrg.hrms_organization_role_id,
-    },
-    include: {
-      permissions: true,
-    },
+  const member = await MyGlobal.prisma.hrms_members.findFirst({
+    where: { id: props.member.id, deleted_at: null },
   });
-  if (role === null) {
+  if (member === null) {
+    throw new HttpException("Unauthorized", 403);
+  }
+  const organizationMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        member: { id: props.member.id },
+        organization: { id: activityLog.organization.id },
+        deleted_at: null,
+      },
+    });
+  if (organizationMember === null) {
     throw new HttpException("Forbidden", 403);
   }
-  const hasManagePermission = role.permissions.some(
-    (p) => p.permission === "org:manage",
-  );
-  if (!hasManagePermission) {
+  const hasPermission =
+    await MyGlobal.prisma.hrms_organization_role_permissions.findFirst({
+      where: {
+        hrms_organization_role_id: organizationMember.hrms_organization_role_id,
+        permission: "org:manage",
+      },
+    });
+  if (hasPermission === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // 4. Transform and return
   return await HrmsActivityLogTransformer.transform(activityLog);
 }

@@ -8,8 +8,10 @@ import { IRedditLikePostLinkContent } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IRedditLikePostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikePostTextContent";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeCommunityAtSummaryTransformer } from "./RedditLikeCommunityAtSummaryTransformer";
 import { RedditLikeMemberAtSummaryTransformer } from "./RedditLikeMemberAtSummaryTransformer";
@@ -42,29 +44,6 @@ export namespace RedditLikePostTransformer {
     } satisfies Prisma.reddit_like_postsFindManyArgs;
   }
   export async function transform(input: Payload): Promise<IRedditLikePost> {
-    let content:
-      | IRedditLikePostTextContent
-      | IRedditLikePostLinkContent
-      | IRedditLikePostImageContent;
-    switch (input.post_type) {
-      case "text":
-        content = await RedditLikePostTextContentTransformer.transform(
-          input.textContent!,
-        );
-        break;
-      case "link":
-        content = await RedditLikePostLinkContentTransformer.transform(
-          input.linkContent!,
-        );
-        break;
-      case "image":
-        content = await RedditLikePostImageContentTransformer.transform(
-          input.imageContent!,
-        );
-        break;
-      default:
-        throw new Error(`Unknown post type: ${input.post_type}`);
-    }
     return {
       id: input.id,
       title: input.title,
@@ -78,10 +57,30 @@ export namespace RedditLikePostTransformer {
       community: await RedditLikeCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-      content,
+      content: await transformContent(input),
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
     };
+  }
+  async function transformContent(
+    input: Payload,
+  ): Promise<IRedditLikePost["content"]> {
+    switch (input.post_type) {
+      case "text":
+        return await RedditLikePostTextContentTransformer.transform(
+          input.textContent!,
+        );
+      case "link":
+        return await RedditLikePostLinkContentTransformer.transform(
+          input.linkContent!,
+        );
+      case "image":
+        return await RedditLikePostImageContentTransformer.transform(
+          input.imageContent!,
+        );
+      default:
+        throw new Error(`Unknown post type: ${input.post_type}`);
+    }
   }
 }

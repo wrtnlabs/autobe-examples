@@ -13,39 +13,44 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { RedditLikeCommentCollector } from "../collectors/RedditLikeCommentCollector";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeCommentTransformer } from "../transformers/RedditLikeCommentTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditLikeMemberPostsPostIdComments(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   postId: string & tags.Format<"uuid">;
   body: IRedditLikeComment.ICreate;
 }): Promise<IRedditLikeComment> {
-  // Validate post exists and get community info
+  // Verify post exists and is not deleted
   const post = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
     where: { id: props.postId },
     select: {
       id: true,
       is_deleted: true,
-      deleted_at: true,
     },
   });
-  // Check post is not deleted
-  if (post.is_deleted || post.deleted_at !== null) {
+  if (post.is_deleted) {
     throw new HttpException("Post has been deleted", 404);
   }
-  // Validate parent comment if provided
+  // If parentId provided, validate parent comment exists and belongs to same post
   if (props.body.parentId !== undefined && props.body.parentId !== null) {
     const parentComment = await MyGlobal.prisma.reddit_like_comments.findUnique(
       {
         where: { id: props.body.parentId },
-        select: { id: true, post_id: true, is_deleted: true },
+        select: {
+          id: true,
+          post_id: true,
+          is_deleted: true,
+        },
       },
     );
     if (parentComment === null) {
       throw new HttpException("Parent comment not found", 404);
+    }
+    if (parentComment.is_deleted) {
+      throw new HttpException("Parent comment has been deleted", 400);
     }
     if (parentComment.post_id !== props.postId) {
       throw new HttpException(
@@ -53,19 +58,21 @@ export async function postRedditLikeMemberPostsPostIdComments(props: {
         400,
       );
     }
-    if (parentComment.is_deleted) {
-      throw new HttpException("Cannot reply to a deleted comment", 400);
-    }
   }
-  // Create comment using collector
-  const created = await MyGlobal.prisma.reddit_like_comments.create({
-    data: await RedditLikeCommentCollector.collect({
-      body: props.body,
-      post: { id: props.postId },
-      redditLikeMembers: { id: props.member.id },
-    }),
-    ...RedditLikeCommentTransformer.select(),
+  // Create the comment using collector
+  const commentData = await RedditLikeCommentCollector.collect({
+    body: props.body,
+    redditLikePosts: { id: props.postId },
+    redditLikeMembers: { id: props.member.id },
   });
-  // Transform and return
-  return await RedditLikeCommentTransformer.transform(created);
+  const created = await MyGlobal.prisma.reddit_like_comments.create({
+    data: commentData,
+  });
+  // Fetch full comment with relations using transformer select
+  const commentWithRelations =
+    await MyGlobal.prisma.reddit_like_comments.findUniqueOrThrow({
+      where: { id: created.id },
+      ...RedditLikeCommentTransformer.select(),
+    });
+  return await RedditLikeCommentTransformer.transform(commentWithRelations);
 }

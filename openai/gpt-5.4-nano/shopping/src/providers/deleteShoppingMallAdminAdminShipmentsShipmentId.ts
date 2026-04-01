@@ -15,9 +15,6 @@ export async function deleteShoppingMallAdminAdminShipmentsShipmentId(props: {
   admin: AdminPayload;
   shipmentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  if (props.admin.type !== "admin") {
-    throw new HttpException("Forbidden", 403);
-  }
   await MyGlobal.prisma.$transaction(async (tx) => {
     await tx.shopping_mall_shipments.findUniqueOrThrow({
       where: { id: props.shipmentId },

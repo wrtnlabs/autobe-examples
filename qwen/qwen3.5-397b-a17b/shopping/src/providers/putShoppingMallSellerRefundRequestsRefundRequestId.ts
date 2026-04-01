@@ -1,11 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
-import { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
@@ -32,86 +30,75 @@ export async function putShoppingMallSellerRefundRequestsRefundRequestId(props: 
       select: {
         id: true,
         status: true,
+        order_item_id: true,
         reason: true,
-        customer_id: true,
-        delivered_at: true,
-        requested_at: true,
-        orderItem: {
-          select: {
-            id: true,
-            shopping_mall_seller_id: true,
-            shopping_mall_product_variant_id: true,
-          },
-        },
       },
     });
-  if (refundRequest.status !== "PENDING") {
-    throw new HttpException("Refund request is not in PENDING status", 400);
-  }
-  if (refundRequest.orderItem.shopping_mall_seller_id !== props.seller.id) {
+  if (refundRequest.status !== "pending") {
     throw new HttpException(
-      "Forbidden: Not the seller of this order item",
-      403,
+      "Refund request has already been responded to",
+      400,
     );
   }
-  if (
-    !props.body.status ||
-    (props.body.status !== "APPROVED" && props.body.status !== "REJECTED")
-  ) {
-    throw new HttpException("Status must be either APPROVED or REJECTED", 400);
+  const orderItem =
+    await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
+      where: { id: refundRequest.order_item_id },
+      select: {
+        id: true,
+        shopping_mall_seller_id: true,
+        shopping_mall_product_variant_id: true,
+        quantity: true,
+        status: true,
+      },
+    });
+  if (orderItem.shopping_mall_seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  const now = new Date();
-  await MyGlobal.prisma.shopping_mall_refund_requests.update({
+  if (orderItem.status !== "delivered") {
+    throw new HttpException(
+      "Refund request can only be responded to for delivered order items",
+      400,
+    );
+  }
+  const updated = await MyGlobal.prisma.shopping_mall_refund_requests.update({
     where: { id: props.refundRequestId },
     data: {
       status: props.body.status,
-      responded_by_seller_id: props.seller.id,
-      responded_at: now,
-      updated_at: now,
+      response_reason: props.body.response_reason ?? null,
+      seller_id: props.seller.id,
+      responded_at: new Date(),
+      updated_at: new Date(),
     },
+    ...ShoppingMallRefundRequestTransformer.select(),
   });
   await MyGlobal.prisma.shopping_mall_refund_request_snapshots.create({
     data: {
       id: v4(),
-      refundRequest: { connect: { id: props.refundRequestId } },
-      orderItem: { connect: { id: refundRequest.orderItem.id } },
-      customer: { connect: { id: refundRequest.customer_id } },
-      status: props.body.status,
+      shopping_mall_refund_request_id: props.refundRequestId,
       reason: refundRequest.reason,
-      delivered_at: refundRequest.delivered_at,
-      requested_at: refundRequest.requested_at,
-      responded_at: now,
-      respondedBySeller: { connect: { id: props.seller.id } },
-      snapshot_at: now,
-      created_at: now,
+      status: props.body.status,
+      seller_response: props.body.response_reason ?? null,
+      responded_at: new Date(),
+      created_at: new Date(),
     },
   });
-  if (props.body.status === "APPROVED") {
+  if (props.body.status === "approved") {
     await MyGlobal.prisma.shopping_mall_order_items.update({
-      where: { id: refundRequest.orderItem.id },
+      where: { id: refundRequest.order_item_id },
       data: {
-        status: "REFUNDED",
-        updated_at: now,
+        status: "refunded",
+        updated_at: new Date(),
       },
     });
     await MyGlobal.prisma.shopping_mall_inventory_records.create({
       data: {
         id: v4(),
-        variant: {
-          connect: {
-            id: refundRequest.orderItem.shopping_mall_product_variant_id,
-          },
-        },
-        quantity_change: 1,
-        reason: "REFUND",
-        created_at: now,
+        product_variant_id: orderItem.shopping_mall_product_variant_id,
+        quantity_change: orderItem.quantity,
+        reason: "refund",
+        created_at: new Date(),
       },
     });
   }
-  const updated =
-    await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
-      where: { id: props.refundRequestId },
-      ...ShoppingMallRefundRequestTransformer.select(),
-    });
   return await ShoppingMallRefundRequestTransformer.transform(updated);
 }

@@ -1,13 +1,13 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import type { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
-import type { IShoppingMallProductReviewStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductReviewStatistic";
+import type { IShoppingMallProductOptionDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionDefinition";
+import type { IShoppingMallProductOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionValue";
+import type { IShoppingMallProductRating } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductRating";
 import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import type { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -19,24 +19,28 @@ import { authorize_seller_join } from "../../../authorize/authorize_seller_join"
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
+import { generate_random_shopping_mall_seller_products_option_definitions_create } from "../../../generate/generate_random_shopping_mall_seller_products_option_definitions_create";
+import { generate_random_shopping_mall_seller_products_option_definitions_option_values_create } from "../../../generate/generate_random_shopping_mall_seller_products_option_definitions_option_values_create";
 import { generate_random_shopping_mall_seller_products_variants_create } from "../../../generate/generate_random_shopping_mall_seller_products_variants_create";
 import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
+import { prepare_random_shopping_mall_product_option_definition } from "../../../prepare/prepare_random_shopping_mall_product_option_definition";
+import { prepare_random_shopping_mall_product_option_value } from "../../../prepare/prepare_random_shopping_mall_product_option_value";
 import { prepare_random_shopping_mall_product_variant } from "../../../prepare/prepare_random_shopping_mall_product_variant";
-import { prepare_random_shopping_mall_product_variant_option } from "../../../prepare/prepare_random_shopping_mall_product_variant_option";
 
 /**
- * Test successful product variant deletion by the owning seller.
+ * Test successful deletion of a product variant when all deletion conditions are met.
  *
- * This test verifies that a seller can successfully delete a product variant
- * when no blocking conditions exist (no pending orders, no pending cancellation
- * requests, no pending refund requests).
- *
- * Test Flow:
+ * This test verifies the complete variant deletion workflow:
  * 1. Seller registers and authenticates
  * 2. Seller creates a product with required fields
- * 3. Seller creates a variant with unique SKU code and options
- * 4. Seller deletes the variant
- * 5. Verify deletion completed successfully (204 No Content)
+ * 3. Seller creates an option definition (e.g., "Color")
+ * 4. Seller creates option values (e.g., "Red", "Blue")
+ * 5. Seller creates two variants using the option values
+ * 6. Seller deletes one variant (the "Blue" variant)
+ * 7. Verify deletion returns successfully (204 No Content)
+ *
+ * The deleted variant should have no pending orders, cancellations, or refunds,
+ * and the product must retain at least one variant to remain purchasable.
  */
 export async function test_api_product_variant_deletion_success(
   connection: api.IConnection,
@@ -47,21 +51,19 @@ export async function test_api_product_variant_deletion_success(
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: "TestPassword123!",
-      shop_name: RandomGenerator.name(),
-      shop_description: RandomGenerator.paragraph({ sentences: 2 }),
-      logo_image_url: typia.random<string & tags.Format<"uri">>(),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
     } satisfies IShoppingMallSeller.IJoin,
   });
   typia.assert(sellerAuth);
-  TestValidator.predicate("seller account created", sellerAuth.id !== null);
-  // 2. Create product using utility function
+  // 2. Create a product
   const product = await generate_random_shopping_mall_seller_products_create(
     sellerConnection,
     {
       body: {
-        name: RandomGenerator.paragraph({ sentences: 1 }),
-        description: RandomGenerator.content({ paragraphs: 1 }),
-        shopping_category_id: typia.random<string & tags.Format<"uuid">>(),
+        name: RandomGenerator.paragraph({ sentences: 2 }),
+        description: RandomGenerator.content({ paragraphs: 2 }),
+        category_id: typia.random<string & tags.Format<"uuid">>(),
         base_price: typia.random<
           number & tags.Type<"uint32"> & tags.Minimum<1000>
         >(),
@@ -69,52 +71,102 @@ export async function test_api_product_variant_deletion_success(
     },
   );
   typia.assert(product);
-  TestValidator.predicate(
-    "product has variants array",
-    Array.isArray(product.variants),
-  );
-  // 3. Create variant using utility function
-  const variant =
-    await generate_random_shopping_mall_seller_products_variants_create(
+  // 3. Create option definition (Color)
+  const optionDefinition =
+    await generate_random_shopping_mall_seller_products_option_definitions_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          name: "Color",
+        } satisfies IShoppingMallProductOptionDefinition.ICreate,
+      },
+    );
+  typia.assert(optionDefinition);
+  // 4. Create option values (Red and Blue)
+  const redOptionValue =
+    await generate_random_shopping_mall_seller_products_option_definitions_option_values_create(
       sellerConnection,
       {
         params: {
           productId: product.id,
+          optionDefinitionId: optionDefinition.id,
         },
         body: {
-          sku_code: `SKU-${RandomGenerator.alphaNumeric(10)}`,
-          price: typia.random<
+          name: "Red",
+        } satisfies IShoppingMallProductOptionValue.ICreate,
+      },
+    );
+  typia.assert(redOptionValue);
+  const blueOptionValue =
+    await generate_random_shopping_mall_seller_products_option_definitions_option_values_create(
+      sellerConnection,
+      {
+        params: {
+          productId: product.id,
+          optionDefinitionId: optionDefinition.id,
+        },
+        body: {
+          name: "Blue",
+        } satisfies IShoppingMallProductOptionValue.ICreate,
+      },
+    );
+  typia.assert(blueOptionValue);
+  // 5. Create two variants (Red and Blue)
+  const redVariantSku = `SKU-RED-${RandomGenerator.alphaNumeric(8)}`;
+  const blueVariantSku = `SKU-BLUE-${RandomGenerator.alphaNumeric(8)}`;
+  const redVariant =
+    await generate_random_shopping_mall_seller_products_variants_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          sku_code: redVariantSku,
+          price_override: typia.random<
             number & tags.Type<"uint32"> & tags.Minimum<1000>
           >(),
-          stock_quantity: typia.random<
-            number & tags.Type<"int32"> & tags.Minimum<10> & tags.Maximum<100>
-          >(),
-          options: ArrayUtil.repeat(2, (index) => ({
-            key: index === 0 ? "color" : "size",
-            value: index === 0 ? "Red" : "Large",
-          })) satisfies IShoppingMallProductVariantOption.ICreate[],
+          option_value_ids: [redOptionValue.id],
         } satisfies IShoppingMallProductVariant.ICreate,
       },
     );
-  typia.assert(variant);
-  TestValidator.equals(
-    "variant belongs to product",
-    variant.product.id,
-    product.id,
-  );
-  TestValidator.predicate("variant has options", variant.options.length > 0);
-  TestValidator.predicate("variant has stock", variant.stockQuantity > 0);
-  // 4. Delete the variant using SDK function
-  // The erase function returns void (204 No Content) on success
-  // If no error is thrown, the deletion was successful
+  typia.assert(redVariant);
+  const blueVariant =
+    await generate_random_shopping_mall_seller_products_variants_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          sku_code: blueVariantSku,
+          price_override: typia.random<
+            number & tags.Type<"uint32"> & tags.Minimum<1000>
+          >(),
+          option_value_ids: [blueOptionValue.id],
+        } satisfies IShoppingMallProductVariant.ICreate,
+      },
+    );
+  typia.assert(blueVariant);
+  // 6. Delete the Blue variant (should succeed as no orders exist)
+  // This returns 204 No Content on success
   await api.functional.shoppingMall.seller.products.variants.erase(
     sellerConnection,
     {
       productId: product.id,
-      variantId: variant.id,
+      variantId: blueVariant.id,
     },
   );
-  // 5. Verify the product still exists after variant deletion
-  // (product should remain but become unavailable if this was the last variant)
-  TestValidator.equals("product ID preserved", product.id, product.id);
+  // 7. Verify the Red variant still exists and is active
+  TestValidator.equals(
+    "Red variant SKU preserved",
+    redVariant.skuCode,
+    redVariantSku,
+  );
+  TestValidator.predicate(
+    "Red variant remains active (not deleted)",
+    redVariant.deletedAt === null,
+  );
+  TestValidator.notEquals(
+    "Variants have different IDs",
+    redVariant.id,
+    blueVariant.id,
+  );
 }

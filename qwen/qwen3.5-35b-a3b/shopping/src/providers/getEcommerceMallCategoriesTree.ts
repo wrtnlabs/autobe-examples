@@ -13,18 +13,22 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallCategoriesTree(): Promise<IEcommerceMallCategory.ITree> {
-  const roots = await MyGlobal.prisma.ecommerce_mall_categories.findMany({
-    where: {
-      parent_id: null,
-      is_active: true,
-      deleted_at: null,
-    },
-    ...EcommerceMallCategoryAtTreeTransformer.select(),
-    orderBy: { display_order: "asc" },
-  });
-  if (roots.length === 0) {
-    throw new HttpException("No active categories found", 404);
+  const rootCategories =
+    await MyGlobal.prisma.ecommerce_mall_categories.findMany({
+      where: {
+        parent_id: null,
+        is_active: true,
+        deleted_at: null,
+      },
+      orderBy: {
+        display_order: "asc",
+      },
+      ...EcommerceMallCategoryAtTreeTransformer.select(),
+    });
+  if (rootCategories.length === 0) {
+    throw new HttpException("Not found", 404);
   }
-  const firstRoot = roots[0];
-  return await EcommerceMallCategoryAtTreeTransformer.transform(firstRoot);
+  return await EcommerceMallCategoryAtTreeTransformer.transform(
+    rootCategories[0],
+  );
 }

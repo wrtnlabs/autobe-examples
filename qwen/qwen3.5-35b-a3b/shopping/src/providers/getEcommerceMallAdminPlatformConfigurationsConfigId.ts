@@ -17,14 +17,12 @@ export async function getEcommerceMallAdminPlatformConfigurationsConfigId(props:
   admin: AdminPayload;
   configId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallPlatformConfiguration> {
-  const configuration =
+  const config =
     await MyGlobal.prisma.ecommerce_mall_platform_configurations.findUniqueOrThrow(
       {
         where: { id: props.configId },
         ...EcommerceMallPlatformConfigurationTransformer.select(),
       },
     );
-  return await EcommerceMallPlatformConfigurationTransformer.transform(
-    configuration,
-  );
+  return await EcommerceMallPlatformConfigurationTransformer.transform(config);
 }

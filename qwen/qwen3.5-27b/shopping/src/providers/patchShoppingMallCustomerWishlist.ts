@@ -22,27 +22,35 @@ export async function patchShoppingMallCustomerWishlist(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput = {
-    shopping_mall_customer_id: props.customer.id,
+  // Build where clause with soft-delete filter and customer ownership
+  const whereInput: Prisma.shopping_mall_wishlist_itemsWhereInput = {
     deleted_at: null,
-    ...(props.body.created_after && {
-      created_at: {
-        gte: new Date(props.body.created_after),
-      },
-    }),
-    ...(props.body.created_before && {
-      created_at: {
-        lte: new Date(props.body.created_before),
-      },
-    }),
-  } satisfies Prisma.shopping_mall_wishlist_itemsWhereInput;
+    shopping_mall_customer_id: props.customer.id,
+  };
+  // Build created_at filter if any date range is provided
+  if (
+    props.body.created_after !== undefined ||
+    props.body.created_before !== undefined
+  ) {
+    const createdAtFilter: Prisma.DateTimeFilter = {};
+    if (props.body.created_after !== undefined) {
+      createdAtFilter.gte = new Date(props.body.created_after);
+    }
+    if (props.body.created_before !== undefined) {
+      createdAtFilter.lte = new Date(props.body.created_before);
+    }
+    whereInput.created_at = createdAtFilter;
+  }
+  // Build order by clause based on sort parameters
   const sortBy = props.body.sort_by ?? "created_at";
   const sortOrder = props.body.sort_order ?? "desc";
-  const orderByInput = (
-    sortBy === "updated_at"
-      ? { updated_at: sortOrder as "asc" | "desc" }
-      : { created_at: sortOrder as "asc" | "desc" }
-  ) satisfies Prisma.shopping_mall_wishlist_itemsOrderByWithRelationInput;
+  const orderByInput: Prisma.shopping_mall_wishlist_itemsOrderByWithRelationInput =
+    (
+      sortBy === "updated_at"
+        ? { updated_at: sortOrder as "asc" | "desc" }
+        : { created_at: sortOrder as "asc" | "desc" }
+    ) satisfies Prisma.shopping_mall_wishlist_itemsOrderByWithRelationInput;
+  // Fetch wishlist items with pagination
   const data = await MyGlobal.prisma.shopping_mall_wishlist_items.findMany({
     where: whereInput,
     skip,
@@ -50,9 +58,11 @@ export async function patchShoppingMallCustomerWishlist(props: {
     orderBy: orderByInput,
     ...ShoppingMallWishlistItemAtSummaryTransformer.select(),
   });
+  // Count total records for pagination metadata
   const total = await MyGlobal.prisma.shopping_mall_wishlist_items.count({
     where: whereInput,
   });
+  // Transform and return paginated response
   return {
     data: await ArrayUtil.asyncMap(
       data,

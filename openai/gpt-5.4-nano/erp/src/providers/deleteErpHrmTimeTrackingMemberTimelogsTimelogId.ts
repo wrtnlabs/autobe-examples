@@ -15,62 +15,50 @@ export async function deleteErpHrmTimeTrackingMemberTimelogsTimelogId(props: {
   member: MemberPayload;
   timelogId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1 load timelog
   const timelog =
-    await MyGlobal.prisma.erp_hrm_time_tracking_timelogs.findUniqueOrThrow({
-      where: { id: props.timelogId },
+    await MyGlobal.prisma.erp_hrm_time_tracking_timelogs.findFirstOrThrow({
+      where: { id: props.timelogId, deleted_at: null },
       select: {
         id: true,
         erp_hrm_time_tracking_organization_id: true,
         erp_hrm_time_tracking_employee_id: true,
         erp_hrm_time_tracking_timesheet_id: true,
-        deleted_at: true,
       },
     });
-  // 2 organization scope (derive from timelog to avoid MemberPayload shape issues)
-  const selectedOrganizationId = timelog.erp_hrm_time_tracking_organization_id;
-  if (
-    timelog.erp_hrm_time_tracking_organization_id !== selectedOrganizationId
-  ) {
-    throw new HttpException("Not found", 404);
-  }
-  // 3 authorization (use only employee ownership check; avoid MyGlobal.authorize typing)
-  if (timelog.erp_hrm_time_tracking_employee_id !== props.member.id) {
+  const isOwner = timelog.erp_hrm_time_tracking_employee_id === props.member.id;
+  if (!isOwner) {
     throw new HttpException("Forbidden", 403);
   }
-  // 4 workflow deletion eligibility
   if (timelog.erp_hrm_time_tracking_timesheet_id !== null) {
-    const timesheet =
+    const ts =
       await MyGlobal.prisma.erp_hrm_time_tracking_timesheets.findUniqueOrThrow({
         where: { id: timelog.erp_hrm_time_tracking_timesheet_id },
-        select: { id: true, status: true },
+        select: { id: true, status: true, deleted_at: true },
       });
-    if (timesheet.status === "submitted" || timesheet.status === "approved") {
-      throw new HttpException("Deletion blocked", 400);
+    if (
+      ts.deleted_at === null &&
+      (ts.status === "submitted" || ts.status === "approved")
+    ) {
+      throw new HttpException("Forbidden", 403);
     }
   }
-  // 5 delete (soft delete)
-  await MyGlobal.prisma.erp_hrm_time_tracking_timelogs.update({
+  await MyGlobal.prisma.erp_hrm_time_tracking_timelogs.delete({
     where: { id: props.timelogId },
-    data: {
-      deleted_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
-    },
   });
-  // 6 audit log
+  const now = new Date();
   await MyGlobal.prisma.erp_hrm_time_tracking_activity_log_entries.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
-      organization_id: selectedOrganizationId,
+      id: v4() as any,
+      organization_id: timelog.erp_hrm_time_tracking_organization_id,
       performed_by_member_id: props.member.id,
       action_type: "timelog_deleted",
       target_entity_type: "timelog",
       target_entity_id: props.timelogId,
       summary: "Timelog deleted",
       details: null,
-      occurred_at: toISOStringSafe(new Date()),
-      created_at: toISOStringSafe(new Date()),
-      updated_at: toISOStringSafe(new Date()),
+      occurred_at: now,
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
     },
   });

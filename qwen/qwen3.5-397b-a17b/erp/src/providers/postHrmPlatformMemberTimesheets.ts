@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
@@ -25,38 +26,49 @@ export async function postHrmPlatformMemberTimesheets(props: {
   member: MemberPayload;
   body: IHrmPlatformTimesheet.ICreate;
 }): Promise<IHrmPlatformTimesheet> {
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      member_id: props.member.id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Employee record not found", 404);
-  }
-  const weekStartDate = new Date(props.body.week_start_date);
-  const weekEndDate = new Date(weekStartDate);
-  weekEndDate.setDate(weekEndDate.getDate() + 6);
-  const existing = await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
-    where: {
-      employee_id: employee.id,
-      week_start_date: weekStartDate,
-      deleted_at: null,
-    },
-  });
-  if (existing) {
-    throw new HttpException("Timesheet already exists for this week", 409);
-  }
+  // Find the employee record for this authenticated member
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+      where: {
+        user_id: props.member.id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+  // Create the timesheet using the collector
   const created = await MyGlobal.prisma.hrm_platform_timesheets.create({
     data: await HrmPlatformTimesheetCollector.collect({
       body: props.body,
-      hrmPlatformEmployees: { id: employee.id },
-      hrmPlatformMemberSessions: { id: props.member.session_id },
+      hrmPlatformEmployees: {
+        id: employee.id,
+      },
     }),
     ...HrmPlatformTimesheetTransformer.select(),
   });
-  return await HrmPlatformTimesheetTransformer.transform(created);
+  // Auto-associate existing timelogs within the week date range
+  const weekStart = new Date(props.body.week_start_date);
+  const weekEnd = new Date(props.body.week_end_date);
+  await MyGlobal.prisma.hrm_platform_timelogs.updateMany({
+    where: {
+      employee_id: employee.id,
+      date: {
+        gte: weekStart,
+        lte: weekEnd,
+      },
+      timesheet_id: null,
+    },
+    data: {
+      timesheet_id: created.id,
+      updated_at: new Date(),
+    },
+  });
+  // Fetch the created timesheet with all relations including updated timelogs
+  const timesheet =
+    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+      where: { id: created.id },
+      ...HrmPlatformTimesheetTransformer.select(),
+    });
+  return await HrmPlatformTimesheetTransformer.transform(timesheet);
 }

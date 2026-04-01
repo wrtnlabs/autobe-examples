@@ -11,6 +11,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { EcommerceMallInventoryRecordAtSummaryTransformer } from "../transformers/EcommerceMallInventoryRecordAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,123 +22,79 @@ export async function patchEcommerceMallSellerInventoryRecords(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Build base WHERE conditions for seller ownership
-  const sellerOwnershipFilter: Prisma.ecommerce_mall_inventory_recordsWhereInput =
-    {
-      deleted_at: null,
-      variant: {
-        product: {
-          seller_id: props.seller.id,
-        },
-      },
-    };
-  // Build additional filters
-  const additionalFilters: Prisma.ecommerce_mall_inventory_recordsWhereInput = {
+  const whereInput: Prisma.ecommerce_mall_inventory_recordsWhereInput = {
     deleted_at: null,
-  };
-  // Apply variantId filter
-  if (props.body.variantId) {
-    additionalFilters.ecommerce_mall_product_variant_id = props.body.variantId;
-  }
-  // Apply reason filter
-  if (props.body.reason !== undefined) {
-    additionalFilters.reason = props.body.reason;
-  }
-  // Apply type filter
-  if (props.body.type !== undefined) {
-    additionalFilters.type = props.body.type;
-  }
-  // Apply dateRange filter
-  if (props.body.dateRange) {
-    additionalFilters.created_at = {
-      gte: new Date(props.body.dateRange.from),
-      lte: new Date(props.body.dateRange.to),
-    };
-  }
-  // Apply quantityChangeRange filter
-  if (props.body.quantityChangeRange) {
-    additionalFilters.quantity_change = {
-      gte: props.body.quantityChangeRange.min,
-      lte: props.body.quantityChangeRange.max,
-    };
-  }
-  // Apply search filter (full-text search on reason and description)
-  if (props.body.search) {
-    additionalFilters.OR = [
-      { reason: { contains: props.body.search, mode: "insensitive" } },
-      { description: { contains: props.body.search, mode: "insensitive" } },
-    ];
-  }
-  // Combine seller ownership with additional filters using AND
-  const whereConditions: Prisma.ecommerce_mall_inventory_recordsWhereInput = {
-    AND: [sellerOwnershipFilter, additionalFilters],
-  };
-  // Build ORDER BY
-  const orderByInput = (() => {
-    if (props.body.sortBy) {
-      const direction = props.body.sortDirection === "ASC" ? "asc" : "desc";
-      return [{ [props.body.sortBy]: direction }];
-    }
-    return [{ created_at: "desc" }];
-  })() satisfies Prisma.ecommerce_mall_inventory_recordsOrderByWithRelationInput[];
-  // Execute query with seller ownership join
+    variant: {
+      product: {
+        seller_id: props.seller.id,
+      },
+    },
+    ...(props.body.variantId !== undefined
+      ? { ecommerce_mall_product_variant_id: props.body.variantId }
+      : {}),
+    ...(props.body.reason !== undefined ? { reason: props.body.reason } : {}),
+    ...(props.body.type !== undefined ? { type: props.body.type } : {}),
+    ...(props.body.dateRange !== undefined
+      ? {
+          created_at: {
+            gte: props.body.dateRange.from,
+            lte: props.body.dateRange.to,
+          },
+        }
+      : {}),
+    ...(props.body.quantityChangeRange !== undefined
+      ? {
+          quantity_change: {
+            gte: props.body.quantityChangeRange.min,
+            lte: props.body.quantityChangeRange.max,
+          },
+        }
+      : {}),
+    ...(props.body.search !== undefined
+      ? { reason: { contains: props.body.search, mode: "insensitive" } }
+      : {}),
+  } satisfies Prisma.ecommerce_mall_inventory_recordsWhereInput;
+  const orderByInput: Prisma.ecommerce_mall_inventory_recordsOrderByWithRelationInput[] =
+    props.body.sortBy === "created_at"
+      ? [
+          {
+            created_at: props.body.sortDirection === "ASC" ? "asc" : "desc",
+          },
+        ]
+      : props.body.sortBy === "quantity_change"
+        ? [
+            {
+              quantity_change:
+                props.body.sortDirection === "ASC" ? "asc" : "desc",
+            },
+          ]
+        : props.body.sortBy === "reason"
+          ? [
+              {
+                reason: props.body.sortDirection === "ASC" ? "asc" : "desc",
+              },
+            ]
+          : [{ created_at: "desc" }];
   const data = await MyGlobal.prisma.ecommerce_mall_inventory_records.findMany({
-    where: whereConditions,
+    where: whereInput,
     skip,
     take: limit,
     orderBy: orderByInput,
-    select: {
-      id: true,
-      ecommerce_mall_product_variant_id: true,
-      quantity_change: true,
-      remaining_quantity: true,
-      reason: true,
-      type: true,
-      description: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      ecommerce_mall_order_id: true,
-      ecommerce_mall_cancellation_request_id: true,
-      ecommerce_mall_refund_request_id: true,
-    } satisfies Prisma.ecommerce_mall_inventory_recordsSelect,
+    ...EcommerceMallInventoryRecordAtSummaryTransformer.select(),
   });
-  // Count total records for pagination
   const total = await MyGlobal.prisma.ecommerce_mall_inventory_records.count({
-    where: whereConditions,
+    where: whereInput,
   });
-  // Map to ISummary DTO
-  const summaryData = data.map((record) => ({
-    id: record.id as string & tags.Format<"uuid">,
-    variant_id: record.ecommerce_mall_product_variant_id as string &
-      tags.Format<"uuid">,
-    quantity_change: record.quantity_change,
-    remaining_quantity: record.remaining_quantity,
-    reason: record.reason,
-    type: record.type,
-    description: record.description ?? null,
-    created_at: record.created_at.toISOString(),
-    updated_at: record.updated_at.toISOString(),
-    deleted_at: record.deleted_at?.toISOString() ?? null,
-    ecommerce_mall_order_id: record.ecommerce_mall_order_id as
-      | (string & tags.Format<"uuid">)
-      | null,
-    ecommerce_mall_cancellation_request_id:
-      record.ecommerce_mall_cancellation_request_id as
-        | (string & tags.Format<"uuid">)
-        | null,
-    ecommerce_mall_refund_request_id:
-      record.ecommerce_mall_refund_request_id as
-        | (string & tags.Format<"uuid">)
-        | null,
-  })) satisfies IEcommerceMallInventoryRecord.ISummary[];
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallInventoryRecordAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: summaryData,
-  } satisfies IPageIEcommerceMallInventoryRecord.ISummary;
+  };
 }

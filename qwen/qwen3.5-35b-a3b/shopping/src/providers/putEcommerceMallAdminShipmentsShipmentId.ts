@@ -21,51 +21,56 @@ export async function putEcommerceMallAdminShipmentsShipmentId(props: {
   shipmentId: string & tags.Format<"uuid">;
   body: IEcommerceMallShipment.IUpdate;
 }): Promise<IEcommerceMallShipment> {
-  // Load shipment and verify it exists
-  const shipment =
-    await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
-      where: {
-        id: props.shipmentId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        ecommerce_mall_order_id: true,
-        ecommerce_mall_seller_id: true,
-        carrier_name: true,
-        carrier_phone: true,
-        carrier_website: true,
-        status: true,
-        shipped_at: true,
-        delivered_at: true,
-        estimated_delivery_at: true,
-        delivery_address: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
+  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
+    const existing = await tx.ecommerce_mall_shipments.findUnique({
+      where: { id: props.shipmentId },
+    });
+    if (existing === null) {
+      throw new HttpException("Shipment not found", 404);
+    }
+    if (existing.deleted_at !== null) {
+      throw new HttpException("Shipment not found", 404);
+    }
+    const snapshot = await tx.ecommerce_mall_shipment_snapshots.create({
+      data: {
+        id: v4(),
+        ecommerce_mall_shipment_id: props.shipmentId,
+        tracking_number: "",
+        carrier_name: existing.carrier_name,
+        carrier_contact: null,
+        status: existing.status,
+        estimated_delivery_date: existing.estimated_delivery_at,
+        actual_delivery_date: existing.delivered_at,
+        shipped_date: existing.shipped_at,
+        tracking_url: null,
+        shipping_method: null,
+        weight_kg: null,
+        dimensions_length_cm: null,
+        dimensions_width_cm: null,
+        dimensions_height_cm: null,
+        delivery_address: existing.delivery_address,
+        signature_required: null,
+        signature_obtained: null,
+        delivery_notes: null,
+        exception_description: null,
+        created_at: new Date(),
       },
     });
-  // Wrap snapshot creation and update in transaction for atomicity
-  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
-    // Manually construct update data (only fields in IUpdate are allowed)
-    const updateData: Prisma.ecommerce_mall_shipmentsUpdateInput = {
-      ...(props.body.delivery_address !== undefined && {
-        delivery_address: props.body.delivery_address,
-      }),
-      ...(props.body.estimated_delivery_at !== undefined && {
-        estimated_delivery_at: props.body.estimated_delivery_at,
-      }),
+    const updateData: Record<string, unknown> = {
       updated_at: new Date(),
     };
-    // Apply the update
-    return await tx.ecommerce_mall_shipments.update({
-      where: {
-        id: props.shipmentId,
-      },
+    if (props.body.delivery_address !== undefined) {
+      updateData.delivery_address = props.body.delivery_address;
+    }
+    if (props.body.estimated_delivery_at !== undefined) {
+      updateData.estimated_delivery_at = props.body.estimated_delivery_at;
+    }
+    const updated = await tx.ecommerce_mall_shipments.update({
+      where: { id: props.shipmentId },
       data: updateData,
       ...EcommerceMallShipmentTransformer.select(),
     });
+    return updated;
   });
-  // Return transformed result
-  return await EcommerceMallShipmentTransformer.transform(updated);
+  return EcommerceMallShipmentTransformer.transform(updated);
 }

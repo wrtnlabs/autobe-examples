@@ -1,7 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIShoppingMallInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallInventoryRecord";
-import { IShoppingMallInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallInventoryRecord";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductInventoryRecord";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -10,7 +10,9 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { ShoppingMallProductInventoryRecordCollector } from "../collectors/ShoppingMallProductInventoryRecordCollector";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { ShoppingMallProductInventoryRecordTransformer } from "../transformers/ShoppingMallProductInventoryRecordTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,86 +20,43 @@ export async function patchShoppingMallSellerProductsProductIdVariantsVariantIdI
   seller: SellerPayload;
   productId: string & tags.Format<"uuid">;
   variantId: string & tags.Format<"uuid">;
-  body: IShoppingMallInventoryRecord.IRequest;
-}): Promise<IPageIShoppingMallInventoryRecord.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  const variant =
-    await MyGlobal.prisma.shopping_mall_product_variants.findFirst({
-      where: {
-        id: props.variantId,
-        shopping_mall_product_id: props.productId,
-        deleted: false,
-      },
-      select: {
-        id: true,
-        shopping_mall_product_id: true,
-      },
+  body: IShoppingMallProductInventoryRecord.ICreate;
+}): Promise<IShoppingMallProductInventoryRecord> {
+  // Validate product exists and is owned by seller
+  const product =
+    await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      select: { id: true, seller_id: true },
     });
-  if (!variant) {
-    throw new HttpException(
-      "Variant not found or does not belong to product",
-      404,
-    );
+  if (product.seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  const product = await MyGlobal.prisma.shopping_mall_products.findFirst({
-    where: {
-      id: props.productId,
-      shopping_seller_id: props.seller.id,
-      deleted: false,
-    },
+  // Validate variant exists and belongs to the product
+  await MyGlobal.prisma.shopping_mall_product_variants.findUniqueOrThrow({
+    where: { id: props.variantId },
+    select: { id: true, shopping_mall_product_id: true },
   });
-  if (!product) {
-    throw new HttpException("Product not found or access denied", 403);
-  }
-  const whereInput = {
-    product_variant_id: props.variantId,
-    ...(props.body.reason && { reason: props.body.reason }),
-    ...(props.body.from && { created_at: { gte: new Date(props.body.from) } }),
-    ...(props.body.to && { created_at: { lte: new Date(props.body.to) } }),
-  } satisfies Prisma.shopping_mall_inventory_recordsWhereInput;
-  const orderByInput = (() => {
-    if (!props.body.sort) {
-      return { created_at: "desc" as const };
-    }
-    const [field, direction = "desc"] = props.body.sort.split(",");
-    if (field === "created_at") {
-      return { created_at: direction === "asc" ? "asc" : "desc" } as const;
-    }
-    return { created_at: "desc" as const };
-  })() satisfies Prisma.shopping_mall_inventory_recordsOrderByWithRelationInput;
-  const data = await MyGlobal.prisma.shopping_mall_inventory_records.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    select: {
-      id: true,
-      quantity_change: true,
-      reason: true,
-      reference_id: true,
-      created_at: true,
-    },
-  });
-  const total = await MyGlobal.prisma.shopping_mall_inventory_records.count({
-    where: whereInput,
-  });
+  // Create inventory record using collector
+  const record =
+    await MyGlobal.prisma.shopping_mall_product_inventory_records.create({
+      data: await ShoppingMallProductInventoryRecordCollector.collect({
+        body: props.body,
+        shoppingMallProductVariants: { id: props.variantId },
+      }),
+      ...ShoppingMallProductInventoryRecordTransformer.select(),
+    });
+  // Calculate current stock by summing all quantity changes for this variant
+  const stockResult =
+    await MyGlobal.prisma.shopping_mall_product_inventory_records.aggregate({
+      where: { product_variant_id: props.variantId },
+      _sum: { quantity_change: true },
+    });
+  const currentStock = stockResult._sum.quantity_change ?? 0;
+  // Transform and return with computed current_stock
+  const transformed =
+    await ShoppingMallProductInventoryRecordTransformer.transform(record);
   return {
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data: data.map((record) => {
-      return {
-        id: record.id,
-        quantity_change: record.quantity_change,
-        reason: record.reason,
-        reference_id: record.reference_id ?? undefined,
-        created_at: record.created_at.toISOString(),
-      } satisfies IShoppingMallInventoryRecord.ISummary;
-    }),
+    ...transformed,
+    current_stock: currentStock as number & tags.Type<"int32">,
   };
 }

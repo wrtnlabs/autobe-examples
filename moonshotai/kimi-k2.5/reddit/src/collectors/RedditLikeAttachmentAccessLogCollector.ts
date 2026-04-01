@@ -13,10 +13,11 @@ export namespace RedditLikeAttachmentAccessLogCollector {
     redditLikeAttachments: IEntity;
     redditLikeMembers: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
-      actor_type: "member",
+      id,
       access_type: props.body.access_type,
+      actor_type: "member",
       ip_address: props.body.ip_address ?? null,
       user_agent: props.body.user_agent ?? null,
       referer: props.body.referer ?? null,

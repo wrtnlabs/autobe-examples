@@ -18,11 +18,11 @@ export function prepare_random_shopping_mall_category(
         paragraphs: 1,
         sentenceMin: 2,
         sentenceMax: 4,
-      }) ??
-      null,
-    parent_category_id:
-      input?.parent_category_id ??
-      typia.random<string & tags.Format<"uuid">>() ??
-      null,
+      }),
+    parent_id:
+      input?.parent_id ??
+      (Math.random() < 0.3
+        ? null
+        : typia.random<string & tags.Format<"uuid">>()),
   };
 }

@@ -25,15 +25,15 @@ export async function putHrmPlatformMemberProjectsProjectIdTasksTaskId(props: {
   taskId: string & tags.Format<"uuid">;
   body: IHrmPlatformTask.IUpdate;
 }): Promise<IHrmPlatformTask> {
-  // Step 1: Verify task exists and belongs to project
+  // Step 1: Verify task exists and belongs to the project
   const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
     where: { id: props.taskId },
     select: {
       id: true,
       hrm_platform_projects_id: true,
       hrm_platform_tasks_id: true,
+      hrm_platform_employees_id: true,
       status: true,
-      deleted_at: true,
     },
   });
   if (task.hrm_platform_projects_id !== props.projectId) {
@@ -42,174 +42,156 @@ export async function putHrmPlatformMemberProjectsProjectIdTasksTaskId(props: {
       400,
     );
   }
-  if (task.deleted_at !== null) {
-    throw new HttpException("Task has been deleted", 404);
-  }
-  // Step 2: Verify project exists and is not deleted
+  // Step 2: Verify project belongs to member's organization
   const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
     {
       where: { id: props.projectId },
       select: {
         id: true,
         hrm_platform_organization_id: true,
-        deleted_at: true,
       },
     },
   );
-  if (project.deleted_at !== null) {
-    throw new HttpException("Project has been deleted", 404);
+  // Get member's employee record to verify organization context
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      hrm_platform_user_id: props.member.id,
+      hrm_platform_organization_id: project.hrm_platform_organization_id,
+      deleted_at: null,
+    },
+  });
+  if (!employee) {
+    throw new HttpException("You are not a member of this organization", 403);
   }
-  // Step 3: Get member's employee record in the organization
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        hrm_platform_user_id: props.member.id,
-        hrm_platform_organization_id: project.hrm_platform_organization_id,
-        deleted_at: null,
-      },
-    });
-  // Step 4: Check authorization - project lead or project:manage permission
-  const projectMember =
+  // Step 3: Check authorization - must be project lead or have project:manage permission
+  const projectMembership =
     await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
-        hrm_platform_project_id: props.projectId,
         hrm_platform_employee_id: employee.id,
+        hrm_platform_project_id: props.projectId,
         deleted_at: null,
       },
     });
-  if (!projectMember) {
+  if (!projectMembership) {
     throw new HttpException("You are not a member of this project", 403);
   }
-  let hasAuthorization = projectMember.role === "project-lead";
-  if (!hasAuthorization) {
-    // Check for project:manage permission through the employee's role
-    const permission = await MyGlobal.prisma.hrm_platform_permissions.findFirst(
-      {
-        where: {
-          code: "project:manage",
-          deleted_at: null,
-        },
-      },
-    );
-    if (permission) {
-      const hasPermission =
-        await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-          where: {
-            hrm_platform_role_id: employee.hrm_platform_role_id,
-            hrm_platform_permission_id: permission.id,
-            deleted_at: null,
-          },
-        });
-      hasAuthorization = !!hasPermission;
-    }
-  }
-  if (!hasAuthorization) {
+  if (projectMembership.role !== "project-lead") {
     throw new HttpException(
-      "Forbidden: You need project-lead role or project:manage permission",
+      "You do not have permission to update this task",
       403,
     );
   }
-  // Step 5: Validate assigned employee is a project member (if provided)
-  if (
-    props.body.hrm_platform_employees_id !== undefined &&
-    props.body.hrm_platform_employees_id !== null
-  ) {
-    const assignedEmployee =
-      await MyGlobal.prisma.hrm_platform_employees.findUnique({
-        where: { id: props.body.hrm_platform_employees_id },
-      });
-    if (!assignedEmployee) {
-      throw new HttpException("Assigned employee not found", 400);
-    }
-    const isProjectMember =
-      await MyGlobal.prisma.hrm_platform_project_members.findFirst({
-        where: {
-          hrm_platform_project_id: props.projectId,
-          hrm_platform_employee_id: props.body.hrm_platform_employees_id,
-          deleted_at: null,
-        },
-      });
-    if (!isProjectMember) {
-      throw new HttpException(
-        "Assigned employee is not a member of this project",
-        400,
-      );
-    }
-  }
-  // Step 6: Validate parent task belongs to same project (if provided)
-  if (
-    props.body.hrm_platform_tasks_id !== undefined &&
-    props.body.hrm_platform_tasks_id !== null
-  ) {
-    const parentTask = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
-      where: { id: props.body.hrm_platform_tasks_id },
-      select: { hrm_platform_projects_id: true, deleted_at: true },
-    });
-    if (!parentTask) {
-      throw new HttpException("Parent task not found", 400);
-    }
-    if (parentTask.deleted_at !== null) {
-      throw new HttpException("Parent task has been deleted", 400);
-    }
-    if (parentTask.hrm_platform_projects_id !== props.projectId) {
-      throw new HttpException(
-        "Parent task must belong to the same project",
-        409,
-      );
+  // Step 4: Validate body does not contain immutable 'title' field
+  // TypeScript type already excludes title from IUpdate, so this is compile-time safe
+  // Step 5: If assigned employee is provided, verify it's a project member
+  if (props.body.hrm_platform_employees_id !== undefined) {
+    if (props.body.hrm_platform_employees_id !== null) {
+      const assignedEmployee =
+        await MyGlobal.prisma.hrm_platform_employees.findUnique({
+          where: { id: props.body.hrm_platform_employees_id },
+        });
+      if (!assignedEmployee) {
+        throw new HttpException("Assigned employee not found", 404);
+      }
+      // Verify assigned employee is a member of the project
+      const assignedProjectMembership =
+        await MyGlobal.prisma.hrm_platform_project_members.findFirst({
+          where: {
+            hrm_platform_employee_id: props.body.hrm_platform_employees_id,
+            hrm_platform_project_id: props.projectId,
+            deleted_at: null,
+          },
+        });
+      if (!assignedProjectMembership) {
+        throw new HttpException(
+          "Assigned employee is not a member of this project",
+          400,
+        );
+      }
     }
   }
-  // Step 7: Record status change in history if status changed
+  // Step 6: If parent task is provided, verify it belongs to the same project
+  if (props.body.hrm_platform_tasks_id !== undefined) {
+    if (props.body.hrm_platform_tasks_id !== null) {
+      const parentTask = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
+        where: { id: props.body.hrm_platform_tasks_id },
+        select: { hrm_platform_projects_id: true },
+      });
+      if (!parentTask) {
+        throw new HttpException("Parent task not found", 404);
+      }
+      if (parentTask.hrm_platform_projects_id !== props.projectId) {
+        throw new HttpException(
+          "Parent task must belong to the same project",
+          409,
+        );
+      }
+    }
+  }
+  // Step 7: Record old status for history if status is being changed
   const oldStatus = task.status;
   const newStatus = props.body.status ?? oldStatus;
-  if (props.body.status !== undefined && oldStatus !== newStatus) {
-    const historyId = v4();
-    const now = new Date();
+  const statusChanged =
+    props.body.status !== undefined && props.body.status !== oldStatus;
+  // Step 8: Update the task
+  const updateData: Prisma.hrm_platform_tasksUpdateInput = {
+    updated_at: new Date(),
+  };
+  if (props.body.description !== undefined) {
+    updateData.description = props.body.description;
+  }
+  if (props.body.status !== undefined) {
+    updateData.status = props.body.status;
+  }
+  if (props.body.priority !== undefined) {
+    updateData.priority = props.body.priority;
+  }
+  if (props.body.estimated_hours !== undefined) {
+    updateData.estimated_hours = props.body.estimated_hours;
+  }
+  if (props.body.due_date !== undefined) {
+    updateData.due_date = props.body.due_date
+      ? new Date(props.body.due_date)
+      : null;
+  }
+  // Use relation property names instead of FK columns
+  if (props.body.hrm_platform_employees_id !== undefined) {
+    if (props.body.hrm_platform_employees_id === null) {
+      updateData.assignedEmployee = { disconnect: true };
+    } else {
+      updateData.assignedEmployee = {
+        connect: { id: props.body.hrm_platform_employees_id },
+      };
+    }
+  }
+  if (props.body.hrm_platform_tasks_id !== undefined) {
+    if (props.body.hrm_platform_tasks_id === null) {
+      updateData.parent = { disconnect: true };
+    } else {
+      updateData.parent = { connect: { id: props.body.hrm_platform_tasks_id } };
+    }
+  }
+  await MyGlobal.prisma.hrm_platform_tasks.update({
+    where: { id: props.taskId },
+    data: updateData,
+  });
+  // Step 9: Record status change in task_histories if status changed
+  if (statusChanged) {
     await MyGlobal.prisma.hrm_platform_task_histories.create({
       data: {
-        id: historyId,
+        id: v4(),
         hrm_platform_task_id: props.taskId,
         hrm_platform_member_id: props.member.id,
-        changed_at: now,
+        changed_at: new Date(),
         old_status: oldStatus,
         new_status: newStatus,
-        created_at: now,
-        updated_at: now,
+        created_at: new Date(),
+        updated_at: new Date(),
         deleted_at: null,
       },
     });
   }
-  // Step 8: Update the task using relation property names
-  const now = new Date();
-  await MyGlobal.prisma.hrm_platform_tasks.update({
-    where: { id: props.taskId },
-    data: {
-      updated_at: now,
-      ...(props.body.description !== undefined && {
-        description: props.body.description,
-      }),
-      ...(props.body.status !== undefined && { status: props.body.status }),
-      ...(props.body.priority !== undefined && {
-        priority: props.body.priority,
-      }),
-      ...(props.body.estimated_hours !== undefined && {
-        estimated_hours: props.body.estimated_hours,
-      }),
-      ...(props.body.due_date !== undefined && {
-        due_date: props.body.due_date ? new Date(props.body.due_date) : null,
-      }),
-      ...(props.body.hrm_platform_employees_id !== undefined &&
-        props.body.hrm_platform_employees_id !== null && {
-          assignedEmployee: {
-            connect: { id: props.body.hrm_platform_employees_id },
-          },
-        }),
-      ...(props.body.hrm_platform_tasks_id !== undefined &&
-        props.body.hrm_platform_tasks_id !== null && {
-          parent: { connect: { id: props.body.hrm_platform_tasks_id } },
-        }),
-    },
-  });
-  // Step 9: Return updated task using transformer
+  // Step 10: Return updated task using transformer
   const updatedTask =
     await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
       where: { id: props.taskId },

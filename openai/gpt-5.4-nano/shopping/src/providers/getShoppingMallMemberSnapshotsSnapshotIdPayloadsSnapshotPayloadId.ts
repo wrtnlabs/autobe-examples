@@ -16,7 +16,17 @@ export async function getShoppingMallMemberSnapshotsSnapshotIdPayloadsSnapshotPa
   snapshotId: string & tags.Format<"uuid">;
   snapshotPayloadId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const canView =
+  const member = await MyGlobal.prisma.shopping_mall_members.findFirst({
+    where: {
+      id: props.member.id,
+      deleted_at: null,
+    },
+    select: { id: true },
+  });
+  if (member === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const visibility =
     await MyGlobal.prisma.shopping_mall_snapshot_parties.findFirst({
       where: {
         shopping_mall_snapshot_id: props.snapshotId,
@@ -26,10 +36,10 @@ export async function getShoppingMallMemberSnapshotsSnapshotIdPayloadsSnapshotPa
       },
       select: { id: true },
     });
-  if (canView === null) {
+  if (visibility === null) {
     throw new HttpException("Forbidden", 403);
   }
-  const payloadRow =
+  const payload =
     await MyGlobal.prisma.shopping_mall_snapshot_payloads.findFirst({
       where: {
         id: props.snapshotPayloadId,
@@ -38,10 +48,7 @@ export async function getShoppingMallMemberSnapshotsSnapshotIdPayloadsSnapshotPa
       },
       select: { payload: true },
     });
-  if (payloadRow === null) {
-    // Treat payload mismatch as unsuccessful access to avoid existence leak.
+  if (payload === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Response body is void in this endpoint contract.
-  void payloadRow.payload;
 }

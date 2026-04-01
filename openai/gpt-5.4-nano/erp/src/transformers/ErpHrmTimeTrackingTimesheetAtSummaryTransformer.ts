@@ -4,8 +4,10 @@ import { IErpHrmTimeTrackingOrganization } from "@ORGANIZATION/PROJECT-api/lib/s
 import { IErpHrmTimeTrackingTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTimesheet";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "./ErpHrmTimeTrackingMemberAtSummaryTransformer";
 
@@ -26,10 +28,27 @@ export namespace ErpHrmTimeTrackingTimesheetAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: ErpHrmTimeTrackingMemberAtSummaryTransformer.select(),
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            logo_url: true,
+            currency_code: true,
+            timezone: true,
+            fiscal_start_month: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
         employee: ErpHrmTimeTrackingMemberAtSummaryTransformer.select(),
-        timelogs: true,
-        versioningLocks: true,
+        timelogs: {
+          select: { id: true },
+        } satisfies Prisma.erp_hrm_time_tracking_timelogsFindManyArgs,
+        versioningLocks: {
+          select: { id: true },
+        } satisfies Prisma.erp_hrm_time_tracking_timesheet_versioning_locksFindManyArgs,
       },
     } satisfies Prisma.erp_hrm_time_tracking_timesheetsFindManyArgs;
   }
@@ -38,10 +57,9 @@ export namespace ErpHrmTimeTrackingTimesheetAtSummaryTransformer {
   ): Promise<IErpHrmTimeTrackingTimesheet.ISummary> {
     return {
       id: input.id,
-      organization:
-        await ErpHrmTimeTrackingMemberAtSummaryTransformer.transform(
-          input.organization,
-        ),
+      organization: {
+        ...(input.organization as unknown as Record<string, never>),
+      } as IErpHrmTimeTrackingOrganization.ISummary,
       employee: await ErpHrmTimeTrackingMemberAtSummaryTransformer.transform(
         input.employee,
       ),

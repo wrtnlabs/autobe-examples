@@ -4,7 +4,7 @@ import typia, { tags } from "typia";
 
 import { IEcommerceMallRefundRequest } from "../../../../api/structures/IEcommerceMallRefundRequest";
 import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
 import { getEcommerceMallSuperAdminRefundRequestsRefundRequestId } from "../../../../providers/getEcommerceMallSuperAdminRefundRequestsRefundRequestId";
 
 @Controller("/ecommerceMall/superAdmin/refund-requests/:refundRequestId")
@@ -40,7 +40,7 @@ export class EcommercemallSuperadminRefund_requestsController {
   @TypedRoute.Get()
   public async at(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedParam("refundRequestId")
     refundRequestId: string & tags.Format<"uuid">,
   ): Promise<IEcommerceMallRefundRequest> {

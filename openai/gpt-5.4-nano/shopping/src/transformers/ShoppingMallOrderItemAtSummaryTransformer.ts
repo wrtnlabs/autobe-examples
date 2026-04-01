@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -25,14 +26,6 @@ export namespace ShoppingMallOrderItemAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        // Selected to satisfy generator constraints; not used in transform()
-        order: { select: { id: true } },
-        productVariant: { select: { id: true } },
-        sellerSnapshot: { select: { id: true } },
-        shipment: { select: { id: true } },
-        cancellationRequests: { select: { id: true } },
-        refundRequests: { select: { id: true } },
-        review: { select: { id: true } },
       },
     } satisfies Prisma.shopping_mall_order_itemsFindManyArgs;
   }

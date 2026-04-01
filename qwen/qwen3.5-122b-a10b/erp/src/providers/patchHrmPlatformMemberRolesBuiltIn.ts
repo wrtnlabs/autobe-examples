@@ -11,6 +11,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { HrmPlatformRoleAtSummaryTransformer } from "../transformers/HrmPlatformRoleAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,64 +19,58 @@ export async function patchHrmPlatformMemberRolesBuiltIn(props: {
   member: MemberPayload;
   body: IHrmPlatformRole.IRequest;
 }): Promise<IPageIHrmPlatformRole.ISummary> {
-  // Parse pagination parameters
+  const member = await MyGlobal.prisma.hrm_platform_members.findFirst({
+    where: {
+      id: props.member.id,
+      deleted_at: null,
+    },
+  });
+  if (member === null) {
+    throw new HttpException("Member not found", 404);
+  }
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      hrm_platform_user_id: props.member.id,
+      deleted_at: null,
+    },
+  });
+  if (employee === null) {
+    throw new HttpException("Employee record not found", 404);
+  }
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause for built-in roles
-  const whereInput: Prisma.hrm_platform_rolesWhereInput = {
+  const whereInput = {
+    hrm_platform_organization_id: employee.hrm_platform_organization_id,
     is_builtin: true,
     deleted_at: null,
-  };
-  // Build order by clause
-  const sortBy = props.body.sort_by ?? "created_at";
-  const sortOrder = props.body.sort_order ?? "desc";
-  const validSortFields = ["created_at", "name", "code"];
-  const orderByInput: Prisma.hrm_platform_rolesOrderByWithRelationInput = {
-    [validSortFields.includes(sortBy) ? sortBy : "created_at"]: sortOrder,
-  };
-  // Fetch roles
+  } satisfies Prisma.hrm_platform_rolesWhereInput;
+  const orderByInput =
+    props.body.sort_by === "name"
+      ? ({ name: props.body.sort_order ?? "desc" } as const)
+      : props.body.sort_by === "code"
+        ? ({ code: props.body.sort_order ?? "desc" } as const)
+        : ({ created_at: props.body.sort_order ?? "desc" } as const);
   const roles = await MyGlobal.prisma.hrm_platform_roles.findMany({
     where: whereInput,
     skip,
     take: limit,
     orderBy: orderByInput,
-    select: {
-      id: true,
-      code: true,
-      name: true,
-      description: true,
-      is_builtin: true,
-      created_at: true,
-      deleted_at: true,
-    },
+    ...HrmPlatformRoleAtSummaryTransformer.select(),
   });
-  // Count total records
   const total = await MyGlobal.prisma.hrm_platform_roles.count({
     where: whereInput,
   });
-  // Transform to ISummary format
-  const data = await ArrayUtil.asyncMap(roles, async (role) =>
-    typia.assert<IHrmPlatformRole.ISummary>({
-      id: role.id,
-      code: role.code,
-      name: role.name,
-      description: role.description ?? null,
-      is_builtin: role.is_builtin,
-      permissions: [],
-      created_at: toISOStringSafe(role.created_at),
-      deleted_at: role.deleted_at
-        ? toISOStringSafe(role.deleted_at as Date)
-        : null,
-    }),
-  );
-  return typia.assert<IPageIHrmPlatformRole.ISummary>({
-    pagination: typia.assert<IPage.IPagination>({
+  return {
+    data: await ArrayUtil.asyncMap(
+      roles,
+      HrmPlatformRoleAtSummaryTransformer.transform,
+    ),
+    pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    }),
-    data,
-  });
+    } satisfies IPage.IPagination,
+  } satisfies IPageIHrmPlatformRole.ISummary;
 }

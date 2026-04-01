@@ -11,6 +11,8 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "../transformers/ErpHrmTimeTrackingMemberAtSummaryTransformer";
+import { ErpHrmTimeTrackingProjectAtSummaryTransformer } from "../transformers/ErpHrmTimeTrackingProjectAtSummaryTransformer";
 import { ErpHrmTimeTrackingProjectMembershipTransformer } from "../transformers/ErpHrmTimeTrackingProjectMembershipTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -21,78 +23,45 @@ export async function putErpHrmTimeTrackingMemberProjectsProjectIdMembershipsMem
   membershipId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingProjectMembership.IUpdate;
 }): Promise<IErpHrmTimeTrackingProjectMembership> {
-  return await MyGlobal.prisma.$transaction(async (transaction) => {
-    const nowIso = toISOStringSafe(new Date()) as string &
-      tags.Format<"date-time">;
+  return await MyGlobal.prisma.$transaction(async (tx) => {
     const membership =
-      await transaction.erp_hrm_time_tracking_project_memberships.findUniqueOrThrow(
-        {
-          where: { id: props.membershipId },
-          select: {
-            id: true,
-            project_id: true,
-            employee_id: true,
-            membership_role: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-          },
-        },
-      );
-    if (membership.project_id !== props.projectId) {
-      throw new HttpException("Invalid scope", 400);
-    }
-    if (membership.deleted_at !== null) {
-      throw new HttpException("Membership is not updatable", 400);
-    }
-    await transaction.erp_hrm_time_tracking_member_sessions.findUniqueOrThrow({
-      where: { id: props.member.session_id },
-      select: {
-        id: true,
-      },
-    });
-    const project =
-      await transaction.erp_hrm_time_tracking_projects.findUniqueOrThrow({
-        where: { id: props.projectId },
+      await tx.erp_hrm_time_tracking_project_memberships.findUniqueOrThrow({
+        where: { id: props.membershipId },
         select: {
           id: true,
+          project_id: true,
+          employee_id: true,
+          membership_role: true,
           deleted_at: true,
-          erp_hrm_time_tracking_organization_id: true,
+          created_at: true,
+          updated_at: true,
+          project: ErpHrmTimeTrackingProjectAtSummaryTransformer.select(),
+          employee: ErpHrmTimeTrackingMemberAtSummaryTransformer.select(),
         },
       });
-    if (project.deleted_at !== null) {
-      throw new HttpException("Project is not available", 400);
+    if (membership.project_id !== props.projectId) {
+      throw new HttpException("Invalid project scope", 400);
     }
-    const nextMembershipRole =
-      props.body.membership_role === undefined
-        ? membership.membership_role
-        : props.body.membership_role;
-    if (nextMembershipRole.trim().length < 1) {
-      throw new HttpException("Invalid membership role", 400);
+    if (membership.deleted_at !== null) {
+      throw new HttpException("Membership is deleted", 400);
+    }
+    if (membership.project.deleted_at !== null) {
+      throw new HttpException("Project is deleted", 400);
     }
     if (props.body.membership_role !== undefined) {
-      await transaction.erp_hrm_time_tracking_project_memberships.update({
-        where: { id: props.membershipId },
-        data: {
-          membership_role: nextMembershipRole,
-          updated_at: nowIso,
-        },
-      });
-    } else {
-      await transaction.erp_hrm_time_tracking_project_memberships.update({
-        where: { id: props.membershipId },
-        data: {
-          updated_at: nowIso,
-        },
-      });
+      if (props.body.membership_role.length < 1) {
+        throw new HttpException("Invalid membership role", 400);
+      }
     }
-    const updated =
-      await transaction.erp_hrm_time_tracking_project_memberships.findUniqueOrThrow(
-        {
-          where: { id: props.membershipId },
-          ...ErpHrmTimeTrackingProjectMembershipTransformer.select(),
-        },
-      );
+    const updated = await tx.erp_hrm_time_tracking_project_memberships.update({
+      where: { id: props.membershipId },
+      data: {
+        ...(props.body.membership_role !== undefined && {
+          membership_role: props.body.membership_role,
+        }),
+      },
+      select: ErpHrmTimeTrackingProjectMembershipTransformer.select().select,
+    });
     return await ErpHrmTimeTrackingProjectMembershipTransformer.transform(
       updated,
     );

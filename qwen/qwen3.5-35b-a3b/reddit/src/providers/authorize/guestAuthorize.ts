@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
@@ -12,15 +12,13 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guestSession = await MyGlobal.prisma.reddit_community_guest_sessions.findFirst({
+  const guest = await MyGlobal.prisma.reddit_community_guests.findFirst({
     where: {
-      reddit_community_guest_id: payload.id,
-      expired_at: { gt: new Date() },
-      deleted_at: null,
+      id: payload.id,
     },
   });
 
-  if (guestSession === null) {
+  if (guest === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

@@ -2,8 +2,10 @@ import { IEcommerceMallSellerApprovalSnapshot } from "@ORGANIZATION/PROJECT-api/
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallSellerApprovalSnapshotAtSummaryTransformer {
@@ -20,9 +22,9 @@ export namespace EcommerceMallSellerApprovalSnapshotAtSummaryTransformer {
         actor_type: true,
         rejection_reason: true,
         created_at: true,
-        actor: { select: { id: true } },
-        approvalRequest: { select: { id: true } },
-        seller: { select: { id: true } },
+        approvalRequest: true,
+        seller: true,
+        actor: true,
       },
     } satisfies Prisma.ecommerce_mall_seller_approval_snapshotsFindManyArgs;
   }

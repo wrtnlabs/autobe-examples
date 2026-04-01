@@ -11,6 +11,7 @@ export namespace EcommerceMallProductVariantCollector {
   export async function collect(props: {
     body: IEcommerceMallProductVariant.ICreate;
     ecommerceMallProducts: IEntity;
+    ecommerceMallSellers: IEntity;
   }) {
     const id: string = v4();
     return {

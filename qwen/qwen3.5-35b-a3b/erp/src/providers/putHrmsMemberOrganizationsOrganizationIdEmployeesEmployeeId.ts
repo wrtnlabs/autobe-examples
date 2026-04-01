@@ -28,87 +28,91 @@ export async function putHrmsMemberOrganizationsOrganizationIdEmployeesEmployeeI
     where: { id: props.employeeId },
     select: {
       id: true,
-      organization_member_id: true,
-      role_id: true,
-      department_id: true,
+      deleted_at: true,
       organizationMember: {
         select: {
-          hrms_organization_id: true,
+          id: true,
+          member: { select: { id: true } },
+          organization: { select: { id: true } },
+          organizationRole: { select: { id: true, name: true } },
         },
       },
     },
   });
-  if (
-    employee.organizationMember.hrms_organization_id !== props.organizationId
-  ) {
-    throw new HttpException("Employee does not belong to organization", 403);
+  if (employee.organizationMember.organization.id !== props.organizationId) {
+    throw new HttpException("Not found", 404);
   }
-  const memberMembership =
-    await MyGlobal.prisma.hrms_organization_members.findFirstOrThrow({
-      where: {
-        hrms_member_id: props.member.id,
-        hrms_organization_id: props.organizationId,
-      },
-      include: {
-        organizationRole: true,
-      },
-    });
-  const memberRole = memberMembership.organizationRole;
-  const hasManagePermission =
-    await MyGlobal.prisma.hrms_organization_role_permissions.findFirst({
-      where: {
-        hrms_organization_role_id: memberRole.id,
-        permission: "employee:manage",
-      },
-    });
-  if (!hasManagePermission) {
+  if (employee.organizationMember.member.id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  if (
-    props.body.department_id !== undefined &&
-    props.body.department_id !== null
-  ) {
-    const department = await MyGlobal.prisma.hrms_departments.findFirst({
-      where: {
-        id: props.body.department_id,
-        organization_id: props.organizationId,
-      },
-    });
-    if (!department) {
-      throw new HttpException("Department not found in organization", 400);
+  if (employee.deleted_at !== null) {
+    throw new HttpException("Not found", 404);
+  }
+  let departmentConnect:
+    | {
+        connect: {
+          id: string;
+        };
+      }
+    | {
+        disconnect: true;
+      }
+    | undefined = undefined;
+  if (props.body.department_id !== undefined) {
+    if (props.body.department_id === null) {
+      departmentConnect = { disconnect: true };
+    } else {
+      const department = await MyGlobal.prisma.hrms_departments.findFirst({
+        where: {
+          id: props.body.department_id,
+          organization_id: props.organizationId,
+          deleted_at: null,
+        },
+        select: { id: true },
+      });
+      if (department === null) {
+        throw new HttpException("Department not found", 404);
+      }
+      departmentConnect = { connect: { id: props.body.department_id } };
     }
   }
-  if (props.body.role_id !== undefined && props.body.role_id !== null) {
+  let roleConnect:
+    | {
+        connect: {
+          id: string;
+        };
+      }
+    | {
+        disconnect: true;
+      }
+    | undefined = undefined;
+  if (props.body.role_id !== undefined) {
     const role = await MyGlobal.prisma.hrms_organization_roles.findFirst({
       where: {
         id: props.body.role_id,
         organization_id: props.organizationId,
       },
+      select: { id: true },
     });
-    if (!role) {
-      throw new HttpException("Role not found in organization", 400);
+    if (role === null) {
+      throw new HttpException("Role not found", 404);
     }
+    roleConnect = { connect: { id: props.body.role_id } };
   }
   const updateData: Prisma.hrms_employeesUpdateInput = {
     ...(props.body.display_name !== undefined && {
       display_name: props.body.display_name,
     }),
-    ...(props.body.position !== undefined && {
-      position: props.body.position,
-    }),
+    ...(props.body.position !== undefined && { position: props.body.position }),
     ...(props.body.employment_type !== undefined && {
       employment_type: props.body.employment_type,
     }),
-    ...(props.body.department_id !== undefined && {
-      department_id: props.body.department_id,
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...((departmentConnect !== undefined || roleConnect !== undefined) && {
+      ...(departmentConnect !== undefined && { department: departmentConnect }),
+      ...(roleConnect !== undefined && { role: roleConnect }),
     }),
-    ...(props.body.role_id !== undefined && {
-      role_id: props.body.role_id,
-    }),
-    ...(props.body.status !== undefined && {
-      status: props.body.status,
-    }),
-    updated_at: new Date(),
+    updated_at: toISOStringSafe(new Date()),
   };
   await MyGlobal.prisma.hrms_employees.update({
     where: { id: props.employeeId },

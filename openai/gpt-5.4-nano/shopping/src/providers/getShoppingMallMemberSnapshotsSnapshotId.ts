@@ -15,32 +15,26 @@ import { ShoppingMallSnapshotTransformer } from "../transformers/ShoppingMallSna
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-export async function getShoppingMallMemberMemberSnapshotsSnapshotId(props: {
+export async function getShoppingMallMemberSnapshotsSnapshotId(props: {
   member: MemberPayload;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallSnapshot> {
-  const partyType = "member";
-  const partyId = props.member.id;
-  const partyVisibility =
-    await MyGlobal.prisma.shopping_mall_snapshot_parties.findFirst({
-      where: {
-        shopping_mall_snapshot_id: props.snapshotId,
-        party_type: partyType,
-        party_id: partyId,
-        can_view: true,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
-  if (partyVisibility === null) {
-    throw new HttpException("Forbidden", 403);
-  }
   const snapshot = await MyGlobal.prisma.shopping_mall_snapshots.findUnique({
     where: { id: props.snapshotId },
-    select: ShoppingMallSnapshotTransformer.select() as any,
+    ...ShoppingMallSnapshotTransformer.select(),
   });
-  if (snapshot === null || snapshot.deleted_at !== null) {
+  if (snapshot === null) {
+    // Avoid leaking existence: return the same denial for not-found vs unauthorized.
     throw new HttpException("Forbidden", 403);
   }
-  return ShoppingMallSnapshotTransformer.transform(snapshot as any);
+  const canView = snapshot.snapshotParties.some(
+    (party) =>
+      party.can_view === true &&
+      party.deleted_at === null &&
+      party.party_id === props.member.id,
+  );
+  if (!canView) {
+    throw new HttpException("Forbidden", 403);
+  }
+  return await ShoppingMallSnapshotTransformer.transform(snapshot);
 }

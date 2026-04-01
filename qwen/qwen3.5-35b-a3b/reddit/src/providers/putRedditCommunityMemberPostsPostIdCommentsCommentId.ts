@@ -14,6 +14,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditCommunityCommentTransformer } from "../transformers/RedditCommunityCommentTransformer";
+import { RedditCommunityPostAtSummaryTransformer } from "../transformers/RedditCommunityPostAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,37 +24,153 @@ export async function putRedditCommunityMemberPostsPostIdCommentsCommentId(props
   commentId: string & tags.Format<"uuid">;
   body: IRedditCommunityComment.IUpdate;
 }): Promise<IRedditCommunityComment> {
-  // 1. Find comment with minimal select for ownership validation
+  const { member, postId, commentId, body } = props;
   const comment =
     await MyGlobal.prisma.reddit_community_comments.findUniqueOrThrow({
-      where: { id: props.commentId },
+      where: { id: commentId },
       select: {
         id: true,
+        body: true,
         reddit_community_members_id: true,
         reddit_community_posts_id: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        votes: true,
+        author: {
+          select: {
+            id: true,
+            username: true,
+            created_at: true,
+            karma: {
+              select: { current_score: true },
+            },
+            userAvatarFiles: {
+              select: {
+                id: true,
+                created_at: true,
+              },
+            },
+          },
+        },
+        post: RedditCommunityPostAtSummaryTransformer.select(),
+        parent: {
+          select: {
+            id: true,
+            created_at: true,
+            votes: true,
+            parent_comment_id: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                created_at: true,
+                karma: { select: { current_score: true } },
+                userAvatarFiles: { select: { id: true, created_at: true } },
+              },
+            },
+          },
+        },
+        replies: {
+          select: {
+            id: true,
+            created_at: true,
+            votes: true,
+            parent_comment_id: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                created_at: true,
+                karma: { select: { current_score: true } },
+                userAvatarFiles: { select: { id: true, created_at: true } },
+              },
+            },
+          },
+        },
       },
     });
-  // 2. Verify comment belongs to the specified post
-  if (comment.reddit_community_posts_id !== props.postId) {
-    throw new HttpException("Forbidden", 403);
+  if (comment.reddit_community_members_id !== member.id) {
+    throw new HttpException("You can only edit your own comments", 403);
   }
-  // 3. Verify comment ownership
-  if (comment.reddit_community_members_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+  if (comment.reddit_community_posts_id !== postId) {
+    throw new HttpException(
+      "Comment does not belong to the specified post",
+      403,
+    );
   }
-  // 4. Update comment body and timestamp
+  if (body.body === undefined) {
+    throw new HttpException("Comment body must not be empty", 400);
+  }
   await MyGlobal.prisma.reddit_community_comments.update({
-    where: { id: props.commentId },
+    where: { id: commentId },
     data: {
-      body: props.body.body,
+      body: body.body,
       updated_at: new Date(),
     },
   });
-  // 5. Return updated comment with full data
-  const updated =
+  const updatedComment =
     await MyGlobal.prisma.reddit_community_comments.findUniqueOrThrow({
-      where: { id: props.commentId },
-      ...RedditCommunityCommentTransformer.select(),
+      where: { id: commentId },
+      select: {
+        id: true,
+        body: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        votes: true,
+        author: {
+          select: {
+            id: true,
+            username: true,
+            created_at: true,
+            karma: {
+              select: { current_score: true },
+            },
+            userAvatarFiles: {
+              select: {
+                id: true,
+                created_at: true,
+              },
+            },
+          },
+        },
+        post: RedditCommunityPostAtSummaryTransformer.select(),
+        parent: {
+          select: {
+            id: true,
+            created_at: true,
+            votes: true,
+            parent_comment_id: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                created_at: true,
+                karma: { select: { current_score: true } },
+                userAvatarFiles: { select: { id: true, created_at: true } },
+              },
+            },
+          },
+        },
+        replies: {
+          select: {
+            id: true,
+            created_at: true,
+            votes: true,
+            parent_comment_id: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                created_at: true,
+                karma: { select: { current_score: true } },
+                userAvatarFiles: { select: { id: true, created_at: true } },
+              },
+            },
+          },
+        },
+      },
     });
-  return await RedditCommunityCommentTransformer.transform(updated);
+  return await RedditCommunityCommentTransformer.transform(updatedComment);
 }

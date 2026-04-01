@@ -23,30 +23,41 @@ export async function postEcommerceMallCustomerCancellationRequests(props: {
   customer: CustomerPayload;
   body: IEcommerceMallCancellationRequest.ICreate;
 }): Promise<IEcommerceMallCancellationRequest> {
-  const orderItem =
-    await MyGlobal.prisma.ecommerce_mall_order_items.findFirstOrThrow({
-      where: { id: props.body.order_item_id },
-    });
   const order = await MyGlobal.prisma.ecommerce_mall_orders.findFirstOrThrow({
-    where: { id: orderItem.ecommerce_mall_order_id },
+    where: { id: props.body.order_item_id },
+    select: {
+      id: true,
+      customer_id: true,
+      status: true,
+      deleted_at: true,
+      shipping_address_id: true,
+    },
   });
-  if (order.status !== "paid") {
-    throw new HttpException(
-      "Item cannot be cancelled because it is not in paid status",
-      400,
-    );
-  }
   if (order.customer_id !== props.customer.id) {
     throw new HttpException(
       "Cancellation request denied: Customer does not own this order item",
       403,
     );
   }
+  if (order.status !== "paid") {
+    throw new HttpException(
+      "Item cannot be cancelled because it is not in paid status",
+      400,
+    );
+  }
+  if (order.deleted_at !== null) {
+    throw new HttpException(
+      "Item cannot be cancelled because it is no longer eligible for cancellation",
+      400,
+    );
+  }
   const existingRequest =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findFirst({
       where: {
         order_item_id: props.body.order_item_id,
-        status: "pending",
+        status: {
+          in: ["pending", "approved"],
+        },
         deleted_at: null,
       },
     });
@@ -60,7 +71,7 @@ export async function postEcommerceMallCustomerCancellationRequests(props: {
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.create({
       data: await EcommerceMallCancellationRequestCollector.collect({
         body: props.body,
-        ecommerceMallCustomers: { id: props.customer.id } satisfies IEntity,
+        ecommerceMallCustomers: props.customer,
       }),
       ...EcommerceMallCancellationRequestTransformer.select(),
     });

@@ -1,10 +1,15 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallInventoryRecord";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ShoppingMallProductVariantAtSummaryTransformer } from "./ShoppingMallProductVariantAtSummaryTransformer";
 
 export namespace ShoppingMallInventoryRecordAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_inventory_recordsGetPayload<
@@ -16,13 +21,8 @@ export namespace ShoppingMallInventoryRecordAtSummaryTransformer {
         id: true,
         quantity_change: true,
         reason: true,
-        reference_id: true,
         created_at: true,
-        variant: {
-          select: {
-            id: true,
-          },
-        },
+        productVariant: ShoppingMallProductVariantAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_inventory_recordsFindManyArgs;
   }
@@ -33,8 +33,11 @@ export namespace ShoppingMallInventoryRecordAtSummaryTransformer {
       id: input.id,
       quantity_change: input.quantity_change,
       reason: input.reason,
-      reference_id: input.reference_id ?? undefined,
       created_at: input.created_at.toISOString(),
+      productVariant:
+        await ShoppingMallProductVariantAtSummaryTransformer.transform(
+          input.productVariant,
+        ),
     };
   }
 }

@@ -15,131 +15,95 @@ export async function deleteHrmPlatformMemberEmployeesEmployeeId(props: {
   member: MemberPayload;
   employeeId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Query the employee record to verify existence and get organization/role info
+  // Get the employee record to verify existence and get organization context
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: {
-        id: props.employeeId,
-      } satisfies Prisma.hrm_platform_employeesWhereUniqueInput,
+      where: { id: props.employeeId },
       select: {
         id: true,
         organization_id: true,
+        user_id: true,
         role_id: true,
-        member_id: true,
+        status: true,
+        deleted_at: true,
       },
     });
-  // Query the requesting member's employee record in the same organization to verify permissions
-  const requestingEmployee =
+  // Get the authenticated member's role in this organization
+  const memberEmployee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        member_id: props.member.id,
         organization_id: employee.organization_id,
+        user_id: props.member.id,
         deleted_at: null,
-      } satisfies Prisma.hrm_platform_employeesWhereInput,
+      },
       select: {
-        id: true,
         role_id: true,
       },
     });
-  // Check if requesting employee has employee:manage permission
+  // Check if member has 'employee:manage' permission
   const hasPermission =
     await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
       where: {
-        role_id: requestingEmployee.role_id,
+        hrm_platform_role_id: memberEmployee.role_id,
         permission: "employee:manage",
-      } satisfies Prisma.hrm_platform_role_permissionsWhereInput,
-    });
-  // Also allow if requesting employee has Owner role (built-in full access)
-  const requestingRole =
-    await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
-      where: {
-        id: requestingEmployee.role_id,
-      } satisfies Prisma.hrm_platform_rolesWhereUniqueInput,
-      select: {
-        built_in: true,
-        name: true,
+        deleted_at: null,
       },
     });
-  const isOwner = requestingRole.built_in && requestingRole.name === "Owner";
-  if (!hasPermission && !isOwner) {
-    throw new HttpException(
-      "Forbidden: employee:manage permission required",
-      403,
-    );
+  if (!hasPermission) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Check if the employee being deactivated has Owner role
-  const targetRole = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow(
-    {
+  // Check if employee is already deactivated
+  if (employee.deleted_at !== null || employee.status === "deactivated") {
+    return;
+  }
+  // Check if this employee is the sole owner of the organization
+  const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
+    where: { id: employee.role_id },
+    select: { name: true, is_builtin: true },
+  });
+  if (role.name === "Owner" && role.is_builtin) {
+    // Count how many owners exist in this organization
+    const ownerCount = await MyGlobal.prisma.hrm_platform_employees.count({
       where: {
-        id: employee.role_id,
-      } satisfies Prisma.hrm_platform_rolesWhereUniqueInput,
-      select: {
-        built_in: true,
-        name: true,
+        organization_id: employee.organization_id,
+        role: {
+          name: "Owner",
+          is_builtin: true,
+        },
+        deleted_at: null,
       },
-    },
-  );
-  // If target employee is Owner, verify there are other active Owners
-  if (targetRole.built_in && targetRole.name === "Owner") {
-    const otherActiveOwners =
-      await MyGlobal.prisma.hrm_platform_employees.count({
-        where: {
-          organization_id: employee.organization_id,
-          role_id: employee.role_id,
-          id: {
-            not: employee.id,
-          },
-          deleted_at: null,
-          status: "active",
-        } satisfies Prisma.hrm_platform_employeesWhereInput,
-      });
-    if (otherActiveOwners === 0) {
+    });
+    // If this is the only owner, prevent deactivation
+    if (ownerCount === 1) {
       throw new HttpException(
-        "Cannot deactivate: at least one active Owner must remain in the organization",
+        "Cannot deactivate the sole owner of an organization. Transfer ownership first.",
         400,
       );
     }
   }
-  // Check for active timer and stop it if exists
-  const activeTimer = await MyGlobal.prisma.hrm_platform_timers.findFirst({
-    where: {
-      employee_id: props.employeeId,
-      stopped_at: null,
-      deleted_at: null,
-    } satisfies Prisma.hrm_platform_timersWhereInput,
-  });
-  if (activeTimer) {
-    // Stop the timer by setting stopped_at
-    await MyGlobal.prisma.hrm_platform_timers.update({
-      where: {
-        id: activeTimer.id,
-      } satisfies Prisma.hrm_platform_timersWhereUniqueInput,
-      data: {
-        stopped_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
-  }
-  // Perform soft delete: set deleted_at and status to deactivated
+  // Perform soft delete: update deleted_at and status
   await MyGlobal.prisma.hrm_platform_employees.update({
-    where: {
-      id: props.employeeId,
-    } satisfies Prisma.hrm_platform_employeesWhereUniqueInput,
+    where: { id: props.employeeId },
     data: {
       deleted_at: new Date(),
       status: "deactivated",
       updated_at: new Date(),
     },
   });
-  // Create activity log entry
+  // Record activity log
   await MyGlobal.prisma.hrm_platform_activity_logs.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
-      member_id: props.member.id,
+      id: v4(),
       organization_id: employee.organization_id,
+      member_id: props.member.id,
       action_type: "employee.deactivated",
       target_entity_type: "employee",
       target_entity_id: props.employeeId,
+      details: JSON.stringify({
+        employee_id: props.employeeId,
+        user_id: employee.user_id,
+        previous_status: employee.status,
+      }),
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,

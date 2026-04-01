@@ -18,41 +18,16 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getHrmsMemberTimerActive(props: {
   member: MemberPayload;
-}): Promise<IHrmsTimer | null> {
-  const organizationMember =
-    await MyGlobal.prisma.hrms_organization_members.findFirst({
-      where: {
-        hrms_member_id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-      },
-    });
-  if (organizationMember === null) {
-    return null;
-  }
-  const employee = await MyGlobal.prisma.hrms_employees.findFirst({
+}): Promise<IHrmsTimer> {
+  const timer = await MyGlobal.prisma.hrms_timers.findFirst({
     where: {
-      organization_member_id: organizationMember.id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-    },
-  });
-  if (employee === null) {
-    return null;
-  }
-  const activeTimer = await MyGlobal.prisma.hrms_timers.findFirst({
-    where: {
-      hrms_employee_id: employee.id,
+      hrms_employee_id: props.member.id,
       deleted_at: null,
     },
     ...HrmsTimerTransformer.select(),
   });
-  if (activeTimer === null) {
-    return null;
+  if (timer === null) {
+    throw new HttpException("Timer not found", 404);
   }
-  return await HrmsTimerTransformer.transform(activeTimer);
+  return await HrmsTimerTransformer.transform(timer);
 }

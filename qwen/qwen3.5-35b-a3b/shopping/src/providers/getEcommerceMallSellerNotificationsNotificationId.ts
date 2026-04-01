@@ -18,11 +18,21 @@ export async function getEcommerceMallSellerNotificationsNotificationId(props: {
   notificationId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallNotification> {
   const notification =
-    await MyGlobal.prisma.ecommerce_mall_notifications.findUniqueOrThrow({
+    await MyGlobal.prisma.ecommerce_mall_notifications.findFirstOrThrow({
       where: {
         id: props.notificationId,
         deleted_at: null,
       },
+      select: {
+        ...EcommerceMallNotificationTransformer.select().select,
+        sellerRef: { select: { id: true } },
+      },
     });
+  const hasAccess =
+    notification.sellerRef !== null &&
+    notification.sellerRef.id === props.seller.id;
+  if (!hasAccess) {
+    throw new HttpException("Notification not found", 404);
+  }
   return await EcommerceMallNotificationTransformer.transform(notification);
 }

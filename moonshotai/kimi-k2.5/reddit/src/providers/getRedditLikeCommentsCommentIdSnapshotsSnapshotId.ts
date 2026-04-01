@@ -17,12 +17,12 @@ export async function getRedditLikeCommentsCommentIdSnapshotsSnapshotId(props: {
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeCommentSnapshot> {
   const snapshot =
-    await MyGlobal.prisma.reddit_like_comment_snapshots.findUniqueOrThrow({
-      where: { id: props.snapshotId },
+    await MyGlobal.prisma.reddit_like_comment_snapshots.findFirstOrThrow({
+      where: {
+        id: props.snapshotId,
+        comment_id: props.commentId,
+      },
       ...RedditLikeCommentSnapshotTransformer.select(),
     });
-  if (snapshot.comment.id !== props.commentId) {
-    throw new HttpException("Snapshot not found for this comment", 404);
-  }
   return await RedditLikeCommentSnapshotTransformer.transform(snapshot);
 }

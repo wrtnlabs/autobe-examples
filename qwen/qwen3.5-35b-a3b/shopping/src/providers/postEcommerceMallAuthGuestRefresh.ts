@@ -16,79 +16,78 @@ export async function postEcommerceMallAuthGuestRefresh(props: {
   body: IEcommerceMallGuest.IRefresh;
 }): Promise<IEcommerceMallGuest.IAuthorized> {
   // 1. Verify refresh token
-  let decoded: {
-    type: "guest";
-    id: string;
+  const decoded: {
+    guest_id: string;
     session_id: string;
-  };
-  try {
-    decoded = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-    ) as typeof decoded;
-  } catch {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
+    type: "guest";
+    created_at: string;
+  } = jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+    issuer: "autobe",
+  }) as typeof decoded;
   // 2. Validate type
   if (decoded.type !== "guest") {
     throw new HttpException("Invalid token type", 401);
   }
-  // 3. Validate session exists
+  // 3. Validate session exists and is active
   const session = await MyGlobal.prisma.ecommerce_mall_guest_sessions.findFirst(
     {
       where: {
         id: decoded.session_id,
-        ecommerce_mall_guest_id: decoded.id,
+        ecommerce_mall_guest_id: decoded.guest_id,
+      },
+      select: {
+        id: true,
+        ecommerce_mall_guest_id: true,
       },
     },
   );
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate guest exists
-  const guest = await MyGlobal.prisma.ecommerce_mall_guests.findUniqueOrThrow({
-    where: { id: decoded.id },
-  });
+  // 4. Calculate new expiration times as ISO strings
+  const accessExpiresAt: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiresAt: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
   // 5. Generate new tokens
-  const accessExpiresAt: string & tags.Format<"date-time"> = new Date(
-    Date.now() + 60 * 60 * 1000,
-  ).toISOString();
-  const refreshExpiresAt: string & tags.Format<"date-time"> = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString();
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: new Date().toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        tokenType: "refresh",
-        created_at: new Date().toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpiresAt,
-    refreshable_until: refreshExpiresAt,
-  };
-  // 6. Update session expiration
+  const accessToken: string = jwt.sign(
+    {
+      type: "guest" as const,
+      guest_id: decoded.guest_id,
+      session_id: decoded.session_id,
+      created_at: toISOStringSafe(new Date()),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refreshToken: string = jwt.sign(
+    {
+      type: "guest" as const,
+      guest_id: decoded.guest_id,
+      session_id: decoded.session_id,
+      token_type: "refresh" as const,
+      created_at: toISOStringSafe(new Date()),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  // 6. Update session with new refresh token and extended expiration
   await MyGlobal.prisma.ecommerce_mall_guest_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: new Date(refreshExpiresAt) },
+    data: {
+      expired_at: toISOStringSafe(new Date(refreshExpiresAt)),
+    },
   });
+  // 7. Return authorized response
   return {
-    id: guest.id as string & tags.Format<"uuid">,
-    token,
+    id: decoded.guest_id as string & tags.Format<"uuid">,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpiresAt,
+      refreshable_until: refreshExpiresAt,
+    },
   };
 }

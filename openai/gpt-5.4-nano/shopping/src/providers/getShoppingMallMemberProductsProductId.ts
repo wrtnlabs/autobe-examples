@@ -9,7 +9,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { ShoppingMallProductTransformer } from "../transformers/ShoppingMallProductTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,11 +16,20 @@ export async function getShoppingMallMemberProductsProductId(props: {
   member: MemberPayload;
   productId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallProduct> {
-  typia.assert<string & tags.Format<"uuid">>(props.productId);
   const product =
     await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
       where: { id: props.productId },
-      ...ShoppingMallProductTransformer.select(),
+      select: {
+        shopping_mall_seller_id: true,
+        shopping_mall_category_id: true,
+        code: true,
+        name: true,
+        description: true,
+        is_featured: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
     });
   if (
     product.deleted_at !== null &&
@@ -29,5 +37,17 @@ export async function getShoppingMallMemberProductsProductId(props: {
   ) {
     throw new HttpException("Forbidden", 403);
   }
-  return await ShoppingMallProductTransformer.transform(product);
+  return {
+    id: props.productId,
+    shopping_mall_seller_id: product.shopping_mall_seller_id,
+    shopping_mall_category_id: product.shopping_mall_category_id,
+    code: product.code,
+    name: product.name,
+    description: product.description,
+    is_featured: product.is_featured,
+    created_at: toISOStringSafe(product.created_at),
+    updated_at: toISOStringSafe(product.updated_at),
+    deleted_at:
+      product.deleted_at === null ? null : toISOStringSafe(product.deleted_at),
+  } satisfies IShoppingMallProduct;
 }

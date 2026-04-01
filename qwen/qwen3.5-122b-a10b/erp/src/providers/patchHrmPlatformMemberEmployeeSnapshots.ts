@@ -15,6 +15,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { HrmPlatformEmployeeSnapshotAtSummaryTransformer } from "../transformers/HrmPlatformEmployeeSnapshotAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -22,18 +23,33 @@ export async function patchHrmPlatformMemberEmployeeSnapshots(props: {
   member: MemberPayload;
   body: IHrmPlatformEmployeeSnapshot.IRequest;
 }): Promise<IPageIHrmPlatformEmployeeSnapshot.ISummary> {
-  // Determine pagination parameters
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const pageSize = props.body.page_size ?? 50;
-  const effectiveLimit = Math.min(limit, pageSize, 200);
-  const skip = (page - 1) * effectiveLimit;
-  // Build where clause from filters
+  // Get member's organization context from their employee records
+  const employees = await MyGlobal.prisma.hrm_platform_employees.findMany({
+    where: {
+      hrm_platform_user_id: props.member.id,
+      deleted_at: null,
+    },
+    select: { hrm_platform_organization_id: true },
+  });
+  if (employees.length === 0) {
+    throw new HttpException("No organization context found", 403);
+  }
+  const organizationIds = employees.map((e) => e.hrm_platform_organization_id);
+  // Validate date range if both provided
+  if (props.body.created_at_from && props.body.created_at_to) {
+    const from = new Date(props.body.created_at_from);
+    const to = new Date(props.body.created_at_to);
+    if (from > to) {
+      throw new HttpException(
+        "created_at_from must be before or equal to created_at_to",
+        400,
+      );
+    }
+  }
+  // Build where clause
   const whereInput: Prisma.hrm_platform_employee_snapshotsWhereInput = {
     deleted_at: null,
-    user: { is: {} },
-    organization: { is: {} },
-    role: { is: {} },
+    hrm_platform_organization_id: { in: organizationIds },
     ...(props.body.hrm_platform_employee_id && {
       hrm_platform_employee_id: props.body.hrm_platform_employee_id,
     }),
@@ -57,163 +73,96 @@ export async function patchHrmPlatformMemberEmployeeSnapshots(props: {
       },
     }),
   };
-  // Fetch snapshots with nested relations
-  const snapshots =
-    await MyGlobal.prisma.hrm_platform_employee_snapshots.findMany({
+  // Determine pagination mode
+  const useCursor =
+    props.body.cursor !== undefined && props.body.cursor !== null;
+  const usePage = props.body.page !== undefined && props.body.page !== null;
+  const limit = props.body.limit ?? props.body.page_size ?? 100;
+  const clampedLimit = Math.min(Math.max(limit, 1), 200);
+  let data: HrmPlatformEmployeeSnapshotAtSummaryTransformer.Payload[];
+  let total: number;
+  if (useCursor && props.body.cursor) {
+    // Cursor-based pagination
+    const decoded = JSON.parse(
+      Buffer.from(props.body.cursor, "base64").toString(),
+    );
+    const lastCreatedAt = new Date(decoded.created_at);
+    const lastId = decoded.id as string;
+    data = await MyGlobal.prisma.hrm_platform_employee_snapshots.findMany({
+      where: {
+        ...whereInput,
+        AND: [
+          {
+            OR: [
+              { created_at: { gt: lastCreatedAt } },
+              { created_at: { equals: lastCreatedAt }, id: { gt: lastId } },
+            ],
+          },
+        ],
+      },
+      orderBy: { created_at: "desc" },
+      take: clampedLimit + 1,
+      ...HrmPlatformEmployeeSnapshotAtSummaryTransformer.select(),
+    } satisfies Prisma.hrm_platform_employee_snapshotsFindManyArgs);
+    total = await MyGlobal.prisma.hrm_platform_employee_snapshots.count({
+      where: whereInput,
+    });
+  } else if (usePage) {
+    // Page-based pagination
+    const page = Math.max(props.body.page ?? 1, 1);
+    const skip = (page - 1) * clampedLimit;
+    data = await MyGlobal.prisma.hrm_platform_employee_snapshots.findMany({
       where: whereInput,
       skip,
-      take: effectiveLimit,
+      take: clampedLimit,
       orderBy: { created_at: "desc" },
-      select: {
-        id: true,
-        position: true,
-        employment_type: true,
-        status: true,
-        created_at: true,
-        user: {
-          select: {
-            id: true,
-            email: true,
-            display_name: true,
-            avatar_image: true,
-            phone_number: true,
-          },
-        },
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            logo_url: true,
-            currency: true,
-            timezone: true,
-            fiscal_start_month: true,
-            created_at: true,
-            updated_at: true,
-          },
-        },
-        role: {
-          select: {
-            id: true,
-            code: true,
-            name: true,
-            description: true,
-            is_builtin: true,
-            permissions: {
-              select: {
-                permission: {
-                  select: {
-                    code: true,
-                  },
-                },
-              },
-            },
-            created_at: true,
-            deleted_at: true,
-          },
-        },
-        department: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            parent_department_id: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-          },
-        },
-      },
+      ...HrmPlatformEmployeeSnapshotAtSummaryTransformer.select(),
+    } satisfies Prisma.hrm_platform_employee_snapshotsFindManyArgs);
+    total = await MyGlobal.prisma.hrm_platform_employee_snapshots.count({
+      where: whereInput,
     });
-  // Get total count
-  const total = await MyGlobal.prisma.hrm_platform_employee_snapshots.count({
-    where: whereInput,
-  });
-  // Transform to summary format
-  const data = await ArrayUtil.asyncMap(snapshots, async (snapshot) => {
-    const rolePermissions =
-      snapshot.role?.permissions?.map((rp) => rp.permission.code) ?? [];
-    return {
-      id: snapshot.id as string & tags.Format<"uuid">,
-      position: snapshot.position ?? null,
-      employment_type: snapshot.employment_type,
-      status: snapshot.status,
-      created_at: toISOStringSafe(snapshot.created_at) as string &
-        tags.Format<"date-time">,
-      user: {
-        id: snapshot.user.id as string & tags.Format<"uuid">,
-        email: snapshot.user.email as string & tags.Format<"email">,
-        display_name: snapshot.user.display_name,
-        avatar_image: snapshot.user.avatar_image as
-          | (string & tags.Format<"url">)
-          | null
-          | undefined,
-        phone_number: snapshot.user.phone_number ?? null,
-      } satisfies IHrmPlatformMember.ISummary,
-      organization: {
-        id: snapshot.organization.id as string & tags.Format<"uuid">,
-        name: snapshot.organization.name,
-        description: snapshot.organization.description ?? null,
-        logo_url: snapshot.organization.logo_url as
-          | (string & tags.Format<"url">)
-          | null
-          | undefined,
-        currency: snapshot.organization.currency,
-        timezone: snapshot.organization.timezone,
-        fiscal_start_month: snapshot.organization.fiscal_start_month as number &
-          tags.Type<"int32"> &
-          tags.Minimum<1> &
-          tags.Maximum<12>,
-        created_at: toISOStringSafe(
-          snapshot.organization.created_at,
-        ) as string & tags.Format<"date-time">,
-        updated_at: toISOStringSafe(
-          snapshot.organization.updated_at,
-        ) as string & tags.Format<"date-time">,
-      } satisfies IHrmPlatformOrganization.ISummary,
-      role: {
-        id: snapshot.role.id as string & tags.Format<"uuid">,
-        code: snapshot.role.code,
-        name: snapshot.role.name,
-        description: snapshot.role.description ?? null,
-        is_builtin: snapshot.role.is_builtin,
-        permissions: rolePermissions,
-        created_at: toISOStringSafe(snapshot.role.created_at) as string &
-          tags.Format<"date-time">,
-        deleted_at: snapshot.role.deleted_at
-          ? (toISOStringSafe(snapshot.role.deleted_at) as string &
-              tags.Format<"date-time">)
-          : null,
-      } satisfies IHrmPlatformRole.ISummary,
-      department: snapshot.department
-        ? ({
-            id: snapshot.department.id as string & tags.Format<"uuid">,
-            name: snapshot.department.name,
-            description: snapshot.department.description ?? null,
-            parent_department: null,
-            created_at: toISOStringSafe(
-              snapshot.department.created_at,
-            ) as string & tags.Format<"date-time">,
-            updated_at: toISOStringSafe(
-              snapshot.department.updated_at,
-            ) as string & tags.Format<"date-time">,
-            deleted_at: snapshot.department.deleted_at
-              ? (toISOStringSafe(snapshot.department.deleted_at) as string &
-                  tags.Format<"date-time">)
-              : null,
-          } satisfies IHrmPlatformDepartment.ISummary)
-        : null,
-    } satisfies IHrmPlatformEmployeeSnapshot.ISummary;
-  });
-  return {
-    pagination: {
-      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
-      limit: effectiveLimit as number & tags.Type<"int32"> & tags.Minimum<0>,
-      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
-      pages: Math.ceil(total / effectiveLimit) as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-    } satisfies IPage.IPagination,
+  } else {
+    // Default: page-based with page=1
+    const page = 1;
+    const skip = (page - 1) * clampedLimit;
+    data = await MyGlobal.prisma.hrm_platform_employee_snapshots.findMany({
+      where: whereInput,
+      skip,
+      take: clampedLimit,
+      orderBy: { created_at: "desc" },
+      ...HrmPlatformEmployeeSnapshotAtSummaryTransformer.select(),
+    } satisfies Prisma.hrm_platform_employee_snapshotsFindManyArgs);
+    total = await MyGlobal.prisma.hrm_platform_employee_snapshots.count({
+      where: whereInput,
+    });
+  }
+  const hasMore = data.length > clampedLimit;
+  if (hasMore) {
+    data = data.slice(0, clampedLimit);
+  }
+  const transformedData = await ArrayUtil.asyncMap(
     data,
+    HrmPlatformEmployeeSnapshotAtSummaryTransformer.transform,
+  );
+  const currentPage = usePage ? Math.max(props.body.page ?? 1, 1) : 1;
+  const totalPages = Math.ceil(total / clampedLimit);
+  let nextCursor: string | undefined;
+  if (hasMore && data.length > 0) {
+    const last = data[data.length - 1];
+    nextCursor = Buffer.from(
+      JSON.stringify({
+        created_at: last.created_at.toISOString(),
+        id: last.id,
+      }),
+    ).toString("base64");
+  }
+  return {
+    data: transformedData,
+    pagination: {
+      current: currentPage,
+      limit: clampedLimit,
+      records: total,
+      pages: totalPages,
+    } satisfies IPage.IPagination,
   } satisfies IPageIHrmPlatformEmployeeSnapshot.ISummary;
 }

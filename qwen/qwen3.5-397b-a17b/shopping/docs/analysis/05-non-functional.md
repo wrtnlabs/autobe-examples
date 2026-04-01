@@ -12,53 +12,99 @@ Define who owns what data, who can access it, and privacy boundaries between use
 
 ### Data Ownership
 
-Customers own their personal profile information including display name and phone number. Customers own their shipping addresses, wishlist, shopping cart contents, and order history. Customers own the reviews they write for products they have purchased.
+Customers own their personal profile information, including display name and phone number.
+Customers own their shipping addresses and can manage them independently.
+Customers own their wishlist and shopping cart contents.
+Customers own their order history and can view all orders they have placed.
+Customers own the reviews they write and can edit or delete them.
 
-Sellers own their shop profile including shop name, shop description, and logo image. Sellers own the products they create, including all product variants and inventory records for those variants. Sellers own the order items associated with their products that they must fulfill.
+Sellers own their shop profile information, including shop name, description, and logo.
+Sellers own the products they create and can manage them independently.
+Sellers own the inventory records for their product variants.
+Sellers own the order items for products they sell and can manage shipping and responses to cancellation or refund requests.
 
-The platform owns category definitions and the administrator system data. All snapshots created under the snapshot principle are owned by the platform for dispute resolution and audit purposes, though relevant parties (data owners and administrators) can view snapshots of their own data.
+The platform owns all snapshot records, which are preserved for legal and dispute resolution purposes.
+Snapshots cannot be deleted or modified by any user, including the original data owner.
 
-When a customer deletes their account, their profile information is deleted but their orders and order history are preserved for seller records and legal purposes. Their reviews are preserved but shown as "deleted user".
-
-When a seller deletes their account, their products are deleted from listings but order history and snapshots are preserved. Their shop name in past orders is preserved for customer records.
+Account deletion behavior is defined in the Soft-Delete Behavior section.
 
 ### Data Isolation
 
-Customer data is isolated so that each customer can only view and modify their own profile, addresses, wishlist, shopping cart, and order history. Customers cannot access other customers' personal information or order data.
+Each customer can only view and manage their own profile information.
+Each customer can only view and manage their own shipping addresses.
+Each customer can only view and manage their own wishlist.
+Each customer can only view and manage their own shopping cart.
+Each customer can only view their own order history and order details.
 
-Seller data is isolated so that each seller can only view and modify their own shop profile, products, variants, and inventory records. Sellers can only view order items for products they sell, not order items from other sellers.
+Each seller can only view and manage their own shop profile.
+Each seller can only view and manage products they have created.
+Each seller can only view inventory records for their own product variants.
+Each seller can only view order items for products they sell.
+Each seller cannot view order items from other sellers.
+Each seller cannot view customer personal information beyond what is required for shipping (recipient name, phone number, shipping address).
 
-Order items are visible to both the customer who placed the order and the seller who must fulfill them. The customer sees all items in their order. Each seller sees only the items for their own products within that order.
+Administrators can view all data on the platform for oversight purposes.
+Administrators can view all customer accounts, seller accounts, products, and orders.
 
-Administrators can view all data across the platform for oversight purposes, including all customer accounts, seller accounts, products, and orders. Super administrators have the same data visibility as regular administrators.
+Super administrators have the same data access as regular administrators.
+Super administrators can additionally view administrator promotion requests.
 
-Product listings and reviews are publicly visible to all authenticated users. Search results and category pages show products from all sellers without revealing seller private data beyond the shop name.
+Customers cannot view other customers' profiles, orders, wishlists, or carts.
+Customers cannot view seller account information beyond the public shop profile.
+Sellers cannot view other sellers' products, inventory, or order items.
 
 ### Access Control
 
-Customers can access their own profile data, addresses, wishlist, cart, and orders. Customers can access public product listings, product details, seller shop profiles, and reviews written by other customers.
+Customers can access their own profile, addresses, wishlist, cart, and order history at any time while their account is active.
+Customers can access product listings, product details, and seller shop profiles without restriction.
+Customers can write reviews only for products they have purchased and where the order item status is delivered.
 
-Sellers can access their own shop profile, products, variants, and inventory records. Sellers can access order items for their products to fulfill shipments and respond to cancellation or refund requests. Sellers can view customer shipping information (recipient name, phone number, address) only for orders containing their products.
+Sellers can access their shop profile, products, inventory records, and order items for their products at any time while their account is active and approved.
+Sellers cannot access their shop management features if their account is pending approval or suspended.
+Sellers can view cancellation and refund requests only for order items of products they sell.
 
-Administrators can access all user data, product data, order data, and snapshot data for platform management. Administrators can view seller approval requests and respond to them. Administrators can view administrator promotion requests if they are super administrators.
+Administrators can access all platform data for management and oversight purposes.
+Administrators can approve or reject seller registrations, administrator promotion requests, and manage user accounts.
+Administrators can view snapshots of any product or review for dispute resolution.
 
-Customers cannot access seller inventory records, other customers' personal data, or platform administrator functions. Sellers cannot access other sellers' products, inventory, or order items. Regular administrators cannot access super administrator functions such as promoting or demoting administrators.
+Super administrators can access all administrator functions and additionally manage administrator grades.
 
-Banned customers and banned sellers cannot log in to access any platform features. Suspended sellers cannot create or edit products but can still access order items for fulfillment.
+If a customer account is banned, the customer cannot log in or access any account features.
+If a seller account is banned, the seller cannot log in or access any seller features.
+If a seller account is suspended, the seller can still process existing orders but cannot create or edit products.
+
+When a customer deletes their account, they lose access to all account features immediately.
+When a seller deletes their account, they lose access to all seller features immediately.
+
+Snapshots can be viewed by the data owner, administrators, and super administrators for dispute resolution.
+Inventory history can be viewed by the seller who owns the product variant.
 
 ### Privacy Boundaries
 
-Customer personal information including phone numbers and shipping addresses is only shared with sellers when an order containing that seller's products is placed. This information is used solely for order fulfillment and shipping purposes.
+Customer personal information (email, phone number, display name) is visible only to the customer and administrators.
+Customer shipping addresses are visible only to the customer, administrators, and sellers who need the information to fulfill orders.
+When an order is placed, the seller receives the shipping address (recipient name, phone number, street address, city, state, postal code, country) for that order only.
 
-Seller contact information is not exposed to customers beyond the shop name and shop description displayed in the shop profile. Direct contact details are not shared through the platform.
+Seller shop profiles (shop name, description, logo) are publicly visible to all customers and other users.
+Seller personal account information (email, password) is private and visible only to the seller and administrators.
 
-Payment information is processed through an external payment gateway and is not stored by the platform. The platform only retains order records showing payment success or failure.
+Product information (name, description, images, category, price, variants) is publicly visible to all customers.
+Product inventory quantities are not displayed to customers; only stock status (in stock or out of stock) is shown.
 
-When a customer deletes their account, their profile information is removed but order records are preserved with the customer's name shown as "deleted user" in reviews. This preserves seller records while protecting customer privacy.
+Order details are visible to the customer who placed the order and to the sellers of the order items.
+Customers cannot view order details from other customers' orders.
+Sellers cannot view order items from other sellers' products.
 
-When a seller deletes their account, their shop profile is removed but past order records preserve the shop name at the time of purchase through snapshots. This ensures customers can reference their purchase history.
+Reviews are publicly visible on product detail pages, showing the reviewer's display name (or deleted user if the account was deleted).
+Review ratings contribute to the product's average rating, which is publicly visible.
 
-Snapshots preserve historical data states for dispute resolution but are only accessible to data owners and administrators. Snapshots are immutable and cannot be deleted by any party.
+Wishlist contents are private and visible only to the customer who owns the wishlist.
+Shopping cart contents are private and visible only to the customer who owns the cart.
+
+Cancellation and refund request reasons are visible to the customer who submitted the request, the seller who must respond, and administrators.
+Cancellation and refund request status is visible to the customer and seller involved.
+
+Administrator actions (approvals, rejections, suspensions, bans) are logged and visible to other administrators but not to customers or sellers.
 
 ## Data Retention and Recovery
 
@@ -66,55 +112,54 @@ Define what happens to deleted data, how long it is retained, and how users can 
 
 ### Soft-Delete Behavior
 
-When a customer deletes their account, their profile information is removed from the system. However, their orders and order history are preserved to maintain seller records and legal compliance. Their reviews remain visible but are displayed as authored by a "deleted user" instead of their display name.
+When users delete data, the platform uses a soft-delete approach to preserve records for legal and business purposes. Soft-deleted data is hidden from regular users but retained in the system for dispute resolution, legal compliance, and business record-keeping.
 
-When a seller deletes their account, their products are removed from all listings and search results. However, order history and product snapshots associated with past orders are preserved. The shop name appearing in historical orders remains unchanged.
+**Customer Account Deletion**
+When a customer deletes their account:
+- Profile information (display name, phone number) is removed from view
+- Order history is preserved and remains accessible to sellers and administrators
+- Reviews are preserved but displayed as "deleted user" instead of the customer's display name
+- Shipping addresses are permanently removed
+- Wishlist contents are permanently cleared
+- Shopping cart contents are permanently cleared
+- Login credentials (email and password association) are permanently removed
 
-When a product is deleted by a seller, it no longer appears in search results or category listings. The product is automatically removed from all customer wishlists. However, all product snapshots created during the product's lifetime are preserved.
+**Seller Account Deletion**
+When a seller deletes their account (only allowed if no pending orders or refund/cancellation requests exist):
+- Products are removed from search results and category listings
+- Products cannot be purchased after deletion
+- Order history and order item snapshots are preserved for customer and administrator access
+- Shop name in past orders remains visible as it appeared at the time of purchase
+- All product images are permanently removed
+- All inventory records for variants are permanently removed
+- Shop name, description, and logo are permanently removed
+- Login credentials (email and password association) are permanently removed
+- Seller approval request history is preserved for administrator records
 
-When a review is deleted by its author, the review content is no longer displayed on the product page. However, the review snapshots created during editing are preserved for dispute resolution purposes.
+**Product Deletion**
+When a product is deleted by a seller or administrator:
+- The product no longer appears in search results or category listings
+- The product cannot be added to cart or purchased
+- All variants and inventory records associated with the product are deleted
+- Product snapshots are preserved and remain accessible to administrators
+- The product is automatically removed from all customer wishlists
+- Product images are permanently removed
 
-Soft-deleted data remains in the system but is marked as inactive and hidden from normal user interfaces. Only administrators can access soft-deleted records through administrative interfaces.
+**Review Deletion**
+When a review is deleted by a customer:
+- The review no longer appears on the product detail page
+- The review is excluded from average rating calculations
+- Review snapshots are preserved and remain accessible to administrators
 
-### Data Retention Policy
+**Administrator-Initiated Deletion**
+Administrators can permanently delete:
+- Any product on the platform (for policy violations)
+- Any category (products become uncategorized)
+- Customer accounts (via ban, preventing login)
+- Seller accounts (via ban, preventing login)
 
-All snapshots are immutable and cannot be deleted once created. This includes product snapshots, product variant snapshots, seller profile snapshots, review snapshots, cancellation request snapshots, and refund request snapshots.
-
-Order records and order items are retained indefinitely, even after the customer or seller who created them deletes their account. This ensures transaction history remains available for legal, tax, and dispute resolution purposes.
-
-Inventory history records are retained for the lifetime of the product variant. When a variant is deleted, its inventory history is preserved as part of the historical record.
-
-Snapshot records include the timestamp of when the change was made, what fields were changed, and the values before and after the modification. This information is used for audit trails and dispute resolution.
-
-Administrators can view snapshots of any product and any seller profile. Sellers can view snapshots of their own products. Customers can view snapshots of their own reviews and cancellation or refund requests they have submitted.
-
-### Permanent Deletion
-
-Customer profile information, including display name and phone number, is permanently deleted when a customer requests account deletion. This deletion occurs after all active orders are completed or cancelled.
-
-Seller profile information, including shop name, shop description, and logo image, is permanently deleted when a seller requests account deletion and meets the deletion criteria (no pending orders, no pending cancellation or refund requests).
-
-Product images are permanently deleted when the product is deleted or when a seller removes an image from a product. The image files are removed from storage.
-
-Shopping cart contents are permanently deleted when a customer removes items from their cart or when the customer deletes their account.
-
-Wishlist entries are permanently deleted when a customer removes products from their wishlist, when the product is deleted by the seller, or when the customer deletes their account.
-
-Address records are permanently deleted when a customer removes an address from their profile or when the customer deletes their account.
-
-Administrator ban actions result in permanent loss of login access. Banned customers and sellers cannot log in to the platform, though their historical data remains preserved according to the retention policy.
-
-### Data Recovery Limitations
-
-The platform does not provide user-initiated data recovery for deleted content. Once a customer or seller permanently deletes data (such as reviews, products, or account information), it cannot be recovered through the user interface.
-
-Snapshots serve as the primary mechanism for viewing historical states of data. Users can view snapshots to see what data looked like at previous points in time, but cannot restore data to a previous snapshot state.
-
-Administrators have oversight capabilities to view all platform data including soft-deleted records, but do not have the ability to restore permanently deleted user content such as reviews or account profiles.
-
-Order-related data cannot be deleted or recovered by users once created. Order records, order items, and associated snapshots remain in the system indefinitely and cannot be modified or removed by customers or sellers.
-
-Inventory history records cannot be deleted or modified once created. All stock changes are permanently recorded with their reason and timestamp.
+**Snapshot Preservation**
+All soft-deleted data maintains snapshot records that preserve the state of data at various points in time. Snapshots are immutable and form a complete audit trail of all data modifications on the platform. See Section 2 for detailed retention policies.
 
 # Storage Capacity
 
@@ -126,23 +171,35 @@ Define storage requirements and capacity planning for file storage.
 
 ### Image Storage
 
-Sellers can upload multiple images for each product. The first image serves as the main thumbnail displayed in product listings. Product images are stored as part of the product record and are included in product snapshots when changes are made.
+Product images and seller logo images are stored as part of the platform's data.
 
-Sellers can upload a logo image for their shop profile. The logo image is stored as part of the seller profile and is included in seller profile snapshots when changes are made.
+Each product can have multiple images uploaded by the seller. The first image serves as the main thumbnail displayed in product listings.
 
-Images can be reordered by the seller. When images are reordered, a new product snapshot is created to preserve the previous image order.
+Each seller profile includes one logo image.
 
-Sellers can delete images from their products. When an image is deleted, a product snapshot is created to preserve the previous state including the deleted image.
+All images are preserved in product snapshots when products are edited, ensuring the complete visual state is retained at each modification point.
 
-All uploaded images are preserved in snapshots even after the original image is modified or deleted, ensuring complete historical records for dispute resolution.
+When a product is deleted, its images are removed from active listings but remain preserved in historical snapshots for order records and dispute resolution.
 
-### Storage Ownership
+When a seller account is deleted, their product images are removed from listings but preserved in order item snapshots for historical order records.
 
-Product images are owned by the seller who uploaded them. When a seller deletes their account, their product images are deleted from active listings.
+Images are owned by the seller who uploaded them and cannot be accessed or modified by other sellers.
 
-Seller logo images are owned by the seller. When a seller deletes their account, their logo image is removed from active display but preserved in order history snapshots where it appeared at the time of purchase.
+Administrators can view all images on the platform for oversight purposes.
 
-Image snapshots are immutable and cannot be deleted by any party, including the seller who uploaded them or administrators. This ensures complete audit trails for all image changes throughout the product lifecycle.
+### Storage Retention
+
+Image storage follows the snapshot principle for all editable visual content.
+
+Product images are retained indefinitely in snapshots even after product deletion, ensuring order records preserve the complete product state at time of purchase.
+
+Seller logo images are retained in order item snapshots to preserve the shop identity associated with historical purchases.
+
+Review-related images, if any, are preserved in review snapshots when reviews are edited or deleted.
+
+All image storage is tied to data ownership rules: customers own their review content, sellers own their product and profile images, and the platform retains historical snapshots for legal and dispute resolution purposes.
+
+Images associated with deleted accounts are preserved only within historical snapshots and are not accessible through active listings or profiles.
 
 # External Dependency SLOs
 
@@ -154,40 +211,14 @@ Define availability expectations, timeout thresholds, and degradation policies f
 
 ### Payment Gateway Dependency
 
-The platform integrates with an external payment gateway service to process customer payments during checkout.
+The platform integrates with an external payment gateway to process customer payments during checkout.
 
-The payment gateway is an external third-party service that the platform depends on for order completion.
+Payment processing depends on the external payment gateway being available. If the payment gateway is unavailable, payment processing fails and the order is not created.
 
-Payment processing requires the payment gateway to be available and responsive.
+When payment fails, the customer can retry the payment. The cart items remain in the customer's cart and can be used for a new checkout attempt.
 
-If the payment gateway is unavailable, payment processing cannot proceed.
+When payment succeeds, the order is created, stock quantities are decreased, and cart items are removed.
 
-### Payment Timeout Handling
+The platform does not control the payment gateway's availability or performance. Payment success or failure is determined by the external payment gateway.
 
-Payment requests to the external gateway have a timeout threshold.
-
-If a payment request exceeds the timeout threshold, the request is treated as failed.
-
-When a payment request times out, the order is not created.
-
-Customers are notified of the payment failure and can retry the payment.
-
-### Payment Failure and Retry
-
-If payment processing fails for any reason, the order is not created.
-
-Customers can retry the payment after a failure.
-
-Retry attempts use the same cart and order details.
-
-Customers can retry payment multiple times until payment succeeds or they abandon the checkout.
-
-### External Service Availability
-
-The platform depends on the external payment gateway being available for order placement.
-
-When the payment gateway is unavailable, customers cannot complete checkout.
-
-The platform does not create orders without successful payment confirmation from the gateway.
-
-Platform functionality other than checkout remains available when the payment gateway is unavailable.
+No specific service level objectives, timeout thresholds, or availability guarantees are defined for the payment gateway dependency, as these were not specified in the requirements.

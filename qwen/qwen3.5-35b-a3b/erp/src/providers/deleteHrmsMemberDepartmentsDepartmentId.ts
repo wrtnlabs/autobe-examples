@@ -15,68 +15,77 @@ export async function deleteHrmsMemberDepartmentsDepartmentId(props: {
   member: MemberPayload;
   departmentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const memberOrganization =
-    await MyGlobal.prisma.hrms_organization_members.findFirst({
-      where: {
-        hrms_member_id: props.member.id,
+  const member = await MyGlobal.prisma.hrms_members.findUniqueOrThrow({
+    where: { id: props.member.id },
+    include: {
+      organizationMembers: {
+        select: {
+          organization: {
+            select: { id: true, deleted_at: true },
+          },
+        },
       },
-      select: { organization: { select: { id: true } } },
-    });
-  if (!memberOrganization) {
-    throw new HttpException("Member not enrolled in any organization", 403);
-  }
-  const memberOrganizationId: string & tags.Format<"uuid"> =
-    memberOrganization.organization.id;
-  const department = await MyGlobal.prisma.hrms_departments.findUniqueOrThrow({
-    where: { id: props.departmentId },
-    select: {
-      id: true,
-      organization_id: true,
-      name: true,
-      deleted_at: true,
-      children: { select: { id: true } },
     },
   });
-  if (department.deleted_at !== null) {
-    throw new HttpException("Department already deleted", 404);
+  const memberOrganization = member.organizationMembers.find(
+    (om) => om.organization.deleted_at === null,
+  );
+  if (!memberOrganization) {
+    throw new HttpException("Organization not found", 404);
   }
-  if (department.organization_id !== memberOrganizationId) {
-    throw new HttpException(
-      "Department does not belong to your organization",
-      404,
-    );
-  }
+  const department = await MyGlobal.prisma.hrms_departments.findFirstOrThrow({
+    where: {
+      id: props.departmentId,
+      organization_id: memberOrganization.organization.id,
+    },
+    include: {
+      children: {
+        where: { deleted_at: null },
+        select: { id: true, name: true },
+      },
+      employees: {
+        where: { deleted_at: null },
+        select: { id: true, display_name: true },
+      },
+    },
+  });
   if (department.children.length > 0) {
-    const childIds = department.children.map((c) => c.id);
     throw new HttpException(
-      `Cannot delete department with ${childIds.length} child department(s): ${childIds.join(", ")}`,
+      `Cannot delete department with ${department.children.length} child department(s): ${department.children.map((c) => c.name).join(", ")}`,
       409,
     );
   }
-  const now: string & tags.Format<"date-time"> = new Date().toISOString();
-  const activityId: string & tags.Format<"uuid"> = v4();
-  await MyGlobal.prisma.$transaction([
-    MyGlobal.prisma.hrms_departments.update({
-      where: { id: props.departmentId },
-      data: { deleted_at: new Date() },
-    }),
-    MyGlobal.prisma.hrms_employees.updateMany({
-      where: { department_id: props.departmentId, deleted_at: null },
-      data: { department_id: null },
-    }),
-    MyGlobal.prisma.hrms_activity_logs.create({
+  const now = toISOStringSafe(new Date());
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.hrms_employees.updateMany({
+      where: {
+        department_id: props.departmentId,
+        deleted_at: null,
+      },
       data: {
-        id: activityId,
-        organization_id: department.organization_id,
+        department_id: null,
+      },
+    });
+    await tx.hrms_departments.update({
+      where: { id: props.departmentId },
+      data: {
+        deleted_at: now,
+        updated_at: now,
+      },
+    });
+    await tx.hrms_activity_logs.create({
+      data: {
+        id: v4(),
+        organization_id: memberOrganization.organization.id,
         performed_by_id: props.member.id,
         action_type: "department.deleted",
         target_entity: "department",
         target_id: props.departmentId,
-        details: `Department '${department.name}' deleted`,
-        created_at: new Date(),
-        updated_at: new Date(),
+        details: `Department "${department.name}" deleted`,
+        created_at: now,
+        updated_at: now,
         deleted_at: null,
       },
-    }),
-  ]);
+    });
+  });
 }

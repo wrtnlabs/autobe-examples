@@ -10,18 +10,16 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace HrmsTimesheetCollector {
   export async function collect(props: {
     body: IHrmsTimesheet.ICreate;
-    hrmsMemberSessions: IEntity;
-    hrmsOrganizationMembers: IEntity;
-    hrmsMembers: IEntity;
+    hrmsEmployees: IEntity;
   }) {
     const id: string = v4();
-    const weekStartDate = new Date(props.body.week_start_date);
-    const weekEndDate = new Date(weekStartDate);
-    weekEndDate.setDate(weekEndDate.getDate() + 6);
+    const week_start_date: Date = new Date(props.body.week_start_date);
+    const week_end_date: Date = new Date(week_start_date);
+    week_end_date.setDate(week_end_date.getDate() + 6);
     return {
       id,
-      week_start_date: weekStartDate,
-      week_end_date: weekEndDate,
+      week_start_date,
+      week_end_date,
       status: "draft",
       total_hours: 0,
       submitted_at: null,
@@ -30,9 +28,7 @@ export namespace HrmsTimesheetCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      employee: {
-        connect: { id: props.hrmsMembers.id },
-      },
+      employee: { connect: { id: props.hrmsEmployees.id } },
       reviewer: undefined,
     } satisfies Prisma.hrms_timesheetsCreateInput;
   }

@@ -1,1 +1,1 @@
-export * as shoppingMall from "./shoppingMall/index";
+export * as mallPlatform from "./mallPlatform/index";

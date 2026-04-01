@@ -21,20 +21,28 @@ export async function patchRedditCommunityRateLimitCounters(props: {
 }): Promise<IPageIRedditCommunityRateLimitCounter.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  const whereInput = {
+  const safeLimit = Math.min(Math.max(limit, 1), 100);
+  const skip = (page - 1) * safeLimit;
+  const whereInput: Prisma.reddit_community_rate_limit_countersWhereInput = {
     deleted_at: null,
     ...(props.body.member_id !== undefined && {
       reddit_community_member_id: props.body.member_id,
     }),
     ...(props.body.endpoint !== undefined && {
-      endpoint: { contains: props.body.endpoint, mode: "insensitive" as const },
+      endpoint: {
+        contains: props.body.endpoint,
+        mode: "insensitive" as const,
+      },
     }),
     ...(props.body.request_count_min !== undefined && {
-      request_count: { gte: props.body.request_count_min },
+      request_count: {
+        gte: props.body.request_count_min,
+      },
     }),
     ...(props.body.request_count_max !== undefined && {
-      request_count: { lte: props.body.request_count_max },
+      request_count: {
+        lte: props.body.request_count_max,
+      },
     }),
     ...(props.body.window_start !== undefined && {
       window_start: props.body.window_start,
@@ -43,43 +51,36 @@ export async function patchRedditCommunityRateLimitCounters(props: {
       window_end: props.body.window_end,
     }),
   } satisfies Prisma.reddit_community_rate_limit_countersWhereInput;
-  const orderByInput = (() => {
-    if (props.body.sortBy === "request_count") {
-      return {
-        request_count: props.body.sortOrder === "asc" ? "asc" : "desc",
-      } satisfies Prisma.reddit_community_rate_limit_countersOrderByWithRelationInput;
-    }
-    if (props.body.sortBy === "endpoint") {
-      return {
-        endpoint: props.body.sortOrder === "asc" ? "asc" : "desc",
-      } satisfies Prisma.reddit_community_rate_limit_countersOrderByWithRelationInput;
-    }
-    return {
-      window_start: props.body.sortOrder === "asc" ? "asc" : "desc",
-    } satisfies Prisma.reddit_community_rate_limit_countersOrderByWithRelationInput;
-  })();
-  const data =
-    await MyGlobal.prisma.reddit_community_rate_limit_counters.findMany({
+  const orderByInput = (
+    props.body.sortBy === "request_count"
+      ? [{ request_count: props.body.sortOrder ?? ("desc" as "asc" | "desc") }]
+      : props.body.sortBy === "endpoint"
+        ? [{ endpoint: props.body.sortOrder ?? ("asc" as "asc" | "desc") }]
+        : [{ window_start: props.body.sortOrder ?? ("desc" as "asc" | "desc") }]
+  ) satisfies Prisma.reddit_community_rate_limit_countersOrderByWithRelationInput[];
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.reddit_community_rate_limit_counters.findMany({
       where: whereInput,
       orderBy: orderByInput,
       skip,
-      take: limit,
+      take: safeLimit,
       ...RedditCommunityRateLimitCounterAtSummaryTransformer.select(),
-    });
-  const total =
-    await MyGlobal.prisma.reddit_community_rate_limit_counters.count({
+    }),
+    MyGlobal.prisma.reddit_community_rate_limit_counters.count({
       where: whereInput,
-    });
+    }),
+  ]);
+  const pagination: IPage.IPagination = {
+    current: page,
+    limit: safeLimit,
+    records: total,
+    pages: total === 0 ? 0 : Math.ceil(total / safeLimit),
+  } satisfies IPage.IPagination;
   return {
+    pagination,
     data: await ArrayUtil.asyncMap(
       data,
       RedditCommunityRateLimitCounterAtSummaryTransformer.transform,
     ),
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit) || 0,
-    } satisfies IPage.IPagination,
   };
 }

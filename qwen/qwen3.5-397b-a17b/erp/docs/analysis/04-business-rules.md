@@ -8,499 +8,639 @@ Per-concept business rules, validation logic, and domain constraints.
 
 ## Organization Rules
 
-Each organization must have a name during creation. The organization can optionally include a description, logo image, currency selection, timezone, and fiscal start month configuration. Organization owners have the authority to edit all organization settings. An organization can only be deleted when all pending timesheets are resolved through approval or rejection. The organization must have no active employee contracts before deletion is permitted. When an organization is deleted, all associated employees, projects, tasks, timelogs, and timesheets are permanently removed. The owner's user account remains intact but loses association with the deleted organization. Each organization operates independently with its own data and configuration. Multiple organizations can exist on the platform with complete separation. Organization settings changes require owner-level permissions to execute.
+Organizations operate as independent tenants with their own employees, projects, and data. Each organization must have a name, description, logo image, currency such as USD or EUR or KRW, timezone, and fiscal start month. Organization owners can edit organization settings at any time. An organization can only be deleted if all pending timesheets are resolved through approval or rejection. The organization cannot be deleted if there are any active employee contracts. When an organization is deleted, all employees, projects, tasks, timelogs, and timesheets are permanently deleted. The owner's user account remains but is no longer associated with any organization. Users create an organization during their initial sign-up process. Each organization maintains complete data isolation from other organizations.
 
-### Organization Creation Requirements
+### Multi-Tenancy and Tenant Isolation
 
-Every organization must have a name during creation. The name is required and cannot be empty. Each organization can optionally include a description to provide additional context about the organization. A logo image can be uploaded during creation or added later, but is not required. The organization must select a currency for financial tracking, such as USD, EUR, or KRW. The currency selection is required. The organization must configure a timezone to ensure consistent date and time handling across all features. The timezone selection is required. The organization can optionally set a fiscal start month to align reporting periods with their financial year. If not specified, the system uses a default fiscal start month. All required fields must be provided before the organization can be created. If the organization name is missing, the creation request is rejected. If the currency is not selected, the creation request is rejected. If the timezone is not configured, the creation request is rejected.
+The platform supports multiple organizations operating as independent tenants. Each organization maintains complete separation from other organizations with its own employees, projects, and data. Users who belong to multiple organizations can only access data for their currently selected organization. All system operations are scoped to the selected organization context. Data from one organization is never visible to employees of another organization. The system enforces organization context on every request to prevent cross-organization data access.
 
-### Organization Settings Management
+### Organization Settings Validation
 
-Organization owners have the authority to edit all organization settings. Owners can modify the organization name, description, logo image, currency, timezone, and fiscal start month at any time. Changes to organization settings take effect immediately. Settings changes require owner-level permissions to execute. Users without owner permissions cannot edit organization settings. If a user without owner permissions attempts to edit organization settings, the request is rejected. Organization settings are shared across all employees within the organization. All employees see the same organization configuration.
+Each organization must have a name, description, logo image, currency, timezone, and fiscal start month. The currency must be a valid currency code such as USD, EUR, or KRW. The timezone must be a valid timezone identifier. The fiscal start month must be a valid month value from 1 to 12. Organization owners can edit organization settings at any time. If any required setting is missing or invalid, the request is rejected. If the currency format is invalid, the request is rejected. If the timezone is not recognized, the request is rejected. If the fiscal start month is outside the valid range, the request is rejected.
 
-### Organization Deletion Prerequisites
+### Organization Creation
 
-An organization can only be deleted when specific conditions are met. All pending timesheets must be resolved before deletion is permitted. A timesheet is considered resolved when it has been approved or rejected. If any timesheet remains in draft or submitted status, the deletion request is rejected. The organization must have no active employee contracts before deletion is permitted. An active contract is one where the end date is null or in the future. If any employee has an active contract, the deletion request is rejected. These prerequisites ensure that all time tracking and employment records are finalized before the organization is removed. If the deletion prerequisites are not met, the request is rejected with an indication of which condition failed.
+Users create an organization during their initial sign-up process. The organization is automatically associated with the creating user as the owner. The organization is created with default built-in roles: Owner, Manager, and Employee. The creating user is assigned the Owner role in the new organization. If the sign-up process is interrupted before completion, no organization is created. If the organization name is missing during creation, the request is rejected. If the organization name exceeds the maximum length, the request is rejected.
 
-### Organization Deletion Consequences
+### Organization Deletion Conditions
 
-When an organization is deleted, all associated data is permanently removed. All employee records within the organization are permanently deleted. All projects and tasks belonging to the organization are permanently deleted. All timelogs and timesheets associated with the organization are permanently deleted. All departments, roles, contracts, and activity logs are permanently deleted. This deletion is irreversible and cannot be undone. The owner's user account remains intact after organization deletion. The owner retains access to the platform but is no longer associated with the deleted organization. If the owner belongs to other organizations, they can continue accessing those organizations. If the deleted organization was the owner's only organization, they can create a new organization or join an existing one through invitation.
+Organization owners can delete their organization only when specific conditions are met. All pending timesheets must be resolved through approval or rejection before deletion is allowed. The organization cannot be deleted if there are any active employee contracts. If pending timesheets exist, the deletion request is rejected with a message indicating unresolved timesheets. If active employee contracts exist, the deletion request is rejected with a message indicating active contracts must be ended first. The system validates both conditions before allowing organization deletion. Organization owners must resolve all blocking conditions before the organization can be deleted.
 
-### Multi-Tenancy Isolation
+### Cascading Deletion and Account Preservation
 
-Each organization operates independently with its own data and configuration. Organizations are completely isolated from one another. Employees in one organization cannot see data from another organization. Users who belong to multiple organizations only see data for their currently selected organization. All data is strictly scoped to the organization context. When a user switches organizations, they access a completely separate set of employees, projects, tasks, and records. This isolation ensures that sensitive business information remains confidential between organizations. The platform supports multiple organizations with complete separation. Organization independence means that settings, roles, and data in one organization have no effect on any other organization.
+When an organization is deleted, all employees, projects, tasks, timelogs, and timesheets associated with the organization are permanently deleted. All departments, custom roles, invitations, activity logs, and timers associated with the organization are permanently deleted. The owner's user account remains intact but is no longer associated with any organization. If the owner belongs to other organizations, those memberships are preserved. If the owner does not belong to any other organizations, the user account exists without organization access. Historical data from the deleted organization cannot be recovered after deletion. The cascading deletion ensures no orphaned records remain in the system.
 
 ## User Rules
 
-Users must provide a valid email address and password during sign-up. Email addresses must be unique across the platform. Users can change their password after account creation. A single user account can belong to multiple organizations simultaneously. Users must select an organization context when logging in to access features. Users can switch between organizations without logging out and back in. Account deletion requires that the user is not the sole owner of any organization. If the user is the sole owner, they must transfer ownership or delete the organization first. When a user account is deleted, their employee records in other organizations are marked as deactivated. User profiles include display name, avatar image, and phone number that are shared across all organizations.
+Users must sign up with a valid email address and password. Login requires the same email and password credentials used during registration. Users can change their password after account creation. A single user account can belong to multiple organizations simultaneously. When logging in, users must select which organization context to work within. All subsequent actions are scoped to the selected organization context. Users can switch between organizations without logging out and back in. Users can delete their account only if they are not the sole owner of any organization. If the user is the sole owner, they must transfer ownership or delete the organization first. When a user account is deleted, their employee records in other organizations are marked as deactivated rather than removed.
 
-### User Account Creation
+### Registration Validation
 
-WHEN a user signs up, THE system SHALL require a valid email address and password.
+Users must provide a valid email address during registration. The email address must be unique across all user accounts in the platform. If the email address is already registered, the registration request is rejected. Users must provide a password during registration. The password must meet minimum security requirements defined by the platform. If the password does not meet requirements, the registration request is rejected. Both email and password are required fields. If either field is missing, the registration request is rejected. Upon successful registration, the user account is created and associated with the newly created organization.
 
-THE system SHALL ensure email addresses are unique across the entire platform.
+### Authentication Rules
 
-IF the provided email address already exists, THEN THE system SHALL reject the sign-up request.
-
-IF the email address is invalid or the password does not meet requirements, THEN THE system SHALL reject the sign-up request.
+Users must log in with the same email and password credentials used during registration. If the email address does not exist in the system, the login request is rejected. If the password does not match the stored credentials, the login request is rejected. The system does not indicate which credential (email or password) was incorrect to prevent enumeration attacks. After successful authentication, the user must select which organization context to work within. If the user belongs to only one organization, that organization is selected by default. If the user belongs to multiple organizations, the user must explicitly choose one. If no organization is selected, access to organization-scoped features is denied.
 
 ### Password Management
 
-THE system SHALL allow users to change their password after account creation.
+Users can change their password after account creation. To change the password, the user must provide the current password for verification. If the current password is incorrect, the password change request is rejected. The new password must meet the same security requirements as during registration. If the new password does not meet requirements, the password change request is rejected. The new password cannot be the same as the current password. If the new password matches the current password, the request is rejected. Password changes apply globally to the user account across all organizations the user belongs to.
 
-WHEN a user changes their password, THE system SHALL validate the new password meets security requirements.
+### Multi-Organization Membership
 
-IF the current password provided is incorrect, THEN THE system SHALL reject the password change request.
+A single user account can belong to multiple organizations simultaneously. Users can be added to organizations through invitation or during initial sign-up. If a user is invited to an organization with an email that already has an account, the existing account is linked to the organization. If a user is invited with an email that has no account, a pending invitation is created. When the user registers with the invited email, they are automatically added to all pending organizations. There is no limit to the number of organizations a user can belong to. Each organization membership is independent with its own role and employee record.
 
-### Organization Membership
+### Organization Context Selection
 
-THE system SHALL allow a single user account to belong to multiple organizations simultaneously.
+When logging in, users must select which organization context to work within. All subsequent actions are scoped to the selected organization context. Users cannot access data from organizations other than the currently selected one. Users can switch between organizations without logging out and back in. When switching organizations, the user's session remains active. All organization-scoped data is refreshed to reflect the newly selected organization. If a user attempts to access data from a non-selected organization, the request is rejected. The organization context is maintained throughout the user session until explicitly changed or the session ends.
 
-WHEN a user logs in, THE system SHALL require the user to select an organization context before accessing features.
+### Account Deletion Constraints
 
-THE system SHALL allow users to switch between organizations without logging out and back in.
+Users can delete their account only if they are not the sole owner of any organization. If the user is the sole owner of an organization, the account deletion request is rejected. Before deleting the account, the user must transfer ownership of any organizations they solely own. Alternatively, the user must delete the organization first if they are the sole owner. If ownership transfer is not completed, the account deletion request is rejected. If the organization has active employee contracts, the organization cannot be deleted, blocking account deletion. If there are pending timesheets in an organization owned solely by the user, the organization cannot be deleted, blocking account deletion.
 
-WHILE a user is working in an organization, THE system SHALL scope all actions and data access to the selected organization only.
+### Employee Record Deactivation
 
-### Account Deletion
+When a user account is deleted, their employee records in other organizations are marked as deactivated rather than removed. Deactivated employee records preserve historical data including timelogs and timesheets. Deactivated employees cannot log time or submit timesheets. Deactivated employees cannot be assigned to new projects or tasks. Deactivated employees can be reactivated by users with employee management permission. The deactivation status is organization-specific. A user may have active employee records in some organizations and deactivated records in others after account deletion in one organization.
 
-IF a user is the sole owner of an organization, THEN THE system SHALL prevent account deletion until ownership is transferred or the organization is deleted.
+### Profile Global Scope
 
-WHEN a user requests account deletion and owns an organization, THE system SHALL require ownership transfer or organization deletion first.
-
-WHEN a user account is deleted, THE system SHALL mark the user's employee records in other organizations as deactivated.
-
-THE system SHALL preserve the user's employee records and historical data in other organizations after account deletion.
-
-### User Profile
-
-THE system SHALL maintain a global user profile shared across all organizations the user belongs to.
-
-THE system SHALL allow users to edit their display name at any time.
-
-WHERE a user provides an avatar image, THE system SHALL store and display it across all organizations.
-
-WHERE a user provides a phone number, THE system SHALL store and display it across all organizations.
-
-THE avatar image and phone number are optional fields in the user profile.
+Each user has a global profile that is shared across all organizations the user belongs to. The global profile includes display name, avatar image, and phone number. Changes to the global profile apply to all organizations simultaneously. Users can edit their global profile at any time. Profile changes are reflected immediately across all organization contexts. The global profile cannot be customized per organization. If a user belongs to multiple organizations, the same display name, avatar, and phone number appear in all organizations. Profile edits require validation of provided data formats. If profile data is invalid, the edit request is rejected.
 
 ## Employee Rules
 
-Each employee record must reference a user account and be assigned exactly one role within the organization. Department and position fields are optional for employee records. Employment type must be one of: full-time, part-time, contractor, or intern. Employee status can only be active or deactivated. Deactivated employees cannot log time or submit timesheets for the organization. Historical data including timelogs and timesheets is preserved for deactivated employees. Deactivated employees can be reactivated to restore their access. Each employee belongs to exactly one organization context at a time. Employee records can only be edited by users with employee management permissions. Department assignment is optional and can be set to null.
+Employees are invited to organizations by email address. If the invited email already has a user account, the user is added to the organization immediately. If the invited email has no account, a pending invitation is created until the user signs up. Each employee record must have a reference to a user account and exactly one role in the organization. Employment type must be one of full-time, part-time, contractor, or intern. Employee status can be active or deactivated. Department and position are optional fields in the employee record. Deactivated employees cannot log time or submit timesheets but their historical data is preserved. Deactivated employees can be reactivated to restore their access. Employee records can be edited for department, position, and employment type by users with employee management permission.
 
-### Role Assignment
+### Employee Record Creation and Role Assignment
 
-Each employee record must be assigned exactly one role within the organization. Role assignment is mandatory when creating a new employee record and cannot be left empty. The role assigned to an employee determines their permissions within the organization. Role assignment can only be changed by users with employee management permissions. An employee cannot exist without a role assignment, and the system rejects any attempt to create or update an employee record without specifying a valid role.
+When an employee invitation is accepted, an employee record is created linking the user account to the organization.
 
-### Employment Type
+If the invited email address already has a user account, the user is added to the organization immediately and an employee record is created.
 
-Employment type is a required field for every employee record and must be specified during employee creation. The employment type must be one of the following four values: full-time, part-time, contractor, or intern. No other employment types are accepted by the system. The employment type field cannot be null or empty. If an invalid employment type is provided, the request is rejected. Employment type can be updated by users with employee management permissions, but it must always remain one of the four valid values.
+If the invited email address has no existing account, a pending invitation is created. When the user signs up with that email address, they are automatically added to the organization and an employee record is created.
 
-### Department and Position Fields
+Each employee record must be assigned exactly one role in the organization. The role determines the employee's permissions within the organization.
 
-Department and position are optional fields for employee records. Department assignment is not required, and an employee record can have a null department value. Position or title is also optional and can be left empty. When a department is deleted from the organization, employees assigned to that department have their department field set to null automatically. Users with employee management permissions can set or clear the department and position fields at any time. The absence of a department or position value does not affect the employee's ability to perform their assigned role.
+The role assignment can be changed by users with employee management permission. When a role is changed, the employee immediately gains or loses the permissions associated with the new role.
 
-### Employee Status and Deactivation
+If an employee's role is deleted, the employee must be reassigned to a different role before the role deletion can complete.
 
-Employee status can only be one of two values: active or deactivated. Deactivated employees cannot log time entries for the organization. Deactivated employees cannot submit timesheets for approval. When an employee is deactivated, all historical data including past timelogs and timesheets is preserved in the system. Deactivated employees can be reactivated by users with employee management permissions, which restores their ability to log time and submit timesheets. Reactivation does not affect the preserved historical data. If a request is made to log time or submit a timesheet for a deactivated employee, the request is rejected.
+### Employee Record Field Validation
 
-### Management Permissions and Organization Context
+Each employee record must have a reference to a user account. The user account provides the employee's identity and authentication credentials.
 
-Employee records can only be created, edited, or deactivated by users with employee management permissions. Attempts to modify employee records without the required permissions are rejected. Each employee record belongs to exactly one organization context. An employee record in one organization is independent from employee records in other organizations, even if they reference the same user account. When a user switches organization context, they can only access and modify employee records within the currently selected organization. Employee data from one organization is not visible or accessible from another organization context.
+Each employee record must have exactly one role assigned from the organization's available roles.
+
+The employment type field must be one of the following values: full-time, part-time, contractor, or intern. No other employment types are permitted.
+
+The employee status field must be either active or deactivated. Active employees have full access according to their role permissions. Deactivated employees have restricted access as defined in the deactivation rules.
+
+The department field is optional. If not provided, the employee is not associated with any department. Employees can be assigned to a department or have their department removed.
+
+The position field is optional. If not provided, the employee has no position title. The position can be set or updated at any time by users with employee management permission.
+
+### Employee Deactivation and Reactivation
+
+When an employee is deactivated, they cannot log time entries. Any attempt to create a timelog by a deactivated employee is rejected.
+
+When an employee is deactivated, they cannot submit timesheets. Any attempt to submit a timesheet by a deactivated employee is rejected.
+
+When an employee is deactivated, their historical data is preserved. All previously created timelogs, timesheets, contracts, and project memberships remain accessible for reporting and audit purposes.
+
+Deactivated employees retain read-only access to their own historical data according to their role permissions at the time of deactivation.
+
+A deactivated employee can be reactivated by users with employee management permission. When reactivated, the employee regains their role permissions and can resume logging time and submitting timesheets.
+
+When an employee is reactivated, their previous department, position, and employment type values are restored.
+
+If an employee's user account is deleted, the employee record is marked as deactivated and cannot be reactivated.
 
 ## Role Rules
 
-Three built-in roles exist in every organization: Owner, Manager, and Employee. Built-in roles cannot be deleted from the organization. Organization owners can create custom roles with specific names and permission sets. Each custom role must have a name and a defined set of permissions. Available permissions include organization management, employee management, employee viewing, project management, project viewing, time management, time approval, time viewing all, and report viewing. Organization owners can edit custom roles to change their permissions. Custom roles can only be deleted if no employees are currently assigned to them. Each employee must be assigned exactly one role within the organization. Role assignments can be changed by users with employee management permissions. Permission sets define what actions a role can perform within the organization.
+Each organization has three built-in roles that cannot be deleted: Owner, Manager, and Employee. The Owner role has full access to all features and can manage roles and members. The Manager role can manage employees, projects, approve timesheets, and view reports. The Employee role can track time, submit timesheets, and view own data. Organization owners can create custom roles with a name and a set of permissions. Available permissions include org:manage, employee:manage, employee:view, project:manage, project:view, time:manage, time:approve, time:view_all, and report:view. Custom roles can be edited by organization owners. Custom roles can only be deleted if no employees are assigned to them. Each employee in an organization must be assigned exactly one role.
 
-### Built-in Role Definition
+### Built-in Role Constraints
 
-Every organization has three built-in roles: Owner, Manager, and Employee. These built-in roles exist automatically when an organization is created and cannot be removed from the organization. The Owner role has full access to all organization features including managing organization settings, managing all employees, managing all projects, approving timesheets, and viewing all reports. The Manager role can manage employees, manage projects, approve timesheets, and view reports but cannot edit organization settings. The Employee role can track time, submit timesheets, and view their own data only. Built-in roles cannot be deleted under any circumstances. Built-in roles cannot be renamed. Built-in roles cannot have their permissions modified. If a user attempts to delete a built-in role, the request is rejected with an error indicating that built-in roles are protected. If a user attempts to rename a built-in role, the request is rejected with an error indicating that built-in role names are fixed.
+Each organization has three built-in roles that cannot be deleted: Owner, Manager, and Employee.
 
-### Custom Role Creation
+The Owner role has full access to all features within the organization. Owners can manage organization settings, manage roles and members, manage employees, manage projects, approve timesheets, and view all reports.
 
-Organization owners can create custom roles to define specific permission sets for their organization. When creating a custom role, a name must be provided and cannot be empty. The role name must be unique within the organization and cannot duplicate the name of any existing role (built-in or custom). A set of permissions must be selected for the custom role. A custom role cannot be created without at least one permission assigned. If the role name is missing or empty, the request is rejected. If the role name already exists in the organization, the request is rejected with an error indicating the name is already in use. If no permissions are selected, the request is rejected with an error indicating that at least one permission is required. Custom roles are marked as editable and deletable (subject to assignment constraints).
+The Manager role can manage employees, manage projects, approve or reject timesheets, and view organization reports. Managers cannot edit organization settings or manage roles.
 
-### Available Permissions
+The Employee role can track time, submit timesheets for approval, and view their own data including timelogs, timesheets, and assigned tasks. Employees cannot manage other employees, projects, or approve timesheets.
 
-The system provides ten distinct permissions that can be assigned to custom roles. The organization management permission allows editing organization settings including name, description, logo, currency, timezone, and fiscal start month. The employee management permission allows adding new employees, editing employee records, and deactivating or reactivating employees. The employee view permission allows viewing the employee list and viewing details of any employee in the organization. The project management permission allows creating new projects, editing existing projects, archiving or completing projects, and deleting projects that have no timelogs. The project view permission allows viewing all projects and their tasks in the organization. The time management permission allows editing or deleting any employee's timelogs regardless of ownership. The time approval permission allows viewing all submitted timesheets, approving timesheets, and rejecting timesheets with a reason. The time view all permission allows viewing all employees' timelogs and timesheets but does not allow editing or approval actions. The report view permission allows accessing organization reports including time reports, project budget reports, and weekly summary reports. Each permission is independent and can be combined with any other permission in a custom role.
+Built-in roles cannot be deleted under any circumstances. Built-in roles cannot be renamed. Built-in roles cannot have their permissions modified.
 
-### Custom Role Editing and Deletion
+### Custom Role Management
 
-Organization owners can edit custom roles to change their name or permission set. When editing a custom role name, the new name must be unique within the organization and cannot duplicate any existing role name. When editing permissions, any combination of the ten available permissions can be selected including adding or removing permissions. Changes to a custom role's permissions take effect immediately for all employees assigned to that role. Custom roles can be deleted only if no employees are currently assigned to them. Before deleting a custom role, all employees assigned to it must be reassigned to a different role. If a user attempts to delete a custom role that has employees assigned, the request is rejected with an error indicating that the role cannot be deleted while employees are assigned to it. The error message should include the count of employees currently assigned to the role. Deleted custom roles cannot be recovered. Employees who were assigned to a deleted role must be reassigned before the deletion can proceed.
+Organization owners can create custom roles with a name and a set of permissions.
 
-### Role Assignment Constraints
+Nine permissions are available for assignment to custom roles:
+- org:manage — edit organization settings
+- employee:manage — add, edit, and deactivate employees
+- employee:view — view employee list and details
+- project:manage — create, edit, and delete projects and tasks
+- project:view — view projects and tasks
+- time:manage — edit or delete any employee's timelogs
+- time:approve — approve or reject timesheets
+- time:view_all — view all employees' timelogs and timesheets
+- report:view — view organization reports
 
-Each employee in an organization must be assigned exactly one role at all times. An employee cannot exist without a role assignment. An employee cannot have multiple roles simultaneously within the same organization. When a new employee is added to an organization, a role must be selected during the creation process. If no role is selected during employee creation, the request is rejected with an error indicating that a role assignment is required. Role assignments can be changed by users who have the employee management permission. When changing an employee's role, the new role must be a valid role within the organization (built-in or custom). The previous role assignment is replaced entirely by the new role assignment. Role changes take effect immediately, granting or revoking permissions based on the new role. If a user without employee management permission attempts to change a role assignment, the request is rejected with an error indicating insufficient permissions. If the selected role does not exist in the organization, the request is rejected with an error indicating the role is not found.
+Organization owners can edit custom roles, including changing the role name and modifying the set of assigned permissions.
+
+Custom roles can only be deleted if no employees are currently assigned to that role. If employees are assigned to a custom role, the role cannot be deleted until all employees are reassigned to a different role.
+
+### Role Assignment Rules
+
+Each employee in an organization must be assigned exactly one role. An employee cannot have multiple roles within the same organization.
+
+Role assignment can be changed by users with the employee:manage permission. When changing an employee's role, the new role must be from the same organization.
+
+If a custom role is deleted, all employees assigned to that role must be reassigned to a different role before the deletion can proceed.
+
+When an employee is invited to an organization, they must be assigned a role as part of the invitation. The invitation cannot be sent without specifying a role.
 
 ## Department Rules
 
-Each department must have a name during creation. Department description is optional and can be left empty. Departments can have an optional parent department for organizational hierarchy. Department nesting is limited to one level only, preventing deeper hierarchies. Deleting a department sets all employees' department assignments to null. Employee records are not deleted when their department is removed. Only users with organization management permissions can create, edit, or delete departments. All employees in the organization can view the list of departments. Department names must be unique within the organization context. Parent department references must point to existing departments within the same organization.
+Each organization can have multiple departments to organize employees. Each department must have a name and can have an optional description. Departments support one level of nesting through an optional parent department reference. Users with org:manage permission can create, edit, and delete departments. When a department is deleted, employees assigned to that department have their department field set to null. Deleting a department does not delete the employees themselves. All employees in the organization can view the list of departments. Department names must be unique within the organization context. The parent department must belong to the same organization.
 
-### Department Creation Rules
+### Department Creation and Attributes
 
-A department must have a name when created. The name cannot be empty or null. The department name must be unique within the organization. No two departments in the same organization can share the same name. A department description is optional and may be left empty during creation. A parent department is optional when creating a department. If a parent department is specified, it must be an existing department within the same organization. A department cannot reference itself as its parent. Only users with organization management permissions can create departments. When a department is created, it is immediately available for employee assignment.
+A department must have a name. The name is required when creating a department.
+
+A department may have an optional description. The description can be provided during creation or added later.
+
+A department may have an optional parent department. When a parent department is specified, it creates a hierarchical relationship.
+
+If no parent department is specified, the department is a top-level department.
 
 ### Department Hierarchy Constraints
 
-Department hierarchy is limited to one level of nesting only. A department can have a parent department, but the parent department cannot itself have a parent. This creates a two-level structure: top-level departments and sub-departments. A sub-department cannot have its own sub-departments. When selecting a parent department, only top-level departments (those without a parent) are available as options. This constraint prevents complex multi-level hierarchies. All departments in a hierarchy must belong to the same organization. Cross-organization department references are not permitted.
+Departments support only one level of nesting. A department cannot have a parent department that itself has a parent department.
 
-### Department Edit Rules
+The parent department must belong to the same organization as the child department. Cross-organization department hierarchies are not permitted.
 
-Only users with organization management permissions can edit departments. The department name can be changed, but the new name must remain unique within the organization. The department description can be added, modified, or cleared at any time. The parent department can be changed or removed during editing. When changing the parent, the same hierarchy constraints apply: the new parent must be a top-level department within the same organization. A department cannot be set as its own parent. Editing a department does not affect employees currently assigned to it. The department's unique identifier remains unchanged throughout edits.
+If an attempt is made to assign a parent department that is not in the same organization, the request is rejected.
 
-### Department Deletion Impact
+### Department Management Permissions
 
-Only users with organization management permissions can delete departments. When a department is deleted, all employees assigned to that department have their department assignment set to null. Employee records are not deleted when their department is removed. Historical records referencing the deleted department are preserved with null department references. Timelogs, timesheets, and other historical data remain intact. The deletion is permanent and cannot be undone. If a sub-department is deleted, only employees directly assigned to that sub-department are affected. Employees assigned to the parent department are not affected. Deleting a parent department does not automatically delete its sub-departments; sub-departments become top-level departments with null parent references.
+Users with the org:manage permission can create departments within the organization.
 
-### Department Viewing Rules
+Users with the org:manage permission can edit department attributes including name, description, and parent department assignment.
 
-All employees in the organization can view the list of departments. This includes active and deactivated employees. Employees can view department names and descriptions. The department list includes information about the hierarchy structure, showing which departments are sub-departments. Employees without organization management permissions cannot create, edit, or delete departments. The department list can be filtered and searched according to the list browsing expectations defined in the List Browsing Expectations section. Department viewing does not require any special permissions beyond organization membership.
+Users with the org:manage permission can delete departments from the organization.
+
+Users without the org:manage permission cannot create, edit, or delete departments.
+
+### Department Deletion Rules
+
+When a department is deleted, all employees assigned to that department have their department assignment set to null.
+
+Deleting a department does not delete the employees themselves. Employee records are preserved.
+
+Deleting a department does not delete any historical data associated with employees who were assigned to that department.
+
+If a department has child departments (departments with this department as their parent), the child departments' parent assignment is set to null when the parent department is deleted.
+
+### Department Visibility and Naming
+
+All employees in the organization can view the list of departments.
+
+Department names must be unique within the organization. Two departments in the same organization cannot have the same name.
+
+If an attempt is made to create a department with a name that already exists in the organization, the request is rejected.
+
+If an attempt is made to rename a department to a name that already exists in the organization, the request is rejected.
 
 ## Contract Rules
 
-Each employee can have multiple contracts serving as historical records. Only one contract can be active at any given time for an employee. Start date is required for every contract. End date is optional, with null indicating an ongoing contract. Pay rate is required and must be a numeric value. Pay period must be one of: hourly, daily, weekly, or monthly. Working hours per week is required for each contract. Notes field is optional for additional contract details. Creating a new contract automatically ends the previous active contract by setting its end date. Past contracts become immutable historical records and cannot be edited. Only the current active contract can be edited by users with employee management permissions. Employees can view their own contracts regardless of status.
+Each employee can have multiple contracts serving as a historical record. Only one contract can be active at any given time for an employee. Each contract must have a start date and a pay rate as required fields. End date is optional where null means the contract is ongoing. Pay period must be one of hourly, daily, weekly, or monthly. Working hours per week is a required numeric field such as 40. Notes are an optional text field on contracts. Creating a new contract automatically ends the previous active contract by setting its end date to the day before the new contract starts. Past contracts are immutable and cannot be edited once superseded. Only the current active contract can be edited by users with employee management permission.
 
 ### Contract Structure and Attributes
 
-Each employee can have multiple contracts serving as a historical record of their employment terms. Every contract must have a start date. The end date is optional; when not provided, the contract is considered ongoing. Each contract requires a pay rate as a numeric value. The pay period must be one of: hourly, daily, weekly, or monthly. Working hours per week is required for each contract. An optional notes field is available for additional contract details. A contract without a start date cannot be created. A contract with an invalid pay period is rejected.
+Each employee can have multiple contracts serving as a historical record of employment terms over time.
 
-### Contract Lifecycle and State Management
+Each contract must have a start date as a required field. The start date cannot be null or empty.
 
-Only one contract can be active at any given time for an employee. When a new contract is created for an employee, the previous active contract is automatically ended by setting its end date to the day before the new contract's start date. Past contracts become immutable historical records and cannot be edited. Only the current active contract can be edited by users with employee management permissions. Attempting to edit a past contract is rejected. Attempting to create a new contract when one is already active results in the previous contract being automatically ended.
+Each contract must have a pay rate as a required numeric field. The pay rate represents the compensation amount for the specified pay period.
 
-### Contract Access Permissions
+Each contract must have an end date as an optional field. When the end date is null, the contract is considered ongoing with no specified termination date.
 
-Employees can view their own contracts regardless of status. Users with employee view permissions can view any employee's contracts. Users without appropriate permissions cannot access contract information. An employee attempting to view another employee's contracts without proper permissions is rejected.
+Each contract must have a pay period as a required field. The pay period must be one of the following values: hourly, daily, weekly, or monthly. Other values are not permitted.
+
+Each contract must have working hours per week as a required numeric field. This represents the expected weekly working hours, such as 40 hours per week.
+
+Each contract may have notes as an optional text field for additional terms or comments.
+
+### Active Contract Constraint
+
+Only one contract can be active at any given time for an employee. An active contract is defined as a contract where the end date is null or the end date is in the future relative to the current date.
+
+When a new contract is created for an employee who has an existing active contract, the system automatically ends the previous active contract. The previous contract's end date is set to the day before the new contract's start date.
+
+The system rejects any request that would result in an employee having multiple active contracts simultaneously.
+
+If a contract creation request specifies a start date that overlaps with an existing active contract's period, the request is rejected.
+
+### Contract Immutability and Editing
+
+Past contracts are immutable and cannot be edited once they are no longer the active contract. A past contract is defined as a contract where the end date has passed or the contract has been superseded by a newer contract.
+
+Only the current active contract can be edited by users with employee management permission. Edits to the active contract may include modifying the end date, pay rate, working hours per week, or notes.
+
+If a user attempts to edit a past contract, the request is rejected.
+
+If a user without employee management permission attempts to edit any contract, the request is rejected.
+
+Contract history must be preserved exactly as recorded. No modifications to historical contract data are permitted under any circumstances.
 
 ## Project Rules
 
-Each project must have a name during creation. Project description is optional and can be left empty. Color code is required for UI display and identification purposes. Project status must be one of: active, archived, or completed. Budget hours is optional and represents total estimated hours for the project. Start date and end date are both optional fields. Archived or completed projects cannot receive new timelogs from employees. Existing timelogs on archived or completed projects are preserved and remain accessible. Projects can only be deleted if they have no timelogs associated with them. Project editing requires project management permissions. Color codes help visually distinguish projects in the interface.
+Projects must have a name and a color code for UI display as required fields. Description, budget hours, start date, and end date are optional fields. Project status must be one of active, archived, or completed. Archived and completed projects cannot receive new timelogs from employees. Existing timelogs on archived or completed projects are preserved and remain accessible. Projects can only be deleted if they have no timelogs associated with them. Users with project:manage permission can create, edit, archive, complete, or delete projects. Budget hours represents the total estimated hours for the project. Color code is used for visual identification in the user interface.
 
-### Project Creation and Attributes
+### Project Creation and Validation
 
-A project must have a name during creation. The project name cannot be empty. Project description is optional and can be left empty or omitted. A color code is required for each project and is used for UI display and visual identification purposes. Budget hours is optional and represents the total estimated hours for the project. Start date is optional and can be left unspecified. End date is optional and can be left unspecified. When budget hours is not provided, the project has no budget constraint. When start date or end date is not provided, the project has no defined timeline boundaries.
+A project must have a name, which is a required field. The name cannot be empty or null.
+
+A project must have a color code, which is a required field used for visual identification in the user interface. The color code cannot be empty or null.
+
+A project may have a description, which is an optional field. If not provided, the description remains empty.
+
+A project may have budget hours, which is an optional field representing the total estimated hours for the project. If not provided, the project has no budget limit.
+
+A project may have a start date, which is an optional field. If not provided, the project has no defined start date.
+
+A project may have an end date, which is an optional field. If not provided, the project has no defined end date.
+
+If the project name is missing or empty, the request to create or update the project is rejected.
+
+If the color code is missing or empty, the request to create or update the project is rejected.
+
+Budget hours, when provided, must be a positive numeric value. If a non-positive value is provided, the request is rejected.
 
 ### Project Status and Timelog Restrictions
 
-Project status must be one of: active, archived, or completed. Only active projects can receive new timelogs from employees. Archived projects cannot receive new timelogs. Completed projects cannot receive new timelogs. Existing timelogs on archived projects are preserved and remain accessible for viewing and reporting. Existing timelogs on completed projects are preserved and remain accessible for viewing and reporting. Employees attempting to log time on an archived or completed project have their request rejected. The system validates project status before accepting any timelog entry.
+A project status must be one of: active, archived, or completed. Any other status value is invalid.
+
+When a project status is set to archived, the project cannot receive new timelogs from employees. Any attempt to log time to an archived project is rejected.
+
+When a project status is set to completed, the project cannot receive new timelogs from employees. Any attempt to log time to a completed project is rejected.
+
+When a project is archived or completed, all existing timelogs associated with the project are preserved and remain accessible for viewing and reporting.
+
+Archived or completed projects retain all their historical data, including timelogs, tasks, and project memberships.
+
+The following flowchart shows project status transitions:
+
+```mermaid
+flowchart LR
+    A["active"] -->|"Archive"| B["archived"]
+    A -->|"Complete"| C["completed"]
+```
+
+Only users with the project:manage permission can change a project status from active to archived or completed.
 
 ### Project Deletion Rules
 
-A project can only be deleted if it has no timelogs associated with it. If a project has one or more timelogs, the deletion request is rejected. Projects with no timelogs can be deleted by users with project management permission. Deleting a project permanently removes the project record. Project deletion does not affect timelogs on other projects. Before deletion, the system checks for any existing timelogs linked to the project.
+A project can only be deleted if it has no timelogs associated with it. If any timelog exists for the project, the deletion request is rejected.
 
-### Project Editing Constraints
+Users with the project:manage permission can delete projects that meet the deletion criteria.
 
-Editing a project requires project management permission. Users without project management permission cannot edit project details. All project attributes can be edited: name, description, color code, status, budget hours, start date, and end date. Changing a project from active to archived or completed status immediately prevents new timelogs. Changing a project from archived or completed back to active status re-enables timelog creation. Color code changes are reflected immediately in the user interface. Project edits are recorded in the activity log with timestamp and user identification.
+Users without the project:manage permission cannot delete any project. Any deletion request from such users is rejected.
+
+If a project has tasks, the tasks are deleted along with the project.
+
+If a project has project members, the project memberships are deleted along with the project.
+
+Deleting a project does not affect timelogs from other projects. Only timelogs associated with the deleted project would be affected, but such projects cannot be deleted if timelogs exist.
 
 ## ProjectMember Rules
 
-Each project membership connects an employee to a specific project. An employee can be assigned to multiple projects simultaneously. Each membership must specify the employee's role as either member or project-lead. Project leads have special permissions to manage tasks within their assigned project. Only users with project management permissions can assign employees to projects. Only users with project management permissions can remove employees from projects. Employees can view which projects they are assigned to within the organization. Project membership requires that the employee exists in the organization. The assigned role determines what actions the employee can take within the project context. Removing an employee from a project does not affect their other project assignments.
+Project membership links an employee to a project with a specific role assignment. Each project membership must have an employee, a project, and an assigned role. The assigned role must be either member or project-lead. An employee can be assigned to multiple projects simultaneously. Only users with project:manage permission can assign employees to projects. Only users with project:manage permission can remove employees from projects. Project leads can manage tasks within their assigned project. Employees can view which projects they are assigned to. The same employee cannot have duplicate memberships in the same project.
 
-### Project Membership Assignment and Validation
+### Project Membership Structure
 
-A project membership connects an employee to a specific project within the organization. Each membership represents a single assignment relationship between one employee and one project.
+Each project membership must link an employee to a project with a specific role assignment. A project membership requires three elements: an employee, a project, and an assigned role. The assigned role must be either member or project-lead. No other role values are accepted.
 
-An employee can be assigned to multiple projects simultaneously. There is no limit to the number of projects an employee can join.
+The same employee cannot have duplicate memberships in the same project. If an attempt is made to assign an employee who is already a member of the project, the request is rejected.
 
-Before assigning an employee to a project, the system validates that the employee exists in the organization and has an active status. If the employee does not exist or is deactivated, the assignment request is rejected.
+An employee can be assigned to multiple projects simultaneously. There is no limit on the number of projects an employee can belong to.
 
-Only users with the project management permission can assign employees to projects. When assigning, the user must specify which role the employee will have in the project.
+When a project membership is created, the employee must exist and be active in the organization. The project must exist and be active. If the employee does not exist, the request is rejected. If the employee is deactivated, the request is rejected. If the project does not exist, the request is rejected. If the project is archived or completed, the request is rejected.
 
-Only users with the project management permission can remove employees from projects. Removing an employee from a project affects only that specific project membership. The employee's assignments to other projects remain unchanged.
+### Project Membership Assignment and Removal
 
-If a project is archived or completed, existing project memberships are preserved but no new assignments can be made to that project.
+Only users with project:manage permission can assign employees to projects. If a user without project:manage permission attempts to assign an employee to a project, the request is rejected.
 
-### Project Member Roles and Permissions
+Only users with project:manage permission can remove employees from projects. If a user without project:manage permission attempts to remove an employee from a project, the request is rejected.
 
-Each project membership must specify the employee's role as either member or project-lead. The role cannot be left unspecified or null.
+When assigning an employee to a project, the assigner must specify the role (member or project-lead). If no role is specified, the request is rejected.
 
-The assigned role determines what actions the employee can take within the project context. This role constraint is enforced for all project-related operations.
+When removing an employee from a project, all task assignments for that employee within the project are automatically cleared. The employee loses access to project tasks immediately upon removal.
 
-A member can view project details, view tasks within the project, and log time to tasks they are assigned to. Members cannot create or edit tasks.
+If an attempt is made to remove an employee who is not a member of the project, the request is rejected. If an attempt is made to assign a role that is not member or project-lead, the request is rejected.
 
-A project-lead has all member permissions plus the ability to manage tasks within their assigned project. Project leads can create new tasks, edit existing tasks, and change task status for tasks in their project.
+### Project Membership Access and Capabilities
 
-The project-lead role does not grant permission to assign or remove other employees from the project. Only users with the project management permission at the organization level can modify project memberships.
+Project leads can manage tasks within their assigned project. This includes creating tasks, editing tasks, and changing task status. Employees with the member role cannot manage tasks unless they also have project:manage permission through their organization role.
 
-An employee's role in a project can be changed by users with the project management permission. Changing from project-lead to member immediately removes task management capabilities for that project.
+Employees can view which projects they are assigned to. An employee can see all projects where they have a membership, regardless of their role (member or project-lead).
 
-### Project Membership Visibility and Lifecycle
+Employees cannot view projects they are not assigned to, unless they have project:view permission through their organization role. If an employee attempts to access a project they are not assigned to and do not have project:view permission, the request is rejected.
 
-Employees can view which projects they are assigned to within the organization. The view includes the project name, status, and the employee's role in each project.
-
-Employees cannot view projects they are not assigned to, unless they have the project view permission at the organization level.
-
-When an employee is removed from a project, the membership connection is permanently deleted. Historical timelogs associated with that project membership are preserved.
-
-If an employee is deactivated in the organization, their project memberships are preserved but they cannot actively participate in project activities. The employee can be reactivated and resume their project assignments.
-
-If a project is deleted, all memberships for that project are automatically removed. This does not affect the employee's memberships in other projects.
+When a project membership is deleted, the employee immediately loses all access to the project and its tasks. Historical timelogs associated with the project remain preserved. If an attempt is made to delete a membership that does not exist, the request is rejected.
 
 ## Task Rules
 
-Each task must have a title during creation. Task description is optional and can provide additional context. Task status must be one of: open, in-progress, completed, or closed. Priority must be one of: low, medium, high, or urgent. Estimated hours is optional for planning purposes. Due date is optional and can be set for deadline tracking. Assigned employee is optional but must be a project member if specified. Parent task is optional for creating subtasks with one level of nesting only. Tasks can only be created within an existing project. Task editing requires project lead status or project management permissions. Assigned employees must already be members of the parent project.
+Tasks must have a title as a required field. Description, estimated hours, and due date are optional fields. Task status must be one of open, in-progress, completed, or closed. Priority must be one of low, medium, high, or urgent. Assigned employee is optional but must be a project member if specified. Tasks support one level of nesting through an optional parent task for subtasks. Project leads can edit tasks within their project. Users with project:manage permission can edit any task in the organization. Task assigned employee must belong to the same project as the task. Parent task must belong to the same project as the child task.
 
-### Task Title and Description Validation
+### Task Title and Required Fields
 
-Every task must have a title during creation. The title cannot be empty or contain only whitespace. If a title is not provided, the task creation request is rejected.
+THE system SHALL require a title for every task.
 
-The task description is optional. If provided, it can contain any text to provide additional context about the task work. An empty description is valid and treated as no description. The description can be added or updated at any time by users with task editing permissions.
+IF a task is created without a title, THEN THE system SHALL reject the request.
 
-### Task Status and Priority Values
+A task cannot exist without a title. The title field is mandatory at creation and cannot be removed or set to empty during editing.
 
-Task status must be one of four values: open, in-progress, completed, or closed. If an invalid status value is provided during task creation or status update, the request is rejected.
+### Optional Task Attributes
 
-Task priority must be one of four values: low, medium, high, or urgent. If an invalid priority value is provided, the request is rejected.
+WHERE a task is created or edited, THE system SHALL allow the following optional attributes:
 
-Both status and priority are required fields. A task cannot be created without specifying both values. Default values are not automatically assigned; the creating user must explicitly select both status and priority.
+- Description: text providing additional context about the task
+- Estimated hours: numeric value indicating expected effort
+- Due date: date by which the task should be completed
 
-### Task Planning Attributes
+IF any optional attribute is not provided, THEN THE system SHALL accept the task with null or empty values for those fields.
 
-Estimated hours is an optional field used for planning purposes. If provided, it represents the expected effort required to complete the task. If not provided, the task has no estimated hours. Estimated hours can be added or updated at any time by users with task editing permissions.
+Optional attributes can be added or updated at any time during the task lifecycle.
 
-Due date is an optional field used for deadline tracking. If provided, it represents the target completion date for the task. If not provided, the task has no due date. Due date can be added or updated at any time by users with task editing permissions. The due date can be in the past, present, or future with no validation restrictions.
+### Task Status Values
+
+THE system SHALL restrict task status to one of the following four values:
+
+- open: task is ready to be worked on
+- in-progress: task is currently being worked on
+- completed: task work is finished
+- closed: task is finalized and no further action is needed
+
+IF a status value outside these four options is provided, THEN THE system SHALL reject the request.
+
+Task status transitions are recorded in task history with timestamp, old status, new status, and the user who made the change.
+
+### Task Priority Values
+
+THE system SHALL restrict task priority to one of the following four values:
+
+- low: task has minimal urgency
+- medium: task has normal urgency
+- high: task has elevated urgency
+- urgent: task requires immediate attention
+
+IF a priority value outside these four options is provided, THEN THE system SHALL reject the request.
+
+Priority can be changed at any time by users with appropriate editing permissions.
 
 ### Task Assignment Rules
 
-Assigned employee is an optional field. A task can exist without being assigned to any employee. If an employee is assigned to a task, that employee must already be a member of the parent project. If the specified employee is not a project member, the task creation or assignment request is rejected.
+WHERE a task is assigned to an employee, THE assigned employee SHALL be a member of the same project as the task.
 
-Only one employee can be assigned to a task at a time. To change the assigned employee, the current assignment is replaced with the new employee. The new employee must also be a project member.
+IF an attempt is made to assign a task to an employee who is not a project member, THEN THE system SHALL reject the request.
 
-Unassigning a task removes the employee assignment, leaving the task unassigned. This is allowed at any time by users with task editing permissions.
+Task assignment is optional. A task can exist without being assigned to any employee.
 
-### Subtask Hierarchy Constraints
+THE system SHALL allow reassignment of tasks to different project members at any time.
 
-Parent task is an optional field used to create subtasks. If provided, the task becomes a subtask of the specified parent task.
+### Subtask Nesting Rules
 
-Subtask hierarchy is limited to one level only. A task can be a subtask of a parent task, but cannot have its own subtasks if it is already a subtask. In other words, only top-level tasks can have subtasks. If an attempt is made to create a subtask under an existing subtask, the request is rejected.
+WHERE a task has a parent task, THE parent task SHALL belong to the same project as the child task.
 
-A task cannot be its own parent. If the parent task reference points to the same task, the request is rejected.
+IF an attempt is made to create a subtask relationship between tasks in different projects, THEN THE system SHALL reject the request.
 
-The parent task must belong to the same project as the subtask. If the parent task is from a different project, the request is rejected.
+THE system SHALL support only one level of task nesting. A subtask cannot have its own subtasks.
 
-### Task Creation and Project Context
+IF an attempt is made to create a nested subtask (a task whose parent is already a subtask), THEN THE system SHALL reject the request.
 
-Tasks can only be created within an existing project. A task cannot exist independently without a project. If the specified project does not exist, the task creation request is rejected.
-
-The creating user must have permission to create tasks in the project. This requires either project lead status on the project or the project:manage permission. If the user lacks the required permissions, the task creation request is rejected.
-
-The project must be in a state that allows task creation. If the project is archived or completed, new tasks cannot be created. The task creation request is rejected if the project status is archived or completed.
+Parent task assignment is optional. Tasks can exist independently without a parent task.
 
 ### Task Editing Permissions
 
-Task editing requires project lead status or project management permissions. Only users who are project leads on the parent project or users with the project:manage permission can edit tasks.
+WHILE a user has project-lead role on a project, THE system SHALL allow the user to edit tasks within that project.
 
-Users without editing permissions cannot modify any task attributes including title, description, status, priority, estimated hours, due date, assigned employee, or parent task. Edit attempts by unauthorized users are rejected.
+WHILE a user has project:manage permission in the organization, THE system SHALL allow the user to edit any task in the organization regardless of project assignment.
 
-Task status changes are recorded in task history (defined in TaskHistory Rules section). Each status change creates a history entry with timestamp, old status, new status, and the user who made the change. This recording is automatic and cannot be bypassed.
+IF a user without project-lead role or project:manage permission attempts to edit a task, THEN THE system SHALL reject the request.
+
+Task editing includes modifying title, description, status, priority, estimated hours, due date, assigned employee, and parent task relationship.
 
 ## TaskHistory Rules
 
-Task history entries are automatically created when task status changes occur. Each history entry must record the timestamp of when the change happened. The old status before the change must be captured in the history entry. The new status after the change must be recorded in the history entry. The user who made the status change must be identified in the history entry. Task history entries are immutable once created and cannot be modified. History entries provide an audit trail of all status transitions for a task. Only status changes trigger history entry creation, not other task edits. Each history entry is linked to exactly one task. The system automatically generates history entries without manual intervention.
+Task history entries are automatically created when task status changes occur. Each task history entry must have a timestamp recording when the change happened. Each entry must record the old status before the change. Each entry must record the new status after the change. Each entry must record which user made the status change. Task history entries are immutable once created and cannot be edited or deleted. Task history provides an audit trail of all status transitions for a task. History entries are created for every status change without exception. The timestamp uses the system time when the change was made. Task history is viewable by anyone who can view the task.
 
-### Automatic Status Change Recording
+### Task History Entry Creation
 
-Task history entries are automatically generated by the system when a task status change occurs. Users cannot manually create task history entries. The system creates history entries without any manual intervention or user action. Each status transition triggers the automatic creation of exactly one history entry. The automatic generation ensures complete tracking of all status changes. Users with task editing permissions do not need to take any additional steps to record history. The system handles history creation as part of the status change operation. Failed status changes do not create history entries. Only successful status transitions result in history entry creation.
+Task history entries are automatically created whenever a task status changes. Every status change is logged without exception, regardless of which user initiates the change or what the status transition is. The system creates the history entry at the moment the status change is applied. History entries cannot be manually created, edited, or deleted by users. This automatic recording ensures a complete record of all task status transitions.
 
-### History Entry Requirements
+### Task History Entry Requirements
 
-Each task history entry must record the timestamp of when the status change occurred. The timestamp is required and cannot be null or omitted. The old status before the change must be captured in the history entry. The new status after the change must be recorded in the history entry. The user who made the status change must be identified in the history entry. Each history entry is linked to exactly one task. A history entry cannot be associated with multiple tasks. The timestamp reflects the exact moment the status change was completed. The old status and new status values must be valid task status values. The user identification allows tracking who made each change. If the user account is deleted, the history entry retains the user reference.
+Each task history entry must include the following information:
 
-### Immutability and Audit Trail
+- Timestamp: The system timestamp when the status change occurred is required. The timestamp uses the system time at the moment of change, not the user's local time.
+- Old Status: The status value before the change is required. This records what the task status was prior to the transition.
+- New Status: The status value after the change is required. This records what the task status became.
+- Changed By: The user who made the status change is required. This identifies which user performed the action that triggered the status change.
 
-Task history entries are immutable once created and cannot be modified. Task history entries cannot be deleted after creation. The immutability ensures an accurate audit trail of all status transitions. History entries provide a complete audit trail for task status changes. The audit trail purpose is to track all transitions throughout the task lifecycle. Users can view the full history of status changes for any task. The transition tracking shows the complete progression from initial status to current status. History constraints prevent any alteration of recorded changes. Change identification is preserved through the combination of timestamp, user, old status, and new status. The audit trail supports compliance and accountability requirements. No user, including organization owners, can modify or delete history entries.
+All four fields are mandatory for every history entry. If any field cannot be recorded, the status change is rejected.
 
-### Status Change Trigger
+### Task History Immutability
 
-Only status changes trigger history entry creation. Editing other task attributes such as title, description, priority, estimated hours, due date, or assigned employee does not create history entries. Changes to task attributes other than status are not recorded in the task history. If a task is updated without changing the status, no history entry is created. The history constraint ensures the audit trail focuses on status transitions only. Users editing task details without status changes will not see new history entries. This separation keeps the history focused on workflow progression rather than all edits.
+Task history entries are immutable once created. No user, regardless of role or permission level, can edit or delete a task history entry. This immutability applies to all fields including timestamp, old status, new status, and changed by user. The system does not provide any mechanism to modify historical records. This ensures the integrity of the audit trail and prevents tampering with task status history.
+
+### Task History Purpose and Access
+
+Task history serves as an audit trail for tracking all status transitions on a task. The audit trail purpose is to provide transparency and accountability for task status changes.
+
+Any user who can view a task can also view the task history for that task. This includes project leads, users with project management permissions, and employees assigned to the project. Users who cannot view the task cannot access its history. The history is displayed in chronological order showing all status changes from task creation to current status.
 
 ## Timelog Rules
 
-Each timelog must have a date indicating when the work was performed. Duration in minutes is required and must be a positive integer. Project is required and must be a project the employee is assigned to. Task is optional but must belong to the selected project if specified. Description is optional and can explain what work was done. Billable flag defaults to true if not specified. Employees can only create timelogs for their own work records. Timelogs cannot be edited if they are part of an approved timesheet. Timelogs cannot be deleted if they are part of any submitted or approved timesheet. Users with time management permissions can edit or delete any employee's timelogs. Project assignment must be validated before timelog creation. Task selection must match the selected project.
+Timelogs must have a date, duration in minutes, and a project as required fields. Task is optional but must belong to the selected project if specified. Description is an optional text field explaining what work was done. Billable flag is a boolean with a default value of true. Employees can only create timelogs for their own employee record. The project must be one the employee is assigned to as a project member. Timelogs can only be edited by the owner if not part of an approved timesheet. Timelogs can only be deleted by the owner if not part of any submitted or approved timesheet. Users with time:manage permission can edit or delete any employee's timelogs regardless of timesheet status.
 
-### Timelog Field Requirements
+### Required Fields
 
-Each timelog must have a date indicating when the work was performed. The date is required and cannot be empty.
+Every timelog must include a date indicating when the work was performed. The date is a required field and cannot be omitted.
 
-Duration in minutes is required and must be a positive integer. Zero or negative durations are rejected.
+Every timelog must include a duration expressed in minutes. The duration represents the total time spent on the work and is a required field. Duration values must be positive integers.
 
-Description is optional and can explain what work was done. If not provided, the timelog is created without a description.
+Every timelog must include a project reference. The project identifies which project the work belongs to and is a required field. A timelog cannot exist without an associated project.
 
-Billable flag defaults to true if not specified. When creating a timelog, if the billable flag is not explicitly set, it is automatically marked as billable.
+### Optional Fields
 
-### Project Assignment Validation
+A timelog may include a task reference. The task is optional and can be omitted when logging time. When a task is specified, it must belong to the selected project (see Project and Task Validation).
 
-Project is required for every timelog. A timelog cannot be created without selecting a project.
+A timelog may include a description. The description is an optional text field that explains what work was performed during the logged time. The description can be left empty.
 
-The selected project must be a project the employee is assigned to. If the employee is not a member of the project, the timelog creation is rejected.
+A timelog includes a billable flag indicating whether the logged time is billable to a client. The billable flag is a boolean field with a default value of true. If not explicitly set, the timelog is treated as billable.
 
-Before timelog creation, the system validates that the employee has an active project membership with the selected project. If no membership exists, the request is rejected with an error indicating the employee is not assigned to the project.
+### Project and Task Validation
 
-### Task Selection Rules
+The project specified in a timelog must be one that the employee is assigned to as a project member. An employee cannot log time to a project they are not a member of.
 
-Task is optional when creating a timelog. A timelog can be logged against a project without specifying a task.
+If a task is specified in the timelog, the task must belong to the selected project. A timelog cannot reference a task from a different project than the one specified.
 
-If a task is specified, it must belong to the selected project. The system validates that the task is part of the same project as the timelog's project.
+The system validates project and task assignments at the time of timelog creation. If the employee is not assigned to the project, or if the task does not belong to the project, the request is rejected.
 
-If the selected task does not match the selected project, the timelog creation is rejected. The task must be directly associated with the project specified in the timelog.
+### Creation Permissions
 
-### Timelog Creation Permissions
+Employees can only create timelogs for their own employee record. An employee cannot create timelogs on behalf of another employee.
 
-Employees can only create timelogs for their own work records. An employee cannot create timelogs on behalf of another employee.
+The system enforces this restriction by associating each timelog with the employee record of the user creating it. Any attempt to create a timelog for a different employee is rejected.
 
-When creating a timelog, the system automatically associates it with the currently authenticated employee. Attempts to create timelogs for other employees are rejected.
+### Edit Restrictions
 
-### Timelog Edit and Delete Restrictions
+Employees can edit their own timelogs only if the timelog is not part of an approved timesheet. Once a timesheet containing the timelog is approved, the timelog becomes locked and cannot be edited.
 
-Timelogs cannot be edited if they are part of an approved timesheet. Once a timesheet is approved, all included timelogs are locked and cannot be modified.
+If the timelog is part of a draft or submitted timesheet, the employee can still edit it. If the timelog is not part of any timesheet, the employee can edit it freely.
 
-Timelogs cannot be deleted if they are part of any submitted or approved timesheet. If a timelog is included in a timesheet with status submitted or approved, deletion is rejected.
+The system checks the timesheet status before allowing edits. If the timelog is part of an approved timesheet, the edit request is rejected.
 
-Users with the time:manage permission can edit or delete any employee's timelogs, overriding the standard restrictions. This permission allows modification of timelogs regardless of timesheet status, except for timelogs in approved timesheets which remain locked from editing.
+### Delete Restrictions
+
+Employees can delete their own timelogs only if the timelog is not part of any submitted or approved timesheet. This is a stricter restriction than editing.
+
+If the timelog is part of a submitted timesheet (awaiting approval), the employee cannot delete it. If the timelog is part of an approved timesheet, the employee cannot delete it.
+
+If the timelog is part of a draft timesheet or not part of any timesheet, the employee can delete it.
+
+The system checks the timesheet status before allowing deletion. If the timelog is part of a submitted or approved timesheet, the delete request is rejected.
+
+### Management Override
+
+Users with the time:manage permission can edit any employee's timelogs regardless of timesheet status. This permission overrides the edit restrictions that apply to regular employees.
+
+Users with the time:manage permission can delete any employee's timelogs regardless of timesheet status. This permission overrides the delete restrictions that apply to regular employees.
+
+The time:manage permission is typically assigned to users with the Owner or Manager role. This allows them to correct errors or make adjustments to timelogs even after timesheets have been submitted or approved.
 
 ## Timesheet Rules
 
-Each timesheet represents a collection of timelogs for a specific week from Monday to Sunday. Week start date and week end dates are required and define the timesheet period. Status must be one of: draft, submitted, approved, or rejected. Total hours are calculated automatically from included timelogs. A timesheet cannot be submitted if it contains no timelogs. Only one timesheet per employee per week can exist in submitted or approved status. Approved timesheets lock all included timelogs from editing or deletion. Rejected timesheets return to draft status for modification. Rejection reason is required text when a timesheet is rejected. Submitted timestamp records when the employee submitted for approval. Reviewed timestamp and reviewer are recorded when approved or rejected.
+Timesheets represent a collection of timelogs for a specific week from Monday to Sunday. Each timesheet must have an employee owner and a week start date which is always a Monday. Week end date is always the corresponding Sunday. Status must be one of draft, submitted, approved, or rejected. Total hours is calculated automatically from included timelogs. Submitted at timestamp is recorded when the timesheet is submitted. Reviewed at timestamp and reviewed by user are recorded when approved or rejected. Rejection reason is required text when rejecting a timesheet. A timesheet cannot be submitted if it has no timelogs included. A timesheet cannot be submitted if another timesheet for the same week is already submitted or approved.
 
-### Timesheet Period Definition
+### Week Definition and Boundaries
 
-Each timesheet represents a single week period from Monday to Sunday. The week start date (Monday) is required and defines the beginning of the timesheet period. The week end date (Sunday) is required and defines the end of the timesheet period. The system automatically calculates the week end date as six days after the week start date to ensure the period spans exactly one week. A timesheet period cannot overlap with another timesheet period for the same employee. Each employee can have only one timesheet per week.
+A timesheet represents a collection of timelogs for a specific week. The week is defined as Monday through Sunday. The week start date must always be a Monday. The week end date must always be the corresponding Sunday of the same week. The system validates that the week start date falls on a Monday. The system validates that the week end date falls on the Sunday of the same week as the start date. A timesheet cannot be created with invalid week boundaries. If the week start date is not a Monday, the request is rejected. If the week end date is not the corresponding Sunday, the request is rejected.
+
+### Timesheet Ownership
+
+Each timesheet must have exactly one employee owner. The employee owner is the employee whose timelogs are included in the timesheet. The employee owner is required when creating a timesheet. A timesheet cannot exist without an employee owner. Only the employee owner can create a draft timesheet for their own week. Only the employee owner can submit their own timesheet for approval. Only the employee owner can modify a draft or rejected timesheet. If no employee owner is specified, the request is rejected.
 
 ### Timesheet Status Lifecycle
 
-Timesheets progress through four statuses: draft, submitted, approved, and rejected. When first created, a timesheet begins in draft status. Employees can submit draft timesheets for approval. Users with timesheet approval permission can change submitted timesheets to either approved or rejected status. When a timesheet is approved, all timelogs included in that timesheet become locked and cannot be edited or deleted. When a timesheet is rejected, it automatically returns to draft status, allowing the employee to make modifications and resubmit.
+A timesheet must have a status at all times. The status must be one of: draft, submitted, approved, or rejected. When first created, a timesheet is in draft status. When an employee submits a timesheet, the status changes from draft to submitted. When a user with approval permission approves a timesheet, the status changes from submitted to approved. When a user with approval permission rejects a timesheet, the status changes from submitted to rejected. A rejected timesheet returns to draft status when the employee modifies it for resubmission. If an invalid status value is provided, the request is rejected.
 
-### Timesheet Submission Rules
+### Automatic Calculations and Timestamps
 
-The total hours displayed on a timesheet are calculated automatically from all included timelogs. A timesheet cannot be submitted if it contains no timelogs. An employee cannot have more than one timesheet in submitted or approved status for the same week. If a timesheet already exists for a week in submitted or approved status, creating another timesheet for that week is rejected. When an employee submits a timesheet, the system records the submitted timestamp indicating when the submission occurred.
+The total hours on a timesheet is calculated automatically from the included timelogs. The total hours is the sum of all timelog durations converted to hours. The total hours updates automatically when timelogs are added or removed from a draft timesheet. The submitted at timestamp is recorded automatically when the timesheet is first submitted. The submitted at timestamp cannot be modified after recording. The reviewed at timestamp is recorded automatically when the timesheet is approved or rejected. The reviewed by user is recorded automatically as the user who performed the approval or rejection. The reviewed at and reviewed by are null until the timesheet is reviewed.
 
-### Timesheet Review Process
+### Submission Validation Rules
 
-When rejecting a timesheet, the reviewer must provide a rejection reason as text. The rejection reason is required and cannot be empty. When a timesheet is approved or rejected, the system records the reviewed timestamp indicating when the review action occurred. The user who approved or rejected the timesheet is recorded as the reviewer. Only users with timesheet approval permission can perform review actions on submitted timesheets.
+A timesheet cannot be submitted if it has no timelogs included. If an employee attempts to submit an empty timesheet, the request is rejected. A timesheet cannot be submitted if another timesheet for the same employee and same week is already in submitted or approved status. If an employee attempts to submit a duplicate week timesheet, the request is rejected. When rejecting a timesheet, a rejection reason is required. The rejection reason must be a non-empty text explanation. If no rejection reason is provided when rejecting, the request is rejected. An approved timesheet cannot be modified or resubmitted. A submitted timesheet cannot be modified until it is rejected and returns to draft status.
 
 ## Timer Rules
 
-Each employee can have at most one active timer running at any time. Starting a timer requires selecting a project from the employee's assigned projects. Task selection is optional when starting a timer. The timer records the start timestamp when activated. Description is optional and can be set or edited while the timer is running. Project and task can be edited while the timer is actively running. Stopping the timer automatically creates a timelog with the calculated duration. Duration is rounded to the nearest minute when the timer stops. Discarding the timer creates no timelog entry. The timer continues running indefinitely if not manually stopped by the employee. No automatic stop mechanism exists for forgotten timers.
+Each employee can have at most one active timer running at any given time. Starting a timer requires selecting a project which must be one the employee is assigned to. Task selection is optional when starting a timer. The timer records a start timestamp when initiated. Description is an optional field that can be set when starting or while running. The project and task of a running timer can be edited while it is active. Stopping the timer creates a timelog with the calculated duration from start to stop. Duration is rounded to the nearest minute when creating the timelog. Employees can discard their timer without creating any timelog. Timers continue running indefinitely if the employee forgets to stop them with no automatic stop mechanism.
 
-### Single Active Timer Constraint
+### Timer Activation Constraints
 
-THE system SHALL enforce that each employee can have at most one active timer running at any time.
+Each employee can have at most one active timer running at any given time. If an employee attempts to start a new timer while another timer is already active, the request is rejected.
 
-IF an employee attempts to start a new timer while another timer is already active, THEN THE system SHALL reject the request.
+Starting a timer requires selecting a project. The selected project must be one the employee is assigned to as a project member. If the employee is not assigned to the selected project, the request is rejected.
 
-THE employee SHALL be required to stop or discard their existing timer before starting a new one.
+Task selection is optional when starting a timer. If a task is selected, it must belong to the selected project. If the task does not belong to the project, the request is rejected.
 
-This constraint applies per employee, not per organization or project.
+The system records a start timestamp when the timer is initiated. This timestamp marks the beginning of the time tracking session.
 
-### Timer Creation Requirements
+### Running Timer Management
 
-WHEN an employee starts a timer, THE system SHALL require selection of a project from the employee's assigned projects.
+Description is an optional field that can be set when starting a timer or while the timer is running. Employees can edit the description of their active timer at any time before stopping it.
 
-IF the employee is not assigned to any project, THEN THE system SHALL prevent timer creation.
+The project of a running timer can be edited while it is active. The new project must be one the employee is assigned to. If the employee is not assigned to the new project, the request is rejected.
 
-Task selection SHALL be optional when starting a timer.
+The task of a running timer can be edited while it is active. If a task is selected, it must belong to the currently selected project. If the task does not belong to the project, the request is rejected. The task can also be removed entirely from the running timer.
 
-IF a task is selected, THE task SHALL belong to the selected project.
+Timers continue running indefinitely if the employee forgets to stop them. The system does not automatically stop timers after any duration or at any specific time.
 
-THE system SHALL record the start timestamp at the moment the timer is activated.
+### Timer Completion Rules
 
-THE start timestamp SHALL be captured with precision to the second.
+When an employee stops their timer, the system creates a timelog with the calculated duration from the start timestamp to the stop timestamp. The duration is rounded to the nearest minute when creating the timelog.
 
-### Timer Editing Rules
+Employees can discard their timer without creating any timelog. Discarding a timer removes it permanently with no record of the tracked time.
 
-WHILE a timer is actively running, THE employee SHALL be able to edit the description field.
-
-THE description field SHALL remain optional throughout the timer's lifetime.
-
-WHILE a timer is actively running, THE employee SHALL be able to change the selected project.
-
-THE new project SHALL be from the employee's assigned projects.
-
-WHILE a timer is actively running, THE employee SHALL be able to change the selected task.
-
-IF a task is changed, THE new task SHALL belong to the currently selected project.
-
-Task selection SHALL remain optional during editing.
-
-THE system SHALL allow editing of description, project, and task independently or together.
-
-### Timer Stopping and Timelog Creation
-
-WHEN an employee stops their timer, THE system SHALL automatically create a timelog entry.
-
-THE timelog SHALL include the date from the timer's start timestamp.
-
-THE system SHALL calculate the duration by measuring the time elapsed between start and stop.
-
-THE calculated duration SHALL be rounded to the nearest minute.
-
-IF the duration is less than 30 seconds, THE duration SHALL round to zero minutes.
-
-THE timelog SHALL inherit the project, task, and description from the timer.
-
-THE billable flag SHALL default to true on the created timelog.
-
-### Timer Discard Behavior
-
-WHEN an employee discards their timer, THE system SHALL delete the timer without creating a timelog.
-
-IF a timer is discarded, no record of the tracked time SHALL be preserved.
-
-THE discard action SHALL be irreversible.
-
-Discarding a timer SHALL immediately free the employee to start a new timer.
-
-### Timer Duration and Automatic Stop
-
-THE system SHALL allow a timer to continue running indefinitely if not manually stopped by the employee.
-
-THE system SHALL NOT implement any automatic stop mechanism for forgotten timers.
-
-IF an employee forgets to stop their timer, THE timer SHALL continue accumulating time until manually stopped or discarded.
-
-No maximum duration limit SHALL be enforced on running timers.
-
-No idle detection or automatic pause SHALL be applied to active timers.
+If the timer has no start timestamp recorded, the stop request is rejected. If the employee does not own the timer, the stop or discard request is rejected.
 
 ## ActivityLog Rules
 
-Each activity log entry must have a timestamp recording when the action occurred. The user who performed the action must be identified in the entry. Action type is required and categorizes the kind of action taken. Target entity identifies what object or record the action affected. Details field provides additional context about the action. Logged actions include employee invitations, deactivations, and reactivations. Contract creation and editing actions are recorded in the activity log. Project creation, archiving, completion, and deletion are logged. Task status changes are recorded with the change details. Timesheet submissions, approvals, and rejections are logged. Role assignments and changes are recorded. Only users with organization management permissions can view the full activity log.
+Activity log entries record significant actions performed within the organization. Each entry must have a timestamp of when the action occurred. Each entry must record the user who performed the action. Each entry must have an action type describing what was done. Each entry must have a target entity indicating what was affected. Details provide additional context about the action. Logged actions include employee invited, deactivated, and reactivated events. Contract created or edited actions are logged. Project created, archived, completed, and deleted actions are logged. Task status changed, timesheet submitted, approved, and rejected actions are logged. Role assigned or changed actions are logged. Users with org:manage permission can view the full activity log.
 
-### Activity Log Entry Structure
+### Activity Log Entry Requirements
 
-Each activity log entry must have a timestamp recording when the action occurred. The user who performed the action must be identified in the entry. Action type is required and categorizes the kind of action taken. Target entity identifies what object or record the action affected. Details field provides additional context about the action when applicable.
+Every activity log entry must have a timestamp indicating when the action occurred. The timestamp is automatically recorded by the system and cannot be modified.
 
-### Logged Employee Actions
+Every activity log entry must record the user who performed the action. The system automatically associates the entry with the user who triggered the logged event.
 
-Employee invitation actions are recorded in the activity log. Employee deactivation actions are recorded in the activity log. Employee reactivation actions are recorded in the activity log. Each employee-related log entry includes the employee identifier and the email address involved in the action.
+Every activity log entry must have an action type describing what was done. The action type categorizes the nature of the logged event.
 
-### Logged Contract Actions
+Every activity log entry must have a target entity indicating what was affected by the action. The target entity identifies which business object the action was performed on.
 
-Contract creation actions are recorded in the activity log. Contract editing actions are recorded in the activity log. Each contract-related log entry includes the employee identifier and the contract start date.
+Activity log entries may include details providing additional context about the action. Details are optional and provide human-readable information about what changed.
 
-### Logged Project Actions
+### Logged Action Categories
 
-Project creation actions are recorded in the activity log. Project archiving actions are recorded in the activity log. Project completion actions are recorded in the activity log. Project deletion actions are recorded in the activity log. Each project-related log entry includes the project identifier and project name.
+The system logs employee lifecycle actions including when an employee is invited to the organization, when an employee is deactivated, and when an employee is reactivated.
 
-### Logged Task Actions
+The system logs contract actions including when a contract is created for an employee and when a contract is edited.
 
-Task status change actions are recorded in the activity log. Each task status change log entry includes the task identifier, the old status value, the new status value, and the user who made the change.
+The system logs project actions including when a project is created, when a project is archived, when a project is completed, and when a project is deleted.
 
-### Logged Timesheet Actions
+The system logs task actions including when a task status is changed. The task history records the timestamp, old status, new status, and who made the change (defined in TaskHistory Rules).
 
-Timesheet submission actions are recorded in the activity log. Timesheet approval actions are recorded in the activity log. Timesheet rejection actions are recorded in the activity log. Each timesheet-related log entry includes the employee identifier, the week start date, and for rejections, the rejection reason.
+The system logs timesheet actions including when a timesheet is submitted, when a timesheet is approved, and when a timesheet is rejected.
 
-### Logged Role Actions
+The system logs role actions including when a role is assigned to an employee and when an employee's role is changed.
 
-Role assignment actions are recorded in the activity log. Role change actions are recorded in the activity log. Each role-related log entry includes the employee identifier, the old role name (if applicable), and the new role name.
+### Activity Log Access Rules
 
-### Activity Log Access
+Users with the org:manage permission can view the full activity log for the organization.
 
-Only users with organization management permissions can view the full activity log. Users without organization management permissions cannot access the activity log. The activity log is paginated to support browsing large volumes of entries. The activity log can be filtered by action type, user, and date range.
+Users without the org:manage permission cannot view the activity log.
 
-### Significant Actions Definition
+The activity log is paginated to support browsing large numbers of entries.
 
-Only significant actions are recorded in the activity log. Significant actions are those that change the state of an entity, affect user permissions, or impact organizational data integrity. Routine viewing actions, data browsing, and read-only operations are not logged. Timer start and stop actions are not logged as they create timelogs which are tracked separately.
+The activity log can be filtered by action type to find specific categories of events.
+
+The activity log can be filtered by user to see all actions performed by a specific user.
+
+The activity log can be filtered by date range to view events within a specific time period.
+
+If a user attempts to view the activity log without the org:manage permission, the request is rejected.
+
+## Invitation Rules
+
+Invitations are created when users with employee:manage permission invite new employees by email. Each invitation must have an email address as the target recipient. Invitation status tracks whether the invitation is pending or has been accepted. If the invited email already has a user account, no invitation is created and the user is added directly. If the invited email has no account, a pending invitation is created. When the user signs up with the invited email address, they are automatically added to the pending organizations. Invitations are scoped to a specific organization. Multiple pending invitations can exist for the same email across different organizations. Invitations expire after a configured time period if not accepted. Only users with employee:manage permission can create invitations.
+
+### Invitation Creation and Permission
+
+Only users with the employee:manage permission can create invitations to the organization. Invitations are created exclusively by email address. The email address is required when creating an invitation. If the email address is missing or invalid, the invitation request is rejected. Each invitation is scoped to a specific organization and cannot be transferred to another organization. Multiple pending invitations can exist for the same email address across different organizations simultaneously.
+
+### Invitation Status Tracking
+
+Each invitation has a status that tracks its lifecycle. The status is either pending or accepted. When an invitation is created, its status is set to pending. When the invited user accepts the invitation by signing up or logging in, the status changes to accepted. Invitations expire after a configured time period if not accepted. Once an invitation expires, it cannot be used to join the organization. Expired invitations must be recreated by a user with employee:manage permission.
+
+### Existing Account Handling
+
+When an invitation is created, the system checks if a user account already exists with the invited email address. If a user account exists, no invitation is created. The existing user is added directly to the organization with the specified role. If no user account exists, a pending invitation is created. When the user signs up with the invited email address, they are automatically added to all organizations with pending invitations for that email. The pending invitations are marked as accepted upon successful signup.
+
+### Invitation Validation and Error Conditions
+
+If the user creating the invitation does not have employee:manage permission, the request is rejected. If the invited email address is already a member of the organization, the request is rejected. If the invited email address has an active invitation to the organization that has not expired, the request is rejected. If the organization is deleted, all pending invitations for that organization are cancelled. If the user's account is deleted before accepting an invitation, the invitation is cancelled.
 
 # Data Browsing Expectations
 
@@ -512,15 +652,59 @@ Define business expectations for how users find, filter, and browse lists.
 
 ### Filtering Rules
 
-The employee list can be filtered by department, employment type, and status. Users can search the employee list by name. The project list can be filtered by status. The task list can be filtered by status, priority, and assigned employee. The timelog list can be filtered by date range, project, task, and billable status. The timesheet list can be filtered by status and date range. The time report can be filtered by date range, employee, project, and billable status. The weekly summary report can be filtered by project. The activity log can be filtered by action type, user, and date range. Multiple filters can be applied simultaneously to narrow down results. Filters persist only for the current browsing session and reset when navigating away from the list. If no items match the applied filters, an empty result is shown with a message indicating no matching items found.
+The employee list supports filtering by department, employment type, and status. Multiple filters can be applied simultaneously.
+
+The employee list supports searching by employee name. The search matches partial name matches.
+
+The project list supports filtering by project status. Only projects matching the selected status are displayed.
+
+The task list supports filtering by task status, priority level, and assigned employee. Filters can be combined.
+
+The timelog list supports filtering by date range, project, task, and billable status. Date range filtering includes both start and end dates.
+
+The timesheet list supports filtering by timesheet status and date range. Date range filtering uses the week start date.
+
+The activity log supports filtering by action type, user who performed the action, and date range.
+
+If no filters are applied, the list displays all items the user has permission to view.
+
+If a filter value does not match any items, an empty list is displayed with no error.
 
 ### Sorting Rules
 
-The task list can be sorted by due date, priority, or creation date. Users can choose ascending or descending order for each sort option. When sorting by priority, tasks are ordered from urgent to low priority in descending order, or from low to urgent in ascending order. When sorting by due date, tasks with no due date appear at the end of the list in ascending order, or at the beginning in descending order. The default sort order for tasks is by creation date in descending order, showing newest tasks first. Other lists use their default sort order: employee list by name, project list by name, timelog list by date descending, timesheet list by week start date descending, and activity log by timestamp descending. Sorting preferences do not persist across sessions and reset to default on each visit.
+The task list supports sorting by due date, priority level, and creation date.
+
+Sorting by due date displays tasks with earlier due dates first.
+
+Sorting by priority displays tasks with higher priority (urgent) first.
+
+Sorting by creation date displays newer tasks first by default.
+
+Users can reverse the sort order for any supported sort field.
+
+If no sort is specified, the task list uses creation date descending as the default order.
+
+The employee list, project list, timelog list, timesheet list, and activity log do not support custom sorting. These lists use system-defined default ordering.
 
 ### Pagination Rules
 
-The employee list, project list, timelog list, timesheet list, and activity log are all paginated. Each page displays a fixed number of items to ensure performance and readability. Users can navigate between pages using previous and next controls. Users can jump to a specific page number if the list has multiple pages. When filters or sorting criteria change, the list returns to the first page. If an item is deleted and the current page becomes empty, the list automatically navigates to the previous page if available, otherwise to the first page. The total number of items and total number of pages are displayed to provide context. If a list contains no items, pagination controls are hidden and an empty state message is shown. Pagination is applied consistently across all paginated lists within the organization.
+The employee list is paginated. Only a subset of employees is displayed per page.
+
+The project list is paginated. Only a subset of projects is displayed per page.
+
+The timelog list is paginated. Only a subset of timelogs is displayed per page.
+
+The timesheet list is paginated. Only a subset of timesheets is displayed per page.
+
+The activity log is paginated. Only a subset of activity entries is displayed per page.
+
+Pagination preserves applied filters when navigating between pages.
+
+Pagination preserves applied sort order when navigating between pages.
+
+If the user navigates to a page that no longer exists due to filter changes, the system displays the last available page.
+
+If all items are removed while viewing a paginated list, the system displays an empty list state.
 
 # Error Conditions
 
@@ -530,62 +714,178 @@ Business error scenarios and how the system should respond.
 
 Describe error conditions and expected system responses in natural language.
 
-### Organization Deletion Constraints
+### Authentication and Authorization Failures
 
-The system rejects organization deletion requests when pending timesheets exist in submitted or approved status. The system rejects organization deletion requests when active employee contracts exist. The owner must resolve all pending timesheets by approving or rejecting them, and end all active contracts before deletion is permitted. When an organization deletion request is rejected, the system indicates which constraint prevented the deletion, specifying whether unresolved timesheets or active contracts are blocking the operation.
+If the email address does not exist in the system, the login request is rejected with a generic authentication error message.
 
-### Account Deletion Constraints
+If the password does not match the stored credentials, the login request is rejected with a generic authentication error message.
 
-The system rejects account deletion requests when the user is the sole owner of an organization. The user must transfer ownership to another user or delete the organization before account deletion is permitted. When an account deletion request is rejected, the system indicates which organization ownership prevents the deletion. If the user belongs to multiple organizations as an employee, those employee records are marked as deactivated rather than deleted.
+If a user attempts to access organization data without selecting an organization context, the request is rejected.
 
-### Employee Invitation Conflicts
+If a user attempts to access data from an organization they do not belong to, the request is rejected.
 
-The system rejects employee invitation requests when the email address already has a pending invitation to the organization. The system accepts invitation requests for emails that already have user accounts, adding the existing user to the organization instead of creating a duplicate invitation. When an invitation request is rejected, the system indicates whether the email is already a member or has a pending invitation awaiting acceptance.
+If a user attempts to perform an action without the required permission, the request is rejected with an authorization error.
 
-### Contract Date Validation
+If a user attempts to delete their account while being the sole owner of an organization, the request is rejected until ownership is transferred or the organization is deleted.
 
-The system rejects contract creation requests when the end date precedes the start date. The system rejects contract creation requests when a new contract's start date overlaps with an existing active contract's period. When creating a new contract, the system automatically ends the previous active contract by setting its end date to the day before the new contract starts. When a contract creation request is rejected due to date validation failure, the system indicates which date constraint was violated.
+If a user attempts to change their password without providing the current password, the request is rejected.
 
-### Project Deletion Constraints
+### Organization Operation Failures
 
-The system rejects project deletion requests when timelogs are associated with the project. The system allows project archiving or completion regardless of existing timelogs. When a project deletion request is rejected, the system indicates that timelogs must be removed or the project must be archived instead of deleted. Users with project management permission can archive projects with timelogs, preserving historical data while preventing new timelog entries.
+If an organization owner attempts to delete the organization while pending timesheets exist, the request is rejected.
 
-### Task Assignment Validation
+If an organization owner attempts to delete the organization while active employee contracts exist, the request is rejected.
 
-The system rejects task assignment requests when the assigned employee is not a member of the project. The system rejects subtask creation requests when the parent task belongs to a different project. The system rejects task creation requests when attempting to create a subtask under a task that already has subtasks, enforcing one level of nesting only. When a task assignment or creation request is rejected, the system indicates which validation constraint was violated.
+If an organization owner attempts to save organization settings with an invalid currency code, the request is rejected.
 
-### Timelog Editing Constraints
+If an organization owner attempts to save organization settings with an invalid timezone, the request is rejected.
 
-The system rejects timelog edit requests when the timelog is part of an approved timesheet. The system rejects timelog delete requests when the timelog is part of a submitted or approved timesheet. The system rejects timelog creation requests when the project is not assigned to the employee creating the timelog. The system rejects timelog creation requests when the task does not belong to the selected project. When a timelog operation is rejected, the system indicates whether the constraint is due to timesheet approval status or project assignment validation.
+If an organization owner attempts to save organization settings with an invalid fiscal start month, the request is rejected.
 
-### Timesheet Submission Conflicts
+If an organization owner attempts to delete a custom role that has employees assigned to it, the request is rejected.
 
-The system rejects timesheet submission requests when the timesheet contains no timelogs. The system rejects timesheet submission requests when another timesheet for the same week is already in submitted or approved status. The system rejects timesheet submission requests when the employee has no timelogs recorded for that week. When a timesheet submission request is rejected, the system indicates whether the rejection is due to empty timelogs or a conflicting timesheet for the same week.
+If an organization owner attempts to delete a built-in role, the request is rejected.
 
-### Timesheet Approval and Rejection
+If a user attempts to create a department with more than one level of nesting, the request is rejected.
 
-The system rejects timesheet approval requests when the timesheet is not in submitted status. The system requires a rejection reason when rejecting a timesheet. When a timesheet is rejected, it returns to draft status and the employee can modify and resubmit it. The system rejects rejection requests without a provided reason. When an approval or rejection request is rejected, the system indicates the current timesheet status and what action is required before the operation can proceed.
+### Employee Management Failures
 
-### Timer Conflicts
+If a user without employee:manage permission attempts to invite an employee, the request is rejected.
 
-The system rejects timer start requests when the employee already has an active timer running. The employee must stop or discard their current timer before starting a new one. The system allows only one active timer per employee at any time. When a timer start request is rejected due to an existing active timer, the system indicates that the current timer must be stopped or discarded first.
+If an invitation is sent to an email address that already has a pending invitation, the request is rejected.
 
-### Permission Denied Scenarios
+If a user attempts to assign a role to an employee that does not exist in the organization, the request is rejected.
 
-The system rejects requests to edit employee records when the user lacks the employee management permission. The system rejects requests to view all employees' timelogs when the user lacks the time view all permission. The system rejects requests to approve timesheets when the user lacks the time approve permission. The system rejects requests to manage projects when the user lacks the project management permission. The system rejects requests to edit organization settings when the user lacks the organization management permission. When a request is rejected due to insufficient permissions, the system indicates that the user does not have access to perform the requested action.
+If a user attempts to edit an employee record without employee:manage permission, the request is rejected.
 
-### Role Assignment Constraints
+If a user attempts to deactivate the only employee with employee:manage permission, the request is rejected.
 
-The system rejects role deletion requests when employees are currently assigned to that role. The system rejects role assignment requests when the role does not belong to the organization. The system rejects built-in role deletion requests regardless of assignment status. The three built-in roles (Owner, Manager, Employee) cannot be deleted. When a role operation is rejected, the system indicates whether the rejection is due to active employee assignments or the role being a protected built-in role.
+If a user attempts to view the employee list without employee:view permission, the request is rejected.
 
-### Department Deletion Behavior
+If a user attempts to filter employees by an invalid department, employment type, or status, the request is rejected.
 
-When a department is deleted, the system sets all employees' department references to null rather than deleting the employees. The system rejects department deletion requests when the department has child departments. Deleting a department does not affect employee records; employees previously assigned to the deleted department have their department field cleared. When a department deletion request is rejected, the system indicates that child departments must be deleted or reassigned first.
+If a user attempts to reactivate a deactivated employee without employee:manage permission, the request is rejected.
 
-### Project Status Transition Errors
+### Contract and Employment Failures
 
-The system rejects timelog creation requests for projects in archived or completed status. The system allows viewing and editing of existing timelogs on archived or completed projects. The system rejects status change requests that would violate the allowed transitions. Archived or completed projects cannot return to active status. When a timelog or status change request is rejected, the system indicates the current project status and what operations are permitted for that status.
+If a user attempts to create a contract without a start date, the request is rejected.
 
-### Contract Editing Constraints
+If a user attempts to create a contract without a pay rate, the request is rejected.
 
-The system rejects edit requests for past contracts as they are immutable historical records. The system allows editing of the current active contract only. The system rejects contract creation requests when required fields are missing, including start date, pay rate, pay period, or working hours per week. When a contract operation is rejected, the system indicates whether the contract is a historical record that cannot be modified or which required field is missing.
+If a user attempts to create a contract without specifying working hours per week, the request is rejected.
+
+If a user attempts to create a contract with an end date earlier than the start date, the request is rejected.
+
+If a user attempts to edit a past contract that is no longer active, the request is rejected.
+
+If a user attempts to create a new contract while another contract is already active, the previous contract is automatically ended the day before the new contract starts.
+
+If an employee attempts to view another employee's contracts without employee:view permission, the request is rejected.
+
+If a user without employee:manage permission attempts to create a contract, the request is rejected.
+
+### Project and Task Operation Failures
+
+If a user attempts to create a project without a name, the request is rejected.
+
+If a user attempts to create a project without a color code, the request is rejected.
+
+If a user attempts to delete a project that has timelogs associated with it, the request is rejected.
+
+If a user attempts to log time to an archived or completed project, the request is rejected.
+
+If a user attempts to create a task without a title, the request is rejected.
+
+If a user attempts to assign a task to an employee who is not a project member, the request is rejected.
+
+If a user attempts to create a subtask with more than one level of nesting, the request is rejected.
+
+If a user without project:manage permission attempts to create or edit a project, the request is rejected.
+
+If a user without project:manage permission attempts to create or edit a task, the request is rejected.
+
+If a project lead attempts to manage tasks in a project they are not assigned to, the request is rejected.
+
+### Time Tracking Failures
+
+If an employee attempts to create a timelog for a project they are not assigned to, the request is rejected.
+
+If an employee attempts to create a timelog with a task that does not belong to the selected project, the request is rejected.
+
+If an employee attempts to edit their own timelog that is part of an approved timesheet, the request is rejected.
+
+If an employee attempts to delete their own timelog that is part of a submitted or approved timesheet, the request is rejected.
+
+If an employee attempts to start a timer while another timer is already active, the existing timer must be stopped or discarded first.
+
+If an employee attempts to stop a timer that is not active, the request is rejected.
+
+If an employee attempts to view another employee's timelogs without time:view_all permission, the request is rejected.
+
+If a user without time:manage permission attempts to edit or delete another employee's timelog, the request is rejected.
+
+If an employee attempts to filter timelogs by an invalid date range, project, or billable status, the request is rejected.
+
+### Timesheet Processing Failures
+
+If an employee attempts to submit a timesheet with no timelogs, the request is rejected.
+
+If an employee attempts to submit a timesheet for a week that already has a submitted or approved timesheet, the request is rejected.
+
+If an employee attempts to create a draft timesheet for a week that already has a draft timesheet, the request is rejected.
+
+If a user without time:approve permission attempts to approve a timesheet, the request is rejected.
+
+If a user without time:approve permission attempts to reject a timesheet, the request is rejected.
+
+If a user attempts to reject a timesheet without providing a rejection reason, the request is rejected.
+
+If an employee attempts to view another employee's timesheet without time:view_all permission, the request is rejected.
+
+If an employee attempts to modify a timelog within an approved timesheet, the request is rejected.
+
+If a timesheet is rejected, it returns to draft status and the employee can modify and resubmit it.
+
+If an employee attempts to filter timesheets by an invalid status or date range, the request is rejected.
+
+### Data Access and Isolation Failures
+
+If a user attempts to access data from an organization they are not a member of, the request is rejected.
+
+If a user attempts to switch to an organization they do not belong to, the request is rejected.
+
+If an employee in one organization attempts to view data from another organization, the request is rejected.
+
+If a user attempts to view the activity log without org:manage permission, the request is rejected.
+
+If a user attempts to filter the activity log by an invalid action type, user, or date range, the request is rejected.
+
+If a user attempts to view reports without report:view permission, the request is rejected.
+
+If a user attempts to filter reports by an invalid date range, employee, project, or billable status, the request is rejected.
+
+If a user attempts to view the dashboard of an organization they do not belong to, the request is rejected.
+
+# File Validation Rules
+
+Validation rules and policies for file uploads and storage.
+
+## File Validation and Policies
+
+Define file type restrictions, virus scanning requirements, content validation, and retention policies for uploaded files.
+
+### File Validation
+
+The system accepts image files for organization logos and user avatars. No file validation rules were specified in the requirements. Organizations can upload a logo image. Users can upload an avatar image for their profile.
+
+### Virus Scan
+
+No virus scanning requirements were specified in the original user requirements. This feature was not requested.
+
+### Content Type
+
+No content type restrictions were specified in the original user requirements. The system accepts image files for organization logos and user avatars. Specific file formats (PNG, JPG, etc.) were not defined by the user.
+
+### Retention
+
+No file retention policies were specified in the original user requirements. Organization logos and user avatars are retained as long as the organization or user account exists. When an organization is deleted, its logo is permanently deleted. When a user deletes their account, their avatar is removed.

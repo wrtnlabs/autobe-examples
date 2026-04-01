@@ -23,28 +23,38 @@ export async function patchShoppingMallCustomerOrders(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput = {
-    deleted_at: null,
+  const whereInput: Prisma.shopping_mall_ordersWhereInput = {
     shopping_mall_customer_id: props.customer.id,
-    ...(props.body.status && { status: props.body.status }),
-    ...(props.body.created_at_start && {
-      created_at: { gte: new Date(props.body.created_at_start) },
+    deleted_at: null,
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.created_at_start !== undefined && {
+      created_at: {
+        gte: new Date(props.body.created_at_start),
+      },
     }),
-    ...(props.body.created_at_end && {
-      created_at: { lte: new Date(props.body.created_at_end) },
+    ...(props.body.created_at_end !== undefined && {
+      created_at: {
+        lte: new Date(props.body.created_at_end),
+      },
     }),
     ...(props.body.total_price_min !== undefined && {
-      total_price: { gte: props.body.total_price_min },
+      total_price: {
+        gte: props.body.total_price_min,
+      },
     }),
     ...(props.body.total_price_max !== undefined && {
-      total_price: { lte: props.body.total_price_max },
+      total_price: {
+        lte: props.body.total_price_max,
+      },
     }),
-  } satisfies Prisma.shopping_mall_ordersWhereInput;
+  };
   const sortField = props.body.sort ?? "created_at";
-  const sortDirection = (props.body.sort_direction ?? "desc").toLowerCase();
-  const orderByInput = {
+  const sortDirection = (props.body.sort_direction ?? "desc").toLowerCase() as
+    | "asc"
+    | "desc";
+  const orderByInput: Prisma.shopping_mall_ordersOrderByWithRelationInput = {
     [sortField]: sortDirection,
-  } satisfies Prisma.shopping_mall_ordersOrderByWithRelationInput;
+  };
   const data = await MyGlobal.prisma.shopping_mall_orders.findMany({
     where: whereInput,
     skip,

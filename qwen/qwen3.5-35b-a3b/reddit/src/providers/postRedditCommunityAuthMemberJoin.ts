@@ -16,85 +16,92 @@ export async function postRedditCommunityAuthMemberJoin(props: {
   ip: string;
   body: IRedditCommunityMember.IJoin;
 }): Promise<IRedditCommunityMember.IAuthorized> {
-  // Check email uniqueness
-  const existingMember =
-    await MyGlobal.prisma.reddit_community_members.findFirst({
-      where: { email: props.body.email },
-    });
-  if (existingMember !== null) {
-    throw new HttpException("Email already registered", 409);
-  }
-  // Generate member ID and session ID
+  // 1. Check email uniqueness
+  const existing = await MyGlobal.prisma.reddit_community_members.findFirst({
+    where: { email: props.body.email },
+  });
+  if (existing) throw new HttpException("Email already registered", 409);
+  // 2. Generate member ID and username
   const memberId: string & tags.Format<"uuid"> = v4();
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  // Hash password
-  const hashedPassword: string = await PasswordUtil.hash(props.body.password);
-  // Generate timestamps using toISOStringSafe
-  const createdAt: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(),
-  );
-  const updatedAt: string & tags.Format<"date-time"> = createdAt;
-  // Create member record
-  await MyGlobal.prisma.reddit_community_members.create({
+  const emailLocalPart = props.body.email.split("@")[0];
+  const username: string = emailLocalPart;
+  // 3. Create member with hashed password
+  const member = await MyGlobal.prisma.reddit_community_members.create({
     data: {
       id: memberId,
       email: props.body.email,
-      username: props.body.email.split("@")[0],
-      password_hash: hashedPassword,
-      created_at: createdAt,
-      updated_at: updatedAt,
+      username: username,
+      password_hash: await PasswordUtil.hash(props.body.password),
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
     },
   });
-  // Calculate session expiration times
+  // 4. Create session
+  const sessionId: string & tags.Format<"uuid"> = v4();
+  const now = new Date();
   const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 15 * 60 * 1000),
+    new Date(now.getTime() + 15 * 60 * 1000),
   );
   const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
   );
-  // Generate JWT tokens
-  const accessToken: string = jwt.sign(
+  const ipAddress: string = props.body.ip ?? props.ip;
+  const session = await MyGlobal.prisma.reddit_community_member_sessions.create(
     {
-      type: "member" as const,
-      id: memberId,
-      session_id: sessionId,
-      created_at: createdAt,
+      data: {
+        id: sessionId,
+        member_id: member.id,
+        access_token: "", // Will be set after JWT generation
+        refresh_token: "", // Will be set after JWT generation
+        ip: ipAddress,
+        href: props.body.href,
+        referrer: props.body.referrer,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+        expired_at: accessExpires,
+      },
     },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "15m", issuer: "autobe" },
   );
-  const refreshToken: string = jwt.sign(
+  // 5. Generate JWT tokens
+  const tokenPayload = {
+    type: "member",
+    id: member.id,
+    session_id: sessionId,
+    created_at: toISOStringSafe(now),
+  };
+  const access: string = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "15m",
+    issuer: "autobe",
+  });
+  const refreshPayload = {
+    ...tokenPayload,
+    tokenType: "refresh",
+  };
+  const refresh: string = jwt.sign(
+    refreshPayload,
+    MyGlobal.env.JWT_SECRET_KEY,
     {
-      type: "member" as const,
-      id: memberId,
-      session_id: sessionId,
-      tokenType: "refresh" as const,
-      created_at: createdAt,
+      expiresIn: "7d",
+      issuer: "autobe",
     },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
   );
-  // Create session record
-  await MyGlobal.prisma.reddit_community_member_sessions.create({
+  // 6. Update session with tokens
+  await MyGlobal.prisma.reddit_community_member_sessions.update({
+    where: { id: sessionId },
     data: {
-      id: sessionId,
-      member_id: memberId,
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      ip: props.body.ip ?? props.ip,
-      href: props.body.href,
-      referrer: props.body.referrer,
-      created_at: createdAt,
-      updated_at: updatedAt,
-      expired_at: accessExpires,
+      access_token: access,
+      refresh_token: refresh,
     },
   });
+  // 7. Return IAuthorized
   return {
     token: {
-      access: accessToken,
-      refresh: refreshToken,
+      access,
+      refresh,
       expired_at: accessExpires,
       refreshable_until: refreshExpires,
-    },
+    } satisfies IAuthorizationToken,
   } satisfies IRedditCommunityMember.IAuthorized;
 }

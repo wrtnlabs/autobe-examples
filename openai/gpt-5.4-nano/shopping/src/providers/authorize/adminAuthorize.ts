@@ -1,4 +1,4 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
@@ -6,27 +6,25 @@ import { AdminPayload } from "../../decorators/payload/AdminPayload";
 export async function adminAuthorize(request: {
   headers: { authorization?: string };
 }): Promise<AdminPayload> {
-  const payload = jwtAuthorize({ request }) as AdminPayload;
+  let payload: AdminPayload;
+  try {
+    payload = jwtAuthorize({ request }) as AdminPayload;
+  } catch {
+    throw new UnauthorizedException("Unauthorized");
+  }
 
   if (payload.type !== "admin") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const session = await MyGlobal.prisma.shopping_mall_admin_sessions.findFirst({
+  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
     where: {
-      id: payload.session_id,
-      shopping_mall_admin_id: payload.id,
+      id: payload.id,
       deleted_at: null,
-      expired_at: { gt: new Date() },
-      admin: {
-        id: payload.id,
-        deleted_at: null,
-      },
     },
-    select: { id: true },
   });
 
-  if (session === null) {
+  if (admin === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

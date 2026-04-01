@@ -15,6 +15,13 @@ export async function guestAuthorize(request: {
   const guest = await MyGlobal.prisma.shopping_mall_guests.findFirst({
     where: {
       id: payload.id,
+      deleted_at: null,
+      sessions: {
+        some: {
+          id: payload.session_id,
+          expired_at: { gt: new Date() },
+        },
+      },
     },
   });
 

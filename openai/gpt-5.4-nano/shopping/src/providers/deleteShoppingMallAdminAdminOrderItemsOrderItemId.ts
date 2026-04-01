@@ -19,34 +19,30 @@ export async function deleteShoppingMallAdminAdminOrderItemsOrderItemId(props: {
     throw new HttpException("Forbidden", 403);
   }
   await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.shopping_mall_order_items.findUniqueOrThrow({
-      where: { id: props.orderItemId },
-      select: {
-        id: true,
-        line_item_status: true,
-        shopping_mall_shipment_id: true,
-      },
-    });
-    // Ensure shipment reference (if any) is still present and not soft-deleted,
-    // so we don't leave dangling foreign-key references from active shipment views.
     const orderItem = await tx.shopping_mall_order_items.findUniqueOrThrow({
       where: { id: props.orderItemId },
       select: {
         id: true,
+        deleted_at: true,
+        line_item_status: true,
         shopping_mall_shipment_id: true,
       },
     });
+    if (orderItem.deleted_at !== null) {
+      throw new HttpException("Order item not found", 404);
+    }
+    if (orderItem.line_item_status.trim().length === 0) {
+      throw new HttpException("Invalid order item status", 409);
+    }
     if (orderItem.shopping_mall_shipment_id !== null) {
       const shipment = await tx.shopping_mall_shipments.findUnique({
         where: { id: orderItem.shopping_mall_shipment_id },
-        select: { id: true, deleted_at: true },
+        select: { id: true },
       });
-      if (shipment === null || shipment.deleted_at !== null) {
-        throw new HttpException("Not Found", 404);
+      if (shipment === null) {
+        throw new HttpException("Shipment not found", 409);
       }
     }
-    await tx.shopping_mall_order_items.delete({
-      where: { id: props.orderItemId },
-    });
+    await tx.shopping_mall_order_items.delete({ where: { id: orderItem.id } });
   });
 }

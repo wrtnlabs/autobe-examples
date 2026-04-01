@@ -15,92 +15,110 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postEcommerceMallAuthSuperAdminRefresh(props: {
   body: IEcommerceMallSuperAdmin.IRefresh;
 }): Promise<IEcommerceMallSuperAdmin.IAuthorized> {
-  // 1. Verify refresh token
-  const decoded = jwt.verify(
-    props.body.refresh_token,
-    MyGlobal.env.JWT_SECRET_KEY,
-    { issuer: "autobe" },
-  ) as {
+  const refresh_token = props.body.refresh_token;
+  let decoded: {
     type: string;
     id: string;
     session_id: string;
     created_at: string;
   };
-  // 2. Validate type
-  if (decoded.type !== "superAdmin") {
-    throw new HttpException("Invalid token type", 401);
+  try {
+    decoded = jwt.verify(refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
+      issuer: "autobe",
+    }) as {
+      type: string;
+      id: string;
+      session_id: string;
+      created_at: string;
+    };
+  } catch {
+    throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 3. Validate session (only check session exists with given id)
+  if (decoded.type !== "super_admin") {
+    throw new HttpException("Invalid token type", 403);
+  }
   const session =
     await MyGlobal.prisma.ecommerce_mall_super_admin_sessions.findFirst({
       where: {
         id: decoded.session_id,
+        super_admin_id: decoded.id,
       },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate actor not deleted
-  const superAdmin =
+  const super_admin =
     await MyGlobal.prisma.ecommerce_mall_super_admins.findUniqueOrThrow({
       where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        display_name: true,
+        grade: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
     });
-  if (superAdmin.deleted_at !== null) {
+  if (super_admin.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 5. Calculate token expiration times
-  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const token = {
-    access: jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: toISOStringSafe(new Date()),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "15m", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: decoded.type,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        tokenType: "refresh",
-        created_at: toISOStringSafe(new Date()),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-  };
-  // 6. Update session expiration
+  const access_token = jwt.sign(
+    {
+      type: "super_admin",
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: new Date().toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "1h",
+      issuer: "autobe",
+    },
+  );
+  const new_refresh_token = jwt.sign(
+    {
+      type: "super_admin",
+      id: decoded.id,
+      session_id: decoded.session_id,
+      tokenType: "refresh",
+      created_at: new Date().toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
   await MyGlobal.prisma.ecommerce_mall_super_admin_sessions.update({
     where: { id: decoded.session_id },
     data: {
       expired_at: refreshExpires,
+      updated_at: new Date(),
     },
   });
   return {
-    id: superAdmin.id,
-    email: superAdmin.email,
-    fullName: superAdmin.full_name,
-    displayName: superAdmin.display_name,
-    grade: superAdmin.grade,
-    status: superAdmin.status,
-    createdAt: toISOStringSafe(superAdmin.created_at),
-    updatedAt: toISOStringSafe(superAdmin.updated_at),
-    deletedAt: superAdmin.deleted_at
-      ? toISOStringSafe(superAdmin.deleted_at)
-      : null,
-    access: token.access,
-    refresh: token.refresh,
-    expired_at: toISOStringSafe(accessExpires),
+    id: super_admin.id as string & tags.Format<"uuid">,
+    email: super_admin.email,
+    fullName: super_admin.full_name,
+    displayName: super_admin.display_name,
+    grade: super_admin.grade as number & tags.Type<"int32">,
+    status: super_admin.status,
+    createdAt: super_admin.created_at.toISOString(),
+    updatedAt: super_admin.updated_at.toISOString(),
+    deletedAt: super_admin.deleted_at?.toISOString() ?? null,
+    access: access_token,
+    refresh: new_refresh_token,
+    expired_at: accessExpires.toISOString(),
     token: {
-      access: token.access,
-      refresh: token.refresh,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
+      access: access_token,
+      refresh: new_refresh_token,
+      expired_at: accessExpires.toISOString(),
+      refreshable_until: refreshExpires.toISOString(),
     },
   } satisfies IEcommerceMallSuperAdmin.IAuthorized;
 }

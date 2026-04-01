@@ -14,7 +14,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { RedditCommunityKarmaSnapshotAtSummaryTransformer } from "../transformers/RedditCommunityKarmaSnapshotAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,62 +22,99 @@ export async function patchRedditCommunityMemberKarmaSnapshots(props: {
   body: IRedditCommunityKarmaSnapshot.IRequest;
 }): Promise<IPageIRedditCommunityKarmaSnapshot.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 100, 100);
-  const skip = (page - 1) * limit;
-  const whereInput: Prisma.reddit_community_karma_snapshotsWhereInput = {
+  const limit = props.body.limit ?? 100;
+  // Build where clause
+  const where: Prisma.reddit_community_karma_snapshotsWhereInput = {
     deleted_at: null,
-    ...(props.body.user_id && {
-      reddit_community_user_id: props.body.user_id,
-    }),
-    ...(props.body.vote_id && {
-      reddit_community_vote_id: props.body.vote_id,
-    }),
+    ...(props.body.user_id && { reddit_community_user_id: props.body.user_id }),
+    ...(props.body.vote_id && { reddit_community_vote_id: props.body.vote_id }),
     ...(props.body.karma_delta !== undefined && {
       karma_delta: props.body.karma_delta,
     }),
-    created_at: {
-      ...(props.body.created_at_start && {
-        gte: new Date(props.body.created_at_start),
-      }),
-      ...(props.body.created_at_end && {
-        lte: new Date(props.body.created_at_end),
-      }),
-      ...(props.body.cursor && {
-        lt: new Date(props.body.cursor),
-      }),
-    },
+    ...(props.body.created_at_start && {
+      created_at: { gte: new Date(props.body.created_at_start) },
+    }),
+    ...(props.body.created_at_end && {
+      created_at: { lte: new Date(props.body.created_at_end) },
+    }),
   } satisfies Prisma.reddit_community_karma_snapshotsWhereInput;
-  const orderByInput = (
+  // Build order by clause
+  const orderDirection: "asc" | "desc" = props.body.order ?? "desc";
+  const orderBy: Prisma.reddit_community_karma_snapshotsOrderByWithRelationInput =
     props.body.sort === "karma_delta"
-      ? {
-          karma_delta: (props.body.order ?? "desc") as "asc" | "desc",
-        }
-      : {
-          created_at: (props.body.order ?? "desc") as "asc" | "desc",
-        }
-  ) satisfies Prisma.reddit_community_karma_snapshotsOrderByWithRelationInput;
+      ? { karma_delta: orderDirection }
+      : { created_at: orderDirection };
+  // Execute findMany
   const data = await MyGlobal.prisma.reddit_community_karma_snapshots.findMany({
-    where: whereInput,
-    skip,
-    take: limit + 1,
-    orderBy: [orderByInput, { id: "asc" }],
-    ...RedditCommunityKarmaSnapshotAtSummaryTransformer.select(),
+    where,
+    skip: (page - 1) * limit,
+    take: limit,
+    orderBy,
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          created_at: true,
+        },
+      },
+      vote: {
+        include: {
+          member: {
+            select: {
+              id: true,
+              username: true,
+              created_at: true,
+            },
+          },
+        },
+        select: {
+          id: true,
+          vote_type: true,
+          created_at: true,
+        },
+      },
+    },
   });
-  const hasMore = data.length > limit;
-  const items = hasMore ? data.slice(0, limit) : data;
+  // Execute count
   const total = await MyGlobal.prisma.reddit_community_karma_snapshots.count({
-    where: whereInput,
+    where,
+  });
+  // Transform to response format
+  const transformedData = await ArrayUtil.asyncMap(data, async (snapshot) => {
+    return {
+      id: snapshot.id,
+      user: {
+        id: snapshot.user.id,
+        username: snapshot.user.username,
+        created_at: toISOStringSafe(snapshot.user.created_at),
+      },
+      vote: {
+        id: snapshot.vote.id,
+        vote_type: typia.assert<"upvote" | "downvote">(snapshot.vote.vote_type),
+        created_at: toISOStringSafe(snapshot.vote.created_at),
+        member: {
+          id: snapshot.vote.member.id,
+          username: snapshot.vote.member.username,
+          created_at: toISOStringSafe(snapshot.vote.member.created_at),
+        },
+      },
+      karma_delta: snapshot.karma_delta,
+      karma_after_change: snapshot.karma_after_change,
+      created_at: toISOStringSafe(snapshot.created_at),
+      updated_at: toISOStringSafe(snapshot.updated_at),
+      deleted_at: snapshot.deleted_at
+        ? toISOStringSafe(snapshot.deleted_at)
+        : null,
+    };
   });
   return {
-    data: await ArrayUtil.asyncMap(
-      items,
-      RedditCommunityKarmaSnapshotAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-  };
+    },
+    data: transformedData,
+  } satisfies IPageIRedditCommunityKarmaSnapshot.ISummary;
 }

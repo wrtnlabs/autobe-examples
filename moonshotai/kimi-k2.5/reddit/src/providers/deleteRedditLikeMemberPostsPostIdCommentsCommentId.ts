@@ -7,16 +7,16 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteRedditLikeMemberPostsPostIdCommentsCommentId(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   postId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find comment and verify it exists and belongs to the post
+  // Fetch comment with post details to get community_id for moderator check
   const comment = await MyGlobal.prisma.reddit_like_comments.findUnique({
     where: { id: props.commentId },
     select: {
@@ -24,43 +24,36 @@ export async function deleteRedditLikeMemberPostsPostIdCommentsCommentId(props: 
       post_id: true,
       author_id: true,
       is_deleted: true,
+      post: {
+        select: {
+          community_id: true,
+        },
+      },
     },
   });
-  // Check if comment exists
-  if (comment === null) {
+  // Comment not found or belongs to different post
+  if (comment === null || comment.post_id !== props.postId) {
     throw new HttpException("Comment not found", 404);
   }
-  // Verify comment belongs to the specified post
-  if (comment.post_id !== props.postId) {
-    throw new HttpException("Comment does not belong to this post", 404);
-  }
-  // Check if already deleted
+  // Already deleted - treat as not found
   if (comment.is_deleted) {
     throw new HttpException("Comment not found", 404);
   }
-  // Check if member is the author
+  // Check authorization: is author?
   const isAuthor = comment.author_id === props.member.id;
+  // If not author, check if moderator of the community
   let isModerator = false;
   if (!isAuthor) {
-    // Get the community_id from the post
-    const post = await MyGlobal.prisma.reddit_like_posts.findUnique({
-      where: { id: props.postId },
-      select: { community_id: true },
-    });
-    if (post === null) {
-      throw new HttpException("Post not found", 404);
-    }
-    // Check if member is a moderator of this community
     const moderator = await MyGlobal.prisma.reddit_like_moderators.findFirst({
       where: {
         member_id: props.member.id,
-        community_id: post.community_id,
+        community_id: comment.post.community_id,
         deleted_at: null,
       },
     });
     isModerator = moderator !== null;
   }
-  // Must be either author or moderator
+  // Neither author nor moderator
   if (!isAuthor && !isModerator) {
     throw new HttpException("Forbidden", 403);
   }

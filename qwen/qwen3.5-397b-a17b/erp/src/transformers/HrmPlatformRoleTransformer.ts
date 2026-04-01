@@ -1,6 +1,4 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
-import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformRolePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRolePermission";
@@ -9,8 +7,8 @@ import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { HrmPlatformEmployeeAtSummaryTransformer } from "./HrmPlatformEmployeeAtSummaryTransformer";
 import { HrmPlatformOrganizationAtSummaryTransformer } from "./HrmPlatformOrganizationAtSummaryTransformer";
+import { HrmPlatformRoleAtSummaryTransformer } from "./HrmPlatformRoleAtSummaryTransformer";
 import { HrmPlatformRolePermissionTransformer } from "./HrmPlatformRolePermissionTransformer";
 
 export namespace HrmPlatformRoleTransformer {
@@ -22,35 +20,33 @@ export namespace HrmPlatformRoleTransformer {
       select: {
         id: true,
         name: true,
-        built_in: true,
+        description: true,
+        is_builtin: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
-        employees: HrmPlatformEmployeeAtSummaryTransformer.select(),
-        permissions: HrmPlatformRolePermissionTransformer.select(),
+        employees: HrmPlatformRoleAtSummaryTransformer.select(),
+        rolePermissions: HrmPlatformRolePermissionTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_rolesFindManyArgs;
   }
   export async function transform(input: Payload): Promise<IHrmPlatformRole> {
     return {
       id: input.id,
-      name: input.name,
-      built_in: input.built_in,
+      organization_id: input.organization.id,
       organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(
         input.organization,
       ),
+      name: input.name,
+      description: input.description ?? undefined,
+      is_builtin: input.is_builtin,
       permissions: await ArrayUtil.asyncMap(
-        input.permissions,
+        input.rolePermissions,
         HrmPlatformRolePermissionTransformer.transform,
-      ),
-      employees: await ArrayUtil.asyncMap(
-        input.employees,
-        HrmPlatformEmployeeAtSummaryTransformer.transform,
       ),
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

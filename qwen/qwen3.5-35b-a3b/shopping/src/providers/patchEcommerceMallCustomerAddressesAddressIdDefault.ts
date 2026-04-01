@@ -17,40 +17,25 @@ export async function patchEcommerceMallCustomerAddressesAddressIdDefault(props:
   customer: CustomerPayload;
   addressId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallAddress> {
-  // Step 1: Verify address exists and belongs to authenticated customer
-  const address =
-    await MyGlobal.prisma.ecommerce_mall_addresses.findFirstOrThrow({
-      where: {
-        id: props.addressId,
-        ecommerce_mall_customer_id: props.customer.id,
-        deleted_at: null,
-      },
-    });
-  // Step 2: Set target address as default
-  const updatedAddress = await MyGlobal.prisma.ecommerce_mall_addresses.update({
-    where: { id: props.addressId },
-    data: {
-      is_default: true,
-      updated_at: new Date(),
+  await MyGlobal.prisma.ecommerce_mall_addresses.findUniqueOrThrow({
+    where: {
+      id: props.addressId,
+      ecommerce_mall_customer_id: props.customer.id,
+      deleted_at: null,
     },
   });
-  // Step 3: Unset all other default addresses for this customer
   await MyGlobal.prisma.ecommerce_mall_addresses.updateMany({
+    data: { is_default: false, updated_at: new Date() },
     where: {
       ecommerce_mall_customer_id: props.customer.id,
       is_default: true,
       id: { not: props.addressId },
     },
-    data: {
-      is_default: false,
-      updated_at: new Date(),
-    },
   });
-  // Step 4: Query final state for transformer
-  const finalAddress =
-    await MyGlobal.prisma.ecommerce_mall_addresses.findUniqueOrThrow({
-      where: { id: props.addressId },
-      ...EcommerceMallAddressTransformer.select(),
-    });
-  return EcommerceMallAddressTransformer.transform(finalAddress);
+  const updatedAddress = await MyGlobal.prisma.ecommerce_mall_addresses.update({
+    where: { id: props.addressId },
+    data: { is_default: true, updated_at: new Date() },
+    ...EcommerceMallAddressTransformer.select(),
+  });
+  return await EcommerceMallAddressTransformer.transform(updatedAddress);
 }

@@ -1,17 +1,19 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
-import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import type { IShoppingMallAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAddress";
+import type { IShoppingMallCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCart";
+import type { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
-import type { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
+import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import type { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
-import type { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import type { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
+import type { IShoppingMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentItem";
+import type { IShoppingMallShipmentLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipmentLog";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -24,114 +26,175 @@ import { authorize_customer_refresh } from "../../../authorize/authorize_custome
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
+import { generate_random_shopping_mall_customer_addresses_create } from "../../../generate/generate_random_shopping_mall_customer_addresses_create";
+import { generate_random_shopping_mall_customer_cart_items_create } from "../../../generate/generate_random_shopping_mall_customer_cart_items_create";
 import { generate_random_shopping_mall_customer_orders_create } from "../../../generate/generate_random_shopping_mall_customer_orders_create";
 import { generate_random_shopping_mall_seller_shipments_create } from "../../../generate/generate_random_shopping_mall_seller_shipments_create";
+import { prepare_random_shopping_mall_address } from "../../../prepare/prepare_random_shopping_mall_address";
+import { prepare_random_shopping_mall_cart_item } from "../../../prepare/prepare_random_shopping_mall_cart_item";
 import { prepare_random_shopping_mall_order } from "../../../prepare/prepare_random_shopping_mall_order";
 import { prepare_random_shopping_mall_shipment } from "../../../prepare/prepare_random_shopping_mall_shipment";
 
+/**
+ * Test shipment tracking update functionality.
+ *
+ * This test validates the shipment tracking update endpoint by testing
+ * a complete order-to-shipment workflow. The test verifies that sellers
+ * can update tracking information for shipments that have not yet been
+ * confirmed by the customer.
+ *
+ * Note: The business rule that tracking becomes immutable after delivery
+ * confirmation cannot be fully tested here because the delivery confirmation
+ * endpoint is not available in the provided SDK functions. This test focuses
+ * on validating the update endpoint functionality for unconfirmed shipments.
+ *
+ * Setup:
+ * 1. Register and authenticate as seller
+ * 2. Register and authenticate as customer
+ * 3. Customer creates shipping address
+ * 4. Customer adds product variant to cart
+ * 5. Customer creates order with paid status
+ * 6. Seller creates shipment with tracking carrier 'FedEx' and tracking number 'FX123456'
+ *
+ * Test:
+ * - Seller updates shipment tracking carrier to 'UPS' and tracking number to 'UP789012'
+ * - Validates the update was successful and tracking information changed
+ */
 export async function test_api_shipment_tracking_update_after_delivery_confirmation(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Customer setup - register and login
-  const customerAuth = await authorize_customer_join(connection, {
+  // 1. Register and authenticate as seller
+  const sellerConnection: api.IConnection = { host: connection.host };
+  const sellerAuth = await authorize_seller_join(sellerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "TestPass123!",
-      nickname: RandomGenerator.name(),
-      phone_number: RandomGenerator.mobile(),
+      password: RandomGenerator.alphaNumeric(16),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: null,
-    } satisfies IShoppingMallCustomer.IJoin,
-  });
-  typia.assert(customerAuth);
-  const customerConnection: api.IConnection = { host: connection.host };
-  await authorize_customer_login(customerConnection, {
-    body: {
-      email: customerAuth.email,
-      password: "TestPass123!",
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: null,
-    } satisfies IShoppingMallCustomer.ILogin,
-  });
-  // 2. Seller setup - register and login
-  const sellerAuth = await authorize_seller_join(connection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "SellerPass123!",
-      shop_name: RandomGenerator.name(),
-      shop_description: RandomGenerator.paragraph({ sentences: 2 }),
-      logo_image_url: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IShoppingMallSeller.IJoin,
   });
   typia.assert(sellerAuth);
-  const sellerConnection: api.IConnection = { host: connection.host };
-  await authorize_seller_login(sellerConnection, {
+  // 2. Register and authenticate as customer
+  const customerConnection: api.IConnection = { host: connection.host };
+  const customerAuth = await authorize_customer_join(customerConnection, {
     body: {
-      email: sellerAuth.email,
-      password: "SellerPass123!",
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-    } satisfies IShoppingMallSeller.ILogin,
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    } satisfies IShoppingMallCustomer.IJoin,
   });
-  // 3. Create order using customer connection (utility handles product/variant setup internally)
+  typia.assert(customerAuth);
+  // 3. Customer creates shipping address
+  const address = await generate_random_shopping_mall_customer_addresses_create(
+    customerConnection,
+    {
+      body: {
+        recipientName: RandomGenerator.name(),
+        recipientPhone: RandomGenerator.mobile(),
+        streetAddress: RandomGenerator.paragraph({ sentences: 1 }),
+        city: RandomGenerator.name(1),
+        state: RandomGenerator.name(1),
+        postalCode: typia.random<string>(),
+        country: "United States",
+        isDefault: true,
+      } satisfies IShoppingMallAddress.ICreate,
+    },
+  );
+  typia.assert(address);
+  // 4. Customer adds product variant to cart
+  const cartItem =
+    await generate_random_shopping_mall_customer_cart_items_create(
+      customerConnection,
+      {
+        body: {
+          shopping_mall_product_variant_id: typia.random<
+            string & tags.Format<"uuid">
+          >(),
+          quantity: typia.random<
+            number & tags.Type<"int32"> & tags.Minimum<1>
+          >(),
+        } satisfies IShoppingMallCartItem.ICreate,
+      },
+    );
+  typia.assert(cartItem);
+  // 5. Customer creates order with paid status
   const order = await generate_random_shopping_mall_customer_orders_create(
     customerConnection,
-    {},
+    {
+      body: {
+        shopping_mall_address_id: address.id,
+        cart_item_ids: [cartItem.id],
+      } satisfies IShoppingMallOrder.ICreate,
+    },
   );
   typia.assert(order);
-  TestValidator.predicate("order has items", order.items.length > 0);
-  // 4. Create shipment using seller connection (utility picks order items from the seller)
+  // 6. Seller creates shipment with initial tracking information
+  const orderItemId = order.orderItems[0]?.id;
+  if (!orderItemId) {
+    throw new Error("Order must have at least one order item");
+  }
   const shipment = await generate_random_shopping_mall_seller_shipments_create(
     sellerConnection,
     {
       body: {
-        order_item_ids: order.items.map((item) => item.id),
-      },
+        tracking_carrier: "FedEx",
+        tracking_number: "FX123456",
+        order_item_ids: [orderItemId],
+      } satisfies IShoppingMallShipment.ICreate,
     },
   );
   typia.assert(shipment);
-  TestValidator.predicate(
-    "shipment has shipped_at",
-    shipment.shipped_at !== null,
+  // Verify initial tracking information
+  TestValidator.equals(
+    "initial tracking carrier",
+    shipment.tracking_carrier,
+    "FedEx",
   );
-  // 5. Attempt to update tracking information after shipment creation
-  // Note: In a complete test scenario with delivery confirmation endpoint available,
-  // the flow would be: shipment created → customer confirms delivery (sets delivered_at
-  // and delivery_confirmed_at) → attempt tracking update. This test validates the
-  // tracking update mechanism on shipped orders as the foundation for post-delivery
-  // behavior testing. Business rules may allow or reject tracking updates after
-  // delivery confirmation based on system requirements.
-  const updatedTrackingCarrier = "DHL Express";
-  const updatedTrackingNumber = `TRACK${RandomGenerator.alphaNumeric(12)}`;
+  TestValidator.equals(
+    "initial tracking number",
+    shipment.tracking_number,
+    "FX123456",
+  );
+  TestValidator.predicate(
+    "shipment not confirmed initially",
+    shipment.confirmed_at === null,
+  );
+  // 7. Seller updates shipment tracking information
+  const updateBody: IShoppingMallShipment.IUpdate = {
+    trackingCarrier: "UPS",
+    trackingNumber: "UP789012",
+  };
   const updatedShipment =
-    await api.functional.shoppingMall.customer.shipments.update(
+    await api.functional.shoppingMall.seller.shipments.update(
       sellerConnection,
       {
         shipmentId: shipment.id,
-        body: {
-          trackingCarrier: updatedTrackingCarrier,
-          trackingNumber: updatedTrackingNumber,
-        },
+        body: updateBody,
       },
     );
   typia.assert(updatedShipment);
-  // 6. Validate tracking information was updated
+  // Validate updated tracking information
   TestValidator.equals(
-    "tracking carrier updated",
+    "updated tracking carrier",
     updatedShipment.tracking_carrier,
-    updatedTrackingCarrier,
+    "UPS",
   );
   TestValidator.equals(
-    "tracking number updated",
+    "updated tracking number",
     updatedShipment.tracking_number,
-    updatedTrackingNumber,
+    "UP789012",
   );
-  // 7. Verify shipment timestamps are preserved
-  TestValidator.equals(
-    "shipped_at preserved",
-    updatedShipment.shipped_at,
-    shipment.shipped_at,
+  TestValidator.notEquals(
+    "tracking carrier changed",
+    shipment.tracking_carrier,
+    updatedShipment.tracking_carrier,
+  );
+  TestValidator.notEquals(
+    "tracking number changed",
+    shipment.tracking_number,
+    updatedShipment.tracking_number,
   );
 }

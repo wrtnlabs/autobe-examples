@@ -21,67 +21,99 @@ export async function patchEcommerceMallSellerProductsProductIdVariantsVariantId
   variantId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductVariantSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallProductVariantSnapshot.ISummary> {
-  // Verify variant exists and belongs to the product
-  const variant =
-    await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
-      where: {
-        id: props.variantId,
-        product_id: props.productId,
-      },
-      select: { id: true },
-    });
-  // Verify seller owns the product
-  await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+  // Verify variant ownership through product ownership
+  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
     where: {
       id: props.productId,
+      seller_id: props.seller.id,
+      deleted_at: null,
     },
     select: { id: true },
   });
-  // Build filters from request body
-  const whereInput: Prisma.ecommerce_mall_product_variant_snapshotsWhereInput =
-    {
-      product_id: props.productId,
-      product_variant_id: props.variantId,
-    };
-  const andConditions: Prisma.ecommerce_mall_product_variant_snapshotsWhereInput[] =
-    [];
-  if (props.body.search !== undefined) {
-    whereInput.sku_code = { contains: props.body.search, mode: "insensitive" };
+  if (product === null) {
+    throw new HttpException("Product not found or access denied", 403);
   }
-  if (props.body.fromDate !== undefined) {
-    andConditions.push({ created_at: { gte: new Date(props.body.fromDate) } });
+  // Verify variant exists and belongs to the product
+  const variant =
+    await MyGlobal.prisma.ecommerce_mall_product_variants.findFirst({
+      where: {
+        id: props.variantId,
+        product_id: props.productId,
+        deleted_at: null,
+      },
+      select: { id: true },
+    });
+  if (variant === null) {
+    throw new HttpException("Variant not found or access denied", 403);
   }
-  if (props.body.toDate !== undefined) {
-    andConditions.push({ created_at: { lt: new Date(props.body.toDate) } });
+  // Build query filters
+  const filters: Prisma.ecommerce_mall_product_variant_snapshotsWhereInput = {
+    product_id: props.productId,
+    product_variant_id: props.variantId,
+  };
+  // Search filter on SKU code
+  if (
+    props.body.search !== undefined &&
+    props.body.search !== null &&
+    props.body.search.trim().length > 0
+  ) {
+    filters.sku_code = { contains: props.body.search, mode: "insensitive" };
   }
-  if (andConditions.length > 0) {
-    whereInput.AND = andConditions;
+  // Date range filters
+  if (
+    props.body.fromDate !== undefined &&
+    props.body.fromDate !== null &&
+    props.body.toDate !== undefined &&
+    props.body.toDate !== null
+  ) {
+    const fromDate = new Date(props.body.fromDate);
+    const toDate = new Date(props.body.toDate);
+    filters.created_at = { gte: fromDate, lt: toDate };
+  } else if (
+    props.body.fromDate !== undefined &&
+    props.body.fromDate !== null
+  ) {
+    const fromDate = new Date(props.body.fromDate);
+    filters.created_at = { gte: fromDate };
+  } else if (props.body.toDate !== undefined && props.body.toDate !== null) {
+    const toDate = new Date(props.body.toDate);
+    filters.created_at = { lt: toDate };
   }
+  // Pagination parameters
   const page = props.body.page ?? 1;
   const limit = Math.min(props.body.limit ?? 20, 100);
   const skip = (page - 1) * limit;
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
+  // Ensure page and limit are within valid ranges
+  const validatedPage = page < 1 ? 1 : page;
+  const validatedLimit = limit < 1 ? 1 : limit > 100 ? 100 : limit;
+  // Query snapshots ordered by created_at descending (newest first)
+  const snapshots =
+    await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findMany({
+      where: filters,
       orderBy: { created_at: "desc" },
+      skip,
+      take: validatedLimit,
       ...EcommerceMallProductVariantSnapshotAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.count({
-      where: whereInput,
-    }),
-  ]);
+    });
+  // Count total records for pagination metadata
+  const total =
+    await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.count({
+      where: filters,
+    });
+  // Transform snapshots to ISummary format
+  const transformedData = await ArrayUtil.asyncMap(
+    snapshots,
+    EcommerceMallProductVariantSnapshotAtSummaryTransformer.transform,
+  );
+  // Build paginated response
+  const totalPages = total === 0 ? 0 : Math.ceil(total / validatedLimit);
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallProductVariantSnapshotAtSummaryTransformer.transform,
-    ),
+    data: transformedData,
     pagination: {
-      current: page,
-      limit: limit,
+      current: validatedPage,
+      limit: validatedLimit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages: totalPages,
     } satisfies IPage.IPagination,
   };
 }

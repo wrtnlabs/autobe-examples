@@ -15,17 +15,25 @@ export async function deleteShoppingMallMemberPaymentsPaymentId(props: {
   member: MemberPayload;
   paymentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const tx = await MyGlobal.prisma.$transaction(async (prisma) => {
-    const payment = await prisma.shopping_mall_payments.findUniqueOrThrow({
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.shopping_mall_payments.findUniqueOrThrow({
       where: { id: props.paymentId },
-      select: {
-        id: true,
-        deleted_at: true,
-        created_at: true,
-        updated_at: true,
-      },
+      select: { id: true },
     });
-    await prisma.shopping_mall_payments.delete({ where: { id: payment.id } });
+    try {
+      await tx.shopping_mall_payments.delete({
+        where: { id: props.paymentId },
+      });
+    } catch (e: unknown) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code === "P2003" || e.code === "P2002") {
+          throw new HttpException(
+            "Payment cannot be erased due to existing related records",
+            409,
+          );
+        }
+      }
+      throw e;
+    }
   });
-  return;
 }

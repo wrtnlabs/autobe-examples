@@ -17,22 +17,22 @@ export async function postHrmPlatformAuthGuestRefresh(props: {
 }): Promise<IHrmPlatformGuest.IAuthorized> {
   // 1. Verify refresh token
   let decoded: {
+    type: "guest";
     id: string;
     session_id: string;
-    type: "guest";
     created_at: string;
   };
   try {
-    decoded = typia.assert<{
+    decoded = jwt.verify(
+      props.body.refresh_token,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    ) as {
+      type: "guest";
       id: string;
       session_id: string;
-      type: "guest";
       created_at: string;
-    }>(
-      jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
-        issuer: "autobe",
-      }),
-    );
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
@@ -53,58 +53,50 @@ export async function postHrmPlatformAuthGuestRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate guest exists and is not deleted
-  const guest = await MyGlobal.prisma.hrm_platform_guests.findUnique({
+  // 4. Validate guest account exists and is not deleted
+  const guest = await MyGlobal.prisma.hrm_platform_guests.findUniqueOrThrow({
     where: { id: decoded.id },
   });
-  if (!guest) {
-    throw new HttpException("Guest account not found", 404);
-  }
   if (guest.deleted_at !== null) {
-    throw new HttpException("Guest account has been deleted", 403);
+    throw new HttpException("Account has been deleted", 403);
   }
   // 5. Generate new tokens with SAME session_id
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const accessToken = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: decoded.type,
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
+  const token = {
+    access: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: decoded.type,
+        id: decoded.id,
+        session_id: decoded.session_id,
+        tokenType: "refresh",
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires.toISOString() as string &
+      tags.Format<"date-time">,
+    refreshable_until: refreshExpires.toISOString() as string &
+      tags.Format<"date-time">,
+  };
   // 6. Update session expiration
   await MyGlobal.prisma.hrm_platform_guest_sessions.update({
     where: { id: decoded.session_id },
-    data: {
-      expired_at: refreshExpires,
-    },
+    data: { expired_at: refreshExpires },
   });
-  // 7. Return authorized response
-  const result: IHrmPlatformGuest.IAuthorized = {
+  return {
     id: guest.id as string & tags.Format<"uuid">,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires.toISOString() as string &
-        tags.Format<"date-time">,
-      refreshable_until: refreshExpires.toISOString() as string &
-        tags.Format<"date-time">,
-    },
+    token,
   };
-  return typia.assert<IHrmPlatformGuest.IAuthorized>(result);
 }

@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallSellerApprovalSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerApprovalSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallSellerApprovalSnapshotAtSummaryTransformer {
@@ -18,7 +20,7 @@ export namespace ShoppingMallSellerApprovalSnapshotAtSummaryTransformer {
         snapshot_data: true,
         created_at: true,
       },
-    };
+    } satisfies Prisma.shopping_mall_seller_approval_snapshotsFindManyArgs;
   }
   export async function transform(
     input: Payload,

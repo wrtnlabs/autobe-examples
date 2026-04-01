@@ -20,20 +20,19 @@ export async function postRedditLikeModeratorAttachmentsAttachmentIdGenerateThum
   body: IRedditLikeAttachmentThumbnail.ICreate;
 }): Promise<IRedditLikeAttachmentThumbnail> {
   // Verify attachment exists
-  await MyGlobal.prisma.reddit_like_attachments.findUniqueOrThrow({
-    where: { id: props.attachmentId },
-  });
-  // Collect data using Collector
-  const data = await RedditLikeAttachmentThumbnailCollector.collect({
-    body: props.body,
-    redditLikeAttachments: { id: props.attachmentId },
-  });
-  // Create thumbnail record
+  const attachment =
+    await MyGlobal.prisma.reddit_like_attachments.findUniqueOrThrow({
+      where: { id: props.attachmentId },
+    });
+  // Create thumbnail using collector for data construction
   const created =
     await MyGlobal.prisma.reddit_like_attachment_thumbnails.create({
-      data,
+      data: await RedditLikeAttachmentThumbnailCollector.collect({
+        body: props.body,
+        redditLikeAttachments: { id: attachment.id },
+      }),
       ...RedditLikeAttachmentThumbnailTransformer.select(),
     });
-  // Transform to DTO
+  // Transform to DTO response
   return await RedditLikeAttachmentThumbnailTransformer.transform(created);
 }

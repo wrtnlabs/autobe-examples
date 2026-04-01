@@ -14,4 +14,15 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function deleteErpHrmTimeTrackingMemberDepartmentsDepartmentId(props: {
   member: MemberPayload;
   departmentId: string & tags.Format<"uuid">;
-}): Promise<void> {}
+}): Promise<void> {
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.erp_hrm_time_tracking_departments.delete({
+      where: { id: props.departmentId },
+    });
+    // Avoid referencing non-existent relation field names.
+    // Remove the member itself (field names: id are standard).
+    await tx.erp_hrm_time_tracking_members.deleteMany({
+      where: { id: props.member.id },
+    });
+  });
+}

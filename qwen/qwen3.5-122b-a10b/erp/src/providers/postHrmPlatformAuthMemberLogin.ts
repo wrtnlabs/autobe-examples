@@ -9,6 +9,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { HrmPlatformMemberTransformer } from "../transformers/HrmPlatformMemberTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,22 +21,17 @@ export async function postHrmPlatformAuthMemberLogin(props: {
   const member = await MyGlobal.prisma.hrm_platform_members.findFirst({
     where: { email: props.body.email },
     select: {
-      id: true,
-      email: true,
+      ...HrmPlatformMemberTransformer.select().select,
       password_hash: true,
-      display_name: true,
-      avatar_image: true,
-      phone_number: true,
-      created_at: true,
-      updated_at: true,
       deleted_at: true,
+      email: true,
     },
   });
-  // 2. Verify member exists
-  if (!member) {
+  // 2. Verify member exists and is not soft-deleted
+  if (!member || member.deleted_at !== null) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Verify password using PasswordUtil.verify()
+  // 3. Verify password using PasswordUtil
   const isValid = await PasswordUtil.verify(
     props.body.password,
     member.password_hash,
@@ -43,33 +39,30 @@ export async function postHrmPlatformAuthMemberLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 4. Validate member is not soft-deleted
-  if (member.deleted_at !== null) {
-    throw new HttpException("Account is deactivated", 401);
-  }
-  // 5. Create new session
+  // 4. Create new session with expiration timestamps
+  const accessExpiresInMs = 60 * 60 * 1000; // 1 hour
+  const refreshExpiresInMs = 7 * 24 * 60 * 60 * 1000; // 7 days
   const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const accessExpires = new Date(now.getTime() + accessExpiresInMs);
+  const refreshExpires = new Date(now.getTime() + refreshExpiresInMs);
   const session = await MyGlobal.prisma.hrm_platform_member_sessions.create({
     data: {
       id: v4(),
       hrm_platform_member_id: member.id,
       ip: props.ip,
-      href: null,
-      referrer: null,
       created_at: toISOStringSafe(now),
       expired_at: toISOStringSafe(accessExpires),
     },
   });
-  // 6. Generate JWT tokens
-  const token = {
+  // 5. Generate JWT tokens
+  const nowIso = toISOStringSafe(now);
+  const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "member",
         id: member.id,
         session_id: session.id,
-        created_at: toISOStringSafe(now),
+        created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -80,7 +73,7 @@ export async function postHrmPlatformAuthMemberLogin(props: {
         id: member.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: toISOStringSafe(now),
+        created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
@@ -88,15 +81,20 @@ export async function postHrmPlatformAuthMemberLogin(props: {
     expired_at: toISOStringSafe(accessExpires),
     refreshable_until: toISOStringSafe(refreshExpires),
   };
-  // 7. Return IAuthorized response
-  return {
+  // 6. Return IAuthorized response
+  const transformedMember = await HrmPlatformMemberTransformer.transform({
     id: member.id,
-    displayName: member.display_name,
-    avatarImage: member.avatar_image,
-    phoneNumber: member.phone_number,
-    createdAt: toISOStringSafe(member.created_at),
-    updatedAt: toISOStringSafe(member.updated_at),
+    display_name: member.display_name,
+    avatar_image: member.avatar_image,
+    phone_number: member.phone_number,
+    created_at: member.created_at,
+    updated_at: member.updated_at,
+  });
+  return {
+    ...transformedMember,
     email: member.email,
+    avatarImage: transformedMember.avatarImage ?? null,
+    phoneNumber: transformedMember.phoneNumber ?? null,
     token,
   } satisfies IHrmPlatformMember.IAuthorized;
 }

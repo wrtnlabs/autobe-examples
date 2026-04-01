@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingTimerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTimerSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingTimerSessionTransformer {
@@ -21,18 +23,12 @@ export namespace ErpHrmTimeTrackingTimerSessionTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: {
-          select: { id: true },
-        },
-        employee: {
-          select: { id: true },
-        },
-        project: {
-          select: { id: true },
-        },
-        task: {
-          select: { id: true },
-        },
+        // FK ids are scalar columns; relation selects are omitted because DTO needs only scalar ids.
+        // However, neighbor reuse is not required for this DTO.
+        organization_id: true,
+        employee_id: true,
+        project_id: true,
+        task_id: true,
       },
     } satisfies Prisma.erp_hrm_time_tracking_timer_sessionsFindManyArgs;
   }
@@ -41,10 +37,10 @@ export namespace ErpHrmTimeTrackingTimerSessionTransformer {
   ): Promise<IErpHrmTimeTrackingTimerSession> {
     return {
       id: input.id,
-      organization_id: input.organization.id,
-      employee_id: input.employee.id,
-      project_id: input.project.id,
-      task_id: input.task ? input.task.id : null,
+      organization_id: input.organization_id,
+      employee_id: input.employee_id,
+      project_id: input.project_id,
+      task_id: input.task_id ?? null,
       description: input.description,
       started_at: input.started_at.toISOString(),
       ended_at: input.ended_at ? input.ended_at.toISOString() : null,

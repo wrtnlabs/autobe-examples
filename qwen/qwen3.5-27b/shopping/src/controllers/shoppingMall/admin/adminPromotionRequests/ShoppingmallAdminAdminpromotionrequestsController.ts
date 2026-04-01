@@ -7,6 +7,7 @@ import { IShoppingMallAdminPromotionRequest } from "../../../../api/structures/I
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 import { getShoppingMallAdminAdminPromotionRequestsRequestId } from "../../../../providers/getShoppingMallAdminAdminPromotionRequestsRequestId";
+import { patchShoppingMallAdminAdminPromotionRequests } from "../../../../providers/patchShoppingMallAdminAdminPromotionRequests";
 import { postShoppingMallAdminAdminPromotionRequests } from "../../../../providers/postShoppingMallAdminAdminPromotionRequests";
 import { putShoppingMallAdminAdminPromotionRequestsRequestId } from "../../../../providers/putShoppingMallAdminAdminPromotionRequestsRequestId";
 
@@ -118,11 +119,20 @@ export class ShoppingmallAdminAdminpromotionrequestsController {
    */
   @TypedRoute.Patch()
   public async index(
+    @AdminAuth()
+    admin: AdminPayload,
     @TypedBody()
     body: IShoppingMallAdminPromotionRequest.IRequest,
   ): Promise<IPageIShoppingMallAdminPromotionRequest.ISummary> {
-    body;
-    return typia.random<IPageIShoppingMallAdminPromotionRequest.ISummary>();
+    try {
+      return await patchShoppingMallAdminAdminPromotionRequests({
+        admin,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   /**

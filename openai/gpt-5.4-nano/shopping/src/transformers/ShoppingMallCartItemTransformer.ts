@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -32,7 +33,7 @@ export namespace ShoppingMallCartItemTransformer {
       shoppingMallCartId: input.shopping_mall_cart_id,
       shoppingMallProductVariantId: input.shopping_mall_product_variant_id,
       quantity: input.quantity,
-      subtotalAmount: input.subtotal_amount,
+      subtotalAmount: Number(input.subtotal_amount),
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,

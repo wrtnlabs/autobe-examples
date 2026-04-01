@@ -29,7 +29,7 @@ export async function getShoppingMallSellerOrdersItemsItemId(props: {
       },
       ...ShoppingMallOrderItemTransformer.select(),
     });
-  if (orderItem.seller.id !== props.seller.id) {
+  if (orderItem.shopping_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await ShoppingMallOrderItemTransformer.transform(orderItem);

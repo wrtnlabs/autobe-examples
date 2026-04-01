@@ -1,6 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
+import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
@@ -32,7 +34,11 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
         employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
         project: HrmPlatformProjectAtSummaryTransformer.select(),
         task: HrmPlatformTaskAtSummaryTransformer.select(),
-        timesheet: true,
+        timesheet: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_timesheetsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_timelogsFindManyArgs;
   }
@@ -41,6 +47,10 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
   ): Promise<IHrmPlatformTimelog.ISummary> {
     return {
       id: input.id,
+      date: input.date.toISOString(),
+      duration_minutes: input.duration_minutes,
+      billable: input.billable,
+      description: input.description ?? undefined,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,
       ),
@@ -50,10 +60,7 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
       task: input.task
         ? await HrmPlatformTaskAtSummaryTransformer.transform(input.task)
         : undefined,
-      date: input.date.toISOString(),
-      duration_minutes: input.duration_minutes,
-      billable: input.billable,
-      description: input.description ?? undefined,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

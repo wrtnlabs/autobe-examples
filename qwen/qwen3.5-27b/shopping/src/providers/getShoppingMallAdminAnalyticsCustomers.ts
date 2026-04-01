@@ -50,22 +50,19 @@ export async function getShoppingMallAdminAnalyticsCustomers(props: {
       },
     });
   // Query order statistics
-  const totalOrders = await MyGlobal.prisma.shopping_mall_orders.count({
-    where: {
-      deleted_at: null,
-    },
-  });
   const orderStats = await MyGlobal.prisma.shopping_mall_orders.aggregate({
-    where: {
-      deleted_at: null,
-    },
+    _count: true,
     _avg: {
       total_price: true,
     },
     _sum: {
       total_price: true,
     },
+    where: {
+      deleted_at: null,
+    },
   });
+  const totalOrders = orderStats._count;
   const averageOrderValue = orderStats._avg.total_price ?? 0;
   const totalRevenue = orderStats._sum.total_price ?? 0;
   const averageOrdersPerActiveCustomer =
@@ -80,5 +77,5 @@ export async function getShoppingMallAdminAnalyticsCustomers(props: {
     averageOrderValue,
     totalRevenue,
     averageOrdersPerActiveCustomer,
-  } satisfies IShoppingMallCustomerAnalytic;
+  };
 }

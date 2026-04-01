@@ -1,4 +1,4 @@
-**shoppingMall — Data ownership, privacy, retention, and recovery policies**
+**mallPlatform — Data ownership, privacy, retention, and recovery policies**
 
 Data ownership, privacy, retention, and recovery policies
 
@@ -12,194 +12,164 @@ Define who owns what data, who can access it, and privacy boundaries between use
 
 ### Data Isolation
 
-Customer, seller, and administrator data shall be logically separated so that each actor type can access only the data that belongs to its permitted business scope.
+The platform SHALL keep each customer account’s profile information, shipping addresses, cart items, and wishlist items separate from other customer accounts.
+The platform SHALL keep each seller account’s profile information, products, product variants, inventory history, and seller dashboard data separate from other seller accounts.
+The platform SHALL keep each order associated with the customer account that placed it while preserving seller-visible order history and snapshots for the relevant sellers and administrators.
+The platform SHALL keep each product associated with the seller account that created it.
+The platform SHALL keep each category separate from product, seller, and customer account data except where the category is used to organize products.
+The platform SHALL keep snapshots associated with the data they preserve and restrict them to the relevant parties defined elsewhere in the document.
+The platform SHALL keep reviews associated with the customer account that wrote them and with the purchased product context they describe.
+The platform SHALL keep cancellation requests and refund requests associated with the specific order item they concern.
+The platform SHALL keep shipment information associated with the order items included in that shipment.
 
-Customer-facing data shall be isolated so that one customer cannot view another customer’s profile information, shipping addresses, wishlist, cart contents, or order history.
+Mermaid diagram:
+```mermaid
+flowchart LR
+    A["Customer account"] --> B["Customer profile"]
+    A --> C["Shipping addresses"]
+    A --> D["Wishlist"]
+    A --> E["Shopping cart"]
+    F["Seller account"] --> G["Seller profile"]
+    F --> H["Products"]
+    H --> I["Variants"]
+    J["Order"] --> K["Order items"]
+    K --> L["Shipments"]
+    M["Snapshot"] --> N["Preserved state"]
+```
 
-Seller-facing data shall be isolated so that one seller cannot view another seller’s private account information, shop profile data, product management data, inventory history, or order-item details outside its own business scope.
-
-Administrator access shall remain separate from customer and seller privacy boundaries and shall be limited to the platform-wide oversight that is explicitly granted elsewhere in the requirements.
-
-Data that is preserved for business records or legal purposes shall remain isolated from the former account holder’s active access after account deletion, unless a separate requirement explicitly allows viewing it for the relevant parties.
 
 ### Ownership
 
-A customer owns the personal account data, profile data, shipping addresses, wishlist entries, cart contents, and reviews created under that customer account, subject to the platform rules for preservation and visibility defined elsewhere.
+Customer accounts own their profile information, shipping addresses, cart items, wishlist items, orders, and reviews they create.
+Seller accounts own their seller profile information and the products, variants, and inventory activity created under their account.
+Administrators own category management responsibilities and approval decisions for seller registrations and administrator requests.
+Each product belongs to the seller who created it.
+Each order belongs to the customer account that placed it, while each order item also preserves the seller profile snapshot tied to the purchased item.
+Each review belongs to the customer account that wrote it, even when the customer account is later deleted and the review is displayed as coming from a deleted user.
+Each shipping address belongs to one customer account only.
+Each cancellation request and refund request belongs to one order item only.
+Each snapshot belongs to the record it preserves and is not transferable to another record.
 
-A seller owns the seller account data, seller profile data, products, variants, inventory history, and seller-created records that belong to that seller’s business activity, subject to the platform rules for preservation and visibility defined elsewhere.
+Mermaid diagram:
+```mermaid
+flowchart LR
+    A["Customer account"] --> B["Profile"]
+    A --> C["Addresses"]
+    A --> D["Cart"]
+    A --> E["Wishlist"]
+    A --> F["Orders"]
+    A --> G["Reviews"]
+    H["Seller account"] --> I["Seller profile"]
+    H --> J["Products"]
+    H --> K["Variants"]
+    H --> L["Inventory activity"]
+    M["Order item"] --> N["Cancellation request"]
+    M --> O["Refund request"]
+    P["Snapshot"] --> Q["Preserved record"]
+```
 
-A customer owns the order relationship created from that customer’s purchase history, but individual order items, snapshots, and preserved order records may remain available to other relevant parties when business or legal preservation is required.
-
-An administrator does not own customer or seller business data by default and may access it only for the administrative purposes defined in the approved business requirements.
-
-When a record is preserved after account deletion, the original ownership of the record does not transfer to another user; instead, the record remains associated with the original business context for continuity and dispute handling.
 
 ### Access Control
 
-A customer shall be able to access only the customer data and customer-owned records that belong to that account, except for preserved order, shipment, snapshot, and review records that are intentionally retained and exposed under the platform rules.
+Customers can access only their own profile information, shipping addresses, cart, wishlist, orders, and reviews, except where preserved purchase history or deleted-user display rules apply.
+Sellers can access only their own seller profile, their own products, their own variants, their own inventory history, their own order items, and the snapshots for their own editable data.
+Administrators can access categories, seller approvals, administrator approval requests, and platform-wide product, order, and account oversight within the permissions defined elsewhere in the document.
+Relevant parties can view snapshots for dispute resolution, limited to the ownership rules of the preserved data.
+Customers can view seller profiles and product listings that are available for customer browsing.
+Customers can view order history and shipment tracking information for their own orders only.
+Sellers can view order items for their products and respond to cancellation and refund requests for those items.
+Administrators can view snapshots of any product and can view platform data needed for oversight as defined in the permissions section.
 
-A seller shall be able to access only the seller data and seller-owned records that belong to that account, including the seller’s own products, order items, shipments, cancellation responses, refund responses, and snapshots that are available to the relevant parties.
+Mermaid diagram:
+```mermaid
+flowchart LR
+    A["Customer"] --> B["Own profile"]
+    A --> C["Own addresses"]
+    A --> D["Own cart"]
+    A --> E["Own wishlist"]
+    A --> F["Own orders"]
+    A --> G["Own reviews"]
+    H["Seller"] --> I["Own seller profile"]
+    H --> J["Own products"]
+    H --> K["Own variants"]
+    H --> L["Own inventory history"]
+    H --> M["Own order items"]
+    N["Administrator"] --> O["Categories"]
+    N --> P["Approvals"]
+    N --> Q["Oversight data"]
+```
 
-An administrator shall be able to access the data needed for platform oversight, moderation, and dispute resolution, including records that are explicitly made available to administrators in the approved requirements.
-
-Access to preserved snapshots shall be limited to the owners and administrators that are entitled to view them for dispute resolution.
-
-If a user account is deleted or suspended, access shall be limited according to the account lifecycle and preservation rules defined elsewhere, and the account holder shall not regain access to records that are no longer part of the active account context.
 
 ### Privacy
 
-Personal information shall be treated as private data and shall not be exposed to other users unless a requirement explicitly makes it visible as part of a business process.
+The platform SHALL preserve the privacy of customer profile information and shipping addresses so that they are visible only according to the ownership and access rules defined in this section and in the permissions section.
+The platform SHALL preserve the privacy of seller profile information so that it is shown to customers through seller profile viewing and product listings only as defined elsewhere in the document.
+The platform SHALL preserve the privacy of customer reviews while honoring the rule that deleted customer accounts are displayed as deleted user for preserved reviews.
+The platform SHALL preserve the privacy of order snapshots, product snapshots, seller profile snapshots, cancellation request snapshots, and refund request snapshots by exposing them only to relevant parties for dispute resolution.
+The platform SHALL preserve the privacy of administrator approval requests and seller approval requests so that they are visible only to the reviewers defined elsewhere in the document.
+The platform SHALL preserve the privacy of account deletion outcomes so that deleted customer profile information is removed while orders, order history, and reviews remain preserved according to the user requirements.
+The platform SHALL preserve the privacy of deleted seller account outcomes so that deleted products are removed from listings while order history, snapshots, and preserved shop names remain available in historical records.
+The platform SHALL not expose hidden seller products to customers when the seller account is suspended, because suspended products must not appear in search or category listings.
 
-Customer profile information shall remain private to the customer except where it is needed to support order fulfillment, shipping, or other platform processes defined elsewhere.
-
-Seller profile information shall be visible to customers only through the seller-facing presentation that is explicitly part of the shopping and purchase experience.
-
-When a customer account is deleted, the customer’s profile information shall no longer be shown as active customer data, while preserved reviews shall remain visible under the deleted-user label.
-
-When a seller account is deleted, the seller’s preserved order-related history and snapshots shall continue to support business records and legal purposes without exposing the deleted seller as an active account holder.
-
-Privacy boundaries shall be maintained across all preserved records so that only the minimum necessary identity information remains visible in historical business records, as required by the platform’s preservation rules.
 
 ## Data Retention and Recovery
 
 Define what happens to deleted data, how long it is retained, and how users can recover it.
 
-### Soft-Delete
+### Soft Delete and Recovery
 
-Deleted customer profiles and deleted seller profiles are retained in a soft-deleted state rather than being removed immediately.
-Soft-deleted customer profile information is no longer available as an active profile.
-Soft-deleted seller accounts are no longer available as active seller accounts.
-Soft-deleted products are removed from active listings.
-Soft-deleted wishlist entries are no longer shown to customers.
-Soft-deleted reviews remain preserved and are shown as coming from a deleted user when the original customer account no longer exists.
-Soft-delete status is used to keep business records available for retention and recovery purposes while preventing normal use of the deleted data.
+Accounts, products, reviews, cancellation requests, and refund requests may be soft-deleted when the platform needs to preserve records for business or legal purposes.
 
+A soft-deleted record remains preserved for authorized recovery or review where the business rules allow it, rather than being removed immediately from the platform’s retained records.
+
+When a record is soft-deleted, the platform shall keep the preserved record available according to the retention policy defined in this document.
+
+A record that is soft-deleted may be recovered only where the business rules for that record allow recovery.
+
+If a record is recovered, the platform shall restore the preserved record rather than creating a new business record.
+
+Mermaid diagram:
 ```mermaid
 flowchart LR
-    A["Active data"] -->|"Delete request"| B["Soft-deleted data"]
-    B -->|"Retained for recovery or record keeping"| C["Preserved record"]
-    B -->|"Permanent deletion process"| D["Removed data"]
+    A["Active record"] -->|"Soft-delete"| B["Preserved record"]
+    B -->|"Recover"| A
 ```
 
-### Retention
 
-The platform retains data that must remain available for seller records, legal purposes, and dispute resolution even after the related account or item is deleted.
-Customer orders and order history are retained after customer account deletion.
-Seller order history and order snapshots are retained after seller account deletion.
-Snapshots are retained and cannot be deleted.
-Inventory history records are retained as the full history of stock changes for each variant.
-Cancellation request and refund request history is retained so that request handling can be reviewed later.
-Retained records remain available to the relevant parties described in the data ownership and privacy policies.
-Retention applies to the preserved historical state of changed business data, not only to the current active version.
+### Retention of Preserved Records
 
+The platform shall retain preserved records after deletion when the business requirements require the information to remain available for seller records, legal purposes, dispute resolution, or historical order context.
+
+The platform shall retain order history, order item snapshots, seller profile snapshots tied to purchase history, product snapshots, variant snapshots, review snapshots, cancellation request snapshots, refund request snapshots, and immutable snapshots created from edits and status changes.
+
+The platform shall retain reviews after customer account deletion and display them as reviews from a deleted user.
+
+The platform shall retain seller order history and preserved snapshots after seller account deletion.
+
+The platform shall retain product snapshots even after the related product is deleted.
+
+The platform shall retain snapshots as immutable records and shall not allow them to be deleted.
+
+The platform shall retain records needed to preserve the history of changes to money-related activities and dispute-related activities.
+
+
+### Recovery and Permanent Deletion
+
+Recovery is allowed only for records that the business rules designate as recoverable.
+
+When recovery is allowed, the platform shall restore the preserved state of the record together with the business information needed to continue the relevant history.
+
+Permanent deletion applies only to data that the business rules do not require the platform to retain.
+
+When a record is permanently deleted, it is no longer available for recovery or historical review.
+
+The platform shall not permanently delete records that must be preserved for seller records, legal purposes, or dispute resolution.
+
+If a related business object has been permanently deleted, any preserved snapshots or retained history required by the platform shall remain available according to the retention policy.
+
+Mermaid diagram:
 ```mermaid
 flowchart LR
-    A["Editable business data changes"] --> B["Snapshot or history record created"]
-    B --> C["Retained record"]
-    C --> D["Available for dispute resolution"]
-    C --> E["Available for seller records or legal purposes"]
-```
-
-### Recovery
-
-Soft-deleted data can be recovered when the business rules for that data allow restoration.
-Recovered data returns to its active state with its previous business meaning intact.
-If a deleted customer account is recovered, the customer profile returns as an active profile.
-If a deleted seller account is recovered, the seller account returns as an active seller account.
-If a deleted product is recovered, it returns to active product use only if its business status allows it.
-Recovery must not remove or alter preserved snapshots, order history, inventory history, or other retained records.
-Recovery is limited to restoring deleted business data; it does not rewrite preserved history.
-
-```mermaid
-sequenceDiagram
-    participant A as "Authorized party"
-    participant S as "System"
-    A->>S: "Request recovery of deleted data"
-    S->>S: "Restore active data state"
-    S-->>A: "Recovered data remains separate from preserved history"
-```
-
-### Permanent-Deletion
-
-Permanent deletion applies only after the platform has preserved the required historical records.
-When permanent deletion occurs, active personal or business data is removed from use and cannot be recovered.
-Permanent deletion does not remove records that the platform must keep for seller records, legal purposes, dispute resolution, or snapshot preservation.
-Snapshots remain immutable and are not eligible for deletion.
-Order history, order item snapshots, seller order snapshots, inventory history, cancellation request history, and refund request history remain preserved when the business rules require them.
-Where a record is permanently deleted, it is no longer available as active data or for ordinary customer use.
-
-```mermaid
-flowchart LR
-    A["Soft-deleted data"] -->|"After required preservation"| B["Permanent deletion"]
-    B --> C["No longer active"]
-    B --> D["Preserved history remains"]
-```
-
-# External Dependency SLOs
-
-Service level objectives for external dependency availability.
-
-## External Dependency SLOs
-
-Define availability expectations, timeout thresholds, and degradation policies for external service dependencies.
-
-### External Dependency Availability Expectations
-
-The platform relies on external dependencies for payment processing and must define availability expectations for those dependencies.
-
-The platform shall treat external dependency availability as a business concern that affects whether the shopping flow can be completed.
-
-The platform shall consider an external dependency unavailable when it cannot be reached or cannot complete the required interaction for the current business operation.
-
-The platform shall distinguish between normal operation and degraded operation when an external dependency is unavailable.
-
-The platform shall record the availability state of an external dependency for operational review.
-
-```mermaid
-flowchart LR
-    A["External dependency available"] -->|"Service interruption"| B["External dependency unavailable"]
-    B -->|"Service restored"| A
-```
-
-### External Dependency Timeout Handling
-
-The platform shall define timeout expectations for interactions with external dependencies.
-
-The platform shall stop waiting for an external dependency when the interaction exceeds the configured timeout for that dependency.
-
-When a timeout occurs, the platform shall treat the external dependency as unavailable for that business operation.
-
-When a timeout occurs, the platform shall not leave the customer in a completed checkout state unless the payment outcome has been confirmed.
-
-When a timeout occurs, the platform shall allow the customer to retry the affected action if the business flow supports retrying.
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant S as System
-    participant E as External dependency
-    U->>S: Submit action that depends on the external dependency
-    S->>E: Attempt the external interaction
-    E-->>S: No timely response
-    S-->>U: Timeout outcome and retry availability
-```
-
-### Degradation Behavior for External Dependency Failures
-
-When an external dependency is unavailable or times out, the platform shall apply a degraded behavior that protects the integrity of the affected business process.
-
-When payment processing fails, the platform shall not create the order and shall allow the customer to retry the payment.
-
-When an external dependency failure affects checkout, the platform shall prevent the affected order from being treated as successfully placed.
-
-When a degraded behavior is active, the platform shall preserve the state needed for the user to continue once the external dependency becomes available again.
-
-The platform shall not silently convert a failed external dependency interaction into a successful business outcome.
-
-```mermaid
-flowchart LR
-    A["Attempt dependent action"] --> B["External dependency response"]
-    B -->|"Success"| C["Complete business action"]
-    B -->|"Timeout or unavailable"| D["Apply degraded behavior"]
-    D --> E["Allow retry or preserve state"]
+    A["Preserved record"] -->|"Recoverable"| B["Recovered record"]
+    A -->|"Not required to retain"| C["Permanent deletion"]
 ```

@@ -22,76 +22,78 @@ export async function patchEcommerceMallCustomerShipmentsShipmentIdTrackingCodes
   shipmentId: string & tags.Format<"uuid">;
   body: IEcommerceMallShipment.IUpdateTrackingCode;
 }): Promise<IEcommerceMallShipment> {
-  // Verify shipment exists and is not deleted
+  // 1. Verify shipment exists and is not deleted
   const shipment =
     await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
-      where: {
-        id: props.shipmentId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        ecommerce_mall_seller_id: true,
-        carrier_name: true,
-        carrier_phone: true,
-        carrier_website: true,
-      },
+      where: { id: props.shipmentId },
+      select: { id: true, ecommerce_mall_order_id: true, deleted_at: true },
     });
-  // Verify seller ownership
-  if (shipment.ecommerce_mall_seller_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
+  if (shipment.deleted_at !== null) {
+    throw new HttpException("Shipment has been deleted", 404);
   }
-  // Validate tracking codes: at least one required
-  if (props.body.tracking_codes.length < 1) {
+  // 2. Verify customer owns this shipment by checking order ownership
+  const order = await MyGlobal.prisma.ecommerce_mall_orders.findFirst({
+    where: {
+      id: shipment.ecommerce_mall_order_id,
+      customer_id: props.customer.id,
+      deleted_at: null,
+    },
+    select: { id: true },
+  });
+  if (order === null) {
+    throw new HttpException("Shipment does not belong to this customer", 403);
+  }
+  // 3. Validate tracking codes
+  if (props.body.tracking_codes.length === 0) {
     throw new HttpException("At least one tracking code is required", 400);
   }
-  // Validate unique tracking codes within shipment
+  // Check for duplicate tracking codes within the shipment and validate strings
   const trackingCodeSet = new Set<string>();
-  for (const tc of props.body.tracking_codes) {
-    if (trackingCodeSet.has(tc.trackingCode)) {
-      throw new HttpException("Duplicate tracking code within shipment", 400);
+  for (const code of props.body.tracking_codes) {
+    if (!code.trackingCode || code.trackingCode.trim().length === 0) {
+      throw new HttpException("Tracking code cannot be empty", 400);
     }
-    trackingCodeSet.add(tc.trackingCode);
+    if (!code.carrierName || code.carrierName.trim().length === 0) {
+      throw new HttpException("Carrier name cannot be empty", 400);
+    }
+    if (trackingCodeSet.has(code.trackingCode)) {
+      throw new HttpException("Duplicate tracking codes not allowed", 409);
+    }
+    trackingCodeSet.add(code.trackingCode);
   }
-  // Delete all existing tracking codes for this shipment
+  // 4. Delete existing tracking codes for this shipment
   await MyGlobal.prisma.ecommerce_mall_shipment_tracking_codes.deleteMany({
-    where: {
-      shipment_id: props.shipmentId,
-    },
+    where: { shipment_id: props.shipmentId },
   });
-  // Insert new tracking codes from request body
-  await Promise.all(
-    props.body.tracking_codes.map(async (trackingCode) => {
-      await MyGlobal.prisma.ecommerce_mall_shipment_tracking_codes.create({
-        data: {
-          id: v4(),
-          shipment_id: props.shipmentId,
-          carrier_name: trackingCode.carrierName,
-          tracking_code: trackingCode.trackingCode,
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
-      });
-    }),
-  );
-  // Update shipment carrier fields if provided
-  const updateData: Prisma.ecommerce_mall_shipmentsUpdateInput = {
-    updated_at: new Date(),
-    ...(props.body.carrier_name !== undefined && {
-      carrier_name: props.body.carrier_name,
-    }),
-    ...(props.body.carrier_phone !== undefined && {
-      carrier_phone: props.body.carrier_phone,
-    }),
-    ...(props.body.carrier_website !== undefined && {
-      carrier_website: props.body.carrier_website,
-    }),
-  };
+  // 5. Insert new tracking codes
+  const now = new Date();
+  await MyGlobal.prisma.ecommerce_mall_shipment_tracking_codes.createMany({
+    data: props.body.tracking_codes.map((code) => ({
+      id: v4() as string & tags.Format<"uuid">,
+      shipment_id: props.shipmentId,
+      carrier_name: code.carrierName,
+      tracking_code: code.trackingCode,
+      created_at: now,
+      updated_at: now,
+    })),
+  });
+  // 6. Update shipment with new carrier info (only if provided) and timestamp
   await MyGlobal.prisma.ecommerce_mall_shipments.update({
     where: { id: props.shipmentId },
-    data: updateData,
+    data: {
+      ...(props.body.carrier_name !== undefined && {
+        carrier_name: props.body.carrier_name,
+      }),
+      ...(props.body.carrier_phone !== undefined && {
+        carrier_phone: props.body.carrier_phone,
+      }),
+      ...(props.body.carrier_website !== undefined && {
+        carrier_website: props.body.carrier_website,
+      }),
+      updated_at: now,
+    },
   });
-  // Return complete shipment with all tracking codes
+  // 7. Return updated shipment using transformer
   const updatedShipment =
     await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
       where: { id: props.shipmentId },

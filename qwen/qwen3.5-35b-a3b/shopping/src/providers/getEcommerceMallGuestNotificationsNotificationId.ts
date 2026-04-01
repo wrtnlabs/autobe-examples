@@ -25,15 +25,15 @@ export async function getEcommerceMallGuestNotificationsNotificationId(props: {
       },
       ...EcommerceMallNotificationTransformer.select(),
     });
-  const guestNotification =
+  const guestReference =
     await MyGlobal.prisma.ecommerce_mall_notification_of_guests.findFirst({
       where: {
         notification_id: props.notificationId,
         guest_id: props.guest.id,
       },
     });
-  if (guestNotification === null) {
-    throw new HttpException("Notification not found", 404);
+  if (guestReference === null) {
+    throw new HttpException("Notification not accessible", 404);
   }
   return await EcommerceMallNotificationTransformer.transform(notification);
 }

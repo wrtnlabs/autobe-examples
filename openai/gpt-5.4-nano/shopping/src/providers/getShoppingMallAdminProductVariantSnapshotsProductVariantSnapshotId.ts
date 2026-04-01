@@ -9,7 +9,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { ShoppingMallProductVariantSnapshotTransformer } from "../transformers/ShoppingMallProductVariantSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,29 +16,39 @@ export async function getShoppingMallAdminProductVariantSnapshotsProductVariantS
   admin: AdminPayload;
   productVariantSnapshotId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallProductVariantSnapshot> {
-  if (props.admin.type !== "admin") {
-    throw new HttpException("Forbidden", 403);
-  }
-  const session = await MyGlobal.prisma.shopping_mall_admin_sessions.findFirst({
-    where: {
-      id: props.admin.session_id,
-      shopping_mall_admin_id: props.admin.id,
-      deleted_at: null,
-      admin: { id: props.admin.id, deleted_at: null },
-    },
-    select: { id: true },
-  });
-  if (session === null) {
-    throw new HttpException("Forbidden", 403);
-  }
   const snapshot =
     await MyGlobal.prisma.shopping_mall_product_variant_snapshots.findUniqueOrThrow(
       {
         where: { id: props.productVariantSnapshotId },
-        ...ShoppingMallProductVariantSnapshotTransformer.select(),
+        select: {
+          id: true,
+          shopping_mall_product_variant_id: true,
+          code: true,
+          name: true,
+          price: true,
+          currency: true,
+          is_available: true,
+          variant_status: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+        },
       },
     );
-  return await ShoppingMallProductVariantSnapshotTransformer.transform(
-    snapshot,
-  );
+  return {
+    id: snapshot.id,
+    shopping_mall_product_variant_id: snapshot.shopping_mall_product_variant_id,
+    code: snapshot.code,
+    name: snapshot.name,
+    price: snapshot.price,
+    currency: snapshot.currency,
+    is_available: snapshot.is_available,
+    variant_status: snapshot.variant_status,
+    created_at: toISOStringSafe(snapshot.created_at),
+    updated_at: toISOStringSafe(snapshot.updated_at),
+    deleted_at:
+      snapshot.deleted_at === null
+        ? null
+        : toISOStringSafe(snapshot.deleted_at),
+  };
 }

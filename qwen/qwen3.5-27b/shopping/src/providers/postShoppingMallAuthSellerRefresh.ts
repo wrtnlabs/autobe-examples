@@ -19,22 +19,26 @@ export async function postShoppingMallAuthSellerRefresh(props: {
   let decoded: {
     id: string;
     session_id: string;
-    type: "seller";
+    type: string;
   };
   try {
     decoded = jwt.verify(
       props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
       { issuer: "autobe" },
-    ) as any;
+    ) as {
+      id: string;
+      session_id: string;
+      type: string;
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate token type
+  // 2. Validate type
   if (decoded.type !== "seller") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Find session with refresh token
+  // 3. Find session by refresh_token
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.findFirst(
     {
       where: {
@@ -49,48 +53,42 @@ export async function postShoppingMallAuthSellerRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate session belongs to seller
-  if (session.shopping_mall_seller_id !== decoded.id) {
-    throw new HttpException("Invalid session", 401);
-  }
-  // 5. Validate seller exists and is active
+  // 4. Validate seller exists and is active
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
-    where: { id: decoded.id },
+    where: {
+      id: decoded.id,
+      deleted_at: null,
+      status: "active",
+      approval_status: "approved",
+    },
   });
-  if (seller.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
-  }
-  if (seller.status !== "active") {
-    throw new HttpException("Account is not active", 403);
-  }
-  if (seller.approval_status !== "approved") {
-    throw new HttpException("Account is not approved", 403);
-  }
-  // 6. Revoke old refresh token
+  // 5. Revoke old session
   await MyGlobal.prisma.shopping_mall_seller_sessions.update({
     where: { id: session.id },
     data: {
       revoked_at: new Date(),
     },
   });
+  // 6. Generate new session ID
+  const newSessionId = v4();
   // 7. Generate new tokens
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const newAccessToken = jwt.sign(
+  const accessToken = jwt.sign(
     {
       type: "seller",
-      id: decoded.id,
-      session_id: session.id,
+      id: seller.id,
+      session_id: newSessionId,
       created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const newRefreshToken = jwt.sign(
+  const refreshToken = jwt.sign(
     {
       type: "seller",
-      id: decoded.id,
-      session_id: session.id,
+      id: seller.id,
+      session_id: newSessionId,
       tokenType: "refresh",
       created_at: new Date().toISOString(),
     },
@@ -98,22 +96,20 @@ export async function postShoppingMallAuthSellerRefresh(props: {
     { expiresIn: "7d", issuer: "autobe" },
   );
   // 8. Create new session record
-  const newSessionId = v4();
   await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
       id: newSessionId,
-      shopping_mall_seller_id: decoded.id,
-      access_token: newAccessToken,
-      refresh_token: newRefreshToken,
+      shopping_mall_seller_id: seller.id,
+      access_token: accessToken,
+      refresh_token: refreshToken,
       ip: session.ip,
       href: session.href,
       referrer: session.referrer,
       created_at: new Date(),
       expired_at: refreshExpires,
-      revoked_at: null,
     },
   });
-  // 9. Return authorization response
+  // 9. Return IAuthorized response
   return {
     id: seller.id,
     email: seller.email,
@@ -123,11 +119,11 @@ export async function postShoppingMallAuthSellerRefresh(props: {
     approval_status: seller.approval_status,
     rejection_reason: seller.rejection_reason,
     status: seller.status,
-    created_at: toISOStringSafe(seller.created_at),
-    updated_at: toISOStringSafe(seller.updated_at),
+    created_at: seller.created_at.toISOString(),
+    updated_at: seller.updated_at.toISOString(),
     token: {
-      access: newAccessToken,
-      refresh: newRefreshToken,
+      access: accessToken,
+      refresh: refreshToken,
       expired_at: accessExpires.toISOString(),
       refreshable_until: refreshExpires.toISOString(),
     },

@@ -20,6 +20,12 @@ export async function getShoppingMallAdminReviewsReviewId(props: {
   admin: AdminPayload;
   reviewId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallReview> {
+  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+    where: { id: props.admin.id, deleted_at: null },
+  });
+  if (admin === null) {
+    throw new HttpException("Forbidden", 403);
+  }
   const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
     where: { id: props.reviewId },
     ...ShoppingMallReviewTransformer.select(),

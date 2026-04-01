@@ -26,70 +26,47 @@ export async function postRedditLikeOwnerReportsReportIdDismiss(props: {
   owner: OwnerPayload;
   reportId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeReport> {
-  // Find the report with community info
-  const report = await MyGlobal.prisma.reddit_like_reports.findUnique({
+  // Find report with community to verify ownership
+  const report = await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
     where: { id: props.reportId },
     select: {
       id: true,
-      community_id: true,
       status: true,
+      community: {
+        select: {
+          id: true,
+          owner_id: true,
+        },
+      },
     },
   });
-  if (report === null) {
-    throw new HttpException("Report not found", 404);
+  // Verify owner is the community owner
+  if (report.community.owner_id !== props.owner.id) {
+    throw new HttpException("Forbidden - Not the community owner", 403);
   }
+  // Check report is pending
   if (report.status !== "pending") {
     throw new HttpException("Report is not in pending status", 400);
   }
-  // Get community to check ownership
-  const community = await MyGlobal.prisma.reddit_like_communities.findUnique({
-    where: { id: report.community_id },
-    select: {
-      id: true,
-      owner_id: true,
-    },
-  });
-  if (community === null) {
-    throw new HttpException("Community not found", 404);
-  }
-  // Verify the owner has moderation rights in this community
-  // Owner must either be the community owner or a designated moderator
-  const isCommunityOwner = community.owner_id === props.owner.id;
-  if (!isCommunityOwner) {
-    // Check if owner is a moderator of this community
-    const moderatorRecord =
-      await MyGlobal.prisma.reddit_like_moderators.findFirst({
-        where: {
-          member_id: props.owner.id,
-          community_id: report.community_id,
-          deleted_at: null,
-        },
-      });
-    if (moderatorRecord === null) {
-      throw new HttpException(
-        "Forbidden - not authorized to dismiss reports in this community",
-        403,
-      );
-    }
-  }
+  const nowStr = toISOStringSafe(new Date());
   // Update report status to dismissed
   await MyGlobal.prisma.reddit_like_reports.update({
     where: { id: props.reportId },
     data: {
       status: "dismissed",
-      updated_at: new Date(),
+      updated_at: nowStr,
     },
   });
-  // Create audit snapshot recording the dismissal
+  // Create audit snapshot
   await MyGlobal.prisma.reddit_like_report_snapshots.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
       reddit_like_report_id: props.reportId,
       status: "dismissed",
-      created_at: new Date(),
+      created_at: nowStr,
     },
   });
-  // Return updated report using transformer
+  // Fetch updated report with full relations
   const updatedReport =
     await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
       where: { id: props.reportId },

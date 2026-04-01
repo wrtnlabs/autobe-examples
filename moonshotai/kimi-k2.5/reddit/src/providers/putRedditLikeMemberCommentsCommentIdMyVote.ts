@@ -9,23 +9,22 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeVoteTransformer } from "../transformers/RedditLikeVoteTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putRedditLikeMemberCommentsCommentIdMyVote(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   commentId: string & tags.Format<"uuid">;
   body: IRedditLikeVote.IUpdate;
 }): Promise<IRedditLikeVote> {
-  // Verify comment exists and is not deleted
+  // Step 1: Validate comment exists and is not deleted
   const comment = await MyGlobal.prisma.reddit_like_comments.findUnique({
     where: { id: props.commentId },
     select: {
       id: true,
       is_deleted: true,
-      post_id: true,
     },
   });
   if (comment === null) {
@@ -34,17 +33,7 @@ export async function putRedditLikeMemberCommentsCommentIdMyVote(props: {
   if (comment.is_deleted) {
     throw new HttpException("Cannot vote on deleted content", 400);
   }
-  // Get post for community context
-  const post = await MyGlobal.prisma.reddit_like_posts.findUnique({
-    where: { id: comment.post_id },
-    select: {
-      community_id: true,
-    },
-  });
-  if (post === null) {
-    throw new HttpException("Post not found", 404);
-  }
-  // Check for existing vote on this comment
+  // Step 2: Check for existing vote by this member on this comment
   const existingVote = await MyGlobal.prisma.reddit_like_votes.findFirst({
     where: {
       member_id: props.member.id,
@@ -57,70 +46,73 @@ export async function putRedditLikeMemberCommentsCommentIdMyVote(props: {
       vote_type: true,
     },
   });
-  const now = new Date();
-  // Execute upsert within transaction
-  const voteResult = await MyGlobal.prisma.$transaction(async (prisma) => {
+  // Step 3: Execute upsert in transaction
+  const result = await MyGlobal.prisma.$transaction(async (tx) => {
+    let voteId: string;
+    const now = new Date();
     if (existingVote !== null) {
-      // Update existing vote if type changed
+      // Update existing vote
+      voteId = existingVote.id;
+      // Only process if vote type is changing
       if (existingVote.vote_type !== props.body.vote_type) {
-        await prisma.reddit_like_votes.update({
-          where: { id: existingVote.id },
+        // Calculate score change: reverse old + apply new
+        const oldDelta = existingVote.vote_type === "upvote" ? -1 : 1;
+        const newDelta = props.body.vote_type === "upvote" ? 1 : -1;
+        const scoreChange = oldDelta + newDelta;
+        // Update vote record
+        await tx.reddit_like_votes.update({
+          where: { id: voteId },
           data: {
             vote_type: props.body.vote_type,
             updated_at: now,
           },
         });
-        // Calculate score delta: reverse old effect, apply new
-        const oldScoreDelta = existingVote.vote_type === "upvote" ? 1 : -1;
-        const newScoreDelta = props.body.vote_type === "upvote" ? 1 : -1;
-        const scoreChange = newScoreDelta - oldScoreDelta;
-        await prisma.reddit_like_comments.update({
+        // Update comment score
+        await tx.reddit_like_comments.update({
           where: { id: props.commentId },
           data: {
             vote_score: { increment: scoreChange },
+            updated_at: now,
           },
         });
       }
-      // Fetch updated vote for response
-      return prisma.reddit_like_votes.findUniqueOrThrow({
-        where: { id: existingVote.id },
-        ...RedditLikeVoteTransformer.select(),
+    } else {
+      // Create new vote
+      voteId = v4();
+      // Create main vote record
+      await tx.reddit_like_votes.create({
+        data: {
+          id: voteId,
+          member_id: props.member.id,
+          vote_type: props.body.vote_type,
+          created_at: now,
+          updated_at: now,
+        },
+      });
+      // Create comment vote link
+      await tx.reddit_like_comment_votes.create({
+        data: {
+          id: v4(),
+          vote_id: voteId,
+          comment_id: props.commentId,
+          created_at: now,
+        },
+      });
+      // Update comment score
+      const scoreDelta = props.body.vote_type === "upvote" ? 1 : -1;
+      await tx.reddit_like_comments.update({
+        where: { id: props.commentId },
+        data: {
+          vote_score: { increment: scoreDelta },
+          updated_at: now,
+        },
       });
     }
-    // Create new vote
-    const newVoteId = v4();
-    await prisma.reddit_like_votes.create({
-      data: {
-        id: newVoteId,
-        member_id: props.member.id,
-        vote_type: props.body.vote_type,
-        created_at: now,
-        updated_at: now,
-      },
-    });
-    // Create the comment vote association - need an id for reddit_like_comment_votes
-    const commentVoteId = v4();
-    await prisma.reddit_like_comment_votes.create({
-      data: {
-        id: commentVoteId,
-        vote_id: newVoteId,
-        comment_id: props.commentId,
-        created_at: now,
-      },
-    });
-    // Update comment vote_score
-    const scoreDelta = props.body.vote_type === "upvote" ? 1 : -1;
-    await prisma.reddit_like_comments.update({
-      where: { id: props.commentId },
-      data: {
-        vote_score: { increment: scoreDelta },
-      },
-    });
-    // Fetch created vote for response
-    return prisma.reddit_like_votes.findUniqueOrThrow({
-      where: { id: newVoteId },
+    // Return the vote with member info
+    return tx.reddit_like_votes.findUniqueOrThrow({
+      where: { id: voteId },
       ...RedditLikeVoteTransformer.select(),
     });
   });
-  return RedditLikeVoteTransformer.transform(voteResult);
+  return RedditLikeVoteTransformer.transform(result);
 }

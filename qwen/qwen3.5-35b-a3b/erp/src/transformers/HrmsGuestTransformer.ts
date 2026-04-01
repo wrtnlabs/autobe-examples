@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmsGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsGuest";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace HrmsGuestTransformer {
@@ -18,6 +20,7 @@ export namespace HrmsGuestTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        sessions: true,
       },
     } satisfies Prisma.hrms_guestsFindManyArgs;
   }

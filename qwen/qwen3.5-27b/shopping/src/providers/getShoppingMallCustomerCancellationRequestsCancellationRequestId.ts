@@ -20,7 +20,7 @@ export async function getShoppingMallCustomerCancellationRequestsCancellationReq
   customer: CustomerPayload;
   cancellationRequestId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallCancellationRequest> {
-  const cancellationRequest =
+  const request =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow(
       {
         where: {
@@ -30,10 +30,8 @@ export async function getShoppingMallCustomerCancellationRequestsCancellationReq
         ...ShoppingMallCancellationRequestTransformer.select(),
       },
     );
-  if (cancellationRequest.customer.id !== props.customer.id) {
+  if (request.customer.id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return await ShoppingMallCancellationRequestTransformer.transform(
-    cancellationRequest,
-  );
+  return await ShoppingMallCancellationRequestTransformer.transform(request);
 }

@@ -22,7 +22,6 @@ export namespace HrmPlatformContractCollector {
       updated_at: new Date(),
       deleted_at: null,
       employee: { connect: { id: props.body.employee_id } },
-      snapshots: undefined,
     } satisfies Prisma.hrm_platform_contractsCreateInput;
   }
 }

@@ -1,0 +1,89 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
+import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
+import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
+import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
+import { IMallPlatformRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformRefundRequest";
+import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { MallPlatformRefundRequestTransformer } from "../transformers/MallPlatformRefundRequestTransformer";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+export async function postMallPlatformSellerRefundRequestsRefundRequestIdApprove(props: {
+  seller: SellerPayload;
+  refundRequestId: string & tags.Format<"uuid">;
+}): Promise<IMallPlatformRefundRequest> {
+  return await MyGlobal.prisma.$transaction(async (prisma) => {
+    const refundRequest =
+      await prisma.mall_platform_refund_requests.findUniqueOrThrow({
+        where: {
+          id: props.refundRequestId,
+        },
+        select: {
+          id: true,
+          mall_platform_order_item_id: true,
+          mall_platform_customer_id: true,
+          mall_platform_seller_id: true,
+          mall_platform_administrator_id: true,
+          reason: true,
+          status: true,
+          reviewed_at: true,
+          review_note: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+        },
+      });
+    if (refundRequest.mall_platform_seller_id !== props.seller.id) {
+      throw new HttpException("Forbidden", 403);
+    }
+    if (refundRequest.status !== "pending") {
+      throw new HttpException("Refund request is not pending", 400);
+    }
+    const snapshotCreatedAt = new Date().toISOString();
+    await prisma.mall_platform_refund_request_snapshots.create({
+      data: {
+        id: v4(),
+        mall_platform_refund_request_id: refundRequest.id,
+        snapshot_reason: "seller approval recorded",
+        status_before: refundRequest.status,
+        status_after: "approved",
+        reviewer_role: "seller",
+        reviewer_note: "approved",
+        created_at: snapshotCreatedAt,
+      },
+    });
+    await prisma.mall_platform_refund_requests.update({
+      where: {
+        id: props.refundRequestId,
+      },
+      data: {
+        status: "approved",
+        reviewed_at: snapshotCreatedAt,
+        review_note: "approved",
+        updated_at: snapshotCreatedAt,
+      },
+    });
+    const updated =
+      await prisma.mall_platform_refund_requests.findUniqueOrThrow({
+        where: {
+          id: props.refundRequestId,
+        },
+        ...MallPlatformRefundRequestTransformer.select(),
+      });
+    return await MallPlatformRefundRequestTransformer.transform(updated);
+  });
+}

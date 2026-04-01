@@ -16,13 +16,16 @@ export async function deleteShoppingMallMemberWishlistsWishlistId(props: {
   wishlistId: string & tags.Format<"uuid">;
 }): Promise<void> {
   await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.shopping_mall_wishlists.findFirstOrThrow({
+    const wishlist = await tx.shopping_mall_wishlists.findFirst({
       where: {
         id: props.wishlistId,
         shopping_mall_member_id: props.member.id,
       },
       select: { id: true },
     });
+    if (wishlist === null) {
+      throw new HttpException("Not Found", 404);
+    }
     await tx.shopping_mall_wishlists.delete({
       where: { id: props.wishlistId },
     });

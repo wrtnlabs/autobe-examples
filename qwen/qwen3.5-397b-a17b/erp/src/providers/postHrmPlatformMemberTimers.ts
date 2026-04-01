@@ -1,6 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
+import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
@@ -23,62 +25,59 @@ export async function postHrmPlatformMemberTimers(props: {
   member: MemberPayload;
   body: IHrmPlatformTimer.ICreate;
 }): Promise<IHrmPlatformTimer> {
-  // Get the member session to find employee_id
-  const session =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findUniqueOrThrow({
-      where: { id: props.member.session_id },
-      select: { member_id: true },
-    });
-  // Find the employee record for this member
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        member_id: session.member_id,
+        user_id: props.member.id,
         deleted_at: null,
       },
-      select: { id: true, status: true },
     });
-  // Verify employee is active
-  if (employee.status !== "active") {
-    throw new HttpException("Employee is not active", 403);
-  }
-  // Check if employee already has an active timer
   const existingTimer = await MyGlobal.prisma.hrm_platform_timers.findFirst({
     where: {
       employee_id: employee.id,
-      stopped_at: null,
       deleted_at: null,
     },
   });
   if (existingTimer !== null) {
-    throw new HttpException("Employee already has an active timer", 409);
+    throw new HttpException("Active timer already exists", 409);
   }
-  // Verify project membership exists
-  const projectMembership =
-    await MyGlobal.prisma.hrm_platform_project_members.findFirstOrThrow({
+  const projectMember =
+    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
-        hrm_platform_employee_id: employee.id,
-        hrm_platform_project_id: props.body.project_id,
-        deleted_at: null,
+        employee: {
+          id: employee.id,
+        },
+        project: { id: props.body.project_id },
       },
     });
-  // If task_id provided, verify task belongs to project
+  if (projectMember === null) {
+    throw new HttpException(
+      "Employee is not a member of the specified project",
+      400,
+    );
+  }
   if (props.body.task_id !== undefined && props.body.task_id !== null) {
-    await MyGlobal.prisma.hrm_platform_tasks.findFirstOrThrow({
+    const task = await MyGlobal.prisma.hrm_platform_tasks.findFirst({
       where: {
         id: props.body.task_id,
         hrm_platform_project_id: props.body.project_id,
       },
     });
+    if (task === null) {
+      throw new HttpException(
+        "Task does not belong to the specified project",
+        400,
+      );
+    }
   }
-  // Create timer using collector
   const created = await MyGlobal.prisma.hrm_platform_timers.create({
     data: await HrmPlatformTimerCollector.collect({
       body: props.body,
-      hrmPlatformEmployees: { id: employee.id },
+      hrmPlatformEmployees: {
+        id: employee.id,
+      },
     }),
     ...HrmPlatformTimerTransformer.select(),
   });
-  // Transform and return
   return await HrmPlatformTimerTransformer.transform(created);
 }

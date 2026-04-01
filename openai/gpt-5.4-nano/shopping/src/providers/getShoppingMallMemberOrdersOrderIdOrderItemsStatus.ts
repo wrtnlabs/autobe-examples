@@ -24,31 +24,28 @@ export async function getShoppingMallMemberOrdersOrderIdOrderItemsStatus(props: 
   member: MemberPayload;
   orderId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallOrderItem> {
-  const order = await MyGlobal.prisma.shopping_mall_orders.findFirstOrThrow({
-    where: {
-      id: props.orderId,
-      deleted_at: null,
-    },
+  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
+    where: { id: props.orderId },
     select: {
       id: true,
       shopping_customer_id: true,
+      deleted_at: true,
     },
   });
+  if (order.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
+  }
   if (order.shopping_customer_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const items = await MyGlobal.prisma.shopping_mall_order_items.findMany({
-    where: {
-      shopping_mall_order_id: props.orderId,
-      deleted_at: null,
-    },
-    orderBy: {
-      created_at: "asc",
-    },
-    ...ShoppingMallOrderItemTransformer.select(),
-  });
-  if (items.length === 0) {
-    throw new HttpException("Order has no items", 404);
-  }
-  return await ShoppingMallOrderItemTransformer.transform(items[0]);
+  const orderItem =
+    await MyGlobal.prisma.shopping_mall_order_items.findFirstOrThrow({
+      where: {
+        shopping_mall_order_id: props.orderId,
+        deleted_at: null,
+      },
+      orderBy: { created_at: "desc" },
+      ...ShoppingMallOrderItemTransformer.select(),
+    });
+  return await ShoppingMallOrderItemTransformer.transform(orderItem);
 }

@@ -11,7 +11,6 @@ export namespace HrmPlatformDepartmentCollector {
   export async function collect(props: {
     body: IHrmPlatformDepartment.ICreate;
     hrmPlatformOrganizations: IEntity;
-    hrmPlatformMemberSessions: IEntity;
   }) {
     const id: string = v4();
     return {
@@ -21,15 +20,12 @@ export namespace HrmPlatformDepartmentCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      organization: { connect: { id: props.hrmPlatformOrganizations.id } },
+      organization: {
+        connect: { id: props.hrmPlatformOrganizations.id },
+      },
       parent: props.body.parent_department_id
         ? { connect: { id: props.body.parent_department_id } }
         : undefined,
-      childDepartments: undefined,
-      employees: undefined,
-      employeeSnapshots: undefined,
-      snapshots: undefined,
-      childSnapshots: undefined,
     } satisfies Prisma.hrm_platform_departmentsCreateInput;
   }
 }

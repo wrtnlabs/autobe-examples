@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallWishlist";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -17,6 +18,16 @@ export namespace ShoppingMallWishlistAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        member: {
+          select: {
+            id: true,
+          },
+        },
+        items: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.shopping_mall_wishlistsFindManyArgs;
   }

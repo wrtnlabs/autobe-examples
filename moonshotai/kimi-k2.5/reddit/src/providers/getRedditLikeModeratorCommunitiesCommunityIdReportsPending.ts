@@ -34,25 +34,25 @@ export async function getRedditLikeModeratorCommunitiesCommunityIdReportsPending
   });
   if (moderatorRole === null) {
     throw new HttpException(
-      "Forbidden: Not a moderator of this community",
+      "Forbidden - Not a moderator of this community",
       403,
     );
   }
-  // Default pagination
+  // Pagination defaults
   const page = 1;
   const limit = 100;
   const skip = (page - 1) * limit;
-  // Query pending reports with related data
+  // Query pending reports for this community
   const reports = await MyGlobal.prisma.reddit_like_reports.findMany({
     where: {
       community_id: props.communityId,
       status: "pending",
     },
-    skip,
-    take: limit,
     orderBy: {
       created_at: "desc",
     },
+    skip,
+    take: limit,
     ...RedditLikeReportAtSummaryTransformer.select(),
   });
   // Get total count for pagination
@@ -62,13 +62,13 @@ export async function getRedditLikeModeratorCommunitiesCommunityIdReportsPending
       status: "pending",
     },
   });
-  // Transform reports to DTO
-  const data = await ArrayUtil.asyncMap(
+  // Transform results
+  const transformedReports = await ArrayUtil.asyncMap(
     reports,
     RedditLikeReportAtSummaryTransformer.transform,
   );
   return {
-    data,
+    data: transformedReports,
     pagination: {
       current: page,
       limit: limit,

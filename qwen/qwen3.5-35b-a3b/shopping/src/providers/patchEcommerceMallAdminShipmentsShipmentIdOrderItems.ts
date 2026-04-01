@@ -27,26 +27,27 @@ export async function patchEcommerceMallAdminShipmentsShipmentIdOrderItems(props
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const shipment =
-    await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
-      where: { id: props.shipmentId },
-    });
-  const whereInput = {
+  await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
+    where: { id: props.shipmentId },
+    select: { id: true },
+  });
+  const whereInput: Prisma.ecommerce_mall_shipments_order_itemsWhereInput = {
     ecommerce_mall_shipment_id: props.shipmentId,
     deleted_at: null,
     ...(props.body.shippedQuantity !== undefined && {
       shipped_quantity: props.body.shippedQuantity,
     }),
-  } satisfies Prisma.ecommerce_mall_shipments_order_itemsWhereInput;
+  };
+  const orderByInput: Prisma.ecommerce_mall_shipments_order_itemsOrderByWithRelationInput[] =
+    props.body.sortBy === "shipped_quantity"
+      ? [{ shipped_quantity: props.body.sortOrder ?? "asc" }]
+      : [{ created_at: props.body.sortOrder ?? "desc" }];
   const data =
     await MyGlobal.prisma.ecommerce_mall_shipments_order_items.findMany({
       where: whereInput,
       skip,
       take: limit,
-      orderBy:
-        props.body.sortBy === "shipped_quantity"
-          ? { shipped_quantity: props.body.sortOrder ?? ("asc" as const) }
-          : { created_at: props.body.sortOrder ?? ("asc" as const) },
+      orderBy: orderByInput,
       ...EcommerceMallShipmentsOrderItemAtSummaryTransformer.select(),
     });
   const total =
@@ -54,15 +55,15 @@ export async function patchEcommerceMallAdminShipmentsShipmentIdOrderItems(props
       where: whereInput,
     });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallShipmentsOrderItemAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallShipmentsOrderItemAtSummaryTransformer.transform,
+    ),
+  } satisfies IPageIEcommerceMallShipmentsOrderItem.ISummary;
 }

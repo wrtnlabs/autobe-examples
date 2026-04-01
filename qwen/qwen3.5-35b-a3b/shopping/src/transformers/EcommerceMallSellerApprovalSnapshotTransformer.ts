@@ -4,8 +4,10 @@ import { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallAdminAtSummaryTransformer } from "./EcommerceMallAdminAtSummaryTransformer";
 
@@ -24,14 +26,10 @@ export namespace EcommerceMallSellerApprovalSnapshotTransformer {
         rejection_reason: true,
         created_at: true,
         approvalRequest: {
-          select: {
-            id: true,
-          },
+          select: { id: true },
         } satisfies Prisma.ecommerce_mall_seller_approval_requestsFindManyArgs,
         seller: {
-          select: {
-            id: true,
-          },
+          select: { id: true },
         } satisfies Prisma.ecommerce_mall_sellersFindManyArgs,
         actor: EcommerceMallAdminAtSummaryTransformer.select(),
       },
@@ -40,29 +38,18 @@ export namespace EcommerceMallSellerApprovalSnapshotTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallSellerApprovalSnapshot> {
-    // Handle polymorphic actor reference based on actor_type discriminator
-    // Note: The actor relation only points to ecommerce_mall_admins table
-    // When actor_type is 'superAdmin', input.actor will be null
-    let actor:
-      | IEcommerceMallAdmin.ISummary
-      | IEcommerceMallSuperAdmin.ISummary
-      | null = null;
-    if (input.actor_type === "admin" && input.actor) {
-      actor = await EcommerceMallAdminAtSummaryTransformer.transform(
-        input.actor,
-      );
-    }
-    // For superAdmin type, actor remains null since there's no relation to super_admins table
     return {
       id: input.id,
       approvalRequestId: input.approvalRequest.id,
       sellerId: input.seller.id,
-      actor,
+      actor: input.actor
+        ? await EcommerceMallAdminAtSummaryTransformer.transform(input.actor)
+        : null,
       actorType: input.actor_type,
       fromStatus: input.from_status,
       toStatus: input.to_status,
       rejectionReason: input.rejection_reason ?? null,
-      createdAt: toISOStringSafe(input.created_at),
+      createdAt: input.created_at.toISOString(),
     };
   }
 }

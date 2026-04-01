@@ -16,72 +16,63 @@ export async function deleteHrmsMemberProjectsProjectIdTasksTaskId(props: {
   projectId: string & tags.Format<"uuid">;
   taskId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify project exists and belongs to member's organization
-  const project = await MyGlobal.prisma.hrms_projects.findUnique({
+  // 1. Verify project exists and user has project:manage permission
+  const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
     where: { id: props.projectId },
-    select: { id: true, hrms_organization_id: true },
+    select: { id: true, hrms_organization_id: true, status: true },
   });
-  if (!project) {
-    throw new HttpException("Project not found", 404);
+  // Get organization member to check role permissions
+  const organizationMember =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        hrms_member_id: props.member.id,
+        hrms_organization_id: project.hrms_organization_id,
+      },
+    });
+  if (organizationMember === null) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Verify user belongs to the project's organization
-  const memberOrg = await MyGlobal.prisma.hrms_organization_members.findFirst({
+  // Check if user has project:manage permission through role
+  const projectMember = await MyGlobal.prisma.hrms_project_members.findFirst({
     where: {
-      hrms_member_id: props.member.id,
-      hrms_organization_id: project.hrms_organization_id,
+      project_id: props.projectId,
+      employee: { organizationMember: { id: organizationMember.id } },
     },
-    select: { hrms_organization_role_id: true },
   });
-  if (!memberOrg) {
-    throw new HttpException("You are not a member of this organization", 403);
+  if (projectMember === null) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Check if user has project:manage permission (Owner or Manager roles)
-  const role = await MyGlobal.prisma.hrms_organization_roles.findUnique({
-    where: { id: memberOrg.hrms_organization_role_id },
-    select: { id: true, organization_id: true, name: true, is_builtin: true },
+  // 2. Validate task exists, belongs to project, and is not already deleted
+  const task = await MyGlobal.prisma.hrms_tasks.findFirstOrThrow({
+    where: {
+      id: props.taskId,
+      hrms_project_id: props.projectId,
+      deleted_at: null,
+    },
+    select: { id: true, title: true, hrms_project_id: true },
   });
-  if (!role || !role.is_builtin) {
-    throw new HttpException("Forbidden: Insufficient permissions", 403);
-  }
-  const hasManagePermission = role.name === "Owner" || role.name === "Manager";
-  if (!hasManagePermission) {
-    throw new HttpException(
-      "Forbidden: You don't have permission to manage this project",
-      403,
-    );
-  }
-  // Verify task exists and belongs to project
-  const task = await MyGlobal.prisma.hrms_tasks.findUnique({
-    where: { id: props.taskId },
-    select: { id: true, hrms_project_id: true, deleted_at: true, title: true },
-  });
-  if (!task || task.hrms_project_id !== props.projectId) {
-    throw new HttpException("Task not found", 404);
-  }
-  // Verify task is not already deleted
-  if (task.deleted_at !== null) {
-    throw new HttpException("Task already deleted", 400);
-  }
-  // Soft delete the task by setting deleted_at timestamp
+  // 3. Soft delete the task
   await MyGlobal.prisma.hrms_tasks.update({
     where: { id: props.taskId },
-    data: {
-      deleted_at: new Date(),
-    },
+    data: { deleted_at: toISOStringSafe(new Date()) },
   });
-  // Create activity log entry for audit trail
+  // 4. Create activity log entry
   await MyGlobal.prisma.hrms_activity_logs.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
+      id: v4(),
       organization_id: project.hrms_organization_id,
       performed_by_id: props.member.id,
-      action_type: "task.deleted",
-      target_entity: "task",
       target_id: props.taskId,
-      details: `Task "${task.title}" was deleted`,
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
+      details: JSON.stringify({
+        task_id: props.taskId,
+        task_title: task.title,
+        project_id: props.projectId,
+        action: "task_deleted",
+      }),
+      action_type: "task_deleted",
+      target_entity: "task",
+      updated_at: toISOStringSafe(new Date()),
+      created_at: toISOStringSafe(new Date()),
     },
   });
 }

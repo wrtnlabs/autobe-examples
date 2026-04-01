@@ -19,20 +19,20 @@ export async function patchShoppingMallAdminAdmins(props: {
   admin: AdminPayload;
   body: IShoppingMallAdmin.IRequest;
 }): Promise<IPageIShoppingMallAdmin.ISummary> {
-  // Verify admin exists and check grade level
+  // Fetch admin record to check grade
   const adminRecord = await MyGlobal.prisma.shopping_mall_admins.findUnique({
     where: {
       id: props.admin.id,
-      deleted_at: null,
     },
     select: {
       grade: true,
     },
   });
-  if (adminRecord === null || adminRecord.grade !== "super") {
+  // Validate super admin grade
+  if (adminRecord?.grade !== "super") {
     throw new HttpException("Forbidden", 403);
   }
-  // Parse pagination parameters with defaults and validation
+  // Parse pagination parameters with defaults
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
@@ -40,27 +40,30 @@ export async function patchShoppingMallAdminAdmins(props: {
   const whereInput: Prisma.shopping_mall_adminsWhereInput = {
     deleted_at: null,
   };
-  // Apply search filter (email LIKE)
-  if (props.body.search != null && props.body.search !== "") {
+  // Apply grade filter if provided
+  if (props.body.grade !== null && props.body.grade !== undefined) {
+    whereInput.grade = props.body.grade;
+  }
+  // Apply status filter if provided
+  if (props.body.status !== null && props.body.status !== undefined) {
+    whereInput.status = props.body.status;
+  }
+  // Apply email search if provided
+  if (props.body.search !== null && props.body.search !== undefined) {
     whereInput.email = {
       contains: props.body.search,
     };
   }
-  // Apply grade filter
-  if (props.body.grade != null) {
-    whereInput.grade = props.body.grade;
-  }
-  // Apply status filter
-  if (props.body.status != null) {
-    whereInput.status = props.body.status;
-  }
   // Build ORDER BY clause
-  const sortBy = props.body.sortBy ?? "created_at";
-  const sortOrder = props.body.sortOrder ?? "desc";
-  const orderByInput: Prisma.shopping_mall_adminsOrderByWithRelationInput = {
-    [sortBy]: sortOrder,
-  };
-  // Fetch data with pagination
+  const orderByInput: Prisma.shopping_mall_adminsOrderByWithRelationInput =
+    props.body.sortBy !== null && props.body.sortBy !== undefined
+      ? {
+          [props.body.sortBy]: props.body.sortOrder ?? "desc",
+        }
+      : {
+          created_at: "desc" as const,
+        };
+  // Execute query
   const data = await MyGlobal.prisma.shopping_mall_admins.findMany({
     where: whereInput,
     skip,
@@ -68,7 +71,7 @@ export async function patchShoppingMallAdminAdmins(props: {
     orderBy: orderByInput,
     ...ShoppingMallAdminAtSummaryTransformer.select(),
   });
-  // Get total count
+  // Count total records
   const total = await MyGlobal.prisma.shopping_mall_admins.count({
     where: whereInput,
   });
@@ -77,15 +80,15 @@ export async function patchShoppingMallAdminAdmins(props: {
     data,
     ShoppingMallAdminAtSummaryTransformer.transform,
   );
-  // Calculate pages, handle edge case where limit is 0
-  const pages = limit > 0 ? Math.ceil(total / limit) : 0;
+  // Build pagination metadata
+  const pagination: IPage.IPagination = {
+    current: page,
+    limit: limit,
+    records: total,
+    pages: Math.ceil(total / limit),
+  };
   return {
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: pages,
-    },
+    pagination,
     data: transformedData,
   };
 }

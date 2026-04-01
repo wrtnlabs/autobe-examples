@@ -27,10 +27,11 @@ export async function getEcommerceMallAdminProductsProductIdSnapshotsSnapshotId(
       },
       ...EcommerceMallProductSnapshotTransformer.select(),
     });
+  // Validate that the snapshot's product matches the path parameter
   if (snapshot.product.id !== props.productId) {
     throw new HttpException(
       "Snapshot does not belong to the specified product",
-      404,
+      400,
     );
   }
   return await EcommerceMallProductSnapshotTransformer.transform(snapshot);

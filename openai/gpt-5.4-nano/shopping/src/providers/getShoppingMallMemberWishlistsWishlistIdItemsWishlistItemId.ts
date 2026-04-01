@@ -21,7 +21,7 @@ export async function getShoppingMallMemberWishlistsWishlistIdItemsWishlistItemI
   wishlistId: string & tags.Format<"uuid">;
   wishlistItemId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallWishlistItem> {
-  const item =
+  const wishlistItem =
     await MyGlobal.prisma.shopping_mall_wishlist_items.findFirstOrThrow({
       where: {
         id: props.wishlistItemId,
@@ -29,14 +29,14 @@ export async function getShoppingMallMemberWishlistsWishlistIdItemsWishlistItemI
         deleted_at: null,
         wishlist: {
           id: props.wishlistId,
-          shopping_mall_member_id: props.member.id,
           deleted_at: null,
+          shopping_mall_member_id: props.member.id,
         },
         product: {
           deleted_at: null,
         },
       },
-      ...ShoppingMallWishlistItemTransformer.select(),
+      select: ShoppingMallWishlistItemTransformer.select().select,
     });
-  return await ShoppingMallWishlistItemTransformer.transform(item);
+  return await ShoppingMallWishlistItemTransformer.transform(wishlistItem);
 }

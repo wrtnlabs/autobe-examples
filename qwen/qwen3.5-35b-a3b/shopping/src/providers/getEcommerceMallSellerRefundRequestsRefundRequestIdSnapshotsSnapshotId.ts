@@ -21,33 +21,31 @@ export async function getEcommerceMallSellerRefundRequestsRefundRequestIdSnapsho
   const snapshot =
     await MyGlobal.prisma.ecommerce_mall_refund_request_snapshots.findUniqueOrThrow(
       {
-        where: {
-          id: props.snapshotId,
-          deleted_at: null,
-        },
+        where: { id: props.snapshotId },
         ...EcommerceMallRefundRequestSnapshotTransformer.select(),
       },
     );
-  if (snapshot.refundRequest.id !== props.refundRequestId) {
-    throw new HttpException("Not Found", 404);
-  }
   const refundRequest =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findUniqueOrThrow({
-      where: {
-        id: snapshot.refundRequest.id,
-        deleted_at: null,
-      },
+      where: { id: props.refundRequestId },
+      include: { orderItem: true },
     });
-  const orderItem =
-    await MyGlobal.prisma.ecommerce_mall_order_items.findUniqueOrThrow({
-      where: {
-        id: refundRequest.ecommerce_mall_order_item_id,
-      },
+  if (refundRequest.orderItem === null) {
+    throw new HttpException("Invalid refund request", 400);
+  }
+  const orderItem = refundRequest.orderItem;
+  const productSnapshot =
+    await MyGlobal.prisma.ecommerce_mall_product_snapshots.findUniqueOrThrow({
+      where: { id: orderItem.product_snapshot_id },
+      select: { ecommerce_mall_product_id: true },
     });
-  if (orderItem.seller_snapshot_id !== props.seller.id) {
+  const product =
+    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+      where: { id: productSnapshot.ecommerce_mall_product_id },
+      select: { seller_id: true },
+    });
+  if (product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return await EcommerceMallRefundRequestSnapshotTransformer.transform(
-    snapshot,
-  );
+  return EcommerceMallRefundRequestSnapshotTransformer.transform(snapshot);
 }

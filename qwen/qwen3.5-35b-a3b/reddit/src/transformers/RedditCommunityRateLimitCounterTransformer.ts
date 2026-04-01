@@ -4,8 +4,10 @@ import { IRedditCommunityRateLimitCounter } from "@ORGANIZATION/PROJECT-api/lib/
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
@@ -34,12 +36,12 @@ export namespace RedditCommunityRateLimitCounterTransformer {
     return {
       id: input.id,
       endpoint: input.endpoint,
-      requestCount: Number(input.request_count),
-      windowStart: input.window_start.toISOString(),
-      windowEnd: input.window_end.toISOString(),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      requestCount: input.request_count,
+      windowStart: toISOStringSafe(input.window_start),
+      windowEnd: toISOStringSafe(input.window_end),
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       member: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.member,
       ),

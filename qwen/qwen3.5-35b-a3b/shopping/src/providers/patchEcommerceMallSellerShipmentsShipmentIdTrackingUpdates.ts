@@ -23,6 +23,10 @@ export async function patchEcommerceMallSellerShipmentsShipmentIdTrackingUpdates
   shipmentId: string & tags.Format<"uuid">;
   body: IEcommerceMallShipmentTrackingUpdate.IRequest;
 }): Promise<IPageIEcommerceMallShipmentTrackingUpdate.ISummary> {
+  const page = Math.max(1, props.body.page ?? 1);
+  const limit = Math.min(100, Math.max(1, props.body.limit ?? 100));
+  const skip = (page - 1) * limit;
+  // Verify shipment exists and belongs to seller
   const shipment = await MyGlobal.prisma.ecommerce_mall_shipments.findFirst({
     where: {
       id: props.shipmentId,
@@ -34,9 +38,7 @@ export async function patchEcommerceMallSellerShipmentsShipmentIdTrackingUpdates
   if (shipment === null) {
     throw new HttpException("Shipment not found", 404);
   }
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
+  // Build tracking status filter if provided
   const whereInput: Prisma.ecommerce_mall_shipment_tracking_updatesWhereInput =
     {
       shipment_id: props.shipmentId,
@@ -45,6 +47,7 @@ export async function patchEcommerceMallSellerShipmentsShipmentIdTrackingUpdates
         tracking_status: props.body.tracking_status,
       }),
     } satisfies Prisma.ecommerce_mall_shipment_tracking_updatesWhereInput;
+  // Query tracking updates with pagination
   const data =
     await MyGlobal.prisma.ecommerce_mall_shipment_tracking_updates.findMany({
       where: whereInput,
@@ -53,10 +56,12 @@ export async function patchEcommerceMallSellerShipmentsShipmentIdTrackingUpdates
       orderBy: { created_at: "desc" },
       ...EcommerceMallShipmentTrackingUpdateAtSummaryTransformer.select(),
     });
+  // Get total count
   const total =
     await MyGlobal.prisma.ecommerce_mall_shipment_tracking_updates.count({
       where: whereInput,
     });
+  // Transform and return paginated response
   return {
     data: await ArrayUtil.asyncMap(
       data,
@@ -64,7 +69,7 @@ export async function patchEcommerceMallSellerShipmentsShipmentIdTrackingUpdates
     ),
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,

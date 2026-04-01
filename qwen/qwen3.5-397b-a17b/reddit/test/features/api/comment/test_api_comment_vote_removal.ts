@@ -1,16 +1,14 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCloneComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneComment";
-import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import type { IRedditCloneKarmaScore } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneKarmaScore";
-import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
-import type { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
-import type { IRedditClonePostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostImage";
-import type { IRedditClonePostLink } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostLink";
-import type { IRedditClonePostText } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostText";
-import type { IRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneSubscription";
-import type { IRedditCloneVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneVote";
+import type { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
+import type { IRedditCommunityCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommentVote";
+import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
+import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
+import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
+import type { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
+import type { IRedditCommunityPostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostImage";
+import type { IRedditCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunitySubscription";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -20,157 +18,151 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_reddit_clone_communities_create } from "../../../generate/generate_random_reddit_clone_communities_create";
-import { generate_random_reddit_clone_member_posts_comments_create } from "../../../generate/generate_random_reddit_clone_member_posts_comments_create";
-import { generate_random_reddit_clone_member_posts_create } from "../../../generate/generate_random_reddit_clone_member_posts_create";
-import { generate_random_reddit_clone_member_subscriptions_create } from "../../../generate/generate_random_reddit_clone_member_subscriptions_create";
-import { prepare_random_reddit_clone_comment } from "../../../prepare/prepare_random_reddit_clone_comment";
-import { prepare_random_reddit_clone_community } from "../../../prepare/prepare_random_reddit_clone_community";
-import { prepare_random_reddit_clone_post } from "../../../prepare/prepare_random_reddit_clone_post";
-import { prepare_random_reddit_clone_post_image } from "../../../prepare/prepare_random_reddit_clone_post_image";
-import { prepare_random_reddit_clone_post_link } from "../../../prepare/prepare_random_reddit_clone_post_link";
-import { prepare_random_reddit_clone_post_text } from "../../../prepare/prepare_random_reddit_clone_post_text";
-import { prepare_random_reddit_clone_subscription } from "../../../prepare/prepare_random_reddit_clone_subscription";
+import { generate_random_reddit_community_member_comments_vote } from "../../../generate/generate_random_reddit_community_member_comments_vote";
+import { generate_random_reddit_community_member_communities_create } from "../../../generate/generate_random_reddit_community_member_communities_create";
+import { generate_random_reddit_community_member_posts_comments_create } from "../../../generate/generate_random_reddit_community_member_posts_comments_create";
+import { prepare_random_reddit_community_comment } from "../../../prepare/prepare_random_reddit_community_comment";
+import { prepare_random_reddit_community_comment_vote } from "../../../prepare/prepare_random_reddit_community_comment_vote";
+import { prepare_random_reddit_community_community } from "../../../prepare/prepare_random_reddit_community_community";
 
 /**
- * Test comment vote removal workflow.
- * 1. Create community with owner
- * 2. Register member A (voter) and member B (comment author)
- * 3. Member A subscribes to community
- * 4. Member B creates a post in the community
- * 5. Member B creates a comment on the post
- * 6. Member A casts initial UPVOTE on the comment
- * 7. Member A removes vote by submitting vote_type=null
- * 8. Validate vote record has deleted_at populated and vote_type preserved
+ * Test comment vote removal functionality.
+ *
+ * This test verifies that a member can remove their existing vote from a comment
+ * by sending direction: null, and that the comment's vote_score is correctly
+ * updated. It also verifies that after removing a vote, the member can cast
+ * a new vote on the same comment.
+ *
+ * Setup:
+ * 1. Create voter member account
+ * 2. Create comment author member account
+ * 3. Create a community
+ * 4. Subscribe voter to the community
+ * 5. Create a post in the community
+ * 6. Create a comment on the post (by comment author)
+ * 7. Cast initial UPVOTE on the comment (by voter)
+ *
+ * Test Steps:
+ * 1. Remove the vote by sending direction: null
+ * 2. Verify vote_score decreased by 1 (from +1 to 0)
+ * 3. Cast a DOWNVOTE on the same comment
+ * 4. Verify vote_score decreased by 1 (from 0 to -1)
  */
 export async function test_api_comment_vote_removal(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create community (using owner connection)
-  const ownerConnection: api.IConnection = { host: connection.host };
-  const owner = await authorize_member_join(ownerConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "Password123!",
-      username: RandomGenerator.name(1),
-      display_name: RandomGenerator.name(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IRedditCloneMember.IJoin,
-  });
-  typia.assert(owner);
-  const community = await generate_random_reddit_clone_communities_create(
-    ownerConnection,
-    {
-      body: {
-        name: RandomGenerator.alphabets(10),
-        description: RandomGenerator.paragraph({ sentences: 2 }),
-      },
-    },
-  );
-  typia.assert(community);
-  // 2. Register member A (voter)
+  // 1. Create voter member account
   const voterConnection: api.IConnection = { host: connection.host };
-  const voter = await authorize_member_join(voterConnection, {
+  const voterAuth = await authorize_member_join(voterConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "Password123!",
+      password: "TestPassword123!",
       username: RandomGenerator.name(1),
-      display_name: RandomGenerator.name(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IRedditCloneMember.IJoin,
+    },
   });
-  typia.assert(voter);
-  // 3. Register member B (comment author)
+  typia.assert(voterAuth);
+  // 2. Create comment author member account
   const authorConnection: api.IConnection = { host: connection.host };
-  const author = await authorize_member_join(authorConnection, {
+  const authorAuth = await authorize_member_join(authorConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "Password123!",
+      password: "TestPassword123!",
       username: RandomGenerator.name(1),
-      display_name: RandomGenerator.name(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IRedditCloneMember.IJoin,
+    },
   });
-  typia.assert(author);
-  // 4. Member A subscribes to community
+  typia.assert(authorAuth);
+  // 3. Create a community (using voter)
+  const community =
+    await generate_random_reddit_community_member_communities_create(
+      voterConnection,
+      {},
+    );
+  typia.assert(community);
+  // 4. Subscribe voter to the community
   const subscription =
-    await generate_random_reddit_clone_member_subscriptions_create(
+    await api.functional.redditCommunity.member.communities.subscription.create(
       voterConnection,
       {
-        body: {
-          community_id: community.id,
-        },
+        communityName: community.name,
       },
     );
   typia.assert(subscription);
-  // 5. Member B creates a post in the community
-  const post = await generate_random_reddit_clone_member_posts_create(
-    authorConnection,
+  // 5. Create a post in the community (using voter)
+  const post = await api.functional.redditCommunity.member.posts.create(
+    voterConnection,
     {
       body: {
+        post_type: "text",
         title: RandomGenerator.paragraph({ sentences: 1 }),
-        post_type: "TEXT" as const,
-        community_id: community.id,
-        text: {
-          body: RandomGenerator.content({ paragraphs: 2 }),
-        },
+        text_content: RandomGenerator.content({ paragraphs: 2 }),
       },
     },
   );
   typia.assert(post);
-  // 6. Member B creates a comment on the post
+  // 6. Create a comment on the post (using author)
   const comment =
-    await generate_random_reddit_clone_member_posts_comments_create(
+    await generate_random_reddit_community_member_posts_comments_create(
       authorConnection,
       {
-        body: {
-          body: RandomGenerator.paragraph({ sentences: 3 }),
-        },
         params: {
           postId: post.id,
+        },
+        body: {
+          content: RandomGenerator.paragraph({ sentences: 2 }),
         },
       },
     );
   typia.assert(comment);
-  // 7. Member A casts initial UPVOTE on the comment
-  const initialVote =
-    await api.functional.redditClone.member.comments.vote.putByCommentid(
+  // 7. Cast initial UPVOTE on the comment (using voter)
+  const upvoteResult =
+    await generate_random_reddit_community_member_comments_vote(
       voterConnection,
       {
-        commentId: comment.id,
+        params: {
+          commentId: comment.id,
+        },
         body: {
-          vote_type: "UPVOTE",
-        } satisfies IRedditCloneVote.IVote,
+          direction: "UPVOTE",
+        },
       },
     );
-  typia.assert(initialVote);
-  TestValidator.equals("initial vote type", initialVote.vote_type, "UPVOTE");
-  TestValidator.predicate(
-    "initial vote not deleted",
-    initialVote.deleted_at === null,
-  );
-  // 8. Member A removes vote by submitting vote_type=null
-  const removalVote =
-    await api.functional.redditClone.member.comments.vote.putByCommentid(
-      voterConnection,
-      {
-        commentId: comment.id,
-        body: {
-          vote_type: null,
-        } satisfies IRedditCloneVote.IVote,
+  typia.assert(upvoteResult);
+  // Verify initial upvote increased score to 1
+  TestValidator.equals("upvote score", upvoteResult.vote_score, 1);
+  // 8. Remove the vote by sending direction: null
+  const removeVoteResult =
+    await api.functional.redditCommunity.member.comments.vote(voterConnection, {
+      commentId: comment.id,
+      body: {
+        direction: null,
       },
-    );
-  typia.assert(removalVote);
-  // Validate vote record has deleted_at populated
-  TestValidator.predicate(
-    "vote removed with deleted_at",
-    removalVote.deleted_at !== null,
+    });
+  typia.assert(removeVoteResult);
+  // 9. Verify vote_score decreased by 1 (from +1 to 0)
+  TestValidator.equals("vote removal score", removeVoteResult.vote_score, 0);
+  TestValidator.notEquals(
+    "vote score changed after removal",
+    upvoteResult.vote_score,
+    removeVoteResult.vote_score,
   );
-  TestValidator.equals("vote type preserved", removalVote.vote_type, "UPVOTE");
+  // 10. Cast a DOWNVOTE on the same comment to verify vote can be re-established
+  const downvoteResult =
+    await api.functional.redditCommunity.member.comments.vote(voterConnection, {
+      commentId: comment.id,
+      body: {
+        direction: "DOWNVOTE",
+      },
+    });
+  typia.assert(downvoteResult);
+  // 11. Verify vote_score decreased by 1 (from 0 to -1)
+  TestValidator.equals("downvote score", downvoteResult.vote_score, -1);
+  TestValidator.notEquals(
+    "vote score changed after downvote",
+    removeVoteResult.vote_score,
+    downvoteResult.vote_score,
+  );
 }

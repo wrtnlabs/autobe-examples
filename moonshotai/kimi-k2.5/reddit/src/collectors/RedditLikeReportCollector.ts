@@ -11,24 +11,28 @@ export namespace RedditLikeReportCollector {
   export async function collect(props: {
     body: IRedditLikeReport.ICreate;
     redditLikeMembers: IEntity;
+    redditLikeMemberSessions: IEntity;
   }) {
     const id: string = v4();
-    const now: Date = new Date();
     return {
       id,
       reason: props.body.reason,
       status: "pending",
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       reporter: { connect: { id: props.redditLikeMembers.id } },
       community: { connect: { id: props.body.communityId } },
       reportOfPost: props.body.postId
         ? {
             create: {
               id: v4(),
-              post: { connect: { id: props.body.postId } },
-              created_at: now,
-              updated_at: now,
+              created_at: new Date(),
+              updated_at: new Date(),
+              post: {
+                connect: {
+                  id: props.body.postId,
+                },
+              },
             },
           }
         : undefined,
@@ -36,9 +40,9 @@ export namespace RedditLikeReportCollector {
         ? {
             create: {
               id: v4(),
+              created_at: new Date(),
+              updated_at: new Date(),
               comment: { connect: { id: props.body.commentId } },
-              created_at: now,
-              updated_at: now,
             },
           }
         : undefined,

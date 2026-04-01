@@ -1,14 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
-import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformEmployeeContract } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployeeContract";
-import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { HrmPlatformEmployeeAtSummaryTransformer } from "./HrmPlatformEmployeeAtSummaryTransformer";
 
 export namespace HrmPlatformEmployeeContractAtSummaryTransformer {
   export type Payload = Prisma.hrm_platform_employee_contractsGetPayload<
@@ -24,7 +20,10 @@ export namespace HrmPlatformEmployeeContractAtSummaryTransformer {
         pay_period: true,
         working_hours_per_week: true,
         notes: true,
-        employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        employee: true,
       },
     } satisfies Prisma.hrm_platform_employee_contractsFindManyArgs;
   }
@@ -38,10 +37,7 @@ export namespace HrmPlatformEmployeeContractAtSummaryTransformer {
       pay_rate: input.pay_rate,
       pay_period: input.pay_period,
       working_hours_per_week: input.working_hours_per_week,
-      notes: input.notes ?? null,
-      employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
-        input.employee,
-      ),
+      is_active: input.end_date === null || input.end_date > new Date(),
     };
   }
 }

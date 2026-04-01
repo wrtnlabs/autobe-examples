@@ -2,8 +2,10 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallSellerTransformer {
@@ -15,22 +17,9 @@ export namespace EcommerceMallSellerTransformer {
       select: {
         id: true,
         email: true,
-        password_hash: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: true,
-        passwordResets: true,
-        emailVerifications: true,
-        products: true,
-        orderSnapshots: true,
-        shipments: true,
-        activityLogReferences: true,
-        notificationSubtypes: true,
-        cancellationRequests: true,
-        refundRequestSnapshotOfSellers: true,
-        approvalRequests: true,
-        approvalRequestSnapshots: true,
       },
     } satisfies Prisma.ecommerce_mall_sellersFindManyArgs;
   }

@@ -1,15 +1,15 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCategoryAtSummaryTransformer } from "./ShoppingMallCategoryAtSummaryTransformer";
-import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallProductSnapshotAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_product_snapshotsGetPayload<
@@ -20,26 +20,53 @@ export namespace ShoppingMallProductSnapshotAtSummaryTransformer {
       select: {
         id: true,
         name: true,
+        description: true,
         base_price: true,
-        snapshot_at: true,
+        created_at: true,
+        product: {
+          select: {
+            base_price: true,
+            variants: {
+              select: {
+                price_override: true,
+              },
+            } satisfies Prisma.shopping_mall_product_variantsFindManyArgs,
+          },
+        } satisfies Prisma.shopping_mall_productsFindManyArgs,
         category: ShoppingMallCategoryAtSummaryTransformer.select(),
-        snapshotBy: ShoppingMallSellerAtSummaryTransformer.select(),
+        snapshotVariants: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_product_snapshot_variantsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_product_snapshotsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallProductSnapshot.ISummary> {
+    const variantPrices = input.product.variants
+      .map((v) => v.price_override)
+      .filter((p): p is number => p !== null);
+    const minPrice =
+      variantPrices.length > 0
+        ? Math.min(...variantPrices)
+        : input.product.base_price;
+    const maxPrice =
+      variantPrices.length > 0
+        ? Math.max(...variantPrices)
+        : input.product.base_price;
     return {
       id: input.id,
       name: input.name,
       base_price: input.base_price,
-      snapshot_at: input.snapshot_at.toISOString(),
+      created_at: toISOStringSafe(input.created_at),
+      product: {
+        min: minPrice,
+        max: maxPrice,
+      } satisfies IShoppingMallProduct.ISummary,
       category: await ShoppingMallCategoryAtSummaryTransformer.transform(
         input.category,
-      ),
-      seller: await ShoppingMallSellerAtSummaryTransformer.transform(
-        input.snapshotBy,
       ),
     };
   }

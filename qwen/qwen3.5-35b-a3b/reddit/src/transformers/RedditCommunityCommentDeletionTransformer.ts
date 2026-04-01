@@ -6,8 +6,10 @@ import { IRedditCommunityMemberSession } from "@ORGANIZATION/PROJECT-api/lib/str
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityCommentAtSummaryTransformer } from "./RedditCommunityCommentAtSummaryTransformer";
 import { RedditCommunityMemberSessionAtSummaryTransformer } from "./RedditCommunityMemberSessionAtSummaryTransformer";
@@ -34,10 +36,10 @@ export namespace RedditCommunityCommentDeletionTransformer {
   ): Promise<IRedditCommunityCommentDeletion> {
     return {
       id: input.id,
-      deleted_at: input.deleted_at.toISOString(),
-      deletion_reason: input.deletion_reason ?? undefined,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
+      deleted_at: toISOStringSafe(input.deleted_at),
+      deletion_reason: input.deletion_reason ?? null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
       comment: await RedditCommunityCommentAtSummaryTransformer.transform(
         input.comment,
       ),

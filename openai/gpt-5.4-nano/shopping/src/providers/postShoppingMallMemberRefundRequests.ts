@@ -18,36 +18,35 @@ export async function postShoppingMallMemberRefundRequests(props: {
   member: MemberPayload;
   body: IShoppingMallRefundRequest.ICreate;
 }): Promise<IShoppingMallRefundRequest> {
-  const customerId = props.member.id;
   if (props.body.customerReason.trim().length === 0) {
-    throw new HttpException("Customer reason is required", 400);
+    throw new HttpException("customerReason is required", 400);
   }
+  const memberId = props.member.id;
   const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
-      where: { id: props.body.orderItemId },
+      where: { id: props.body.orderItemId, deleted_at: null } as any,
       select: {
         id: true,
-        shopping_mall_order_id: true,
         line_item_status: true,
         deleted_at: true,
+        shopping_mall_order_id: true,
       },
     });
-  if (orderItem.deleted_at !== null) {
-    throw new HttpException("Order item not found", 404);
-  }
-  const shoppingMallOrder =
-    await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
-      where: { id: orderItem.shopping_mall_order_id },
-      select: {
-        shopping_customer_id: true,
-      },
-    });
-  if (shoppingMallOrder.shopping_customer_id !== customerId) {
+  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
+    where: { id: orderItem.shopping_mall_order_id },
+    select: { shopping_customer_id: true },
+  });
+  if (order.shopping_customer_id !== memberId) {
     throw new HttpException("Forbidden", 403);
   }
-  const isDelivered = orderItem.line_item_status === "delivered";
-  if (!isDelivered) {
-    throw new HttpException("Order item is not eligible for refund", 400);
+  if (orderItem.line_item_status !== "delivered") {
+    throw new HttpException("Refund is only available after delivery", 400);
+  }
+  const decidedAtIso = orderItem.deleted_at
+    ? toISOStringSafe(orderItem.deleted_at)
+    : null;
+  if (!decidedAtIso) {
+    throw new HttpException("Missing delivery time", 400);
   }
   const created = await MyGlobal.prisma.shopping_mall_refund_requests.create({
     data: await ShoppingMallRefundRequestCollector.collect({

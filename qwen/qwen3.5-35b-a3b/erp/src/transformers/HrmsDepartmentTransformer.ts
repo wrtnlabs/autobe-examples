@@ -4,8 +4,10 @@ import { IHrmsMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsMembe
 import { IHrmsOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsDepartmentAtSummaryTransformer } from "./HrmsDepartmentAtSummaryTransformer";
 import { HrmsOrganizationAtSummaryTransformer } from "./HrmsOrganizationAtSummaryTransformer";
@@ -25,6 +27,7 @@ export namespace HrmsDepartmentTransformer {
         deleted_at: true,
         organization: HrmsOrganizationAtSummaryTransformer.select(),
         parent: HrmsDepartmentAtSummaryTransformer.select(),
+        employees: HrmsDepartmentAtSummaryTransformer.select(),
         children: HrmsDepartmentAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrms_departmentsFindManyArgs;
@@ -39,13 +42,14 @@ export namespace HrmsDepartmentTransformer {
         ? await HrmsDepartmentAtSummaryTransformer.transform(input.parent)
         : null,
       name: input.name,
-      description: input.description ?? undefined,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      description: input.description ?? null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       children: await ArrayUtil.asyncMap(
         input.children,
-        HrmsDepartmentAtSummaryTransformer.transform,
+        async (child) =>
+          await HrmsDepartmentAtSummaryTransformer.transform(child),
       ),
     };
   }

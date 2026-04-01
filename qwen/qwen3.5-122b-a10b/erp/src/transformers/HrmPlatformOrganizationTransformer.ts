@@ -23,6 +23,27 @@ export namespace HrmPlatformOrganizationTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        snapshots: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_organization_snapshotsFindManyArgs,
+        employees: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_employeesFindManyArgs,
+        departments: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_departmentsFindManyArgs,
+        employeeSnapshots: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_employee_snapshotsFindManyArgs,
+        projects: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_projectsFindManyArgs,
+        roles: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_rolesFindManyArgs,
+        activityLogs: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_activity_logsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_organizationsFindManyArgs;
   }

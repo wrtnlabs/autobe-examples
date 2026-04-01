@@ -5,8 +5,10 @@ import { IEcommerceMallShipmentTrackingUpdate } from "@ORGANIZATION/PROJECT-api/
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallShipmentAtSummaryTransformer } from "./EcommerceMallShipmentAtSummaryTransformer";
 
@@ -20,8 +22,8 @@ export namespace EcommerceMallShipmentTrackingUpdateAtSummaryTransformer {
       select: {
         id: true,
         tracking_status: true,
-        created_at: true,
         carrier_response: true,
+        created_at: true,
         updated_at: true,
         deleted_at: true,
         shipment: EcommerceMallShipmentAtSummaryTransformer.select(),
@@ -33,11 +35,11 @@ export namespace EcommerceMallShipmentTrackingUpdateAtSummaryTransformer {
   ): Promise<IEcommerceMallShipmentTrackingUpdate.ISummary> {
     return {
       id: input.id,
+      tracking_status: input.tracking_status,
+      created_at: input.created_at.toISOString(),
       shipment: await EcommerceMallShipmentAtSummaryTransformer.transform(
         input.shipment,
       ),
-      tracking_status: input.tracking_status,
-      created_at: input.created_at.toISOString(),
     };
   }
 }

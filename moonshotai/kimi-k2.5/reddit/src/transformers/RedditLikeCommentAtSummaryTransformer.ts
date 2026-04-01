@@ -3,8 +3,10 @@ import { IRedditLikeComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRe
 import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeMemberAtSummaryTransformer } from "./RedditLikeMemberAtSummaryTransformer";
 
@@ -12,38 +14,6 @@ export namespace RedditLikeCommentAtSummaryTransformer {
   export type Payload = Prisma.reddit_like_commentsGetPayload<
     ReturnType<typeof select>
   >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        content: true,
-        vote_score: true,
-        is_edited: true,
-        is_deleted: true,
-        created_at: true,
-        updated_at: true,
-        author: RedditLikeMemberAtSummaryTransformer.select(),
-        post: {
-          select: { id: true },
-        } satisfies Prisma.reddit_like_postsFindManyArgs,
-        parent: {
-          select: { id: true },
-        } satisfies Prisma.reddit_like_commentsFindManyArgs,
-        replies: {
-          select: { id: true },
-        } satisfies Prisma.reddit_like_commentsFindManyArgs,
-        snapshots: {
-          select: { id: true },
-        } satisfies Prisma.reddit_like_comment_snapshotsFindManyArgs,
-        votes: {
-          select: { id: true },
-        } satisfies Prisma.reddit_like_comment_votesFindManyArgs,
-        reports: {
-          select: { id: true },
-        } satisfies Prisma.reddit_like_report_of_commentsFindManyArgs,
-      },
-    } satisfies Prisma.reddit_like_commentsFindManyArgs;
-  }
   export async function transform(
     input: Payload,
   ): Promise<IRedditLikeComment.ISummary> {
@@ -57,8 +27,27 @@ export namespace RedditLikeCommentAtSummaryTransformer {
       is_edited: input.is_edited,
       is_deleted: input.is_deleted,
       created_at: input.created_at.toISOString(),
-      parent_id: input.parent?.id ?? null,
+      parent_id: input.parent_id,
       reply_count: input.replies.length,
     };
+  }
+  export function select() {
+    return {
+      select: {
+        id: true,
+        content: true,
+        vote_score: true,
+        is_edited: true,
+        is_deleted: true,
+        created_at: true,
+        parent_id: true,
+        author: RedditLikeMemberAtSummaryTransformer.select(),
+        replies: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.reddit_like_commentsFindManyArgs,
+      },
+    } satisfies Prisma.reddit_like_commentsFindManyArgs;
   }
 }

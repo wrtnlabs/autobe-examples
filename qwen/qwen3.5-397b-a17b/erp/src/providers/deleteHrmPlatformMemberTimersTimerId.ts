@@ -18,21 +18,23 @@ export async function deleteHrmPlatformMemberTimersTimerId(props: {
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        member_id: props.member.id,
+        user_id: props.member.id,
         deleted_at: null,
       },
+      select: { id: true },
     });
-  await MyGlobal.prisma.hrm_platform_timers.findUniqueOrThrow({
-    where: {
-      id: props.timerId,
-      employee_id: employee.id,
-      deleted_at: null,
-    },
+  const timer = await MyGlobal.prisma.hrm_platform_timers.findUniqueOrThrow({
+    where: { id: props.timerId },
+    select: { id: true, employee_id: true, deleted_at: true },
   });
+  if (timer.employee_id !== employee.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (timer.deleted_at !== null) {
+    throw new HttpException("Timer already deleted", 400);
+  }
   await MyGlobal.prisma.hrm_platform_timers.update({
-    where: {
-      id: props.timerId,
-    },
+    where: { id: props.timerId },
     data: {
       deleted_at: new Date(),
     },

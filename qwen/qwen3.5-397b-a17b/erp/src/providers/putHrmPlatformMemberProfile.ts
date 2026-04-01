@@ -17,34 +17,30 @@ export async function putHrmPlatformMemberProfile(props: {
   member: MemberPayload;
   body: IHrmPlatformMember.IUpdate;
 }): Promise<IHrmPlatformMember> {
-  const updated = await MyGlobal.prisma.hrm_platform_members.update({
+  await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
     where: {
       id: props.member.id,
       deleted_at: null,
     },
+  });
+  await MyGlobal.prisma.hrm_platform_members.update({
+    where: { id: props.member.id },
     data: {
       ...(props.body.display_name !== undefined && {
         display_name: props.body.display_name,
       }),
-      ...(props.body.avatar_url !== undefined && {
-        avatar_url: props.body.avatar_url,
+      ...(props.body.avatar_image !== undefined && {
+        avatar_image: props.body.avatar_image ?? null,
       }),
       ...(props.body.phone_number !== undefined && {
-        phone_number: props.body.phone_number,
+        phone_number: props.body.phone_number ?? null,
       }),
       updated_at: new Date(),
     },
+  });
+  const updated = await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
+    where: { id: props.member.id },
     ...HrmPlatformMemberTransformer.select(),
   });
-  if (props.body.display_name !== undefined) {
-    await MyGlobal.prisma.hrm_platform_employees.updateMany({
-      where: {
-        member_id: props.member.id,
-      },
-      data: {
-        display_name: props.body.display_name,
-      },
-    });
-  }
   return await HrmPlatformMemberTransformer.transform(updated);
 }

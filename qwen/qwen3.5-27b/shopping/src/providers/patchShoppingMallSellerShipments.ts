@@ -23,54 +23,66 @@ export async function patchShoppingMallSellerShipments(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput = {
-    deleted_at: null,
+  // Build where clause with seller isolation
+  const whereInput: Prisma.shopping_mall_shipmentsWhereInput = {
     seller_id: props.seller.id,
-    ...(props.body.status === "pending" && {
-      delivered_at: null,
-    }),
-    ...(props.body.status === "delivered" && {
-      delivered_at: {
-        not: null,
-      },
-      delivery_confirmed: false,
-    }),
-    ...(props.body.status === "confirmed" && {
-      delivery_confirmed: true,
-    }),
-    ...(props.body.shipped_at_from && {
-      shipped_at: {
-        gte: new Date(props.body.shipped_at_from),
-      },
-    }),
-    ...(props.body.shipped_at_to && {
-      shipped_at: {
-        lte: new Date(props.body.shipped_at_to),
-      },
-    }),
-    ...(props.body.delivered_at_from && {
-      delivered_at: {
-        gte: new Date(props.body.delivered_at_from),
-      },
-    }),
-    ...(props.body.delivered_at_to && {
-      delivered_at: {
-        lte: new Date(props.body.delivered_at_to),
-      },
-    }),
-    ...(props.body.tracking_carrier && {
-      tracking_carrier: {
-        contains: props.body.tracking_carrier,
-        mode: "insensitive",
-      },
-    }),
-    ...(props.body.tracking_number && {
-      tracking_number: {
-        contains: props.body.tracking_number,
-        mode: "insensitive",
-      },
-    }),
-  } satisfies Prisma.shopping_mall_shipmentsWhereInput;
+    deleted_at: null,
+  };
+  // Apply status filter (derived from delivered_at and delivery_confirmed)
+  if (props.body.status === "pending") {
+    whereInput.delivered_at = null;
+  } else if (props.body.status === "delivered") {
+    whereInput.AND = [
+      { delivered_at: { not: null } },
+      { delivery_confirmed: false },
+    ];
+  } else if (props.body.status === "confirmed") {
+    whereInput.delivery_confirmed = true;
+  }
+  // Apply tracking carrier filter (case-insensitive partial match)
+  if (props.body.tracking_carrier !== undefined) {
+    whereInput.tracking_carrier = {
+      contains: props.body.tracking_carrier,
+      mode: "insensitive",
+    };
+  }
+  // Apply tracking number filter (case-insensitive partial match)
+  if (props.body.tracking_number !== undefined) {
+    whereInput.tracking_number = {
+      contains: props.body.tracking_number,
+      mode: "insensitive",
+    };
+  }
+  // Apply shipped_at range filters
+  if (
+    props.body.shipped_at_from !== undefined ||
+    props.body.shipped_at_to !== undefined
+  ) {
+    const shippedAtFilter: Prisma.DateTimeFilter = {};
+    if (props.body.shipped_at_from !== undefined) {
+      shippedAtFilter.gte = new Date(props.body.shipped_at_from);
+    }
+    if (props.body.shipped_at_to !== undefined) {
+      shippedAtFilter.lte = new Date(props.body.shipped_at_to);
+    }
+    whereInput.shipped_at = shippedAtFilter;
+  }
+  // Apply delivered_at range filters (only if not already set by status filter)
+  if (
+    (props.body.delivered_at_from !== undefined ||
+      props.body.delivered_at_to !== undefined) &&
+    props.body.status !== "pending"
+  ) {
+    const deliveredAtFilter: Prisma.DateTimeFilter = {};
+    if (props.body.delivered_at_from !== undefined) {
+      deliveredAtFilter.gte = new Date(props.body.delivered_at_from);
+    }
+    if (props.body.delivered_at_to !== undefined) {
+      deliveredAtFilter.lte = new Date(props.body.delivered_at_to);
+    }
+    whereInput.delivered_at = deliveredAtFilter;
+  }
+  // Fetch shipments with pagination
   const data = await MyGlobal.prisma.shopping_mall_shipments.findMany({
     where: whereInput,
     skip,
@@ -78,19 +90,22 @@ export async function patchShoppingMallSellerShipments(props: {
     orderBy: { created_at: "desc" },
     ...ShoppingMallShipmentAtSummaryTransformer.select(),
   });
+  // Get total count for pagination
   const total = await MyGlobal.prisma.shopping_mall_shipments.count({
     where: whereInput,
   });
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    ShoppingMallShipmentAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallShipmentAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+    data: transformedData,
+  } satisfies IPageIShoppingMallShipment.ISummary;
 }

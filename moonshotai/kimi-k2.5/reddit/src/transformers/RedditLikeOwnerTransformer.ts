@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditLikeOwner } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeOwner";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace RedditLikeOwnerTransformer {
@@ -21,8 +23,6 @@ export namespace RedditLikeOwnerTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        // password_hash intentionally excluded for security
-        // sessions, passwordResets, auditLogs not needed for this DTO
       },
     } satisfies Prisma.reddit_like_ownersFindManyArgs;
   }

@@ -16,15 +16,20 @@ import { GuestPayload } from "../decorators/payload/GuestPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-/**
- * [Original Description]
- * Retrieve a filtered and paginated list of products available in the shopping mall platform.
- *
- * Cannot implement: Schema missing shopping_mall_products table required by API.
- */
 export async function patchShoppingMallGuestProducts(props: {
   guest: GuestPayload;
   body: IShoppingMallProduct.IRequest;
 }): Promise<IPageIShoppingMallProduct.ISummary> {
+  /**
+   * [Original Description]
+   * Retrieve a filtered and paginated list of products available in the shopping mall platform.
+   *
+   * Cannot implement: Schema missing shopping_mall_products table required by API.
+   * The DTO IShoppingMallProduct references database tables (shopping_mall_products,
+   * shopping_mall_product_images, shopping_mall_product_variants) that do not exist
+   * in the Prisma schema. Only the following tables exist: shopping_mall_categories,
+   * shopping_mall_sellers, shopping_mall_wishlist_items, shopping_mall_cart_items,
+   * shopping_mall_orders, shopping_mall_order_items, shopping_mall_reviews.
+   */
   return typia.random<IPageIShoppingMallProduct.ISummary>();
 }

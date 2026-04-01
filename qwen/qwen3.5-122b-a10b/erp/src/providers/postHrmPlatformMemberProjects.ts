@@ -18,29 +18,22 @@ export async function postHrmPlatformMemberProjects(props: {
   member: MemberPayload;
   body: IHrmPlatformProject.ICreate;
 }): Promise<IHrmPlatformProject> {
-  // Query member's current organization through employee record
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
       deleted_at: null,
     },
-    select: {
-      hrm_platform_organization_id: true,
-    },
   });
-  if (!employee) {
-    throw new HttpException(
-      "Member is not associated with any organization",
-      403,
-    );
+  if (employee === null) {
+    throw new HttpException("You're not enrolled in any organization", 403);
   }
-  // Create project using collector
+  const organization: IEntity = {
+    id: employee.hrm_platform_organization_id,
+  };
   const created = await MyGlobal.prisma.hrm_platform_projects.create({
     data: await HrmPlatformProjectCollector.collect({
       body: props.body,
-      hrmPlatformOrganizations: {
-        id: employee.hrm_platform_organization_id,
-      } as any,
+      hrmPlatformOrganizations: organization,
     }),
     ...HrmPlatformProjectTransformer.select(),
   });

@@ -2,8 +2,10 @@ import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCategoryAtSummaryTransformer } from "./EcommerceMallCategoryAtSummaryTransformer";
 
@@ -42,17 +44,14 @@ export namespace EcommerceMallCategoryTransformer {
       display_order: input.display_order,
       icon_uri: input.icon_uri ?? undefined,
       is_active: input.is_active,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at:
-        input.deleted_at !== null && input.deleted_at !== undefined
-          ? toISOStringSafe(input.deleted_at)
-          : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
       parent: input.parent
         ? await EcommerceMallCategoryAtSummaryTransformer.transform(
             input.parent,
           )
-        : undefined,
+        : null,
     };
   }
 }

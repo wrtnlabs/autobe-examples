@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IRedditLikeVote } from "../../../../../api/structures/IRedditLikeVote";
-import { AdminAuth } from "../../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { deleteRedditLikeMemberPostsPostIdMyVote } from "../../../../../providers/deleteRedditLikeMemberPostsPostIdMyVote";
 import { getRedditLikeMemberPostsPostIdMyVote } from "../../../../../providers/getRedditLikeMemberPostsPostIdMyVote";
 import { putRedditLikeMemberPostsPostIdMyVote } from "../../../../../providers/putRedditLikeMemberPostsPostIdMyVote";
@@ -29,8 +29,8 @@ export class RedditlikeMemberPostsMy_voteController {
    */
   @TypedRoute.Get()
   public async myVote(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
   ): Promise<IRedditLikeVote> {
@@ -68,8 +68,8 @@ export class RedditlikeMemberPostsMy_voteController {
    */
   @TypedRoute.Put()
   public async update(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -105,8 +105,8 @@ export class RedditlikeMemberPostsMy_voteController {
    */
   @TypedRoute.Delete()
   public async erase(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
   ): Promise<void> {

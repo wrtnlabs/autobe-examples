@@ -5,8 +5,10 @@ import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
 import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
@@ -32,10 +34,6 @@ export namespace EcommerceMallShipmentTransformer {
         deleted_at: true,
         order: EcommerceMallOrderAtSummaryTransformer.select(),
         seller: EcommerceMallSellerAtSummaryTransformer.select(),
-        orderItems: true,
-        snapshots: true,
-        trackingUpdates: true,
-        trackingCodes: true,
       },
     } satisfies Prisma.ecommerce_mall_shipmentsFindManyArgs;
   }
@@ -61,6 +59,6 @@ export namespace EcommerceMallShipmentTransformer {
       seller: await EcommerceMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
-    };
+    } satisfies IEcommerceMallShipment;
   }
 }

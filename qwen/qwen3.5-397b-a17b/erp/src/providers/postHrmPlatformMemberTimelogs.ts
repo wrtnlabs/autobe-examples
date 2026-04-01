@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
@@ -25,120 +26,89 @@ export async function postHrmPlatformMemberTimelogs(props: {
   member: MemberPayload;
   body: IHrmPlatformTimelog.ICreate;
 }): Promise<IHrmPlatformTimelog> {
-  // Step 1: Get employee record for authenticated member
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        member_id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        organization_id: true,
-        status: true,
-      },
-    });
-  // Step 2: Validate employee is active
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      user_id: props.member.id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  });
+  if (!employee) {
+    throw new HttpException("Employee record not found", 404);
+  }
   if (employee.status !== "active") {
     throw new HttpException("Employee is not active", 403);
   }
-  // Step 3: Validate project exists and employee is assigned to it
   const projectMember =
-    await MyGlobal.prisma.hrm_platform_project_members.findFirstOrThrow({
+    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
-        employee: { id: employee.id },
-        project: { id: props.body.project_id },
+        hrm_platform_employee_id: employee.id,
+        hrm_platform_project_id: props.body.projectId,
+      },
+    });
+  if (!projectMember) {
+    throw new HttpException("Employee is not assigned to this project", 403);
+  }
+  if (props.body.taskId !== undefined && props.body.taskId !== null) {
+    const task = await MyGlobal.prisma.hrm_platform_tasks.findFirst({
+      where: {
+        id: props.body.taskId,
+        hrm_platform_project_id: props.body.projectId,
         deleted_at: null,
       },
-      select: {
-        project: { select: { id: true } },
-      },
     });
-  // Step 4: Validate project status is active
-  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
-    {
-      where: { id: props.body.project_id },
-      select: {
-        id: true,
-        status: true,
-      },
-    },
-  );
-  if (project.status !== "active") {
-    throw new HttpException(
-      "Cannot create timelog for archived or completed project",
-      400,
-    );
-  }
-  // Step 5: Validate task if provided
-  if (props.body.task_id !== undefined && props.body.task_id !== null) {
-    const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
-      where: { id: props.body.task_id },
-      select: {
-        id: true,
-        hrm_platform_project_id: true,
-      },
-    });
-    if (task.hrm_platform_project_id !== props.body.project_id) {
+    if (!task) {
       throw new HttpException(
         "Task does not belong to the specified project",
         400,
       );
     }
   }
-  // Step 6: Validate date is not in the future
-  const workDate = new Date(props.body.date);
-  const now = new Date();
-  if (workDate > now) {
-    throw new HttpException("Timelog date cannot be in the future", 400);
-  }
-  // Step 7: Check for approved timesheet conflict
-  // Calculate week boundaries (Monday to Sunday)
-  const weekStart = getWeekStartDate(workDate);
-  const weekEnd = getWeekEndDate(weekStart);
-  const approvedTimesheet =
+  const inputDate = new Date(props.body.date);
+  const weekStart = computeWeekStart(inputDate);
+  const weekEnd = computeWeekEnd(inputDate);
+  const weekStartDateStr = weekStart.toISOString().split("T")[0];
+  const weekEndDateStr = weekEnd.toISOString().split("T")[0];
+  const existingTimesheet =
     await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
       where: {
         employee_id: employee.id,
-        status: "approved",
-        week_start_date: weekStart,
-        week_end_date: weekEnd,
+        week_start_date: weekStartDateStr,
+        week_end_date: weekEndDateStr,
+        status: { in: ["submitted", "approved"] },
         deleted_at: null,
       },
-      select: {
-        id: true,
-      },
     });
-  if (approvedTimesheet) {
+  if (existingTimesheet) {
     throw new HttpException(
-      "Cannot create timelog for date in approved timesheet week",
+      "Cannot create timelog for a week with submitted or approved timesheet",
       400,
     );
   }
-  // Step 8: Create timelog using collector
   const created = await MyGlobal.prisma.hrm_platform_timelogs.create({
     data: await HrmPlatformTimelogCollector.collect({
       body: props.body,
-      hrmPlatformEmployees: { id: employee.id },
-      hrmPlatformMemberSessions: { id: props.member.session_id },
+      employee: { id: employee.id },
     }),
     ...HrmPlatformTimelogTransformer.select(),
   });
-  // Step 9: Transform and return
   return await HrmPlatformTimelogTransformer.transform(created);
 }
-// Helper functions for week boundary calculation
-function getWeekStartDate(date: Date): Date {
+function computeWeekStart(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   d.setDate(diff);
   d.setHours(0, 0, 0, 0);
   return d;
 }
-function getWeekEndDate(weekStart: Date): Date {
-  const d = new Date(weekStart);
-  d.setDate(d.getDate() + 6);
-  d.setHours(23, 59, 59, 999);
-  return d;
+function computeWeekEnd(date: Date): Date {
+  const start = computeWeekStart(date);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return end;
 }

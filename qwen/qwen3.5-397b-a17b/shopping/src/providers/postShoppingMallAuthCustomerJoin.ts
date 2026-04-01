@@ -1,6 +1,7 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -9,6 +10,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { ShoppingMallCustomerTransformer } from "../transformers/ShoppingMallCustomerTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -26,96 +28,88 @@ export async function postShoppingMallAuthCustomerJoin(props: {
   // 2. Hash password
   const passwordHash = await PasswordUtil.hash(props.body.password);
   // 3. Create customer record
-  const now = new Date();
   const customer = await MyGlobal.prisma.shopping_mall_customers.create({
     data: {
       id: v4(),
       email: props.body.email,
       password_hash: passwordHash,
-      nickname: props.body.nickname,
-      phone_number: props.body.phone_number,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
     },
-    select: {
-      id: true,
-      email: true,
-      nickname: true,
-      phone_number: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-    },
+    ...ShoppingMallCustomerTransformer.select(),
   });
-  // 4. Create session record
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const session = await MyGlobal.prisma.shopping_mall_customer_sessions.create({
+  // 4. Create customer profile
+  await MyGlobal.prisma.shopping_mall_customer_profiles.create({
     data: {
       id: v4(),
       shopping_mall_customer_id: customer.id,
-      ip: props.body.ip ?? props.ip,
+      display_name: "Customer",
+      phone_number: "",
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+    },
+  });
+  // 5. Generate session ID for tokens
+  const sessionId = v4();
+  const now = new Date();
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // 6. Create session record first
+  const session = await MyGlobal.prisma.shopping_mall_customer_sessions.create({
+    data: {
+      id: sessionId,
+      shopping_mall_customer_id: customer.id,
+      access_token: "",
+      refresh_token: "",
+      ip: props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
       created_at: now,
       expired_at: accessExpires,
     },
-    select: {
-      id: true,
-      created_at: true,
-      expired_at: true,
+  });
+  // 7. Generate JWT tokens with session ID
+  const accessToken = jwt.sign(
+    {
+      type: "customer",
+      id: customer.id,
+      session_id: session.id,
+      created_at: now.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refreshToken = jwt.sign(
+    {
+      type: "customer",
+      id: customer.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: now.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  // 8. Update session with actual tokens
+  await MyGlobal.prisma.shopping_mall_customer_sessions.update({
+    where: { id: session.id },
+    data: {
+      access_token: accessToken,
+      refresh_token: refreshToken,
     },
   });
-  // 5. Generate JWT tokens
+  // 9. Build token response
   const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "customer",
-        id: customer.id,
-        session_id: session.id,
-        created_at: now.toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "customer",
-        id: customer.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: now.toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
   };
-  // 6. Return IAuthorized response
+  // 10. Transform and return response
   return {
-    id: customer.id,
-    email: customer.email,
-    nickname: customer.nickname,
-    phone_number: customer.phone_number,
-    created_at: toISOStringSafe(customer.created_at),
-    updated_at: toISOStringSafe(customer.updated_at),
-    deleted_at:
-      customer.deleted_at === null
-        ? null
-        : toISOStringSafe(customer.deleted_at),
-    customer: {
-      id: customer.id,
-      email: customer.email,
-      nickname: customer.nickname,
-      phone_number: customer.phone_number,
-      created_at: toISOStringSafe(customer.created_at),
-      deleted_at:
-        customer.deleted_at === null
-          ? null
-          : toISOStringSafe(customer.deleted_at),
-    } satisfies IShoppingMallCustomer.ISummary,
+    ...(await ShoppingMallCustomerTransformer.transform(customer)),
     token,
   } satisfies IShoppingMallCustomer.IAuthorized;
 }

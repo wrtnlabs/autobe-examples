@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdminPromotionSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminPromotionSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallAdminPromotionSnapshotTransformer {
@@ -15,17 +17,13 @@ export namespace ShoppingMallAdminPromotionSnapshotTransformer {
     return {
       select: {
         id: true,
+        request: { select: { id: true } },
         user_id: true,
         reason: true,
         status: true,
         submitted_at: true,
         responded_at: true,
         created_at: true,
-        request: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_admin_promotion_requestsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_admin_promotion_snapshotsFindManyArgs;
   }

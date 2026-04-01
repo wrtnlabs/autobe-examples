@@ -12,11 +12,9 @@ export namespace HrmPlatformTimerCollector {
     body: IHrmPlatformTimer.ICreate;
     hrmPlatformEmployees: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       started_at: new Date(),
-      stopped_at: null,
       description: props.body.description ?? null,
       created_at: new Date(),
       updated_at: new Date(),

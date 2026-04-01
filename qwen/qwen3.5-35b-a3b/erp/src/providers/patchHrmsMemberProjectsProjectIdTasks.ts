@@ -23,86 +23,117 @@ export async function patchHrmsMemberProjectsProjectIdTasks(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmsTask.IRequest;
 }): Promise<IPageIHrmsTask.ISummary> {
-  // Fetch project with validation
-  const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
-    where: {
-      id: props.projectId,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      name: true,
-      hrms_organization_id: true,
-    },
-  });
-  // Build WHERE clause for task query
-  const whereInput: Prisma.hrms_tasksWhereInput = {
-    hrms_project_id: props.projectId,
-    deleted_at: null,
-    ...(props.body.status &&
-      props.body.status.length > 0 && {
-        status: { in: props.body.status },
-      }),
-    ...(props.body.priority &&
-      props.body.priority.length > 0 && {
-        priority: { in: props.body.priority },
-      }),
-    ...(props.body.employeeIds &&
-      props.body.employeeIds.length > 0 && {
-        hrms_employee_id: { in: props.body.employeeIds },
-      }),
-    ...(props.body.withAssignment !== undefined && {
-      hrms_employee_id: props.body.withAssignment ? { not: null } : null,
-    }),
-    ...(props.body.parentTaskFilter === "parent" && {
-      hrms_task_id: null,
-    }),
-    ...(props.body.parentTaskFilter === "subtask" && {
-      hrms_task_id: { not: null },
-    }),
-    ...(props.body.dueDateFrom && {
-      due_date: { gte: new Date(props.body.dueDateFrom) },
-    }),
-    ...(props.body.dueDateTo && {
-      due_date: { lte: new Date(props.body.dueDateTo) },
-    }),
-    ...(props.body.createdDateFrom && {
-      created_at: { gte: new Date(props.body.createdDateFrom) },
-    }),
-    ...(props.body.createdDateTo && {
-      created_at: { lte: new Date(props.body.createdDateTo) },
-    }),
-  } satisfies Prisma.hrms_tasksWhereInput;
-  // Pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Query tasks
+  const projectMembership =
+    await MyGlobal.prisma.hrms_project_members.findFirst({
+      where: {
+        employee: {
+          organizationMember: {
+            member: {
+              id: props.member.id,
+              deleted_at: null,
+            },
+          },
+        },
+        project_id: props.projectId,
+        status: "active",
+      },
+    });
+  if (!projectMembership) {
+    throw new HttpException("Project access denied", 403);
+  }
+  const whereInput: Prisma.hrms_tasksWhereInput = {
+    hrms_project_id: props.projectId,
+    deleted_at: null,
+  };
+  if (props.body.status && props.body.status.length > 0) {
+    whereInput.status = { in: props.body.status };
+  }
+  if (props.body.priority && props.body.priority.length > 0) {
+    whereInput.priority = { in: props.body.priority };
+  }
+  if (props.body.createdDateFrom || props.body.createdDateTo) {
+    whereInput.created_at = {
+      ...(props.body.createdDateFrom && {
+        gte: new Date(props.body.createdDateFrom),
+      }),
+      ...(props.body.createdDateTo && {
+        lte: new Date(props.body.createdDateTo),
+      }),
+    };
+  }
+  if (props.body.dueDateFrom || props.body.dueDateTo) {
+    whereInput.due_date = {
+      ...(props.body.dueDateFrom && { gte: new Date(props.body.dueDateFrom) }),
+      ...(props.body.dueDateTo && { lte: new Date(props.body.dueDateTo) }),
+    };
+  }
+  if (props.body.employeeIds && props.body.employeeIds.length > 0) {
+    whereInput.hrms_employee_id = { in: props.body.employeeIds };
+  }
+  if (props.body.withAssignment === true) {
+    whereInput.hrms_employee_id = { not: null };
+  } else if (props.body.withAssignment === false) {
+    whereInput.hrms_employee_id = null;
+  }
+  if (props.body.parentTaskFilter === "parent") {
+    whereInput.hrms_task_id = null;
+  } else if (props.body.parentTaskFilter === "subtask") {
+    whereInput.hrms_task_id = { not: null };
+  }
+  if (props.body.projectIds && props.body.projectIds.length > 0) {
+    whereInput.hrms_project_id = { in: props.body.projectIds };
+  }
   const tasks = await MyGlobal.prisma.hrms_tasks.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { created_at: "desc" },
+    include: {
+      assignedEmployee: {
+        include: {
+          organizationMember: {
+            include: {
+              member: true,
+            },
+          },
+        },
+      },
+    },
   });
-  // Get total count for pagination
-  const total = await MyGlobal.prisma.hrms_tasks.count({
-    where: whereInput,
+  const total = await MyGlobal.prisma.hrms_tasks.count({ where: whereInput });
+  const project = await MyGlobal.prisma.hrms_projects.findUnique({
+    where: { id: props.projectId },
+    select: { name: true },
   });
-  // Build response data - map tasks to IHrmsTask.ISummary format
-  const data = tasks.map((task) => ({
+  const data = await ArrayUtil.asyncMap(tasks, async (task) => ({
+    id: task.id as string & tags.Format<"uuid">,
     project_id: task.hrms_project_id,
-    project_name: project.name,
+    project_name: project?.name ?? "",
+    title: task.title,
+    description: task.description,
+    status: task.status,
+    priority: task.priority,
+    estimated_hours: task.estimated_hours,
+    due_date: task.due_date ? toISOStringSafe(task.due_date) : "",
+    billable: task.billable,
+    assigned_employee_id: task.hrms_employee_id,
+    assigned_employee_name: task.assignedEmployee
+      ? `${task.assignedEmployee.display_name}${task.assignedEmployee.organizationMember.member.email}`
+      : null,
+    parent_task_id: task.hrms_task_id,
     task_count: 1,
+    created_at: task.created_at ? toISOStringSafe(task.created_at) : "",
+    updated_at: task.updated_at ? toISOStringSafe(task.updated_at) : "",
   }));
-  // Calculate pagination metadata
-  const pages = Math.ceil(total / limit);
   return {
+    data: data,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages,
-    },
-    data: data,
-  } satisfies IPageIHrmsTask.ISummary;
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+  };
 }

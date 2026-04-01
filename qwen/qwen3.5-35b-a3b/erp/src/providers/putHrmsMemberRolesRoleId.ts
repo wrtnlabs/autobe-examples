@@ -11,7 +11,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { HrmsOrganizationAtSummaryTransformer } from "../transformers/HrmsOrganizationAtSummaryTransformer";
 import { HrmsOrganizationRoleTransformer } from "../transformers/HrmsOrganizationRoleTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -21,63 +20,76 @@ export async function putHrmsMemberRolesRoleId(props: {
   roleId: string & tags.Format<"uuid">;
   body: IHrmsOrganizationRole.IUpdate;
 }): Promise<IHrmsOrganizationRole> {
+  // Get the existing role with all needed data
   const role = await MyGlobal.prisma.hrms_organization_roles.findUniqueOrThrow({
     where: { id: props.roleId },
-    select: {
-      id: true,
-      name: true,
-      is_builtin: true,
-      organization_id: true,
-      permissions: true,
-    },
+    ...HrmsOrganizationRoleTransformer.select(),
   });
-  if (role.is_builtin) {
-    throw new HttpException("Cannot update built-in roles", 400);
+  // Reject built-in roles (Owner, Manager, Employee)
+  if (role.is_builtin || ["Owner", "Manager", "Employee"].includes(role.name)) {
+    throw new HttpException("Built-in roles cannot be modified", 400);
   }
+  // Verify the requesting member is an Owner in the organization
+  const ownerMember = await MyGlobal.prisma.hrms_organization_members.findFirst(
+    {
+      where: {
+        hrms_member_id: props.member.id,
+        hrms_organization_id: role.organization.id,
+        organizationRole: {
+          name: "Owner",
+          is_builtin: true,
+        },
+      },
+    },
+  );
+  if (ownerMember === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Validate role name uniqueness if provided
   if (props.body.name !== undefined) {
-    const duplicateRole =
+    const existingRole =
       await MyGlobal.prisma.hrms_organization_roles.findFirst({
         where: {
-          organization_id: role.organization_id,
+          organization_id: role.organization.id,
           name: props.body.name,
           id: { not: props.roleId },
         },
       });
-    if (duplicateRole) {
-      throw new HttpException(
-        "Role name must be unique within the organization",
-        400,
-      );
+    if (existingRole !== null) {
+      throw new HttpException("Role name already exists", 400);
     }
   }
-  const updatedRole = await MyGlobal.prisma.hrms_organization_roles.update({
+  // Update the role
+  await MyGlobal.prisma.hrms_organization_roles.update({
     where: { id: props.roleId },
     data: {
       ...(props.body.name !== undefined && { name: props.body.name }),
-      ...(props.body.permissions !== undefined && {
-        permissions: {
-          deleteMany: {},
-          create: props.body.permissions.map((p) => ({
-            permission: p,
-            id: v4(),
-            created_at: new Date(),
-            updated_at: new Date(),
-          })),
-        },
-      }),
-      updated_at: toISOStringSafe(new Date()),
-    },
-    select: {
-      id: true,
-      name: true,
-      is_builtin: true,
-      created_at: true,
-      updated_at: true,
-      organization: HrmsOrganizationAtSummaryTransformer.select(),
-      permissions: true,
-      organizationMembers: true,
-      employees: true,
+      updated_at: new Date(),
     },
   });
-  return HrmsOrganizationRoleTransformer.transform(updatedRole);
+  // If permissions provided, handle separately via normalized table
+  if (props.body.permissions !== undefined) {
+    // Delete existing permissions for this role
+    await MyGlobal.prisma.hrms_organization_role_permissions.deleteMany({
+      where: {
+        hrms_organization_role_id: props.roleId,
+      },
+    });
+    // Insert new permissions
+    if (props.body.permissions.length > 0) {
+      await MyGlobal.prisma.hrms_organization_role_permissions.createMany({
+        data: props.body.permissions.map((permission) => ({
+          hrms_organization_role_id: props.roleId,
+          permission: permission,
+        })) as any,
+      });
+    }
+  }
+  // Get and return the updated role using transformer
+  const updatedRole =
+    await MyGlobal.prisma.hrms_organization_roles.findUniqueOrThrow({
+      where: { id: props.roleId },
+      ...HrmsOrganizationRoleTransformer.select(),
+    });
+  return await HrmsOrganizationRoleTransformer.transform(updatedRole);
 }

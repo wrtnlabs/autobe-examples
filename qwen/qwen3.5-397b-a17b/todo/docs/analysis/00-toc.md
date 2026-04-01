@@ -1,6 +1,6 @@
 ### Table of Contents
 
-**todoApp** is a backend service with the following actors and domain entities.
+**multiUserTodo** is a backend service with the following actors and domain entities.
 
 **Actors**: guest, member
 **Entities**: User, Todo, EditHistory
@@ -10,8 +10,8 @@
 **Scope**
 
 - **User** — owns many Todos
-- **Todo** — belongsTo User via userId, has many EditHistory entries
-- **EditHistory** — belongsTo Todo via todoId
+- **Todo** — owned by User, has many EditHistory entries
+- **EditHistory** — belongs to Todo
 
 - **guest** (guest)
 - **member** (member)
@@ -102,8 +102,8 @@ Each type of information has one authoritative location. Other files should refe
 **Glossary**
 
 - **User** — owns many Todos
-- **Todo** — belongsTo User via userId, has many EditHistory entries
-- **EditHistory** — belongsTo Todo via todoId
+- **Todo** — owned by User, has many EditHistory entries
+- **EditHistory** — belongs to Todo
 
 ---
 

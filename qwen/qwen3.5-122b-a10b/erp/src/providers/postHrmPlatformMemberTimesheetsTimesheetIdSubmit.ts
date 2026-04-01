@@ -25,81 +25,67 @@ export async function postHrmPlatformMemberTimesheetsTimesheetIdSubmit(props: {
   member: MemberPayload;
   timesheetId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTimesheet> {
-  // Find employee record for authenticated member
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      hrm_platform_user_id: props.member.id,
-      deleted_at: null,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Employee not found", 404);
-  }
-  // Validate employee is active
-  if (employee.status !== "active") {
-    throw new HttpException("Employee is not active", 403);
-  }
-  // Retrieve timesheet with timelogs
-  const timesheet = await MyGlobal.prisma.hrm_platform_timesheets.findUnique({
-    where: {
-      id: props.timesheetId,
-    },
-    select: {
-      id: true,
-      hrm_platform_employee_id: true,
-      status: true,
-      week_start_date: true,
-      week_end_date: true,
-      timesheetTimelogs: {
-        select: {
-          id: true,
+  return await MyGlobal.prisma.$transaction(async (tx) => {
+    const timesheet = await tx.hrm_platform_timesheets.findUniqueOrThrow({
+      where: { id: props.timesheetId },
+      select: {
+        id: true,
+        hrm_platform_employee_id: true,
+        hrm_platform_member_id: true,
+        week_start_date: true,
+        week_end_date: true,
+        status: true,
+        submitted_at: true,
+        reviewed_at: true,
+        rejection_reason: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        employee: {
+          select: {
+            hrm_platform_user_id: true,
+            organization: {
+              select: {
+                id: true,
+              },
+            },
+          },
         },
-      },
-    },
-  });
-  if (!timesheet) {
-    throw new HttpException("Timesheet not found", 404);
-  }
-  // Validate ownership
-  if (timesheet.hrm_platform_employee_id !== employee.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Validate draft status
-  if (timesheet.status !== "draft") {
-    throw new HttpException("Timesheet is not in draft status", 400);
-  }
-  // Validate timelog presence
-  if (timesheet.timesheetTimelogs.length === 0) {
-    throw new HttpException("Timesheet has no timelogs", 400);
-  }
-  // Check weekly conflict
-  const conflictingTimesheet =
-    await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
-      where: {
-        hrm_platform_employee_id: employee.id,
-        week_start_date: timesheet.week_start_date,
-        status: {
-          in: ["submitted", "approved"],
+        timesheetTimelogs: {
+          select: {
+            id: true,
+          },
         },
-        id: {
-          not: props.timesheetId,
-        },
-        deleted_at: null,
       },
     });
-  if (conflictingTimesheet) {
-    throw new HttpException(
-      "A timesheet for this week already exists in submitted or approved status",
-      409,
-    );
-  }
-  // Update timesheet in transaction
-  const now = new Date();
-  await MyGlobal.prisma.$transaction([
-    MyGlobal.prisma.hrm_platform_timesheets.update({
+    if (timesheet.employee.hrm_platform_user_id !== props.member.id) {
+      throw new HttpException("Forbidden", 403);
+    }
+    if (timesheet.status !== "draft") {
+      throw new HttpException("Timesheet is not in draft status", 400);
+    }
+    if (timesheet.timesheetTimelogs.length === 0) {
+      throw new HttpException(
+        "Timesheet cannot be submitted without timelogs",
+        400,
+      );
+    }
+    const conflict = await tx.hrm_platform_timesheets.findFirst({
       where: {
-        id: props.timesheetId,
+        hrm_platform_employee_id: timesheet.hrm_platform_employee_id,
+        week_start_date: timesheet.week_start_date,
+        status: { in: ["submitted", "approved"] },
+        id: { not: props.timesheetId },
+        deleted_at: null,
       },
+      select: { id: true },
+    });
+    if (conflict) {
+      throw new HttpException("Weekly timesheet conflict", 409);
+    }
+    const now = new Date();
+    await tx.hrm_platform_timesheets.update({
+      where: { id: props.timesheetId },
       data: {
         status: "submitted",
         submitted_at: now,
@@ -107,31 +93,26 @@ export async function postHrmPlatformMemberTimesheetsTimesheetIdSubmit(props: {
         rejection_reason: null,
         updated_at: now,
       },
-    }),
-    MyGlobal.prisma.hrm_platform_activity_logs.create({
+    });
+    await tx.hrm_platform_activity_logs.create({
       data: {
-        id: v4(),
-        organization_id: employee.hrm_platform_organization_id,
+        id: v4() as string & tags.Format<"uuid">,
+        organization_id: timesheet.employee.organization.id,
         user_id: props.member.id,
-        action_type: "timesheet:submit",
+        action_type: "timesheet:submitted",
         target_entity: "timesheet",
         target_id: props.timesheetId,
         details: JSON.stringify({
           week_start_date: toISOStringSafe(timesheet.week_start_date),
           week_end_date: toISOStringSafe(timesheet.week_end_date),
-          submitted_at: toISOStringSafe(now),
         }),
         created_at: now,
       },
-    }),
-  ]);
-  // Re-fetch timesheet with proper select for transformation
-  const updated =
-    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-      where: {
-        id: props.timesheetId,
-      },
+    });
+    const updated = await tx.hrm_platform_timesheets.findUniqueOrThrow({
+      where: { id: props.timesheetId },
       ...HrmPlatformTimesheetTransformer.select(),
     });
-  return await HrmPlatformTimesheetTransformer.transform(updated);
+    return await HrmPlatformTimesheetTransformer.transform(updated);
+  });
 }

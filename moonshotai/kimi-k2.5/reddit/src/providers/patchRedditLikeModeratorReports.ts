@@ -20,12 +20,14 @@ import { RedditLikeReportAtSummaryTransformer } from "../transformers/RedditLike
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function patchRedditLikeModeratorReports(props: {
   moderator: ModeratorPayload;
   body: IRedditLikeReport.IRequest;
 }): Promise<IPageIRedditLikeReport.ISummary> {
-  // Get communities moderated by this user
-  const moderatedCommunities =
+  // Get communities where this moderator has privileges
+  const moderatorCommunities =
     await MyGlobal.prisma.reddit_like_moderators.findMany({
       where: {
         member_id: props.moderator.id,
@@ -33,76 +35,76 @@ export async function patchRedditLikeModeratorReports(props: {
       },
       select: {
         community_id: true,
-      } satisfies Prisma.reddit_like_moderatorsSelect,
+      },
     });
-  const communityIds = moderatedCommunities.map((m) => m.community_id);
+  const communityIds = moderatorCommunities.map((m) => m.community_id);
+  // If no moderated communities, return empty result
   if (communityIds.length === 0) {
     return {
       data: [],
       pagination: {
-        current: 1,
+        current: props.body.page ?? 1,
         limit: props.body.limit ?? 20,
         records: 0,
         pages: 0,
       } satisfies IPage.IPagination,
-    } satisfies IPageIRedditLikeReport.ISummary;
+    };
   }
-  // Validate and determine community filter
-  const communityFilter =
-    props.body.communityId != null
-      ? communityIds.includes(props.body.communityId)
-        ? props.body.communityId
-        : null
-      : { in: communityIds };
-  if (communityFilter === null) {
-    throw new HttpException(
-      "Forbidden - Not a moderator for this community",
-      403,
-    );
+  // If filtering by specific community, verify moderator has access
+  if (props.body.communityId) {
+    if (!communityIds.includes(props.body.communityId)) {
+      throw new HttpException(
+        "You don't have moderator privileges for this community",
+        403,
+      );
+    }
   }
-  // Build created_at filter
-  const createdAtFilter = {
-    ...(props.body.createdAtFrom != null && { gte: props.body.createdAtFrom }),
-    ...(props.body.createdAtTo != null && { lte: props.body.createdAtTo }),
-  };
-  // Build where clause - removed deleted_at since it doesn't exist on reports
-  const whereInput = {
-    community_id: communityFilter,
-    status: props.body.status ?? "pending",
-    ...(Object.keys(createdAtFilter).length > 0 && {
-      created_at: createdAtFilter,
-    }),
-  } satisfies Prisma.reddit_like_reportsWhereInput;
   // Pagination
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Query reports with transformer select
-  const reports = await MyGlobal.prisma.reddit_like_reports.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: {
-      created_at: "desc",
-    },
-    ...RedditLikeReportAtSummaryTransformer.select(),
-  });
-  // Count total
-  const total = await MyGlobal.prisma.reddit_like_reports.count({
-    where: whereInput,
-  });
+  // Build where clause
+  const whereInput: Prisma.reddit_like_reportsWhereInput = {
+    ...(props.body.communityId
+      ? { community_id: props.body.communityId }
+      : { community_id: { in: communityIds } }),
+    status: props.body.status ?? "pending",
+    ...(props.body.createdAtFrom && {
+      created_at: {
+        gte: new Date(props.body.createdAtFrom),
+      },
+    }),
+    ...(props.body.createdAtTo && {
+      created_at: {
+        lte: new Date(props.body.createdAtTo),
+      },
+    }),
+  };
+  // Get reports and total count
+  const [reports, total] = await Promise.all([
+    MyGlobal.prisma.reddit_like_reports.findMany({
+      where: whereInput,
+      orderBy: { created_at: "desc" },
+      skip,
+      take: limit,
+      ...RedditLikeReportAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.reddit_like_reports.count({
+      where: whereInput,
+    }),
+  ]);
   // Transform results
-  const transformedReports = await ArrayUtil.asyncMap(
+  const data = await ArrayUtil.asyncMap(
     reports,
     RedditLikeReportAtSummaryTransformer.transform,
   );
   return {
-    data: transformedReports,
+    data,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIRedditLikeReport.ISummary;
+  };
 }

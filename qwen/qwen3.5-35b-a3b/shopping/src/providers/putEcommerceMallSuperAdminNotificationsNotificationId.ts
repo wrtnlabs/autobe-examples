@@ -8,33 +8,23 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { EcommerceMallNotificationTransformer } from "../transformers/EcommerceMallNotificationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putEcommerceMallSuperAdminNotificationsNotificationId(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   notificationId: string & tags.Format<"uuid">;
   body: IEcommerceMallNotification.IUpdate;
 }): Promise<IEcommerceMallNotification> {
-  const notification =
+  const existingNotification =
     await MyGlobal.prisma.ecommerce_mall_notifications.findUniqueOrThrow({
-      where: { id: props.notificationId },
-      select: {
-        id: true,
-        title: true,
-        body: true,
-        type: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
+      where: {
+        id: props.notificationId,
+        deleted_at: null,
       },
     });
-  if (notification.deleted_at !== null) {
-    throw new HttpException("Notification not found", 404);
-  }
   const updateData: {
     title?: string;
     body?: string;
@@ -51,44 +41,44 @@ export async function putEcommerceMallSuperAdminNotificationsNotificationId(prop
     updateData.body = props.body.body;
   }
   if (props.body.type !== undefined) {
+    const typeCollision =
+      await MyGlobal.prisma.ecommerce_mall_notifications.findFirst({
+        where: {
+          type: props.body.type,
+          id: {
+            not: props.notificationId,
+          },
+        },
+      });
+    if (typeCollision !== null) {
+      throw new HttpException("Notification type must be unique", 409);
+    }
     updateData.type = props.body.type;
   }
   if (props.body.status !== undefined) {
+    const statusCollision =
+      await MyGlobal.prisma.ecommerce_mall_notifications.findFirst({
+        where: {
+          status: props.body.status,
+          id: {
+            not: props.notificationId,
+          },
+        },
+      });
+    if (statusCollision !== null) {
+      throw new HttpException("Notification status must be unique", 409);
+    }
     updateData.status = props.body.status;
   }
-  try {
+  const updatedNotification =
     await MyGlobal.prisma.ecommerce_mall_notifications.update({
-      where: { id: props.notificationId },
-      data: updateData,
-    });
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      error.constructor.name === "PrismaClientKnownRequestError"
-    ) {
-      const prismaError = error as any;
-      if (prismaError.code === "P2002") {
-        throw new HttpException(
-          "Notification type or status already exists",
-          409,
-        );
-      }
-    }
-    throw error;
-  }
-  const updated =
-    await MyGlobal.prisma.ecommerce_mall_notifications.findUniqueOrThrow({
-      where: { id: props.notificationId },
-      select: {
-        id: true,
-        title: true,
-        body: true,
-        type: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
+      where: {
+        id: props.notificationId,
       },
+      data: updateData,
+      ...EcommerceMallNotificationTransformer.select(),
     });
-  return await EcommerceMallNotificationTransformer.transform(updated);
+  return await EcommerceMallNotificationTransformer.transform(
+    updatedNotification,
+  );
 }

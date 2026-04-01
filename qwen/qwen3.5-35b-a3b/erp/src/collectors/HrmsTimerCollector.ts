@@ -10,8 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace HrmsTimerCollector {
   export async function collect(props: {
     body: IHrmsTimer.ICreate;
-    hrmsEmployees: IEntity; // from authorized actor
-    hrmsMemberSessions: IEntity; // from authorized session
+    hrmsEmployees: IEntity;
   }) {
     const id: string = v4();
     return {

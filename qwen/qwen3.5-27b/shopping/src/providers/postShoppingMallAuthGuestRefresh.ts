@@ -19,17 +19,17 @@ export async function postShoppingMallAuthGuestRefresh(props: {
   let decoded: {
     id: string;
     session_id: string;
-    type: "guest";
+    type: string;
   };
   try {
     decoded = jwt.verify(
       props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
       { issuer: "autobe" },
-    ) as unknown as {
+    ) as {
       id: string;
       session_id: string;
-      type: "guest";
+      type: string;
     };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
@@ -38,7 +38,7 @@ export async function postShoppingMallAuthGuestRefresh(props: {
   if (decoded.type !== "guest") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session exists and not expired
+  // 3. Validate session exists
   const session = await MyGlobal.prisma.shopping_mall_guest_sessions.findFirst({
     where: {
       id: decoded.session_id,
@@ -48,26 +48,31 @@ export async function postShoppingMallAuthGuestRefresh(props: {
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate guest not deleted
+  // 4. Validate session not expired
+  const now = new Date();
+  if (session.expired_at < now) {
+    throw new HttpException("Session expired", 401);
+  }
+  // 5. Validate guest not deleted
   const guest = await MyGlobal.prisma.shopping_mall_guests.findUniqueOrThrow({
     where: { id: decoded.id },
   });
   if (guest.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
+    throw new HttpException("Guest account has been deleted", 403);
   }
-  // 5. Generate new tokens (SAME session_id)
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // 6. Generate new tokens
+  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const token = {
     access: jwt.sign(
       {
         type: "guest",
         id: decoded.id,
         session_id: decoded.session_id,
-        created_at: new Date().toISOString(),
+        created_at: now.toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
+      { expiresIn: "15m", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
@@ -75,15 +80,15 @@ export async function postShoppingMallAuthGuestRefresh(props: {
         id: decoded.id,
         session_id: decoded.session_id,
         tokenType: "refresh",
-        created_at: new Date().toISOString(),
+        created_at: now.toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
+      { expiresIn: "24h", issuer: "autobe" },
     ),
     expired_at: accessExpires.toISOString(),
     refreshable_until: refreshExpires.toISOString(),
   };
-  // 6. Update session expiration
+  // 7. Update session
   await MyGlobal.prisma.shopping_mall_guest_sessions.update({
     where: { id: decoded.session_id },
     data: {
@@ -93,17 +98,9 @@ export async function postShoppingMallAuthGuestRefresh(props: {
       ip: props.body.ip ?? session.ip,
     },
   });
-  // 7. Update guest record
-  await MyGlobal.prisma.shopping_mall_guests.update({
-    where: { id: decoded.id },
-    data: {
-      ip: props.body.ip ?? guest.ip,
-      updated_at: new Date(),
-    },
-  });
-  // 8. Return IAuthorized response
+  // 8. Return guest info with tokens
   return {
-    id: guest.id as string & tags.Format<"uuid">,
+    id: guest.id,
     device_fingerprint: guest.device_fingerprint,
     ip: guest.ip,
     created_at: toISOStringSafe(guest.created_at),
@@ -112,9 +109,8 @@ export async function postShoppingMallAuthGuestRefresh(props: {
     token: {
       access: token.access,
       refresh: token.refresh,
-      expired_at: token.expired_at as string & tags.Format<"date-time">,
-      refreshable_until: token.refreshable_until as string &
-        tags.Format<"date-time">,
-    } satisfies IAuthorizationToken,
-  } satisfies IShoppingMallGuest.IAuthorized;
+      expired_at: token.expired_at,
+      refreshable_until: token.refreshable_until,
+    },
+  };
 }

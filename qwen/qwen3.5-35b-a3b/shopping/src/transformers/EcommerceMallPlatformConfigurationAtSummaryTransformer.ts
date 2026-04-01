@@ -2,8 +2,10 @@ import { IEcommerceMallPlatformConfiguration } from "@ORGANIZATION/PROJECT-api/l
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallPlatformConfigurationAtSummaryTransformer {
@@ -23,7 +25,9 @@ export namespace EcommerceMallPlatformConfigurationAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        values: true,
+        values: {
+          select: {},
+        } satisfies Prisma.ecommerce_mall_platform_configuration_valuesFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_platform_configurationsFindManyArgs;
   }
@@ -38,6 +42,6 @@ export namespace EcommerceMallPlatformConfigurationAtSummaryTransformer {
       scope: input.scope,
       default_value: input.default_value ?? undefined,
       is_active: input.is_active,
-    };
+    } satisfies IEcommerceMallPlatformConfiguration.ISummary;
   }
 }

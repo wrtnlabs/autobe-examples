@@ -17,27 +17,27 @@ export async function getShoppingMallAdminProductSnapshotsProductSnapshotId(prop
   admin: AdminPayload;
   productSnapshotId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallProductSnapshot> {
-  const canView =
+  const snapshot =
+    await MyGlobal.prisma.shopping_mall_product_snapshots.findUnique({
+      where: { id: props.productSnapshotId },
+      ...ShoppingMallProductSnapshotTransformer.select(),
+    });
+  const visibility =
     await MyGlobal.prisma.shopping_mall_snapshot_parties.findFirst({
       where: {
         shopping_mall_snapshot_id: props.productSnapshotId,
-        party_type: "admin",
         party_id: props.admin.id,
         can_view: true,
         deleted_at: null,
       },
       select: { id: true },
     });
-  if (canView === null) {
+  if (visibility === null) {
+    // Do not leak whether the snapshot exists: deny access when visibility fails.
     throw new HttpException("Forbidden", 403);
   }
-  const snapshot =
-    await MyGlobal.prisma.shopping_mall_product_snapshots.findUnique({
-      where: { id: props.productSnapshotId },
-      ...ShoppingMallProductSnapshotTransformer.select(),
-    });
   if (snapshot === null) {
-    // Keep response behavior consistent and avoid leaking existence.
+    // Visibility exists but record missing (treat as forbidden to avoid leakage).
     throw new HttpException("Forbidden", 403);
   }
   return await ShoppingMallProductSnapshotTransformer.transform(snapshot);

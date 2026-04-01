@@ -21,7 +21,7 @@ export async function putShoppingMallSellerCancellationRequestsCancellationReque
   cancellationRequestId: string & tags.Format<"uuid">;
   body: IShoppingMallCancellationRequest.IUpdate;
 }): Promise<IShoppingMallCancellationRequest> {
-  // Step 1: Find cancellation request (not soft-deleted)
+  // Step 1: Find the cancellation request and verify it exists and is not soft-deleted
   const cancellationRequest =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow(
       {
@@ -36,12 +36,18 @@ export async function putShoppingMallSellerCancellationRequestsCancellationReque
         },
       },
     );
-  // Step 2: Verify seller owns the product (via order_item)
+  // Step 2: Verify the status is 'pending' - only pending requests can be updated
+  if (cancellationRequest.status !== "pending") {
+    throw new HttpException(
+      "Cancellation request has already been responded to",
+      409,
+    );
+  }
+  // Step 3: Verify the seller owns the product in the order item
   const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: {
         id: cancellationRequest.shopping_mall_order_item_id,
-        deleted_at: null,
       },
       select: {
         id: true,
@@ -51,33 +57,23 @@ export async function putShoppingMallSellerCancellationRequestsCancellationReque
   if (orderItem.shopping_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Step 3: Verify status is 'pending'
-  if (cancellationRequest.status !== "pending") {
-    throw new HttpException("Cancellation request already responded to", 409);
-  }
-  // Step 4: Validate rejection_reason when status is 'rejected'
+  // Step 4: Validate rejection_reason if status is 'rejected'
   if (props.body.status === "rejected" && !props.body.rejection_reason) {
     throw new HttpException(
-      "Rejection reason is required when rejecting cancellation",
+      "Rejection reason is required when rejecting a cancellation request",
       400,
     );
   }
+  // Step 5: Begin database transaction
   const now = new Date();
-  // Step 5: Transaction
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Get full cancellation request for snapshot
-    const fullRequest =
-      await tx.shopping_mall_cancellation_requests.findUniqueOrThrow({
-        where: { id: props.cancellationRequestId },
-        ...ShoppingMallCancellationRequestTransformer.select(),
-      });
-    // Create snapshot
+  const result = await MyGlobal.prisma.$transaction(async (tx) => {
+    // Step 5a: Create snapshot in shopping_mall_cancellation_snapshots
     await tx.shopping_mall_cancellation_snapshots.create({
       data: {
-        id: v4() as string & tags.Format<"uuid">,
+        id: v4(),
         shopping_mall_cancellation_request_id: props.cancellationRequestId,
         snapshot_data: JSON.stringify({
-          previous_status: fullRequest.status,
+          previous_status: "pending",
           new_status: props.body.status,
           rejection_reason: props.body.rejection_reason ?? null,
           responded_at: now.toISOString(),
@@ -86,35 +82,39 @@ export async function putShoppingMallSellerCancellationRequestsCancellationReque
         created_at: now,
       },
     });
-    // Update cancellation request
+    // Step 5b: Update the cancellation request
     await tx.shopping_mall_cancellation_requests.update({
-      where: { id: props.cancellationRequestId },
+      where: {
+        id: props.cancellationRequestId,
+      },
       data: {
         status: props.body.status,
-        rejection_reason: props.body.rejection_reason ?? null,
+        rejection_reason:
+          props.body.status === "rejected" ? props.body.rejection_reason : null,
         responded_at: now,
         shopping_mall_seller_id: props.seller.id,
         updated_at: now,
       },
     });
-    // If approved, update order item status to 'cancelled'
+    // Step 5c: If approved, update order item status to 'cancelled'
     if (props.body.status === "approved") {
       await tx.shopping_mall_order_items.update({
-        where: { id: orderItem.id },
+        where: {
+          id: orderItem.id,
+        },
         data: {
           status: "cancelled",
-          updated_at: now,
         },
       });
     }
-  });
-  // Step 6: Return updated cancellation request
-  const updated =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.findUniqueOrThrow(
-      {
-        where: { id: props.cancellationRequestId },
-        ...ShoppingMallCancellationRequestTransformer.select(),
+    // Step 6: Return the updated cancellation request with full data
+    return tx.shopping_mall_cancellation_requests.findUniqueOrThrow({
+      where: {
+        id: props.cancellationRequestId,
       },
-    );
-  return await ShoppingMallCancellationRequestTransformer.transform(updated);
+      ...ShoppingMallCancellationRequestTransformer.select(),
+    });
+  });
+  // Step 7: Transform and return the result
+  return await ShoppingMallCancellationRequestTransformer.transform(result);
 }

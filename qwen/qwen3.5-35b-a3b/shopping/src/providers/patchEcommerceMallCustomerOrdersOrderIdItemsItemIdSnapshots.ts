@@ -27,10 +27,6 @@ export async function patchEcommerceMallCustomerOrdersOrderIdItemsItemIdSnapshot
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput = {
-    order_item_id: props.itemId,
-    deleted_at: null,
-  } satisfies Prisma.ecommerce_mall_order_item_snapshotsWhereInput;
   await MyGlobal.prisma.ecommerce_mall_orders.findFirstOrThrow({
     where: {
       id: props.orderId,
@@ -39,14 +35,9 @@ export async function patchEcommerceMallCustomerOrdersOrderIdItemsItemIdSnapshot
     },
     select: { id: true },
   });
-  await MyGlobal.prisma.ecommerce_mall_order_items.findFirstOrThrow({
-    where: {
-      id: props.itemId,
-      ecommerce_mall_order_id: props.orderId,
-      deleted_at: null,
-    },
-    select: { id: true },
-  });
+  const whereInput = {
+    order_item_id: props.itemId,
+  } satisfies Prisma.ecommerce_mall_order_item_snapshotsWhereInput;
   const data =
     await MyGlobal.prisma.ecommerce_mall_order_item_snapshots.findMany({
       where: whereInput,
@@ -61,15 +52,15 @@ export async function patchEcommerceMallCustomerOrdersOrderIdItemsItemIdSnapshot
     },
   );
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallOrderItemSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallOrderItemSnapshotAtSummaryTransformer.transform,
-    ),
   };
 }

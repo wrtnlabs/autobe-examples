@@ -25,7 +25,7 @@ export async function putHrmPlatformMemberTimersTimerId(props: {
   timerId: string & tags.Format<"uuid">;
   body: IHrmPlatformTimer.IUpdate;
 }): Promise<IHrmPlatformTimer> {
-  // Step 1: Verify employee exists for current member
+  // Step 1: Get employee record for authenticated member
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
       hrm_platform_user_id: props.member.id,
@@ -33,10 +33,10 @@ export async function putHrmPlatformMemberTimersTimerId(props: {
     },
   });
   if (employee === null) {
-    throw new HttpException("Employee record not found", 403);
+    throw new HttpException("Employee record not found", 404);
   }
-  // Step 2: Fetch timer with required fields for validation
-  const timer = await MyGlobal.prisma.hrm_platform_timers.findUniqueOrThrow({
+  // Step 2: Fetch timer by timerId
+  const timer = await MyGlobal.prisma.hrm_platform_timers.findUnique({
     where: { id: props.timerId },
     select: {
       id: true,
@@ -47,60 +47,65 @@ export async function putHrmPlatformMemberTimersTimerId(props: {
       deleted_at: true,
     },
   });
-  // Step 3: Verify ownership - timer must belong to current employee
-  if (timer.employee_id !== employee.id) {
-    throw new HttpException("Timer does not belong to you", 403);
+  // Step 3: Verify timer exists
+  if (timer === null) {
+    throw new HttpException("Timer not found", 404);
   }
-  // Step 4: Verify timer is still running (not stopped)
+  // Step 4: Verify timer belongs to current employee
+  if (timer.employee_id !== employee.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Step 5: Verify timer is still running (not stopped)
   if (timer.stopped_at !== null) {
     throw new HttpException("Cannot update a stopped timer", 400);
   }
-  // Step 5: Verify timer is not soft-deleted
+  // Step 6: Verify timer is not soft-deleted
   if (timer.deleted_at !== null) {
-    throw new HttpException("Timer has been deleted", 404);
+    throw new HttpException("Timer is deleted", 400);
   }
-  // Step 6: Validate project_id if provided
+  // Step 7: Validate project_id if provided
   if (props.body.project_id !== undefined) {
-    // Verify project exists
-    const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
+    const newProject = await MyGlobal.prisma.hrm_platform_projects.findUnique({
       where: { id: props.body.project_id },
+      select: { id: true },
     });
-    if (project === null) {
+    if (newProject === null) {
       throw new HttpException("Project not found", 400);
     }
-    // Verify employee is assigned to the project
-    const projectMember =
+    // Verify employee has project membership
+    const projectMembership =
       await MyGlobal.prisma.hrm_platform_project_members.findFirst({
         where: {
           hrm_platform_employee_id: employee.id,
           hrm_platform_project_id: props.body.project_id,
+          deleted_at: null,
         },
       });
-    if (projectMember === null) {
+    if (projectMembership === null) {
       throw new HttpException("You are not assigned to this project", 400);
     }
   }
-  // Step 7: Validate task_id if provided
-  if (props.body.task_id !== undefined && props.body.task_id !== null) {
-    // Determine which project to validate against
-    const selectedProjectId = props.body.project_id ?? timer.project_id;
-    // Verify task exists and belongs to the selected project
-    const task = await MyGlobal.prisma.hrm_platform_tasks.findFirst({
-      where: {
-        id: props.body.task_id,
-        hrm_platform_projects_id: selectedProjectId,
-        deleted_at: null,
-      },
-    });
-    if (task === null) {
-      throw new HttpException(
-        "Task not found or does not belong to the selected project",
-        400,
-      );
+  // Step 8: Validate task_id if provided
+  if (props.body.task_id !== undefined) {
+    const targetProjectId = props.body.project_id ?? timer.project_id;
+    if (props.body.task_id !== null) {
+      const task = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
+        where: { id: props.body.task_id },
+        select: { id: true, hrm_platform_projects_id: true },
+      });
+      if (task === null) {
+        throw new HttpException("Task not found", 400);
+      }
+      if (task.hrm_platform_projects_id !== targetProjectId) {
+        throw new HttpException(
+          "Task does not belong to the selected project",
+          400,
+        );
+      }
     }
   }
-  // Step 8: Update timer
-  await MyGlobal.prisma.hrm_platform_timers.update({
+  // Step 9: Update timer
+  const updatedTimer = await MyGlobal.prisma.hrm_platform_timers.update({
     where: { id: props.timerId },
     data: {
       ...(props.body.description !== undefined && {
@@ -109,15 +114,18 @@ export async function putHrmPlatformMemberTimersTimerId(props: {
       ...(props.body.project_id !== undefined && {
         project_id: props.body.project_id,
       }),
-      ...(props.body.task_id !== undefined && { task_id: props.body.task_id }),
+      ...(props.body.task_id !== undefined && {
+        task_id: props.body.task_id,
+      }),
       updated_at: new Date(),
     },
   });
-  // Step 9: Fetch updated timer with full data for response
-  const updatedTimer =
-    await MyGlobal.prisma.hrm_platform_timers.findUniqueOrThrow({
+  // Step 10: Return updated timer using transformer
+  const fullTimer = await MyGlobal.prisma.hrm_platform_timers.findUniqueOrThrow(
+    {
       where: { id: props.timerId },
       ...HrmPlatformTimerTransformer.select(),
-    });
-  return await HrmPlatformTimerTransformer.transform(updatedTimer);
+    },
+  );
+  return await HrmPlatformTimerTransformer.transform(fullTimer);
 }

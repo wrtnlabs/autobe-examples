@@ -20,29 +20,35 @@ export async function putErpHrmTimeTrackingReportOutputsReportOutputId(props: {
   reportOutputId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingReportOutput.IUpdate;
 }): Promise<IErpHrmTimeTrackingReportOutput> {
-  const notesProvided = Object.prototype.hasOwnProperty.call(
-    props.body,
-    "notes",
-  );
-  const notes = notesProvided ? (props.body.notes ?? null) : undefined;
-  await MyGlobal.prisma.erp_hrm_time_tracking_report_outputs.update({
+  await MyGlobal.prisma.erp_hrm_time_tracking_report_outputs.findUniqueOrThrow({
     where: { id: props.reportOutputId },
-    data: {
-      ...(notesProvided ? { notes: notes } : {}),
+    select: {
+      ...ErpHrmTimeTrackingReportOutputTransformer.select().select,
+      reportGenerationRun: {
+        select: {
+          reportDefinition: {
+            select: {
+              erp_hrm_time_tracking_organization_id: true,
+            },
+          },
+        },
+      },
     },
+  });
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    if (props.body.notes !== undefined) {
+      await tx.erp_hrm_time_tracking_report_outputs.update({
+        where: { id: props.reportOutputId },
+        data: { notes: props.body.notes ?? null },
+      });
+    }
   });
   const updated =
     await MyGlobal.prisma.erp_hrm_time_tracking_report_outputs.findUniqueOrThrow(
       {
         where: { id: props.reportOutputId },
-        select: ErpHrmTimeTrackingReportOutputTransformer.select(),
-      } as Parameters<
-        typeof MyGlobal.prisma.erp_hrm_time_tracking_report_outputs.findUniqueOrThrow
-      >[0],
+        ...ErpHrmTimeTrackingReportOutputTransformer.select(),
+      },
     );
-  return ErpHrmTimeTrackingReportOutputTransformer.transform(
-    updated as Parameters<
-      typeof ErpHrmTimeTrackingReportOutputTransformer.transform
-    >[0],
-  );
+  return ErpHrmTimeTrackingReportOutputTransformer.transform(updated as any);
 }

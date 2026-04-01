@@ -21,18 +21,13 @@ export async function getShoppingMallMemberReviewsReviewId(props: {
   reviewId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallReview> {
   const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
-    where: { id: props.reviewId },
-    select: {
-      ...(ShoppingMallReviewTransformer.select()
-        .select satisfies Prisma.shopping_mall_reviewsFindManyArgs["select"]),
-      is_public: true,
-      shopping_mall_customer_id: true,
+    where: {
+      id: props.reviewId,
     },
+    ...ShoppingMallReviewTransformer.select(),
   });
-  if (
-    !review.is_public &&
-    review.shopping_mall_customer_id !== props.member.id
-  ) {
+  const customerId = review.customer.id;
+  if (customerId !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await ShoppingMallReviewTransformer.transform(review);

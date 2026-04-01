@@ -7,9 +7,14 @@ import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/struc
 import { IRedditCommunityVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityVote";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { RedditCommunityCommentAtSummaryTransformer } from "./RedditCommunityCommentAtSummaryTransformer";
+import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
+import { RedditCommunityPostAtSummaryTransformer } from "./RedditCommunityPostAtSummaryTransformer";
 
 export namespace RedditCommunityVoteTransformer {
   export type Payload = Prisma.reddit_community_votesGetPayload<
@@ -23,9 +28,9 @@ export namespace RedditCommunityVoteTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        member: true,
-        targetPost: true,
-        targetComment: true,
+        member: RedditCommunityMemberAtSummaryTransformer.select(),
+        targetPost: RedditCommunityPostAtSummaryTransformer.select(),
+        targetComment: RedditCommunityCommentAtSummaryTransformer.select(),
         karmaSnapshots: true,
         postTarget: true,
         commentVote: true,
@@ -38,68 +43,22 @@ export namespace RedditCommunityVoteTransformer {
     return {
       id: input.id,
       vote_type: input.vote_type as "upvote" | "downvote",
-      member: {
-        id: input.member.id,
-        username: input.member.username,
-        created_at: toISOStringSafe(input.member.created_at),
-      } satisfies IRedditCommunityMember.ISummary,
+      member: await RedditCommunityMemberAtSummaryTransformer.transform(
+        input.member,
+      ),
       targetPost: input.targetPost
-        ? {
-            id: input.targetPost.id,
-            title: input.targetPost.title,
-            author: {
-              id: input.targetPost.author.id,
-              username: input.targetPost.author.username,
-              created_at: toISOStringSafe(input.targetPost.author.created_at),
-            } satisfies IRedditCommunityMember.ISummary,
-            community: {
-              id: input.targetPost.community.id,
-              name: input.targetPost.community.name,
-              description: input.targetPost.community.description,
-              subscriber_count: input.targetPost.community.subscriber_count,
-              owner: {
-                id: input.targetPost.community.owner.id,
-                username: input.targetPost.community.owner.username,
-                created_at: toISOStringSafe(
-                  input.targetPost.community.owner.created_at,
-                ),
-              } satisfies IRedditCommunityMember.ISummary,
-              created_at: toISOStringSafe(
-                input.targetPost.community.created_at,
-              ),
-              updated_at: toISOStringSafe(
-                input.targetPost.community.updated_at,
-              ),
-              deleted_at: input.targetPost.community.deleted_at
-                ? toISOStringSafe(input.targetPost.community.deleted_at)
-                : null,
-            } satisfies IRedditCommunityCommunity.ISummary,
-            vote_score: input.targetPost.vote_score,
-            comment_count: input.targetPost.comment_count,
-            created_at: toISOStringSafe(input.targetPost.created_at),
-            post_type: input.targetPost.post_type as "text" | "link" | "image",
-            preview_content: input.targetPost.preview_content,
-          }
-        : null,
+        ? await RedditCommunityPostAtSummaryTransformer.transform(
+            input.targetPost,
+          )
+        : undefined,
       targetComment: input.targetComment
-        ? ({
-            id: input.targetComment.id,
-            voteScore: input.targetComment.voteScore,
-            createdAt: toISOStringSafe(input.targetComment.createdAt),
-            parentComment: null,
-            replyCount: input.targetComment.replyCount,
-            author: {
-              id: input.targetComment.author.id,
-              username: input.targetComment.author.username,
-              created_at: toISOStringSafe(
-                input.targetComment.author.created_at,
-              ),
-            } satisfies IRedditCommunityMember.ISummary,
-          } satisfies IRedditCommunityComment.ISummary)
-        : null,
+        ? await RedditCommunityCommentAtSummaryTransformer.transform(
+            input.targetComment,
+          )
+        : undefined,
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
       deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-    } satisfies IRedditCommunityVote;
+    };
   }
 }

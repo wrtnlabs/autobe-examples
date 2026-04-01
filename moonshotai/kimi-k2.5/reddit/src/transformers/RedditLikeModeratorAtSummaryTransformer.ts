@@ -5,8 +5,10 @@ import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRed
 import { IRedditLikeModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeModerator";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeCommunityAtSummaryTransformer } from "./RedditLikeCommunityAtSummaryTransformer";
 import { RedditLikeMemberAtSummaryTransformer } from "./RedditLikeMemberAtSummaryTransformer";
@@ -15,6 +17,21 @@ export namespace RedditLikeModeratorAtSummaryTransformer {
   export type Payload = Prisma.reddit_like_moderatorsGetPayload<
     ReturnType<typeof select>
   >;
+  export async function transform(
+    input: Payload,
+  ): Promise<IRedditLikeModerator.ISummary> {
+    return {
+      id: input.id,
+      canAddModerators: input.can_add_moderators,
+      member: await RedditLikeMemberAtSummaryTransformer.transform(
+        input.member,
+      ),
+      community: await RedditLikeCommunityAtSummaryTransformer.transform(
+        input.community,
+      ),
+      createdAt: input.created_at.toISOString(),
+    };
+  }
   export function select() {
     return {
       select: {
@@ -25,20 +42,5 @@ export namespace RedditLikeModeratorAtSummaryTransformer {
         community: RedditLikeCommunityAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_like_moderatorsFindManyArgs;
-  }
-  export async function transform(
-    input: Payload,
-  ): Promise<IRedditLikeModerator.ISummary> {
-    return {
-      id: input.id,
-      canAddModerators: input.can_add_moderators,
-      createdAt: input.created_at.toISOString(),
-      member: await RedditLikeMemberAtSummaryTransformer.transform(
-        input.member,
-      ),
-      community: await RedditLikeCommunityAtSummaryTransformer.transform(
-        input.community,
-      ),
-    };
   }
 }

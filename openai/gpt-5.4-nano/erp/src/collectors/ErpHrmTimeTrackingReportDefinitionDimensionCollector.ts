@@ -12,17 +12,18 @@ export namespace ErpHrmTimeTrackingReportDefinitionDimensionCollector {
     body: IErpHrmTimeTrackingReportDefinitionDimension.ICreate;
     reportDefinition: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       dimension_key: props.body.dimension_key,
       dimension_label: props.body.dimension_label,
       sort_order: props.body.sort_order,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      reportDefinition: { connect: { id: props.reportDefinition.id } },
-      reportOutputs: undefined,
+      reportDefinition: {
+        connect: { id: props.reportDefinition.id },
+      },
+      // reportOutputs is a reverse hasMany relation; omit from create input.
     } satisfies Prisma.erp_hrm_time_tracking_report_definition_dimensionsCreateInput;
   }
 }

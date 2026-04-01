@@ -24,193 +24,155 @@ export async function putRedditCommunityMemberProfile(props: {
   member: MemberPayload;
   body: IRedditCommunityUserProfile.IUpdate;
 }): Promise<IRedditCommunityUserProfile> {
-  const memberId = props.member.id;
-  const sessionId = props.member.session_id;
-  // Verify session is valid for this member
-  const session =
-    await MyGlobal.prisma.reddit_community_member_sessions.findFirst({
-      where: {
-        id: sessionId,
-        member_id: memberId,
-        expired_at: {
-          gte: new Date(),
-        },
-      },
-    });
-  if (!session) {
-    throw new HttpException("Session expired", 401);
-  }
-  // Verify member account exists and is not deleted
-  const member = await MyGlobal.prisma.reddit_community_members.findFirst({
-    where: {
-      id: memberId,
-      deleted_at: null,
-    },
-  });
-  if (!member) {
-    throw new HttpException("Member not found", 404);
-  }
-  // Find the profile belonging to this member's user account
+  const member = props.member;
+  const body = props.body;
+  // Step 1: Fetch existing profile to validate existence
   const profile =
-    await MyGlobal.prisma.reddit_community_user_profiles.findFirst({
+    await MyGlobal.prisma.reddit_community_user_profiles.findFirstOrThrow({
       where: {
         reddit_community_user_id: member.id,
         deleted_at: null,
       },
     });
-  if (!profile) {
-    throw new HttpException("Profile not found", 404);
-  }
-  // Validate display name if provided - must not be empty and must be unique
-  let displayName: string | undefined = props.body.display_name;
-  if (displayName !== undefined) {
-    // Check uniqueness - find any profile with this name other than this one
-    const existingProfile =
+  // Step 2: Validate display_name uniqueness if provided
+  if (body.display_name !== undefined) {
+    const displayNameConflict =
       await MyGlobal.prisma.reddit_community_user_profiles.findFirst({
         where: {
-          display_name: displayName,
+          display_name: body.display_name,
           id: {
             not: profile.id,
           },
           deleted_at: null,
         },
       });
-    if (existingProfile) {
-      throw new HttpException("Display name already in use", 409);
+    if (displayNameConflict !== null) {
+      throw new HttpException("Display name already exists", 409);
     }
   }
-  // Validate avatar if provided - must exist and belong to this member
-  let avatarUrlId: (string & tags.Format<"uuid">) | null | undefined =
-    props.body.avatar_image_url_id;
-  if (props.body.avatar_image_url_id !== undefined) {
-    const avatarId = props.body.avatar_image_url_id;
-    if (avatarId === null) {
-      // Explicitly removing avatar
-      avatarUrlId = null;
-    } else {
-      // Verify avatar belongs to this member via file_of_users relationship
-      const fileOfUser =
-        await MyGlobal.prisma.reddit_community_file_of_users.findFirst({
-          where: {
-            reddit_community_member_id: member.id,
-            reddit_community_file_id: avatarId,
-          },
-        });
-      if (!fileOfUser) {
-        throw new HttpException("Avatar does not belong to you", 400);
-      }
-      avatarUrlId = avatarId;
+  // Step 3: Validate avatar ownership if provided
+  if (body.avatar_image_url_id !== undefined) {
+    const avatar =
+      await MyGlobal.prisma.reddit_community_user_avatars.findFirst({
+        where: {
+          id: body.avatar_image_url_id as string,
+        },
+      });
+    if (avatar === null) {
+      throw new HttpException("Avatar file not found", 400);
+    }
+    // Verify avatar belongs to this user
+    if (avatar.reddit_community_user_id !== member.id) {
+      throw new HttpException("Avatar does not belong to user", 400);
     }
   }
-  // Build update data - only include fields that were provided
+  // Step 4: Build update data
   const updateData: {
     display_name?: string;
     bio?: string | null;
-    avatar_image_url_id?: (string & tags.Format<"uuid">) | null;
+    avatar_image_url_id?: string | null;
     updated_at: Date;
   } = {
     updated_at: new Date(),
   };
-  if (props.body.display_name !== undefined) {
-    updateData.display_name = displayName!;
+  if (body.display_name !== undefined) {
+    updateData.display_name = body.display_name;
   }
-  if (props.body.bio !== undefined) {
-    updateData.bio = props.body.bio;
+  if (body.bio !== undefined) {
+    updateData.bio = body.bio;
   }
-  if (props.body.avatar_image_url_id !== undefined) {
-    updateData.avatar_image_url_id = avatarUrlId!;
+  if (body.avatar_image_url_id !== undefined) {
+    updateData.avatar_image_url_id = body.avatar_image_url_id;
   }
-  // Update profile atomically
-  const updatedProfile =
-    await MyGlobal.prisma.reddit_community_user_profiles.update({
+  // Step 5: Execute update
+  const updated = await MyGlobal.prisma.reddit_community_user_profiles.update({
+    where: {
+      id: profile.id,
+    },
+    data: updateData,
+  });
+  // Step 6: Fetch updated profile with full selects
+  const fullProfile =
+    await MyGlobal.prisma.reddit_community_user_profiles.findUniqueOrThrow({
       where: {
-        id: profile.id,
-      },
-      data: updateData,
-    });
-  // Fetch member details for user summary
-  const memberRecord =
-    await MyGlobal.prisma.reddit_community_members.findUniqueOrThrow({
-      where: {
-        id: member.id,
+        id: updated.id,
       },
       select: {
         id: true,
-        username: true,
-        created_at: true,
-      },
-    });
-  // Fetch karma score for member
-  const karmaRecord =
-    await MyGlobal.prisma.reddit_community_user_karmas.findFirst({
-      where: {
-        reddit_community_member_id: member.id,
-      },
-      select: {
-        id: true,
-        reddit_community_member_id: true,
-        current_score: true,
+        display_name: true,
+        bio: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            created_at: true,
+          },
+        },
+        avatar: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
-  const karma: IRedditCommunityUserKarma = karmaRecord
-    ? {
-        id: karmaRecord.id,
-        reddit_member_id: karmaRecord.reddit_community_member_id,
-        current_score: karmaRecord.current_score,
-        created_at: toISOStringSafe(karmaRecord.created_at),
-        updated_at: toISOStringSafe(karmaRecord.updated_at),
-      }
-    : {
-        id: v4() as string & tags.Format<"uuid">,
-        reddit_member_id: member.id,
-        current_score: 0,
-        created_at: toISOStringSafe(new Date()),
-        updated_at: toISOStringSafe(new Date()),
-      };
-  // Build user summary
-  const userSummary: IRedditCommunityMember.ISummary = {
-    id: memberRecord.id,
-    username: memberRecord.username,
-    created_at: toISOStringSafe(memberRecord.created_at),
-    profile: undefined,
-    karma: karma.current_score,
+  // Step 7: Transform and return
+  const karmaRecord =
+    await MyGlobal.prisma.reddit_community_user_karmas.findFirstOrThrow({
+      where: {
+        reddit_community_member_id: fullProfile.user.id,
+      },
+    });
+  const user: IRedditCommunityMember.ISummary = {
+    id: fullProfile.user.id,
+    username: fullProfile.user.username,
+    created_at: toISOStringSafe(fullProfile.user.created_at),
+    karma:
+      karmaRecord !== undefined && karmaRecord !== null
+        ? Number(karmaRecord.current_score)
+        : undefined,
   };
-  // Empty pagination for posts and comments (requires separate pagination logic)
-  const postsPagination: IPageIRedditCommunityPost.ISummary = {
+  const karma: IRedditCommunityUserKarma = {
+    id: karmaRecord.id,
+    reddit_member_id: karmaRecord.reddit_community_member_id,
+    current_score: Number(karmaRecord.current_score),
+    created_at: toISOStringSafe(karmaRecord.created_at),
+    updated_at: toISOStringSafe(karmaRecord.updated_at),
+  };
+  const posts: IPageIRedditCommunityPost.ISummary = {
     pagination: {
       current: 1,
-      limit: 10,
+      limit: 20,
       records: 0,
       pages: 0,
     },
     data: [],
   };
-  const commentsPagination: IPageIRedditCommunityComment.ISummary = {
+  const comments: IPageIRedditCommunityComment.ISummary = {
     pagination: {
       current: 1,
-      limit: 10,
+      limit: 20,
       records: 0,
       pages: 0,
     },
     data: [],
   };
-  // Build and return complete profile response
-  const result: IRedditCommunityUserProfile = {
-    id: updatedProfile.id,
-    user: userSummary,
-    avatar_image_url_id: updatedProfile.avatar_image_url_id ?? null,
-    display_name: updatedProfile.display_name,
-    bio: updatedProfile.bio ?? null,
-    karma: karma,
-    posts: postsPagination,
-    comments: commentsPagination,
-    created_at: toISOStringSafe(updatedProfile.created_at),
-    updated_at: toISOStringSafe(updatedProfile.updated_at),
-    deleted_at: updatedProfile.deleted_at
-      ? toISOStringSafe(updatedProfile.deleted_at)
+  return {
+    id: fullProfile.id,
+    user,
+    avatar_image_url_id: fullProfile.avatar?.id ?? null,
+    display_name: fullProfile.display_name,
+    bio: fullProfile.bio ?? null,
+    karma,
+    posts,
+    comments,
+    created_at: toISOStringSafe(fullProfile.created_at),
+    updated_at: toISOStringSafe(fullProfile.updated_at),
+    deleted_at: fullProfile.deleted_at
+      ? toISOStringSafe(fullProfile.deleted_at)
       : null,
   };
-  return result satisfies IRedditCommunityUserProfile;
 }

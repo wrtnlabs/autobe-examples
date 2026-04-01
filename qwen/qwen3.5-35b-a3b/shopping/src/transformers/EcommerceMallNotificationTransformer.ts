@@ -2,8 +2,10 @@ import { IEcommerceMallNotification } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallNotificationTransformer {
@@ -21,6 +23,24 @@ export namespace EcommerceMallNotificationTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        recipients: {
+          select: { id: true },
+        } satisfies Prisma.ecommerce_mall_notification_recipientsFindManyArgs,
+        customerReference: {
+          select: { id: true },
+        } satisfies Prisma.ecommerce_mall_notification_of_customersFindManyArgs,
+        sellerRef: {
+          select: { id: true },
+        } satisfies Prisma.ecommerce_mall_notification_of_sellersFindManyArgs,
+        adminReference: {
+          select: { id: true },
+        } satisfies Prisma.ecommerce_mall_notification_of_adminsFindManyArgs,
+        notificationOfSuperAdmin: {
+          select: { id: true },
+        } satisfies Prisma.ecommerce_mall_notification_of_super_adminsFindManyArgs,
+        guestReference: {
+          select: { id: true },
+        } satisfies Prisma.ecommerce_mall_notification_of_guestsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_notificationsFindManyArgs;
   }

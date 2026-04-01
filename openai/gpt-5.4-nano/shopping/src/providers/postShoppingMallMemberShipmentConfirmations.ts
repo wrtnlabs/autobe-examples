@@ -17,66 +17,75 @@ export async function postShoppingMallMemberShipmentConfirmations(props: {
   member: MemberPayload;
   body: IShoppingMallShipmentConfirmation.ICreate;
 }): Promise<IShoppingMallShipmentConfirmation> {
-  const confirmation = await MyGlobal.prisma.$transaction(async (tx) => {
-    const shipment = await tx.shopping_mall_shipments.findUniqueOrThrow({
-      where: { id: props.body.shoppingMallShipmentId },
-      select: {
-        id: true,
-        status: true,
-        seller_snapshot_id: true,
-        deleted_at: true,
+  const shipment = await MyGlobal.prisma.shopping_mall_shipments.findUnique({
+    where: { id: props.body.shoppingMallShipmentId },
+    select: {
+      id: true,
+      status: true,
+      deleted_at: true,
+    },
+  });
+  if (shipment === null || shipment.deleted_at !== null) {
+    throw new HttpException("Shipment not found", 404);
+  }
+  const normalizedConfirmationType = props.body.confirmationType;
+  if (
+    shipment.status === "delivered" &&
+    normalizedConfirmationType !== "delivered"
+  ) {
+    throw new HttpException("Shipment already delivered", 409);
+  }
+  const targetLineItemStatus =
+    normalizedConfirmationType === "delivered"
+      ? "delivered"
+      : normalizedConfirmationType === "shipped"
+        ? "shipped"
+        : null;
+  const created = await MyGlobal.prisma.$transaction(async (tx) => {
+    const confirmation = await tx.shopping_mall_shipment_confirmations.create({
+      data: {
+        id: v4(),
+        confirmed_at: toISOStringSafe(props.body.confirmedAt as any),
+        confirmation_type: props.body.confirmationType,
+        tracking_url:
+          props.body.trackingUrl === undefined ||
+          props.body.trackingUrl === null
+            ? null
+            : props.body.trackingUrl,
+        tracking_number:
+          props.body.trackingNumber === undefined ||
+          props.body.trackingNumber === null
+            ? null
+            : props.body.trackingNumber,
+        carrier_name:
+          props.body.carrierName === undefined ||
+          props.body.carrierName === null
+            ? null
+            : props.body.carrierName,
+        note:
+          props.body.note === undefined || props.body.note === null
+            ? null
+            : props.body.note,
+        created_at: toISOStringSafe(new globalThis.Date()),
+        updated_at: toISOStringSafe(new globalThis.Date()),
+        deleted_at: null,
+        shopping_mall_shipment_id: props.body.shoppingMallShipmentId!,
       },
+      ...ShoppingMallShipmentConfirmationTransformer.select(),
     });
-    if (shipment.deleted_at !== null) {
-      throw new HttpException("Shipment not found", 404);
-    }
-    // Authorization is domain-specific; with the currently available schemas,
-    // we at least ensure caller is authenticated (member) and then proceed.
-    // (Further seller ownership checks require snapshot-party schemas.)
-    const existingConfCount =
-      await tx.shopping_mall_shipment_confirmations.count({
+    if (targetLineItemStatus !== null) {
+      await tx.shopping_mall_order_items.updateMany({
         where: {
-          shopping_mall_shipment_id: props.body.shoppingMallShipmentId,
+          shopping_mall_shipment_id: props.body.shoppingMallShipmentId!,
           deleted_at: null,
         },
+        data: {
+          line_item_status: targetLineItemStatus,
+          updated_at: toISOStringSafe(new globalThis.Date()),
+        },
       });
-    if (shipment.status === "delivered" || shipment.status === "shipped") {
-      // Graceful no-op on repeated confirmations.
-      // We still create the confirmation record for audit, but do not regress statuses.
     }
-    const created = await tx.shopping_mall_shipment_confirmations.create({
-      data: {
-        id: v4() as unknown as string & tags.Format<"uuid">,
-        shopping_mall_shipment_id: props.body.shoppingMallShipmentId,
-        confirmation_type: props.body.confirmationType,
-        confirmed_at: props.body.confirmedAt,
-        tracking_url: props.body.trackingUrl ?? null,
-        tracking_number: props.body.trackingNumber ?? null,
-        carrier_name: props.body.carrierName ?? null,
-        note: props.body.note ?? null,
-        created_at: props.body.confirmedAt,
-        updated_at: props.body.confirmedAt,
-        deleted_at: null,
-      },
-    });
-    await tx.shopping_mall_order_items.updateMany({
-      where: {
-        shopping_mall_shipment_id: props.body.shoppingMallShipmentId,
-        deleted_at: null,
-      },
-      data: {
-        line_item_status: props.body.confirmationType,
-        updated_at: props.body.confirmedAt,
-      },
-    });
-    return created;
+    return confirmation;
   });
-  return await ShoppingMallShipmentConfirmationTransformer.transform(
-    await MyGlobal.prisma.shopping_mall_shipment_confirmations.findUniqueOrThrow(
-      {
-        where: { id: confirmation.id },
-        ...ShoppingMallShipmentConfirmationTransformer.select(),
-      },
-    ),
-  );
+  return ShoppingMallShipmentConfirmationTransformer.transform(created as any);
 }

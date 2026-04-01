@@ -17,13 +17,15 @@ export async function postShoppingMallAuthGuestJoin(props: {
   body: IShoppingMallGuest.IJoin;
 }): Promise<IShoppingMallGuest.IAuthorized> {
   const now = new Date();
-  const guestId = v4() as string & tags.Format<"uuid">;
-  const deviceFingerprint = `guest_${guestId}`;
+  const nowIso = now.toISOString();
+  const guestId = v4();
+  const deviceFingerprint = v4();
+  const guestIp = props.body.ip ?? props.ip;
   const guest = await MyGlobal.prisma.shopping_mall_guests.create({
     data: {
       id: guestId,
       device_fingerprint: deviceFingerprint,
-      ip: props.body.ip ?? props.ip,
+      ip: guestIp,
       created_at: now,
       updated_at: now,
       deleted_at: null,
@@ -39,12 +41,14 @@ export async function postShoppingMallAuthGuestJoin(props: {
   });
   const accessExpires = new Date(now.getTime() + 15 * 60 * 1000);
   const refreshExpires = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  const sessionId = v4() as string & tags.Format<"uuid">;
+  const accessExpiresIso = accessExpires.toISOString();
+  const refreshExpiresIso = refreshExpires.toISOString();
+  const sessionId = v4();
   await MyGlobal.prisma.shopping_mall_guest_sessions.create({
     data: {
       id: sessionId,
-      shopping_mall_guest_id: guest.id,
-      ip: props.body.ip ?? props.ip,
+      shopping_mall_guest_id: guestId,
+      ip: guestIp,
       href: props.body.href,
       referrer: props.body.referrer,
       created_at: now,
@@ -55,9 +59,9 @@ export async function postShoppingMallAuthGuestJoin(props: {
     access: jwt.sign(
       {
         type: "guest",
-        id: guest.id,
+        id: guestId,
         session_id: sessionId,
-        created_at: now.toISOString(),
+        created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "15m", issuer: "autobe" },
@@ -65,27 +69,24 @@ export async function postShoppingMallAuthGuestJoin(props: {
     refresh: jwt.sign(
       {
         type: "guest",
-        id: guest.id,
+        id: guestId,
         session_id: sessionId,
         tokenType: "refresh",
-        created_at: now.toISOString(),
+        created_at: nowIso,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "24h", issuer: "autobe" },
     ),
-    expired_at: accessExpires.toISOString() as string &
-      tags.Format<"date-time">,
-    refreshable_until: refreshExpires.toISOString() as string &
-      tags.Format<"date-time">,
+    expired_at: accessExpiresIso,
+    refreshable_until: refreshExpiresIso,
   };
   return {
-    id: guest.id as string & tags.Format<"uuid">,
+    id: guest.id,
     device_fingerprint: guest.device_fingerprint,
     ip: guest.ip,
-    created_at: toISOStringSafe(guest.created_at),
-    updated_at: toISOStringSafe(guest.updated_at),
-    deleted_at:
-      guest.deleted_at === null ? null : toISOStringSafe(guest.deleted_at),
-    token,
-  } satisfies IShoppingMallGuest.IAuthorized;
+    created_at: guest.created_at.toISOString(),
+    updated_at: guest.updated_at.toISOString(),
+    deleted_at: guest.deleted_at?.toISOString() ?? null,
+    token: token,
+  };
 }

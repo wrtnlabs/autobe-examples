@@ -11,6 +11,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { ShoppingMallReviewAtSummaryTransformer } from "../transformers/ShoppingMallReviewAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,71 +19,37 @@ export async function getShoppingMallMemberProductsProductIdReviews(props: {
   member: MemberPayload;
   productId: string & tags.Format<"uuid">;
 }): Promise<IPageIShoppingMallReview.ISummary> {
-  const page: number = 1;
-  const limit: number = 20;
-  const skip: number = (page - 1) * limit;
-  const product = await MyGlobal.prisma.shopping_mall_products.findUnique({
-    where: { id: props.productId },
-    select: { id: true },
-  });
-  if (product === null) {
-    const records = 0;
-    return {
-      pagination: {
-        current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
-        limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
-        records: records as number & tags.Type<"int32"> & tags.Minimum<0>,
-        pages: Math.ceil(records / limit) as number &
-          tags.Type<"int32"> &
-          tags.Minimum<0>,
+  const page = 1;
+  const limit = 20;
+  const skip = (page - 1) * limit;
+  const [rows, total] = await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.shopping_mall_reviews.findMany({
+      where: {
+        shopping_mall_product_id: props.productId,
+        OR: [{ is_public: true }, { deleted_at: { not: null } }],
       },
-      data: [],
-    };
-  }
-  const reviews = await MyGlobal.prisma.shopping_mall_reviews.findMany({
-    where: { shopping_mall_product_id: props.productId },
-    orderBy: [{ updated_at: "desc" }, { created_at: "desc" }],
-    skip,
-    take: limit,
-    select: {
-      id: true,
-      shopping_mall_product_id: true,
-      shopping_mall_order_item_id: true,
-      shopping_mall_customer_id: true,
-      rating: true,
-      body: true,
-      is_public: true,
-      deleted_at: true,
-      created_at: true,
-      updated_at: true,
-    },
-  });
-  const records = await MyGlobal.prisma.shopping_mall_reviews.count({
-    where: { shopping_mall_product_id: props.productId },
-  });
+      skip,
+      take: limit,
+      orderBy: { updated_at: "desc" },
+      ...ShoppingMallReviewAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.shopping_mall_reviews.count({
+      where: {
+        shopping_mall_product_id: props.productId,
+        OR: [{ is_public: true }, { deleted_at: { not: null } }],
+      },
+    }),
+  ]);
   return {
-    pagination: {
-      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
-      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
-      records: records as number & tags.Type<"int32"> & tags.Minimum<0>,
-      pages: Math.ceil(records / limit) as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-    },
-    data: reviews.map(
-      (r) =>
-        ({
-          id: r.id,
-          shoppingMallProductId: r.shopping_mall_product_id,
-          shoppingMallOrderItemId: r.shopping_mall_order_item_id,
-          shoppingMallCustomerId: r.shopping_mall_customer_id,
-          rating: r.rating,
-          body: r.body === null ? null : r.body,
-          isPublic: r.is_public,
-          deletedAt: r.deleted_at === null ? null : r.deleted_at.toISOString(),
-          createdAt: r.created_at.toISOString(),
-          updatedAt: r.updated_at.toISOString(),
-        }) satisfies IShoppingMallReview.ISummary,
+    data: await ArrayUtil.asyncMap(
+      rows,
+      ShoppingMallReviewAtSummaryTransformer.transform,
     ),
+    pagination: {
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
   };
 }

@@ -18,7 +18,5 @@ export async function putShoppingMallMemberCancellationRequestsCancellationReque
   cancellationRequestId: string & tags.Format<"uuid">;
   body: IShoppingMallCancellationRequest.IUpdate;
 }): Promise<IShoppingMallCancellationRequest> {
-  // This function body was previously empty, causing TS2355.
-  // Fail fast while keeping correct return typing.
   throw new HttpException("Not implemented", 501);
 }

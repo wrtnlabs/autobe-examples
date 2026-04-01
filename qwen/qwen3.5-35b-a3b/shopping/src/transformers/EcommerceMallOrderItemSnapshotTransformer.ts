@@ -2,8 +2,10 @@ import { IEcommerceMallOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/s
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallOrderItemSnapshotTransformer {
@@ -23,9 +25,7 @@ export namespace EcommerceMallOrderItemSnapshotTransformer {
         updated_at: true,
         deleted_at: true,
         orderItem: {
-          select: {
-            id: true,
-          },
+          select: { id: true },
         },
       },
     } satisfies Prisma.ecommerce_mall_order_item_snapshotsFindManyArgs;
@@ -44,6 +44,6 @@ export namespace EcommerceMallOrderItemSnapshotTransformer {
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IEcommerceMallOrderItemSnapshot;
   }
 }

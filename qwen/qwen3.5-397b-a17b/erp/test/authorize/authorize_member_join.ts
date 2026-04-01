@@ -18,14 +18,13 @@ export async function authorize_member_join(
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
     display_name: props.body?.display_name ?? RandomGenerator.name(),
+    avatar_image:
+      props.body?.avatar_image ?? typia.random<string & tags.Format<"uri">>(),
+    phone_number: props.body?.phone_number ?? RandomGenerator.mobile(),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    avatar_url:
-      props.body?.avatar_url ??
-      typia.random<(string & tags.Format<"uri">) | null>(),
-    phone_number: props.body?.phone_number ?? RandomGenerator.mobile(),
-    ip: props.body?.ip ?? typia.random<(string & tags.Format<"ipv4">) | null>(),
+    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
   } satisfies IHrmPlatformMember.IJoin;
   return await api.functional.hrmPlatform.auth.member.join(connection, {
     body: joinInput,

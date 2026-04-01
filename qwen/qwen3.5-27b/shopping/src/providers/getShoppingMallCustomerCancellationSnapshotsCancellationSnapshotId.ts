@@ -25,12 +25,32 @@ export async function getShoppingMallCustomerCancellationSnapshotsCancellationSn
     await MyGlobal.prisma.shopping_mall_cancellation_snapshots.findUniqueOrThrow(
       {
         where: { id: props.cancellationSnapshotId },
+        select: {
+          id: true,
+          snapshot_data: true,
+          created_at: true,
+          cancellationRequest: {
+            select: {
+              id: true,
+              shopping_mall_customer_id: true,
+            },
+          },
+        },
+      },
+    );
+  if (
+    snapshot.cancellationRequest.shopping_mall_customer_id !== props.customer.id
+  ) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const fullSnapshot =
+    await MyGlobal.prisma.shopping_mall_cancellation_snapshots.findUniqueOrThrow(
+      {
+        where: { id: props.cancellationSnapshotId },
         ...ShoppingMallCancellationSnapshotTransformer.select(),
       },
     );
-  // Authorization: verify the customer owns this cancellation request
-  if (snapshot.cancellationRequest.customer.id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  return await ShoppingMallCancellationSnapshotTransformer.transform(snapshot);
+  return await ShoppingMallCancellationSnapshotTransformer.transform(
+    fullSnapshot,
+  );
 }

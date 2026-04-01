@@ -8,7 +8,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { ShoppingMallProductSnapshotCollector } from "../collectors/ShoppingMallProductSnapshotCollector";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 import { ShoppingMallProductSnapshotTransformer } from "../transformers/ShoppingMallProductSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -18,77 +17,59 @@ export async function postShoppingMallAdminProductSnapshots(props: {
   admin: AdminPayload;
   body: IShoppingMallProductSnapshot.ICreate;
 }): Promise<IShoppingMallProductSnapshot> {
-  if (props.admin.type !== "admin") {
-    throw new HttpException("Forbidden", 403);
-  }
-  const snapshotCode = props.body.snapshot_code;
-  const sourceType = props.body.source_type;
-  const reason = props.body.reason;
-  if (snapshotCode.trim().length === 0) {
-    throw new HttpException("snapshot_code is required", 400);
-  }
-  if (sourceType.trim().length === 0) {
-    throw new HttpException("source_type is required", 400);
-  }
-  if (reason.trim().length === 0) {
-    throw new HttpException("reason is required", 400);
-  }
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const validateOptionalUuid = (
-    value: (string & tags.Format<"uuid">) | null | undefined,
-    fieldName: string,
-  ): void => {
-    if (value == null) return;
-    if (!uuidRegex.test(value)) {
-      throw new HttpException(`${fieldName} must be a valid uuid`, 400);
-    }
-  };
-  if (!uuidRegex.test(props.body.source_entity_id)) {
-    throw new HttpException("source_entity_id must be a valid uuid", 400);
-  }
-  validateOptionalUuid(props.body.source_seller_id, "source_seller_id");
-  validateOptionalUuid(props.body.source_order_id, "source_order_id");
-  validateOptionalUuid(props.body.source_order_item_id, "source_order_item_id");
-  validateOptionalUuid(props.body.source_review_id, "source_review_id");
-  validateOptionalUuid(
-    props.body.source_cancellation_request_id,
-    "source_cancellation_request_id",
-  );
-  validateOptionalUuid(
-    props.body.source_refund_request_id,
-    "source_refund_request_id",
-  );
   return await MyGlobal.prisma.$transaction(async (tx) => {
-    const data = await ShoppingMallProductSnapshotCollector.collect({
-      body: props.body,
+    const admin = await tx.shopping_mall_admins.findFirst({
+      where: { id: props.admin.id, deleted_at: null },
+      select: { id: true },
     });
-    let created: {
-      id: string & tags.Format<"uuid">;
-    };
-    try {
-      const row = await tx.shopping_mall_snapshots.create({
-        data,
-      });
-      created = { id: row.id };
-    } catch (err: unknown) {
-      const code =
-        typeof err === "object" && err !== null && "code" in err
-          ? (
-              err as {
-                code?: unknown;
-              }
-            ).code
-          : undefined;
-      if (code === "P2002") {
-        throw new HttpException("snapshot_code already exists", 409);
-      }
-      throw new HttpException("Failed to create snapshot", 500);
+    if (admin === null) {
+      throw new HttpException("You're not enrolled", 403);
     }
-    const loaded = await tx.shopping_mall_product_snapshots.findUniqueOrThrow({
-      where: { id: created.id },
+    const createdAt = toISOStringSafe(new Date());
+    const snapshot = await tx.shopping_mall_snapshots.create({
+      data: {
+        id: v4(),
+        snapshot_code: props.body.snapshot_code,
+        source_type: props.body.source_type,
+        source_entity_id: props.body.source_entity_id,
+        source_seller_id:
+          props.body.source_seller_id === undefined
+            ? null
+            : props.body.source_seller_id,
+        source_order_id:
+          props.body.source_order_id === undefined
+            ? null
+            : props.body.source_order_id,
+        source_order_item_id:
+          props.body.source_order_item_id === undefined
+            ? null
+            : props.body.source_order_item_id,
+        source_review_id:
+          props.body.source_review_id === undefined
+            ? null
+            : props.body.source_review_id,
+        source_cancellation_request_id:
+          props.body.source_cancellation_request_id === undefined
+            ? null
+            : props.body.source_cancellation_request_id,
+        source_refund_request_id:
+          props.body.source_refund_request_id === undefined
+            ? null
+            : props.body.source_refund_request_id,
+        created_by_member_id: null,
+        reason: props.body.reason,
+        created_at: createdAt,
+        updated_at: createdAt,
+        deleted_at: null,
+      },
+    });
+    const selected = await tx.shopping_mall_product_snapshots.findUnique({
+      where: { id: snapshot.id },
       ...ShoppingMallProductSnapshotTransformer.select(),
     });
-    return await ShoppingMallProductSnapshotTransformer.transform(loaded);
+    if (selected === null) {
+      throw new HttpException("Snapshot not found after creation", 500);
+    }
+    return await ShoppingMallProductSnapshotTransformer.transform(selected);
   });
 }

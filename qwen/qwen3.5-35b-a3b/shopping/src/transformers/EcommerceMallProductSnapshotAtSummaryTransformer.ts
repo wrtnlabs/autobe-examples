@@ -4,8 +4,10 @@ import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/str
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 
@@ -36,11 +38,11 @@ export namespace EcommerceMallProductSnapshotAtSummaryTransformer {
         input.product,
       ),
       name: input.name,
-      description: input.description ?? null,
+      description: input.description,
       base_price: Number(input.base_price),
-      sale_price: input.sale_price ? Number(input.sale_price) : null,
+      sale_price: input.sale_price !== null ? Number(input.sale_price) : null,
       status: input.status,
-      created_at: toISOStringSafe(input.created_at),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

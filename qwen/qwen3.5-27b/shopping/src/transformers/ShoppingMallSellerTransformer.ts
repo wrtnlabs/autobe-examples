@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallSellerTransformer {
@@ -15,7 +17,6 @@ export namespace ShoppingMallSellerTransformer {
       select: {
         id: true,
         email: true,
-        password_hash: true,
         shop_name: true,
         shop_description: true,
         logo_image: true,
@@ -24,13 +25,6 @@ export namespace ShoppingMallSellerTransformer {
         status: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
-        sessions: true,
-        passwordResets: true,
-        orderItems: true,
-        shipments: true,
-        cancellationRequests: true,
-        approvalRequests: true,
       },
     } satisfies Prisma.shopping_mall_sellersFindManyArgs;
   }
@@ -41,10 +35,10 @@ export namespace ShoppingMallSellerTransformer {
       id: input.id,
       email: input.email,
       shop_name: input.shop_name,
-      shop_description: input.shop_description,
-      logo_image: input.logo_image,
+      shop_description: input.shop_description ?? null,
+      logo_image: input.logo_image ?? null,
       approval_status: input.approval_status,
-      rejection_reason: input.rejection_reason,
+      rejection_reason: input.rejection_reason ?? null,
       status: input.status,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),

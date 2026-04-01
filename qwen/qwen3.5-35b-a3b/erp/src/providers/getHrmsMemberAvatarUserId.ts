@@ -16,32 +16,48 @@ export async function getHrmsMemberAvatarUserId(props: {
   member: MemberPayload;
   userId: string & tags.Format<"uuid">;
 }): Promise<IAvatarImageResponse> {
-  const requestedMember = await MyGlobal.prisma.hrms_members.findUniqueOrThrow({
-    where: { id: props.userId },
-    select: { id: true },
+  // Verify the target user exists
+  const targetUser = await MyGlobal.prisma.hrms_members.findUniqueOrThrow({
+    where: {
+      id: props.userId,
+      deleted_at: null,
+    },
   });
-  // Get organization IDs for the requested member
-  const requestedOrgIds =
-    await MyGlobal.prisma.hrms_organization_members.findMany({
-      where: { hrms_member_id: requestedMember.id },
-      select: { hrms_organization_id: true },
-    });
-  if (requestedOrgIds.length === 0) {
-    throw new HttpException("Access denied", 403);
-  }
-  const organizationMember =
+  // Get the requesting member's organization membership context
+  const requestingMembership =
     await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
         hrms_member_id: props.member.id,
-        hrms_organization_id: {
-          in: requestedOrgIds.map((org) => org.hrms_organization_id),
-        },
+        deleted_at: null,
       },
-      select: { hrms_organization_id: true },
     });
-  if (organizationMember === null) {
-    throw new HttpException("Access denied", 403);
+  if (requestingMembership === null) {
+    throw new HttpException("Forbidden", 403);
   }
+  // Verify data isolation - target user must be in an organization the requester has access to
+  const targetUserMembership =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        hrms_member_id: props.userId,
+        deleted_at: null,
+      },
+    });
+  if (targetUserMembership === null) {
+    throw new HttpException("User has no organization membership", 404);
+  }
+  // Check if both users share at least one organization
+  const hasOrganizationAccess =
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
+      where: {
+        hrms_organization_id: requestingMembership.hrms_organization_id,
+        hrms_member_id: props.userId,
+        deleted_at: null,
+      },
+    });
+  if (hasOrganizationAccess === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Query for the user's avatar file
   const avatarFile = await MyGlobal.prisma.hrms_files.findFirst({
     where: {
       owner_id: props.userId,
@@ -49,16 +65,25 @@ export async function getHrmsMemberAvatarUserId(props: {
       validation_status: "validated",
       deleted_at: null,
     },
-    select: { storage_path: true },
   });
+  const defaultAvatarUri: string &
+    tags.Format<"uri"> &
+    tags.ContentMediaType<"image/png"> =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
   if (avatarFile !== null) {
+    const avatarUri: string &
+      tags.Format<"uri"> &
+      (
+        | tags.ContentMediaType<"image/png">
+        | tags.ContentMediaType<"image/jpeg">
+      ) = avatarFile.storage_path;
     return {
-      avatar_uri: avatarFile.storage_path,
+      avatar_uri: avatarUri,
       default_avatar: false,
     };
   }
   return {
-    avatar_uri: "https://cdn.example.com/default-avatar.png",
+    avatar_uri: defaultAvatarUri,
     default_avatar: true,
   };
 }

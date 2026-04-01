@@ -5,7 +5,7 @@ import typia, { tags } from "typia";
 import { IEcommerceMallSuperAdmin } from "../../../../api/structures/IEcommerceMallSuperAdmin";
 import { IPageIEcommerceMallSuperAdmin } from "../../../../api/structures/IPageIEcommerceMallSuperAdmin";
 import { SuperadminAuth } from "../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../../../../decorators/payload/SuperAdminPayload";
 import { getEcommerceMallSuperAdminSuperAdminsSuperAdminId } from "../../../../providers/getEcommerceMallSuperAdminSuperAdminsSuperAdminId";
 import { patchEcommerceMallSuperAdminSuperAdmins } from "../../../../providers/patchEcommerceMallSuperAdminSuperAdmins";
 
@@ -46,7 +46,7 @@ export class EcommercemallSuperadminSuper_adminsController {
   @TypedRoute.Patch()
   public async index(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IEcommerceMallSuperAdmin.IRequest,
   ): Promise<IPageIEcommerceMallSuperAdmin.ISummary> {
@@ -95,7 +95,7 @@ export class EcommercemallSuperadminSuper_adminsController {
   @TypedRoute.Get(":superAdminId")
   public async at(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedParam("superAdminId")
     superAdminId: string & tags.Format<"uuid">,
   ): Promise<IEcommerceMallSuperAdmin> {

@@ -3,8 +3,10 @@ import { IHrmsActivityLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrms
 import { IHrmsMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmsMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmsMemberAtSummaryTransformer } from "./HrmsMemberAtSummaryTransformer";
 
@@ -42,6 +44,6 @@ export namespace HrmsActivityLogAtSummaryTransformer {
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IHrmsActivityLog.ISummary;
   }
 }

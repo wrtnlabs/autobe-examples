@@ -21,71 +21,64 @@ export async function patchRedditCommunityCommunitiesCommunityIdModerators(props
   communityId: string & tags.Format<"uuid">;
   body: IRedditCommunityModerator.IRequest;
 }): Promise<IPageIRedditCommunityModerator.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  // Build filter conditions
+  // Build filters from body
   const whereInput: Prisma.reddit_community_moderatorsWhereInput = {
     reddit_community_community_id: props.communityId,
     deleted_at: null,
-    ...(props.body.search !== undefined && {
+    ...(props.body.search && {
       moderator: {
         username: {
           contains: props.body.search,
-          mode: "insensitive",
+          mode: "insensitive" as const,
         },
       },
     }),
-    ...(props.body.added_by_username !== undefined && {
+    ...(props.body.added_by_username && {
       addedBy: {
         username: {
           contains: props.body.added_by_username,
-          mode: "insensitive",
+          mode: "insensitive" as const,
         },
       },
     }),
-    ...(props.body.created_at_from !== undefined && {
-      created_at: {
-        gte: new Date(props.body.created_at_from),
-      },
+    ...(props.body.created_at_from && {
+      created_at: { gte: new Date(props.body.created_at_from) },
     }),
-    ...(props.body.created_at_to !== undefined && {
-      created_at: {
-        lte: new Date(props.body.created_at_to),
-      },
+    ...(props.body.created_at_to && {
+      created_at: { lte: new Date(props.body.created_at_to) },
     }),
-  } satisfies Prisma.reddit_community_moderatorsWhereInput;
-  // Build order by with default sort by created_at desc
-  const orderByInput: Prisma.reddit_community_moderatorsOrderByWithRelationInput[] =
-    [
-      props.body.sort === "username"
-        ? {
-            moderator: {
-              username: (props.body.order ?? "desc") as "asc" | "desc",
-            },
-          }
-        : { created_at: (props.body.order ?? "desc") as "asc" | "desc" },
-    ];
-  // Query moderators with pagination
+  };
+  // Build sort order
+  const orderByInput =
+    props.body.sort === "username"
+      ? [{ moderator: { username: props.body.order ?? ("desc" as const) } }]
+      : [{ created_at: props.body.order ?? ("desc" as const) }];
+  // Get pagination params
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // Query moderators
   const data = await MyGlobal.prisma.reddit_community_moderators.findMany({
     where: whereInput,
+    orderBy: orderByInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
     ...RedditCommunityModeratorAtSummaryTransformer.select(),
   });
   // Get total count
   const total = await MyGlobal.prisma.reddit_community_moderators.count({
     where: whereInput,
   });
+  // Transform and return
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    RedditCommunityModeratorAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      RedditCommunityModeratorAtSummaryTransformer.transform,
-    ),
+    data: transformedData,
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,

@@ -22,37 +22,29 @@ export async function postEcommerceMallSellerCancellationRequestsCancellationReq
   seller: SellerPayload;
   cancellationRequestId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallCancellationRequest> {
-  // 1. Fetch the cancellation request with authorization data
-  const request =
+  // Query the cancellation request with all required fields
+  const cancellationRequest =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findUniqueOrThrow(
       {
-        where: { id: props.cancellationRequestId },
-        select: {
-          id: true,
-          status: true,
-          seller_id: true,
-          customer_id: true,
-          order_item_id: true,
-          reason: true,
-          seller_response: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
+        where: {
+          id: props.cancellationRequestId,
+          deleted_at: null,
         },
+        ...EcommerceMallCancellationRequestTransformer.select(),
       },
     );
-  // 2. Validate authorization - seller must match the cancellation request
-  if (request.seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // 3. Validate state - only pending requests can be rejected
-  if (request.status !== "pending") {
+  // Validate status is pending
+  if (cancellationRequest.status !== "pending") {
     throw new HttpException(
       "Cancellation request is not in pending status",
       400,
     );
   }
-  // 4. Update the cancellation request to rejected status
+  // Verify seller owns the order item
+  if (cancellationRequest.seller.id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Update the cancellation request with rejected status
   await MyGlobal.prisma.ecommerce_mall_cancellation_requests.update({
     where: { id: props.cancellationRequestId },
     data: {
@@ -60,30 +52,32 @@ export async function postEcommerceMallSellerCancellationRequestsCancellationReq
       updated_at: toISOStringSafe(new Date()),
     },
   });
-  // 5. Create snapshot record for audit trail
-  const snapshotId = v4() as string & tags.Format<"uuid">;
-  const snapshotTimestamp = toISOStringSafe(new Date());
+  // Create snapshot for audit trail
   await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.create({
     data: {
-      id: snapshotId,
-      cancellation_request_id: props.cancellationRequestId,
+      id: v4(),
       actor_type: "seller",
       status_before: "pending",
       status_after: "rejected",
       action: "rejected",
-      created_at: snapshotTimestamp,
-      updated_at: snapshotTimestamp,
+      created_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
+      cancellationRequest: { connect: { id: props.cancellationRequestId } },
     },
   });
-  // 6. Fetch and return the updated request with relations using transformer
-  const fullRequest =
+  // Query the updated cancellation request with full transformer selection
+  const updatedCancellationRequest =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findUniqueOrThrow(
       {
-        where: { id: props.cancellationRequestId },
+        where: {
+          id: props.cancellationRequestId,
+          deleted_at: null,
+        },
         ...EcommerceMallCancellationRequestTransformer.select(),
       },
     );
+  // Transform and return
   return await EcommerceMallCancellationRequestTransformer.transform(
-    fullRequest,
+    updatedCancellationRequest,
   );
 }

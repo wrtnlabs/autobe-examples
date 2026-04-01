@@ -10,9 +10,13 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ErpHrmTimeTrackingTaskCollector {
   export async function collect(props: {
     body: IErpHrmTimeTrackingTask.ICreate;
-    erpHrmTimeTrackingProjects: IEntity;
+    project: IEntity;
   }) {
-    const id: string = v4();
+    const id = v4();
+    const due_date: Date | null =
+      props.body.due_date === undefined || props.body.due_date === null
+        ? null
+        : new Date(props.body.due_date);
     return {
       id,
       title: props.body.title,
@@ -20,26 +24,17 @@ export namespace ErpHrmTimeTrackingTaskCollector {
       status: props.body.status,
       priority: props.body.priority,
       estimated_hours: props.body.estimated_hours ?? null,
-      due_date:
-        props.body.due_date != null ? new Date(props.body.due_date) : null,
+      due_date,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      project: {
-        connect: { id: props.erpHrmTimeTrackingProjects.id },
-      },
-      parentTask:
-        props.body.parent_task_id != null
-          ? {
-              connect: { id: props.body.parent_task_id },
-            }
-          : undefined,
-      assignedEmployee:
-        props.body.assigned_employee_id != null
-          ? {
-              connect: { id: props.body.assigned_employee_id },
-            }
-          : undefined,
+      project: { connect: { id: props.project.id } },
+      parentTask: props.body.parent_task_id
+        ? { connect: { id: props.body.parent_task_id } }
+        : undefined,
+      assignedEmployee: props.body.assigned_employee_id
+        ? { connect: { id: props.body.assigned_employee_id } }
+        : undefined,
       childTasks: undefined,
       timelogs: undefined,
       timerSessions: undefined,

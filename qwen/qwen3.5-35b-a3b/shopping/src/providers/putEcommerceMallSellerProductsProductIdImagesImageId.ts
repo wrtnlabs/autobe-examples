@@ -20,29 +20,22 @@ export async function putEcommerceMallSellerProductsProductIdImagesImageId(props
   body: IEcommerceMallProductImage.IUpdate;
 }): Promise<IEcommerceMallProductImage> {
   // Verify seller owns the product
-  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
+  await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
     where: {
       id: props.productId,
       seller_id: props.seller.id,
       deleted_at: null,
     },
   });
-  if (product === null) {
-    throw new HttpException("Product not found", 404);
-  }
-  // Verify image exists and belongs to this product
-  const existingImage =
-    await MyGlobal.prisma.ecommerce_mall_product_images.findFirst({
-      where: {
-        id: props.imageId,
-        product_id: props.productId,
-        deleted_at: null,
-      },
-    });
-  if (existingImage === null) {
-    throw new HttpException("Image not found", 404);
-  }
-  // Build partial update data with only provided fields
+  // Verify image exists, belongs to product, and is not soft-deleted
+  await MyGlobal.prisma.ecommerce_mall_product_images.findUniqueOrThrow({
+    where: {
+      id: props.imageId,
+      product_id: props.productId,
+      deleted_at: null,
+    },
+  });
+  // Build update data with only provided fields
   const updateData: Prisma.ecommerce_mall_product_imagesUpdateInput = {};
   if (props.body.image_url !== undefined) {
     updateData.image_url = props.body.image_url;
@@ -53,15 +46,17 @@ export async function putEcommerceMallSellerProductsProductIdImagesImageId(props
   if (props.body.alt_text !== undefined) {
     updateData.alt_text = props.body.alt_text;
   }
-  updateData.updated_at = toISOStringSafe(new Date());
-  // Execute update
-  const updated = await MyGlobal.prisma.ecommerce_mall_product_images.update({
-    where: {
-      id: props.imageId,
-    },
+  updateData.updated_at = new Date();
+  // Update the image
+  await MyGlobal.prisma.ecommerce_mall_product_images.update({
+    where: { id: props.imageId },
     data: updateData,
-    ...EcommerceMallProductImageTransformer.select(),
   });
-  // Transform and return
-  return await EcommerceMallProductImageTransformer.transform(updated);
+  // Return updated image using transformer
+  const updatedImage =
+    await MyGlobal.prisma.ecommerce_mall_product_images.findUniqueOrThrow({
+      where: { id: props.imageId },
+      ...EcommerceMallProductImageTransformer.select(),
+    });
+  return await EcommerceMallProductImageTransformer.transform(updatedImage);
 }

@@ -20,26 +20,16 @@ export async function patchShoppingMallAdminRefundRequestsRefundRequestIdSnapsho
   refundRequestId: string & tags.Format<"uuid">;
   body: IShoppingMallRefundSnapshot.IRequest;
 }): Promise<IPageIShoppingMallRefundSnapshot.ISummary> {
-  // Extract pagination parameters with defaults
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Extract sorting parameters with defaults
   const sortBy = props.body.sortBy ?? "created_at";
   const sortOrder = props.body.sortOrder ?? "desc";
-  // Verify the refund request exists (admin can access any refund request)
-  await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
-    where: {
-      id: props.refundRequestId,
-    },
-  });
-  // Build order by clause
   const orderByInput = (
-    sortOrder === "asc"
-      ? { created_at: "asc" as const }
+    sortBy === "created_at"
+      ? { created_at: sortOrder as "asc" | "desc" }
       : { created_at: "desc" as const }
   ) satisfies Prisma.shopping_mall_refund_snapshotsOrderByWithRelationInput;
-  // Query snapshots with pagination
   const data = await MyGlobal.prisma.shopping_mall_refund_snapshots.findMany({
     where: {
       shopping_mall_refund_request_id: props.refundRequestId,
@@ -49,24 +39,21 @@ export async function patchShoppingMallAdminRefundRequestsRefundRequestIdSnapsho
     orderBy: orderByInput,
     ...ShoppingMallRefundSnapshotAtSummaryTransformer.select(),
   });
-  // Count total records
   const total = await MyGlobal.prisma.shopping_mall_refund_snapshots.count({
     where: {
       shopping_mall_refund_request_id: props.refundRequestId,
     },
   });
-  // Transform results
-  const transformed = await ArrayUtil.asyncMap(
-    data,
-    ShoppingMallRefundSnapshotAtSummaryTransformer.transform,
-  );
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallRefundSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformed,
   };
 }

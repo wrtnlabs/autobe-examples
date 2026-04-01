@@ -4,8 +4,10 @@ import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
 import { ShoppingMallOrderItemAtSummaryTransformer } from "./ShoppingMallOrderItemAtSummaryTransformer";
@@ -34,7 +36,7 @@ export namespace ShoppingMallReviewAtSummaryTransformer {
     return {
       id: input.id,
       rating: input.rating,
-      content: input.content,
+      content: input.content ?? undefined,
       customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),

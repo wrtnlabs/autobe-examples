@@ -16,153 +16,92 @@ export async function getHrmsMemberTasksTaskId(props: {
   member: MemberPayload;
   taskId: string & tags.Format<"uuid">;
 }): Promise<IHrmsTask> {
-  // Query the task with project and assigned employee relations
+  // IHrmsTask is an analytics response type, not a single task detail
+  // Fetch the task to get organization context
   const task = await MyGlobal.prisma.hrms_tasks.findUniqueOrThrow({
     where: {
       id: props.taskId,
       deleted_at: null,
     },
-    select: {
-      id: true,
-      hrms_project_id: true,
-      hrms_employee_id: true,
-      hrms_task_id: true,
-      title: true,
-      description: true,
-      status: true,
-      priority: true,
-      estimated_hours: true,
-      due_date: true,
-      billable: true,
-      created_at: true,
-      updated_at: true,
-      project: {
-        select: {
-          id: true,
-          hrms_organization_id: true,
-          name: true,
-        },
-      },
-      assignedEmployee: {
-        select: {
-          id: true,
-          display_name: true,
-        },
-      },
+    include: {
+      project: true,
     },
-  });
-  // Get the member's organization context
-  const memberOrganization =
+  } satisfies Prisma.hrms_tasksFindManyArgs);
+  // Get organization context from the task's project
+  const organizationId = task.project.hrms_organization_id;
+  // Verify member belongs to the organization
+  const memberOrgMembership =
     await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
         hrms_member_id: props.member.id,
+        hrms_organization_id: organizationId,
         deleted_at: null,
       },
-      include: {
-        organization: {
-          select: {
-            id: true,
-          },
-        },
-        organizationRole: {
-          select: {
-            id: true,
-          },
-        },
-        employees: {
-          select: {
-            id: true,
-          },
-        },
-      },
     });
-  if (!memberOrganization || memberOrganization.employees.length === 0) {
-    throw new HttpException("Unauthorized", 401);
-  }
-  const employeeId = memberOrganization.employees[0].id;
-  // Verify the task's project belongs to the member's organization
-  if (
-    task.project.hrms_organization_id !==
-    memberOrganization.hrms_organization_id
-  ) {
-    throw new HttpException("Not Found", 404);
-  }
-  // Check if user has project:view permission - get from role
-  const hasProjectViewPermission = true;
-  // Check if user is a project member
-  const isProjectMember = await MyGlobal.prisma.hrms_project_members.findFirst({
-    where: {
-      project_id: task.project.id,
-      employee_id: employeeId,
-      status: "active",
-    },
-  });
-  // Check if user is assigned to the task
-  const isAssigned = task.hrms_employee_id === employeeId;
-  // Authorization: must have project:view permission OR be a project member AND be assigned
-  if (!(hasProjectViewPermission || (isProjectMember && isAssigned))) {
+  if (!memberOrgMembership) {
     throw new HttpException("Forbidden", 403);
   }
-  // Build analytics response (IHrmsTask is an analytics type, not a task entity)
-  // For a single task endpoint, return analytics based on this task's project
-  const projectTasks = await MyGlobal.prisma.hrms_tasks.findMany({
+  // Fetch all projects in the organization for analytics
+  const projects = await MyGlobal.prisma.hrms_projects.findMany({
     where: {
-      hrms_project_id: task.hrms_project_id,
+      hrms_organization_id: organizationId,
       deleted_at: null,
     },
-    select: {
-      status: true,
-    },
   });
-  // Count tasks by status
-  const statusCounts: Record<string, number> = {};
-  for (const t of projectTasks) {
-    statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
+  // Calculate analytics per project
+  const analytics: IHrmsTask.ISummary[] = [];
+  for (const project of projects) {
+    const taskCount = await MyGlobal.prisma.hrms_tasks.count({
+      where: {
+        hrms_project_id: project.id,
+        deleted_at: null,
+      },
+    });
+    analytics.push({
+      project_id: project.id,
+      project_name: project.name,
+      task_count: taskCount,
+    } satisfies IHrmsTask.ISummary);
   }
-  // Get all tasks for total count
-  const allProjectTasks = await MyGlobal.prisma.hrms_tasks.findMany({
+  // Sort by task count descending
+  analytics.sort((a, b) => b.task_count - a.task_count);
+  // Calculate total projects
+  const totalProjects = await MyGlobal.prisma.hrms_projects.count({
     where: {
-      hrms_project_id: task.hrms_project_id,
+      hrms_organization_id: organizationId,
       deleted_at: null,
     },
-    select: {
-      id: true,
-    },
   });
-  // Get budget hours for the project
-  const project = await MyGlobal.prisma.hrms_projects.findFirst({
+  // Calculate total budget hours
+  const budgetSum = await MyGlobal.prisma.hrms_projects.aggregate({
     where: {
-      id: task.hrms_project_id,
+      hrms_organization_id: organizationId,
+      deleted_at: null,
     },
-    select: {
+    _sum: {
       budget_hours: true,
     },
   });
-  // Get total logged hours for this project (by employee) - using correct relation field names
+  const totalBudgetHours = budgetSum._sum.budget_hours ?? null;
+  // Calculate total logged hours for the member
+  const projectsForMember = projects.map((p) => p.id);
   const loggedHoursResult = await MyGlobal.prisma.hrms_timelogs.aggregate({
     where: {
-      project_id: task.hrms_project_id,
-      employee_id: employeeId,
+      employee_id: props.member.id,
+      project_id: { in: projectsForMember },
     },
     _sum: {
       duration_minutes: true,
     },
   });
-  const totalLoggedHours = loggedHoursResult._sum?.duration_minutes
-    ? loggedHoursResult._sum.duration_minutes / 60 // convert minutes to hours
+  // Convert duration (milliseconds) to hours
+  const totalLoggedHours = loggedHoursResult._sum.duration_minutes
+    ? loggedHoursResult._sum.duration_minutes / 60
     : null;
-  // Build analytics response
-  const analytics: IHrmsTask.ISummary[] = [
-    {
-      project_id: task.project.id,
-      project_name: task.project.name,
-      task_count: projectTasks.length,
-    },
-  ];
   return {
-    analytics,
-    total_projects: allProjectTasks.length,
-    total_budget_hours: project?.budget_hours ?? null,
+    analytics: analytics,
+    total_projects: totalProjects,
+    total_budget_hours: totalBudgetHours ?? null,
     total_logged_hours: totalLoggedHours,
   } satisfies IHrmsTask;
 }

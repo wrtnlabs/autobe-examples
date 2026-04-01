@@ -22,22 +22,29 @@ export async function getShoppingMallAdminShipmentsShipmentIdItemsItemId(props: 
   shipmentId: string & tags.Format<"uuid">;
   itemId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallOrderItem> {
+  // Verify the order item exists in the specified shipment
   const shipmentItem =
-    await MyGlobal.prisma.shopping_mall_shipment_items.findFirst({
+    await MyGlobal.prisma.shopping_mall_shipment_items.findUniqueOrThrow({
       where: {
-        shopping_mall_shipment_id: props.shipmentId,
-        shopping_mall_order_item_id: props.itemId,
-        shipment: {
-          deleted_at: null,
+        shopping_mall_shipment_id_shopping_mall_order_item_id: {
+          shopping_mall_shipment_id: props.shipmentId,
+          shopping_mall_order_item_id: props.itemId,
         },
-        orderItem: {
-          deleted_at: null,
+      },
+      select: {
+        shipment: {
+          select: {
+            id: true,
+            deleted_at: true,
+          },
         },
       },
     });
-  if (shipmentItem === null) {
-    throw new HttpException("Order item not found in shipment", 404);
+  // Check if shipment is soft-deleted
+  if (shipmentItem.shipment.deleted_at !== null) {
+    throw new HttpException("Shipment not found", 404);
   }
+  // Retrieve the complete order item
   const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: {
@@ -46,5 +53,6 @@ export async function getShoppingMallAdminShipmentsShipmentIdItemsItemId(props: 
       },
       ...ShoppingMallOrderItemTransformer.select(),
     });
+  // Transform and return the order item
   return await ShoppingMallOrderItemTransformer.transform(orderItem);
 }

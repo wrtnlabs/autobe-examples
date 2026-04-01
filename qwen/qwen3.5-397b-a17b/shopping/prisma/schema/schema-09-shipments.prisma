@@ -1,0 +1,159 @@
+/// Shipments representing packages sent by sellers with tracking information
+/// and delivery status. Each shipment can contain multiple order items from
+/// the same seller. All items in a shipment share the same tracking
+/// information. Customers confirm delivery per shipment, or items
+/// auto-confirm after 14 days from shipping.
+///
+/// @namespace shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's {@link shopping_mall_sellers.id}.
+  seller_id String
+  
+  /// Name of the shipping carrier (e.g., FedEx, UPS, DHL).
+  tracking_carrier String
+  
+  /// Tracking number provided by the carrier for package tracking.
+  tracking_number String
+  
+  /// Timestamp when the shipment was sent out by the seller.
+  shipped_at DateTime
+  
+  /// Timestamp when the customer confirmed delivery. Null if not yet confirmed
+  /// (auto-confirmed after 14 days from shipped_at).
+  confirmed_at DateTime?
+  
+  /// Timestamp when the shipment was created.
+  created_at DateTime
+  
+  /// Timestamp when the shipment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the shipment was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  logs shopping_mall_shipment_logs[]
+  shipmentItems shopping_mall_shipment_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([tracking_number])
+  @@index([seller_id, shipped_at])
+}
+
+/// Immutable audit log of shipment lifecycle events including status
+/// changes, tracking updates, and delivery confirmations. Each entry records
+/// the event type, actor who triggered it, status transition, and contextual
+/// metadata. Append-only table for compliance and dispute resolution.
+///
+/// @namespace shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shipment's {@link shopping_mall_shipments.id}.
+  shopping_mall_shipment_id String
+  
+  /// Type of shipment event: 'created', 'tracking_updated',
+  /// 'delivery_confirmed', 'auto_delivered'.
+  event_type String
+  
+  /// Type of actor who triggered the event: 'customer', 'seller',
+  /// 'administrator', 'system'.
+  actor_type String
+  
+  /// ID of the actor who triggered the event. Stored as plain field for
+  /// historical integrity.
+  actor_id String?
+  
+  /// Previous shipment status before this event. Null for initial creation
+  /// events.
+  old_status String?
+  
+  /// New shipment status after this event.
+  new_status String?
+  
+  /// Additional context about the event such as carrier name, tracking number,
+  /// or delivery confirmation details.
+  metadata String?
+  
+  /// Timestamp when this log entry was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_shipment_id, created_at], map: "shopping_mall_shipment_logs_shopping_mall_shipment_id__d832bc73")
+  @@index([created_at])
+}
+
+/// Junction table associating order items with shipments. Each order item
+/// belongs to exactly one shipment, while shipments can contain multiple
+/// order items from the same seller. All items in a shipment share the same
+/// tracking information and delivery confirmation status.
+///
+/// @namespace shipments
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Shipment's {@link shopping_mall_shipments.id}.
+  shipment_id String
+  
+  /// Order item's {@link shopping_mall_order_items.id}.
+  order_item_id String
+  
+  /// Creation timestamp when item was added to shipment.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for data retention and recovery.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment shopping_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([order_item_id])
+  @@index([shipment_id])
+}

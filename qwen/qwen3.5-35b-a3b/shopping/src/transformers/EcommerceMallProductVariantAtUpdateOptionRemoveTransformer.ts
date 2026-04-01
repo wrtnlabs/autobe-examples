@@ -2,8 +2,10 @@ import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallProductVariantAtUpdateOptionRemoveTransformer {
@@ -13,7 +15,17 @@ export namespace EcommerceMallProductVariantAtUpdateOptionRemoveTransformer {
   export function select() {
     return {
       select: {
+        id: true,
         key: true,
+        value: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        productVariant: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_product_variant_optionsFindManyArgs;
   }

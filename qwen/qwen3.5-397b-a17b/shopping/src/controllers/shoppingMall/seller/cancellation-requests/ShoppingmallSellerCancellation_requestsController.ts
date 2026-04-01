@@ -2,46 +2,122 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IPageIShoppingMallCancellationRequest } from "../../../../api/structures/IPageIShoppingMallCancellationRequest";
 import { IShoppingMallCancellationRequest } from "../../../../api/structures/IShoppingMallCancellationRequest";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
+import { getShoppingMallSellerCancellationRequestsCancellationRequestId } from "../../../../providers/getShoppingMallSellerCancellationRequestsCancellationRequestId";
+import { patchShoppingMallSellerCancellationRequests } from "../../../../providers/patchShoppingMallSellerCancellationRequests";
 import { putShoppingMallSellerCancellationRequestsCancellationRequestId } from "../../../../providers/putShoppingMallSellerCancellationRequestsCancellationRequestId";
 
-@Controller("/shoppingMall/seller/cancellation-requests/:cancellationRequestId")
+@Controller("/shoppingMall/seller/cancellation-requests")
 export class ShoppingmallSellerCancellation_requestsController {
   /**
-   * Update an existing cancellation request record with administrative oversight.
+   * Retrieve a filtered and paginated list of cancellation requests for order items.
    *
-   * This endpoint allows platform administrators to modify cancellation request records for administrative purposes, such as correcting status or updating response tracking. The operation is restricted to admin and superAdmin actors only - customers cannot modify their submitted cancellation requests, and sellers must use the dedicated approve/reject endpoints.
+   * This operation provides comprehensive search capabilities for cancellation requests, allowing filtering by status (pending, approved, rejected), date ranges, and order item association. The endpoint supports role-based access control: customers can view their own cancellation requests, sellers can view requests for order items belonging to their products, and administrators can view all cancellation requests across the platform.
    *
-   * The cancellation reason field is immutable and cannot be updated, as it represents the customer's original submission. Only administrative fields such as status and response tracking can be modified. Before any update is applied, a snapshot of the current state is automatically created in the cancellation request snapshots table to maintain a complete audit trail.
+   * Each cancellation request represents a customer's request to cancel an individual order item before shipment. The response includes request status, customer reason, creation timestamp, and associated order item information optimized for list displays.
    *
-   * This operation updates the updated_at timestamp to reflect when the modification occurred. The response includes the complete updated cancellation request with all fields including the associated order item reference, customer information, and current status.
+   * Supports cursor-based pagination for efficient handling of large result sets. Results can be sorted by creation date or status.
    *
    * @param connection
-   * @param cancellationRequestId Target cancellation request's ID (UUID format)
-   * @param body Update information for the cancellation request (admin fields only)
+   * @param body Search criteria and pagination parameters for filtering cancellation requests
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Update cancellation request record with administrative oversight.
+   * @x-autobe-specification Query shopping_mall_cancellation_requests table with pagination and filtering.
    *
-   * Query shopping_mall_cancellation_requests table by cancellationRequestId (UUID).
-   * Validate actor is admin or superAdmin - reject if customer or seller.
-   * Validate cancellation request exists and is not soft-deleted.
-   * Update allowed fields: status, responded_by_seller_id, responded_at based on request body.
-   * Do NOT allow modification of reason field (customer-submitted, immutable per business rule).
-   * Create snapshot record in shopping_mall_cancellation_request_snapshots before update to preserve audit trail.
-   * Update updated_at timestamp.
-   * Return updated cancellation request with full details.
+   * Apply status filter (pending/approved/rejected) if provided in request body.
+   * Apply date range filter on created_at if provided.
+   * For customer actor: filter by shopping_mall_customer_id = authenticated customer ID.
+   * For seller actor: join with shopping_mall_order_items on order_item_id, then filter by shopping_mall_seller_id = authenticated seller ID.
+   * For administrator actor: no additional filtering, return all requests.
    *
-   * Edge cases:
-   * - Reject if cancellation request not found (404)
-   * - Reject if actor lacks admin privileges (403)
-   * - Reject if attempting to modify reason field (400)
-   * - Reject if cancellation request is soft-deleted (404)
+   * Join with shopping_mall_order_items to include order number and item status in response.
+   * Join with shopping_mall_products to include product name in summary.
+   *
+   * Exclude soft-deleted records (deleted_at IS NOT NULL).
+   * Return cursor-based pagination with configurable page size (default 20, max 100).
+   * Sort by created_at DESC by default, support custom sorting via request body.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put()
+  @TypedRoute.Patch()
+  public async index(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedBody()
+    body: IShoppingMallCancellationRequest.IRequest,
+  ): Promise<IPageIShoppingMallCancellationRequest.ISummary> {
+    try {
+      return await patchShoppingMallSellerCancellationRequests({
+        seller,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a specific cancellation request by its unique identifier.
+   *
+   * This operation returns the complete details of a cancellation request including the target order item, requesting customer, cancellation reason, current approval status, and timestamps. Customers can use this to view their submitted cancellation requests, while sellers can access requests for order items they are responsible for.
+   *
+   * The response includes all cancellation request fields: ID, order item reference, customer reference, reason text, status (pending, approved, or rejected), and audit timestamps. Authorization ensures users can only access cancellation requests they have permission to view.
+   *
+   * @param connection
+   * @param cancellationRequestId Cancellation request UUID (global scope)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Query shopping_mall_cancellation_requests table by primary key ID.
+   *
+   * Validate that the cancellation request exists and is not soft deleted (deleted_at is null).
+   *
+   * Authorization check: Ensure the requesting user is either the customer who submitted the request (shopping_mall_customer_id matches authenticated customer) or the seller associated with the order item (join with shopping_mall_order_items to get seller_id).
+   *
+   * Return the full cancellation request entity with all fields: id, shopping_mall_order_item_id, shopping_mall_customer_id, reason, status, created_at, updated_at, deleted_at.
+   *
+   * Handle 404 if cancellation request not found or already soft deleted.
+   * Handle 403 if user lacks permission to view this cancellation request.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":cancellationRequestId")
+  public async at(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("cancellationRequestId")
+    cancellationRequestId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallCancellationRequest> {
+    try {
+      return await getShoppingMallSellerCancellationRequestsCancellationRequestId(
+        {
+          seller,
+          cancellationRequestId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a cancellation request by responding to it as a seller.
+   *
+   * This operation allows sellers to approve or reject customer cancellation requests for order items. When responding, the seller must provide a response reason explaining the approval or rejection decision. The operation validates that the cancellation request exists and is in pending status.
+   *
+   * Upon successful response, the system creates an immutable snapshot preserving the request state at the time of response for audit trail and dispute resolution. If approved, the order item status changes to cancelled and inventory is automatically restored via inventory records.
+   *
+   * @param connection
+   * @param cancellationRequestId Cancellation request UUID (global scope)
+   * @param body Seller's response to the cancellation request with approval status and reason
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Validate the cancellation request exists and is in pending status. Verify the seller has permission to respond (seller owns the order item associated with the cancellation request). Update the cancellation request status to approved or rejected. Set the response_reason field with the seller's explanation. Create a snapshot record in shopping_mall_cancellation_request_snapshots capturing the request state, seller ID, status, reason, and response reason. If status is approved, update the associated order item status to cancelled and create an inventory record with positive quantity to restore stock. Return the updated cancellation request entity.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":cancellationRequestId")
   public async update(
     @SellerAuth()
     seller: SellerPayload,

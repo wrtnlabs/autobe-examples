@@ -2,8 +2,10 @@ import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallCustomerAtSummaryTransformer {
@@ -20,23 +22,6 @@ export namespace EcommerceMallCustomerAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: true,
-        passwordResets: true,
-        emailVerifications: true,
-        orders: true,
-        orderSnapshots: true,
-        reviews: true,
-        reviewHelpfulnessVotes: true,
-        reviewSnapshots: true,
-        customerActivityLogs: true,
-        notificationReferences: true,
-        addresses: true,
-        addressSnapshots: true,
-        wishlistItems: true,
-        generatedSnapshots: true,
-        cancellationRequests: true,
-        refundRequests: true,
-        refundRequestCustomerSnapshots: true,
       },
     } satisfies Prisma.ecommerce_mall_customersFindManyArgs;
   }

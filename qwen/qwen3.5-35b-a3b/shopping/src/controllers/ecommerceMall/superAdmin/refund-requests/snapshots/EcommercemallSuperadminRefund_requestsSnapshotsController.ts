@@ -5,7 +5,7 @@ import typia, { tags } from "typia";
 import { IEcommerceMallRefundRequestSnapshot } from "../../../../../api/structures/IEcommerceMallRefundRequestSnapshot";
 import { IPageIEcommerceMallRefundRequestSnapshot } from "../../../../../api/structures/IPageIEcommerceMallRefundRequestSnapshot";
 import { SuperadminAuth } from "../../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../../../../../decorators/payload/SuperAdminPayload";
 import { getEcommerceMallSuperAdminRefundRequestsRefundRequestIdSnapshotsSnapshotId } from "../../../../../providers/getEcommerceMallSuperAdminRefundRequestsRefundRequestIdSnapshotsSnapshotId";
 import { patchEcommerceMallSuperAdminRefundRequestsRefundRequestIdSnapshots } from "../../../../../providers/patchEcommerceMallSuperAdminRefundRequestsRefundRequestIdSnapshots";
 
@@ -51,7 +51,7 @@ export class EcommercemallSuperadminRefund_requestsSnapshotsController {
   @TypedRoute.Patch()
   public async index(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedParam("refundRequestId")
     refundRequestId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -121,7 +121,7 @@ export class EcommercemallSuperadminRefund_requestsSnapshotsController {
   @TypedRoute.Get(":snapshotId")
   public async at(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedParam("refundRequestId")
     refundRequestId: string & tags.Format<"uuid">,
     @TypedParam("snapshotId")

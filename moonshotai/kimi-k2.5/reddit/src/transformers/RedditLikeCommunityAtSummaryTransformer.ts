@@ -4,8 +4,10 @@ import { IRedditLikeCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeAttachmentAtSummaryTransformer } from "./RedditLikeAttachmentAtSummaryTransformer";
 import { RedditLikeMemberAtSummaryTransformer } from "./RedditLikeMemberAtSummaryTransformer";
@@ -21,13 +23,35 @@ export namespace RedditLikeCommunityAtSummaryTransformer {
         name: true,
         description: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
         owner: RedditLikeMemberAtSummaryTransformer.select(),
         iconAttachment: RedditLikeAttachmentAtSummaryTransformer.select(),
-        _count: {
+        subscriptions: {
           select: {
-            subscriptions: true,
+            id: true,
           },
-        },
+        } satisfies Prisma.reddit_like_community_subscriptionsFindManyArgs,
+        moderators: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.reddit_like_moderatorsFindManyArgs,
+        attachmentReferences: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.reddit_like_attachment_reference_of_communitiesFindManyArgs,
+        posts: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.reddit_like_postsFindManyArgs,
+        reports: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.reddit_like_reportsFindManyArgs,
       },
     } satisfies Prisma.reddit_like_communitiesFindManyArgs;
   }
@@ -44,7 +68,7 @@ export namespace RedditLikeCommunityAtSummaryTransformer {
             input.iconAttachment,
           )
         : null,
-      subscriberCount: input._count.subscriptions,
+      subscriberCount: input.subscriptions.length,
       createdAt: input.created_at.toISOString(),
     };
   }

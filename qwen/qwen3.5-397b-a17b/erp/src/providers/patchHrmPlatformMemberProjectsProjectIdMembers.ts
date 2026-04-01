@@ -1,7 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
-import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
+import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProjectMember";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
@@ -24,7 +25,7 @@ export async function patchHrmPlatformMemberProjectsProjectIdMembers(props: {
   body: IHrmPlatformProjectMember.IRequest;
 }): Promise<IPageIHrmPlatformProjectMember.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 100, 100);
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
   await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow({
     where: {
@@ -35,30 +36,40 @@ export async function patchHrmPlatformMemberProjectsProjectIdMembers(props: {
   const whereInput = {
     hrm_platform_project_id: props.projectId,
     deleted_at: null,
-    ...(props.body.role && { role: props.body.role }),
-    ...(props.body.search && {
+    ...(props.body.role !== undefined && { role: props.body.role }),
+    ...(props.body.employment_type !== undefined && {
       employee: {
-        display_name: {
-          contains: props.body.search,
-          mode: "insensitive" as const,
+        employment_type: props.body.employment_type,
+      },
+    }),
+    ...(props.body.status !== undefined && {
+      employee: {
+        status: props.body.status,
+      },
+    }),
+    ...(props.body.search !== undefined && {
+      employee: {
+        user: {
+          display_name: {
+            contains: props.body.search,
+          },
         },
       },
     }),
   } satisfies Prisma.hrm_platform_project_membersWhereInput;
-  const orderByInput = (() => {
-    if (!props.body.sort) {
-      return { created_at: "desc" as const };
-    }
-    if (props.body.sort === "name" || props.body.sort === "-name") {
-      const direction = props.body.sort.startsWith("-") ? "desc" : "asc";
-      return { employee: { display_name: direction as "asc" | "desc" } };
-    }
-    if (props.body.sort === "created_at" || props.body.sort === "-created_at") {
-      const direction = props.body.sort.startsWith("-") ? "desc" : "asc";
-      return { created_at: direction as "asc" | "desc" };
-    }
-    return { created_at: "desc" as const };
-  })() satisfies Prisma.hrm_platform_project_membersOrderByWithRelationInput;
+  const orderByInput = (
+    props.body.sort === "employee_name"
+      ? {
+          employee: {
+            user: {
+              display_name: "asc",
+            },
+          },
+        }
+      : props.body.sort === "role"
+        ? { role: "asc" }
+        : { created_at: "desc" }
+  ) satisfies Prisma.hrm_platform_project_membersOrderByWithRelationInput;
   const data = await MyGlobal.prisma.hrm_platform_project_members.findMany({
     where: whereInput,
     skip,
@@ -71,49 +82,45 @@ export async function patchHrmPlatformMemberProjectsProjectIdMembers(props: {
       employee: {
         select: {
           id: true,
-          display_name: true,
-          position: true,
-          employment_type: true,
-          status: true,
-          department: {
+          user: {
             select: {
               id: true,
-              name: true,
-              description: true,
-              parent: {
-                select: {
-                  id: true,
-                  name: true,
-                  description: true,
-                },
-              },
+              display_name: true,
+              avatar_image: true,
+              phone_number: true,
             },
           },
           role: {
             select: {
               id: true,
               name: true,
-              built_in: true,
+              is_builtin: true,
+              organization: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  logo: true,
+                  currency: true,
+                  timezone: true,
+                },
+              },
               created_at: true,
             },
           },
-        },
-      },
-      project: {
-        select: {
-          id: true,
-          name: true,
-          color_code: true,
-          status: true,
-          budget_hours: true,
-          started_at: true,
-          ended_at: true,
-          created_at: true,
-          members: {
+          department: {
             select: {
               id: true,
+              name: true,
+              description: true,
+              created_at: true,
+              deleted_at: true,
             },
           },
+          position: true,
+          employment_type: true,
+          status: true,
+          created_at: true,
         },
       },
     },
@@ -129,58 +136,54 @@ export async function patchHrmPlatformMemberProjectsProjectIdMembers(props: {
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: data.map(
-      (membership) =>
+      (member) =>
         ({
-          id: membership.id as string & tags.Format<"uuid">,
-          role: membership.role,
-          created_at: toISOStringSafe(membership.created_at),
+          id: member.id,
+          role: member.role,
           employee: {
-            id: membership.employee.id as string & tags.Format<"uuid">,
-            display_name: membership.employee.display_name,
-            position: membership.employee.position,
-            employment_type: membership.employee.employment_type,
-            status: membership.employee.status,
-            department: membership.employee.department
-              ? {
-                  id: membership.employee.department.id as string &
-                    tags.Format<"uuid">,
-                  name: membership.employee.department.name,
-                  description: membership.employee.department.description,
-                  parent: membership.employee.department.parent
-                    ? {
-                        id: membership.employee.department.parent.id as string &
-                          tags.Format<"uuid">,
-                        name: membership.employee.department.parent.name,
-                        description:
-                          membership.employee.department.parent.description,
-                        parent: null,
-                      }
-                    : null,
-                }
-              : null,
+            id: member.employee.id,
+            user: {
+              id: member.employee.user.id,
+              display_name: member.employee.user.display_name,
+              avatar_image: member.employee.user.avatar_image ?? null,
+              phone_number: member.employee.user.phone_number ?? null,
+            } satisfies IHrmPlatformMember.ISummary,
             role: {
-              id: membership.employee.role.id as string & tags.Format<"uuid">,
-              name: membership.employee.role.name,
-              built_in: membership.employee.role.built_in,
-              created_at: toISOStringSafe(membership.employee.role.created_at),
+              id: member.employee.role.id,
+              name: member.employee.role.name,
+              is_builtin: member.employee.role.is_builtin,
+              organization: {
+                id: member.employee.role.organization.id,
+                name: member.employee.role.organization.name,
+                description:
+                  member.employee.role.organization.description ?? null,
+                logo: member.employee.role.organization.logo ?? null,
+                currency: member.employee.role.organization.currency,
+                timezone: member.employee.role.organization.timezone,
+              } satisfies IHrmPlatformOrganization.ISummary,
+              created_at: toISOStringSafe(member.employee.role.created_at),
             } satisfies IHrmPlatformRole.ISummary,
+            department: member.employee.department
+              ? ({
+                  id: member.employee.department.id,
+                  name: member.employee.department.name,
+                  description: member.employee.department.description ?? null,
+                  parent: null,
+                  created_at: toISOStringSafe(
+                    member.employee.department.created_at,
+                  ),
+                  deleted_at: member.employee.department.deleted_at
+                    ? toISOStringSafe(member.employee.department.deleted_at)
+                    : null,
+                } satisfies IHrmPlatformDepartment.ISummary)
+              : null,
+            position: member.employee.position ?? null,
+            employment_type: member.employee.employment_type,
+            status: member.employee.status,
+            created_at: toISOStringSafe(member.employee.created_at),
           } satisfies IHrmPlatformEmployee.ISummary,
-          project: {
-            id: membership.project.id as string & tags.Format<"uuid">,
-            name: membership.project.name,
-            color_code: membership.project.color_code,
-            status: membership.project.status,
-            budget_hours: membership.project.budget_hours ?? null,
-            started_at: membership.project.started_at
-              ? toISOStringSafe(membership.project.started_at)
-              : null,
-            ended_at: membership.project.ended_at
-              ? toISOStringSafe(membership.project.ended_at)
-              : null,
-            created_at: toISOStringSafe(membership.project.created_at),
-            members_count: membership.project.members.length,
-          } satisfies IHrmPlatformProject.ISummary,
+          created_at: toISOStringSafe(member.created_at),
         }) satisfies IHrmPlatformProjectMember.ISummary,
     ),
-  } satisfies IPageIHrmPlatformProjectMember.ISummary;
+  };
 }

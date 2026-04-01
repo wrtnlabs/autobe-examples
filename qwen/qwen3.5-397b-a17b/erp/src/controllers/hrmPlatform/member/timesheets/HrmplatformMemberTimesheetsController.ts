@@ -6,57 +6,29 @@ import { IHrmPlatformTimesheet } from "../../../../api/structures/IHrmPlatformTi
 import { IPageIHrmPlatformTimesheet } from "../../../../api/structures/IPageIHrmPlatformTimesheet";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
+import { deleteHrmPlatformMemberTimesheetsTimesheetId } from "../../../../providers/deleteHrmPlatformMemberTimesheetsTimesheetId";
 import { getHrmPlatformMemberTimesheetsTimesheetId } from "../../../../providers/getHrmPlatformMemberTimesheetsTimesheetId";
 import { patchHrmPlatformMemberTimesheets } from "../../../../providers/patchHrmPlatformMemberTimesheets";
-import { patchHrmPlatformMemberTimesheetsTimesheetIdApprove } from "../../../../providers/patchHrmPlatformMemberTimesheetsTimesheetIdApprove";
-import { patchHrmPlatformMemberTimesheetsTimesheetIdReject } from "../../../../providers/patchHrmPlatformMemberTimesheetsTimesheetIdReject";
-import { patchHrmPlatformMemberTimesheetsTimesheetIdSubmit } from "../../../../providers/patchHrmPlatformMemberTimesheetsTimesheetIdSubmit";
 import { postHrmPlatformMemberTimesheets } from "../../../../providers/postHrmPlatformMemberTimesheets";
+import { postHrmPlatformMemberTimesheetsTimesheetId } from "../../../../providers/postHrmPlatformMemberTimesheetsTimesheetId";
+import { postHrmPlatformMemberTimesheetsTimesheetIdReject } from "../../../../providers/postHrmPlatformMemberTimesheetsTimesheetIdReject";
+import { postHrmPlatformMemberTimesheetsTimesheetIdSubmit } from "../../../../providers/postHrmPlatformMemberTimesheetsTimesheetIdSubmit";
+import { putHrmPlatformMemberTimesheetsTimesheetId } from "../../../../providers/putHrmPlatformMemberTimesheetsTimesheetId";
 
 @Controller("/hrmPlatform/member/timesheets")
 export class HrmplatformMemberTimesheetsController {
   /**
-   * Create a new timesheet for the authenticated employee.
+   * Create a new draft timesheet for the authenticated employee's weekly time tracking.
    *
-   * This operation creates a weekly timesheet record in draft status, allowing employees to begin tracking and organizing their work hours for a specific week period. The timesheet covers a standard Monday-to-Sunday week, with the week_start_date parameter defining the beginning of the period.
+   * This operation creates a timesheet in draft status for a specific week period. The employee must provide both the week start date (Monday) and week end date (Sunday) in ISO date format. Upon creation, all existing timelogs for the employee within the specified week are automatically associated with the timesheet.
    *
-   * The employee creating the timesheet becomes the owner (employee_id) and has full control over the draft timesheet, including adding timelogs, submitting for approval, or deleting the draft. Each employee can have only one timesheet per week, enforced by the unique constraint on employee_id and week_start_date.
-   *
-   * Upon successful creation, the timesheet is initialized with 'draft' status, allowing the employee to add timelog entries before submission. The week_end_date is automatically calculated as week_start_date plus 6 days (Sunday). Submitted and reviewed timestamps are null until the timesheet progresses through the approval workflow.
-   *
-   * Users with time:manage or time:approve permissions can create timesheets on behalf of other employees by specifying the employee context. This supports administrative workflows where managers assist with timesheet creation.
+   * Only one timesheet per employee per week is allowed due to the unique constraint on employee_id and week_start_date. Attempting to create a duplicate timesheet for an existing week will result in a constraint violation error. Draft timesheets remain editable until submitted for approval.
    *
    * @param connection
-   * @param body Timesheet creation information including week start date
+   * @param body Timesheet creation data with week period dates
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new hrm_platform_timesheets record with the following implementation logic:
-   *
-   * 1. Validate the requesting user has member actor status and appropriate permissions (time:manage, time:approve, or is creating for themselves)
-   *
-   * 2. Extract week_start_date from request body and calculate week_end_date as week_start_date + 6 days
-   *
-   * 3. Check unique constraint: query hrm_platform_timesheets for existing record with same employee_id and week_start_date. If found, return conflict error indicating timesheet already exists for that week
-   *
-   * 4. Create timesheet record with:
-   *    - employee_id: authenticated employee's ID (or specified employee if admin)
-   *    - week_start_date: from request body
-   *    - week_end_date: calculated as week_start_date + 6 days
-   *    - status: 'draft'
-   *    - submitted_at: null
-   *    - reviewed_by_id: null
-   *    - reviewed_at: null
-   *    - rejection_reason: null
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   *    - deleted_at: null
-   *
-   * 5. Return the complete IHrmPlatformTimesheet entity including all fields
-   *
-   * 6. Handle edge cases:
-   *    - Duplicate week: return 409 Conflict with message about existing timesheet
-   *    - Invalid date format: return 400 Bad Request
-   *    - Insufficient permissions: return 403 Forbidden
+   * @x-autobe-specification Create a new draft timesheet for the authenticated employee. Extract employee_id from session context. Validate no existing timesheet for the same employee and week_start_date (check unique constraint). Calculate week_end_date as week_start_date + 6 days (Monday to Sunday). Set initial status to 'draft'. Set submitted_at, reviewed_at, reviewed_by_employee_id, rejection_reason to null. Automatically associate all existing timelogs for this employee within the week date range by updating their timesheet_id. Return the created timesheet with full entity data. Handle constraint violation error if timesheet for this week already exists.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -78,31 +50,17 @@ export class HrmplatformMemberTimesheetsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of timesheet records.
+   * Retrieve a filtered and paginated list of timesheet records within the authenticated user's organization context.
    *
-   * This endpoint provides comprehensive timesheet listing capabilities for time tracking management. Employees can access their own timesheets to monitor submission and approval status throughout the weekly workflow cycle. Users with timesheet approval permissions can view all timesheets across the organization for review and audit purposes.
+   * This operation provides advanced search capabilities for timesheets including status filtering (draft, submitted, approved, rejected), week date range filtering, and employee-specific queries. Permission-based access control applies: employees can view their own timesheets by default; users with time:view_all permission can view all timesheets across the organization; users with time:approve permission can view all submitted timesheets for approval workflow.
    *
-   * The operation supports multiple filtering dimensions including timesheet status filtering to isolate drafts, submitted, approved, or rejected timesheets. Date range filtering enables retrieval of timesheets for specific periods, supporting historical analysis and reporting requirements. Pagination parameters allow efficient browsing of large timesheet histories.
-   *
-   * Access control is enforced based on user permissions: regular employees are restricted to their own timesheets only, while users with time:approve or time:view_all permissions can access the complete organizational timesheet dataset. This ensures data isolation while enabling appropriate oversight capabilities.
-   *
-   * The response includes timesheet summary information optimized for list displays, containing essential fields such as week period, status, total hours, submission timestamp, and review status. Detailed timesheet information with full timelog breakdowns can be retrieved through the detail endpoint.
+   * Supports comprehensive pagination with configurable page sizes and sorting options. Response includes timesheet summary information optimized for list displays, showing week period, status, total hours, and workflow timestamps. Only active (non-deleted) timesheets are included in results. Results are scoped to the authenticated user's organization through employee membership relationships.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for timesheet filtering
+   * @param body Search criteria and pagination parameters for filtering timesheets by status, date range, and employee
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timesheets table with pagination and filtering support.
-   *
-   * Apply status filter when provided to match draft, submitted, approved, or rejected states. Apply date range filtering on week_start_date and week_end_date fields when range parameters are provided.
-   *
-   * Enforce access control: if user lacks time:approve or time:view_all permission, filter results to only include timesheets owned by the requesting employee. Join with hrm_platform_employees to verify ownership.
-   *
-   * Return paginated results with cursor-based or offset-based pagination. Include pagination metadata (total count, page info) in response.
-   *
-   * Sort results by week_start_date descending by default to show most recent timesheets first. Support custom sorting if specified in request.
-   *
-   * Handle edge cases: empty result sets return empty data array with pagination metadata. Invalid status values return validation error. Date range with end before start returns validation error.
+   * @x-autobe-specification Query hrm_platform_timesheets table with pagination and filtering. Filter by status (draft, submitted, approved, rejected), week_start_date range, and employee_id (derived from authenticated session). Join with hrm_platform_employees for employee display name. Join with hrm_platform_timelogs to calculate total hours if not pre-computed. Apply organization isolation by filtering timesheets belonging to employees in the current organization context. Support cursor-based pagination for large result sets. Sort by week_start_date descending by default (most recent first). Return timesheet summary information optimized for list displays including status, week period, total hours, and submission/review timestamps.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -124,33 +82,31 @@ export class HrmplatformMemberTimesheetsController {
   }
 
   /**
-   * Retrieve a specific timesheet by its unique identifier.
+   * Retrieve a single timesheet record by its unique identifier.
    *
-   * This operation returns detailed information about a single timesheet record, including the weekly period it covers (week_start_date to week_end_date), current workflow status (draft, submitted, approved, or rejected), submission and review timestamps, and rejection reason if applicable.
+   * This operation returns the complete timesheet entity including week period (Monday to Sunday), workflow status (draft, submitted, approved, rejected), submission and review timestamps, and rejection reason if applicable. The response includes the owning employee details and the reviewer employee details when the timesheet has been reviewed.
    *
-   * Authorization is enforced based on timesheet ownership and user permissions. Employees can only access their own timesheets, while users with time:view_all or time:approve permissions can view any timesheet across the organization. This ensures data isolation and privacy between employees while allowing authorized reviewers to access timesheets for approval workflows.
+   * Timesheets group an employee's timelogs by week for approval tracking. The included timelogs array contains all time entries associated with this timesheet. Approved timesheets have locked timelogs that cannot be edited or deleted.
    *
-   * The response includes all timesheet fields: employee ownership reference, optional reviewer reference, week period dates, status, submitted_at timestamp, reviewed_at timestamp, rejection_reason (when status is rejected), and audit timestamps (created_at, updated_at, deleted_at).
-   *
-   * Related operations: PATCH /timesheets for listing timesheets with filtering and pagination, PUT /timesheets/{timesheetId} for updating timesheet details, POST /timesheets/{timesheetId}/approve for approving submitted timesheets, POST /timesheets/{timesheetId}/reject for rejecting timesheets with reason.
+   * Access is restricted to the timesheet owner (employee) or users with time:approve permission. Returns 404 if the timesheet does not exist or the user lacks permission to view it.
    *
    * @param connection
-   * @param timesheetId Target timesheet's unique identifier (UUID format)
+   * @param timesheetId Unique identifier of the timesheet (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_platform_timesheets table by primary key (timesheetId UUID).
+   * @x-autobe-specification Query hrm_platform_timesheets table by primary key id (UUID).
    *
-   * Authorization check:
-   * - If user has time:view_all or time:approve permission: allow access to any timesheet
-   * - Otherwise: verify timesheet.employee_id matches the authenticated employee's ID
-   * - Reject with 403 Forbidden if authorization fails
+   * Join with hrm_platform_employees for employee relation to include employee details.
+   * Left join with hrm_platform_employees for reviewedByEmployee relation to include reviewer details when present.
    *
-   * Join with hrm_platform_employees to include employee information if needed in response.
-   * Join with hrm_platform_members to include reviewer information if reviewed_by_id is not null.
+   * Include related timelogs from hrm_platform_timelogs table where timesheet_id matches.
    *
-   * Return 404 Not Found if timesheet doesn't exist or is soft-deleted (deleted_at is not null).
+   * Validate that the requesting user has permission to view this timesheet:
+   * - Employee can view their own timesheets
+   * - Users with time:approve permission can view all timesheets
    *
-   * Ensure soft-deleted records are excluded from results by filtering where deleted_at IS NULL.
+   * Return 404 if timesheet not found or user lacks permission.
+   * Return 400 if timesheet is soft-deleted (deleted_at is not null).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":timesheetId")
@@ -172,103 +128,20 @@ export class HrmplatformMemberTimesheetsController {
   }
 
   /**
-   * Submit a draft timesheet for approval review.
+   * Approve a submitted timesheet, transitioning it to approved status and enforcing immutability on all included timelogs.
    *
-   * This operation transitions a timesheet from draft status to submitted status, initiating the approval workflow. The employee who owns the timesheet can submit it once they have completed logging all time entries for the week. Upon submission, the timesheet becomes locked and the employee can no longer modify the timesheet or its included timelogs until it is either approved or rejected by a reviewer.
+   * This operation is restricted to users with time:approve permission within the organization. When a timesheet is approved, all timelogs included in the timesheet become immutable - they cannot be edited or deleted through the API. The system records the approval timestamp and the employee who performed the approval.
    *
-   * The system performs several validation checks before allowing submission. First, the timesheet must contain at least one timelog entry - empty timesheets cannot be submitted. Second, there must not be another timesheet for the same employee and week period that is already in submitted or approved status. Third, the timesheet must currently be in draft status - already submitted timesheets cannot be resubmitted.
-   *
-   * When submission succeeds, the system updates the timesheet status from draft to submitted and records the submission timestamp in the submitted_at field. The timesheet remains in submitted status until a reviewer with time:approve permission either approves or rejects it. This operation is typically followed by GET /timesheets/{timesheetId} to retrieve the updated timesheet state or PATCH /timesheets to list all timesheets for the employee.
-   *
-   * Only the employee who owns the timesheet can submit it. Users with employee:manage or time:approve permissions may have separate endpoints for approving or rejecting submitted timesheets.
+   * The timesheet must be in submitted status to be approved. Attempting to approve a draft, already approved, or rejected timesheet will result in an error. After approval, the timesheet status becomes approved and cannot return to draft or submitted status. Timelog immutability is enforced through business logic validation that checks the parent timesheet status before allowing modifications.
    *
    * @param connection
-   * @param timesheetId Target timesheet's unique identifier
+   * @param timesheetId Timesheet identifier (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement timesheet submission workflow with comprehensive validation.
-   *
-   * 1. Retrieve the timesheet by timesheetId from hrm_platform_timesheets table
-   * 2. Validate the requesting user is the owner (employee_id matches authenticated employee)
-   * 3. Validate timesheet status is 'draft' - reject if already submitted, approved, or rejected
-   * 4. Query hrm_platform_timelogs to count timelogs belonging to this timesheet
-   * 5. Validate at least one timelog exists - reject with error if timesheet is empty
-   * 6. Query for duplicate timesheets: same employee_id, same week_start_date, status in ('submitted', 'approved')
-   * 7. Validate no duplicate exists - reject if another timesheet for same week is already submitted or approved
-   * 8. Begin database transaction
-   * 9. Update timesheet: set status='submitted', submitted_at=current timestamp
-   * 10. Commit transaction
-   * 11. Return updated timesheet entity with full details
-   *
-   * Error handling:
-   * - 404: Timesheet not found
-   * - 403: User is not the timesheet owner
-   * - 400: Timesheet is not in draft status
-   * - 400: Timesheet contains no timelogs
-   * - 409: Duplicate timesheet exists for same week
-   * - 400: Employee is deactivated (cannot submit timesheets)
-   *
-   * Authorization: member actor who owns the timesheet (employee.user_id matches authenticated user)
+   * @x-autobe-specification Validate the requesting user has time:approve permission within the current organization context. Query hrm_platform_timesheets table by timesheetId. Verify the timesheet status is 'submitted' - reject if draft, approved, or rejected. Verify the requesting employee has time:approve permission through their role assignments. Update the timesheet: set status to 'approved', set reviewed_at to current timestamp, set reviewed_by_employee_id to the requesting employee's ID. Lock all timelogs associated with this timesheet by updating their locked status. Create an activity log entry recording the approval action. Return the updated timesheet entity with all fields including the new review metadata. Handle edge cases: timesheet not found (404), insufficient permissions (403), invalid status for approval (400).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch(":timesheetId/submit")
-  public async submit(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("timesheetId")
-    timesheetId: string & tags.Format<"uuid">,
-  ): Promise<IHrmPlatformTimesheet> {
-    try {
-      return await patchHrmPlatformMemberTimesheetsTimesheetIdSubmit({
-        member,
-        timesheetId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Approve a submitted timesheet, transitioning it to approved status and locking all associated timelogs.
-   *
-   * This operation allows users with time:approve permission to review and approve timesheets that are in submitted status. When a timesheet is approved, the system records the reviewer's identity in the reviewed_by_id field and sets the reviewed_at timestamp to the current time. The timesheet status changes from submitted to approved.
-   *
-   * Approving a timesheet has a critical side effect: all timelog entries included in that timesheet become permanently locked, preventing any future edits or deletions. This ensures the integrity of approved time records for payroll and billing purposes.
-   *
-   * The operation validates that the timesheet exists, is in submitted status, and the user has the required time:approve permission. If the timesheet is in draft, approved, or rejected status, the request is rejected with an appropriate error indicating the current status.
-   *
-   * This operation is part of the timesheet approval workflow. Users typically retrieve the list of submitted timesheets first using PATCH /timesheets with status filter, then approve individual timesheets using this endpoint. After approval, the timesheet can be retrieved via GET /timesheets/{timesheetId} to confirm the updated status.
-   *
-   * @param connection
-   * @param timesheetId Target timesheet's unique identifier (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the hrm_platform_timesheets table by the provided timesheetId path parameter.
-   *
-   * Validate the following preconditions:
-   * 1. Timesheet exists and is not soft deleted (deleted_at is null)
-   * 2. Timesheet status is 'submitted' - reject if draft, approved, or rejected
-   * 3. Current user has time:approve permission in the organization context
-   * 4. Timesheet belongs to the current organization (via employee_id join)
-   *
-   * If validation passes, execute an update transaction:
-   * - Set status to 'approved'
-   * - Set reviewed_by_id to current user's member ID
-   * - Set reviewed_at to current timestamp
-   * - Ensure rejection_reason is null
-   *
-   * The timelog locking is enforced at the timelog level - when querying or updating timelogs, check if their parent timesheet is in approved status and reject modification attempts.
-   *
-   * Return the updated timesheet record with all fields including the new reviewed_by_id and reviewed_at values.
-   *
-   * Error handling:
-   * - 404: Timesheet not found or soft deleted
-   * - 400: Timesheet not in submitted status (include current status in error details)
-   * - 403: User lacks time:approve permission
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch(":timesheetId/approve")
+  @TypedRoute.Post(":timesheetId")
   public async approve(
     @MemberAuth()
     member: MemberPayload,
@@ -276,7 +149,7 @@ export class HrmplatformMemberTimesheetsController {
     timesheetId: string & tags.Format<"uuid">,
   ): Promise<IHrmPlatformTimesheet> {
     try {
-      return await patchHrmPlatformMemberTimesheetsTimesheetIdApprove({
+      return await postHrmPlatformMemberTimesheetsTimesheetId({
         member,
         timesheetId,
       });
@@ -287,23 +160,142 @@ export class HrmplatformMemberTimesheetsController {
   }
 
   /**
-   * Reject a submitted timesheet with a required rejection reason.
+   * Update an existing timesheet's metadata and configuration.
    *
-   * This operation allows users with time approval permissions to reject timesheets that have been submitted for review. The rejection reason is mandatory and must provide clear feedback to the employee about what needs to be corrected. When a timesheet is rejected, the system records the review timestamp, the identity of the reviewer, and the detailed rejection reason.
+   * This operation allows employees to modify their draft or rejected timesheets. Updates are restricted to timesheets in 'draft' or 'rejected' status - submitted and approved timesheets cannot be modified to maintain approval workflow integrity.
    *
-   * The timesheet status transitions from submitted to rejected, and then automatically returns to draft status, allowing the employee to address the issues and resubmit. All timelogs included in the timesheet remain unlocked and editable after rejection.
+   * Updatable fields include the week period (week_start_date and week_end_date) and rejection_reason. When updating week dates, the system validates that week_start_date falls on a Monday and week_end_date on the corresponding Sunday. The unique constraint ensures no duplicate timesheets exist for the same employee and week period.
    *
-   * This operation validates that the timesheet is in submitted status before allowing rejection. Attempts to reject timesheets in draft, approved, or already rejected status will be rejected. The requesting user must have the time:approve permission within the organization context.
+   * For rejected timesheets, clearing the rejection_reason prepares the timesheet for resubmission. The operation returns the complete updated timesheet entity including employee and reviewer information.
    *
    * @param connection
-   * @param timesheetId Target timesheet's ID (UUID format)
-   * @param body Rejection details including the mandatory rejection reason
+   * @param timesheetId Timesheet UUID identifier
+   * @param body Timesheet update data with week period and rejection reason
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the requesting member has time:approve permission within the organization context. Query the timesheet by ID and verify it exists and is not soft deleted. Validate the timesheet status is 'submitted' - reject if draft, approved, or already rejected. Validate the rejection_reason is provided and not empty (minimum 1 character). Update the timesheet: set status to 'rejected', set reviewed_at to current timestamp, set reviewed_by_id to the requesting member's ID, set rejection_reason to the provided value. The timesheet automatically returns to draft status after rejection, allowing the employee to modify and resubmit. Record an activity log entry for the rejection action. Return the updated timesheet with the new status and rejection details.
+   * @x-autobe-specification Update a timesheet by UUID. Query hrm_platform_timesheets table by id. Validate timesheet exists and is not deleted. Check status is 'draft' or 'rejected' - reject updates to submitted/approved timesheets. Validate week_start_date is Monday and week_end_date is Sunday of same week. Validate unique constraint: no other timesheet exists for same employee_id and week_start_date combination. If status is 'rejected' and rejection_reason is being cleared, allow for resubmission. Update allowed fields: week_start_date, week_end_date, rejection_reason. Update updated_at timestamp. Return full timesheet entity. Join with employee and reviewedByEmployee for complete response.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch(":timesheetId/reject")
+  @TypedRoute.Put(":timesheetId")
+  public async update(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("timesheetId")
+    timesheetId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IHrmPlatformTimesheet.IUpdate,
+  ): Promise<IHrmPlatformTimesheet> {
+    try {
+      return await putHrmPlatformMemberTimesheetsTimesheetId({
+        member,
+        timesheetId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Soft delete a draft timesheet from the system.
+   *
+   * This operation allows employees to delete their own draft timesheets before submission. Only timesheets with 'draft' status can be deleted - submitted, approved, or rejected timesheets are locked and cannot be removed. Users with time:manage permission can delete any employee's draft timesheets.
+   *
+   * The deletion is implemented as a soft delete, marking the timesheet with a deletion timestamp while preserving data integrity. All timelogs associated with the deleted timesheet are also soft deleted through cascade. The operation validates ownership and status before proceeding, returning appropriate error responses for invalid deletion attempts.
+   *
+   * @param connection
+   * @param timesheetId Unique identifier of the timesheet to delete (UUID format)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Soft delete a timesheet by setting deleted_at timestamp. Validate that timesheet status is 'draft' - reject deletion attempts on submitted, approved, or rejected timesheets with 400 Bad Request. Verify the requesting employee owns this timesheet (employee_id matches authenticated user's employee ID) unless they have time:manage permission. Check that no timelogs in this timesheet are referenced elsewhere. Set deleted_at to current timestamp. Cascade soft delete to all associated timelogs in this timesheet week. Return the deleted timesheet entity. Log activity entry for timesheet deletion.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":timesheetId")
+  public async erase(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("timesheetId")
+    timesheetId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteHrmPlatformMemberTimesheetsTimesheetId({
+        member,
+        timesheetId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Submit a draft timesheet for approval review.
+   *
+   * This operation transitions a timesheet from draft status to submitted status, initiating the approval workflow. The employee who owns the timesheet can submit it when they have completed logging all time entries for the week.
+   *
+   * The system validates that the timesheet contains at least one timelog entry and that no other timesheet for the same week has already been submitted or approved. Upon successful submission, all timelogs included in the timesheet are locked from editing or deletion through business logic validation - the timelogs remain in the database with their soft-delete capability intact, but modification operations will be rejected while the timesheet is in submitted or approved status.
+   *
+   * Users with time:approve permission will see the submitted timesheet in their approval queue for review. The timesheet status changes to 'submitted' and cannot be modified by the employee until it is either approved or rejected. The submitted_at timestamp is recorded to track when the timesheet entered the approval workflow.
+   *
+   * @param connection
+   * @param timesheetId Timesheet unique identifier (UUID)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Submit a draft timesheet for approval workflow. Query hrm_platform_timesheets by timesheetId. Validate timesheet exists and belongs to the requesting employee. Validate timesheet status is 'draft' - reject if already submitted, approved, or rejected. Validate timesheet has at least one associated timelog in hrm_platform_timelogs - reject empty timesheets. Validate no other timesheet exists for the same employee and week_start_date with status 'submitted' or 'approved' using the unique constraint @@unique([employee_id, week_start_date]). Update timesheet: set status to 'submitted', set submitted_at to current timestamp. Lock all included timelogs from further editing or deletion. Return the updated timesheet entity. Error cases: 404 if timesheet not found, 400 if not in draft status, 400 if no timelogs, 409 if duplicate week submission exists, 403 if not the timesheet owner.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post(":timesheetId/submit")
+  public async submit(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("timesheetId")
+    timesheetId: string & tags.Format<"uuid">,
+  ): Promise<IHrmPlatformTimesheet> {
+    try {
+      return await postHrmPlatformMemberTimesheetsTimesheetIdSubmit({
+        member,
+        timesheetId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reject a submitted timesheet and return it to draft status for employee revision.
+   *
+   * This operation allows users with time:approve permission to reject a submitted timesheet. The rejection requires a reason explaining why the timesheet was rejected. Upon rejection, the timesheet status changes from 'submitted' back to 'draft', allowing the employee to modify the timelogs and resubmit.
+   *
+   * The system records the rejection timestamp, the rejecting user, and the rejection reason. The employee receives notification of the rejection and can view the reason when accessing their timesheet.
+   *
+   * Only timesheets in 'submitted' status can be rejected. Attempting to reject a draft, approved, or already-rejected timesheet will fail with a validation error.
+   *
+   * @param connection
+   * @param timesheetId Timesheet unique identifier (UUID format)
+   * @param body Rejection details including required reason
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Reject a submitted timesheet and return it to draft status.
+   *
+   * Implementation steps:
+   * 1. Validate timesheet exists and is not soft-deleted
+   * 2. Verify timesheet status is 'submitted' (cannot reject draft, approved, or already rejected)
+   * 3. Verify requesting user has 'time:approve' permission in the organization
+   * 4. Validate rejection_reason is provided and non-empty (required field)
+   * 5. Update timesheet: set status to 'draft', reviewed_at to current timestamp, rejection_reason to provided value, reviewed_by_employee_id to current employee's ID
+   * 6. Log activity: record timesheet rejection event in hrm_platform_activity_logs
+   * 7. Return updated timesheet entity
+   *
+   * Edge cases:
+   * - Rejecting a non-submitted timesheet → 400 Bad Request
+   * - Missing rejection_reason → 400 Bad Request
+   * - User without time:approve permission → 403 Forbidden
+   * - Timesheet not found → 404 Not Found
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post(":timesheetId/reject")
   public async reject(
     @MemberAuth()
     member: MemberPayload,
@@ -313,7 +305,7 @@ export class HrmplatformMemberTimesheetsController {
     body: IHrmPlatformTimesheet.IReject,
   ): Promise<IHrmPlatformTimesheet> {
     try {
-      return await patchHrmPlatformMemberTimesheetsTimesheetIdReject({
+      return await postHrmPlatformMemberTimesheetsTimesheetIdReject({
         member,
         timesheetId,
         body,

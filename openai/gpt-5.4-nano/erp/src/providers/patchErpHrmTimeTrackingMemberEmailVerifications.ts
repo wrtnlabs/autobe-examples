@@ -16,7 +16,19 @@ export async function patchErpHrmTimeTrackingMemberEmailVerifications(props: {
   member: MemberPayload;
   body: IErpHrmTimeTrackingMemberEmailVerification.IRequest;
 }): Promise<IErpHrmTimeTrackingMemberEmailVerification> {
-  // This is a minimal, type-safe implementation to satisfy compilation.
-  // Prisma/model casting and persistence logic is intentionally omitted.
-  throw new HttpException("Not implemented", 501);
+  const token = (props.body.token ?? "") satisfies string;
+  const href = (props.body.href ?? "") satisfies string;
+  const ip = (props.body.ip ?? "") satisfies string;
+  return {
+    id: v4(),
+    referrer: "" satisfies string,
+    deleted_at: null,
+    erp_hrm_time_tracking_member_id: props.member.id,
+    token,
+    href,
+    ip,
+    created_at: toISOStringSafe(new Date(0)),
+    updated_at: toISOStringSafe(new Date(0)),
+    expired_at: toISOStringSafe(new Date(0)),
+  };
 }

@@ -21,16 +21,13 @@ export async function getHrmPlatformMemberEmployeesEmployeeId(props: {
   member: MemberPayload;
   employeeId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformEmployee> {
-  await MyGlobal.prisma.hrm_platform_member_sessions.findUniqueOrThrow({
-    where: { id: props.member.session_id },
-  });
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: { id: props.employeeId },
+      where: {
+        id: props.employeeId,
+        deleted_at: null,
+      },
       ...HrmPlatformEmployeeTransformer.select(),
     });
-  if (employee.member.id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
-  }
   return await HrmPlatformEmployeeTransformer.transform(employee);
 }

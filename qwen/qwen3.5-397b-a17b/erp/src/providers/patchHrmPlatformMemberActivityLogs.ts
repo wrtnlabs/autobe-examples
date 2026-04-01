@@ -21,11 +21,11 @@ export async function patchHrmPlatformMemberActivityLogs(props: {
   body: IHrmPlatformActivityLog.IRequest;
 }): Promise<IPageIHrmPlatformActivityLog.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 100, 100);
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
-      member_id: props.member.id,
+      user_id: props.member.id,
       deleted_at: null,
     },
     select: {
@@ -33,24 +33,31 @@ export async function patchHrmPlatformMemberActivityLogs(props: {
     },
   });
   if (!employee) {
-    throw new HttpException("Member not associated with any organization", 403);
+    throw new HttpException("Member not found in any organization", 404);
+  }
+  if (props.body.dateFrom && props.body.dateTo) {
+    const from = new Date(props.body.dateFrom);
+    const to = new Date(props.body.dateTo);
+    if (from > to) {
+      throw new HttpException(
+        "Invalid date range: dateFrom must be before dateTo",
+        400,
+      );
+    }
   }
   const whereInput = {
     organization_id: employee.organization_id,
     deleted_at: null,
-    ...(props.body.action_type && { action_type: props.body.action_type }),
-    ...(props.body.member_id && { member_id: props.body.member_id }),
-    ...(props.body.target_entity_type && {
-      target_entity_type: props.body.target_entity_type,
+    ...(props.body.actionType && { action_type: props.body.actionType }),
+    ...(props.body.userId && { member_id: props.body.userId }),
+    ...(props.body.dateFrom && {
+      created_at: { gte: new Date(props.body.dateFrom) },
     }),
-    ...(props.body.target_entity_id && {
-      target_entity_id: props.body.target_entity_id,
+    ...(props.body.dateTo && {
+      created_at: { lte: new Date(props.body.dateTo) },
     }),
-    ...(props.body.created_at_from && {
-      created_at: { gte: new Date(props.body.created_at_from) },
-    }),
-    ...(props.body.created_at_to && {
-      created_at: { lte: new Date(props.body.created_at_to) },
+    ...(props.body.targetEntityType && {
+      target_entity_type: props.body.targetEntityType,
     }),
   } satisfies Prisma.hrm_platform_activity_logsWhereInput;
   const data = await MyGlobal.prisma.hrm_platform_activity_logs.findMany({
@@ -64,15 +71,15 @@ export async function patchHrmPlatformMemberActivityLogs(props: {
     where: whereInput,
   });
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmPlatformActivityLogAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmPlatformActivityLogAtSummaryTransformer.transform,
-    ),
   };
 }

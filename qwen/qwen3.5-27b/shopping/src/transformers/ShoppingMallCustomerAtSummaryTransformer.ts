@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallCustomerAtSummaryTransformer {
@@ -31,7 +33,7 @@ export namespace ShoppingMallCustomerAtSummaryTransformer {
       id: input.id,
       email: input.email,
       display_name: input.display_name,
-      phone_number: input.phone_number,
+      phone_number: input.phone_number ?? null,
       status: input.status,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),

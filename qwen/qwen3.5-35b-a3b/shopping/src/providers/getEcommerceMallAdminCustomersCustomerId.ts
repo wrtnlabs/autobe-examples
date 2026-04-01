@@ -12,20 +12,29 @@ import { AdminPayload } from "../decorators/payload/AdminPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-/**
- * Retrieve detailed information for a specific customer account.
- *
- * This operation returns the complete customer profile including the customer's registered email address, display information from their profile, account status, and timestamp information.
- *
- * The requesting actor must be authenticated. Customer accounts can only view their own account details. Administrators and super administrators can view any customer account for oversight and support purposes.
- *
- * The customer record includes the primary authentication email, the customer's display name and phone number from their profile, the timestamp when the account was created, and the current account status. Sensitive authentication fields including password hashes are never exposed through this API.
- *
- * Cannot implement: Schema missing display_name and phone_number required by API.
- */
 export async function getEcommerceMallAdminCustomersCustomerId(props: {
   admin: AdminPayload;
   customerId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallCustomer> {
-  return typia.random<IEcommerceMallCustomer>();
+  const customer =
+    await MyGlobal.prisma.ecommerce_mall_customers.findUniqueOrThrow({
+      where: { id: props.customerId },
+      select: {
+        id: true,
+        email: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
+    });
+  return {
+    id: customer.id,
+    display_name: "",
+    phone_number: null,
+    status: customer.status,
+    created_at: customer.created_at.toISOString(),
+    updated_at: customer.updated_at.toISOString(),
+    deleted_at: customer.deleted_at?.toISOString() ?? null,
+  } satisfies IEcommerceMallCustomer;
 }

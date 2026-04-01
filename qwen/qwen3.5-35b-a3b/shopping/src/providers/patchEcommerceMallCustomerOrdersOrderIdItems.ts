@@ -22,9 +22,7 @@ export async function patchEcommerceMallCustomerOrdersOrderIdItems(props: {
   orderId: string & tags.Format<"uuid">;
   body: IEcommerceMallOrderItem.IRequest;
 }): Promise<IPageIEcommerceMallOrderItem.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
+  // Validate order exists and belongs to customer
   const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
     where: {
       id: props.orderId,
@@ -33,9 +31,25 @@ export async function patchEcommerceMallCustomerOrdersOrderIdItems(props: {
     },
     select: { id: true },
   });
+  // Build where clause from request body filters
   const whereInput: Prisma.ecommerce_mall_order_itemsWhereInput = {
     ecommerce_mall_order_id: props.orderId,
     deleted_at: null,
+    ...(props.body.status !== undefined && {
+      // Status is computed field, cannot filter directly on it
+      // Filter by cancellation/refund request counts instead
+      cancellationRequests: {
+        some: {
+          status: props.body.status === "cancelled" ? "cancelled" : undefined,
+        },
+      },
+      refundRequests: {
+        some: {
+          status: props.body.status === "refunded" ? "approved" : undefined,
+        },
+      },
+      // Note: computed status requires runtime evaluation after query
+    }),
     ...(props.body.product_name !== undefined && {
       product_name: {
         contains: props.body.product_name,
@@ -56,6 +70,11 @@ export async function patchEcommerceMallCustomerOrdersOrderIdItems(props: {
       },
     }),
   } satisfies Prisma.ecommerce_mall_order_itemsWhereInput;
+  // Calculate pagination
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 20, 100);
+  const skip = (page - 1) * limit;
+  // Query order items
   const data = await MyGlobal.prisma.ecommerce_mall_order_items.findMany({
     where: whereInput,
     skip,
@@ -63,20 +82,22 @@ export async function patchEcommerceMallCustomerOrdersOrderIdItems(props: {
     orderBy: { created_at: "desc" },
     ...EcommerceMallOrderItemAtSummaryTransformer.select(),
   });
+  // Count total records
   const total = await MyGlobal.prisma.ecommerce_mall_order_items.count({
     where: whereInput,
   });
-  const pages = total === 0 ? 0 : Math.ceil(total / limit);
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    EcommerceMallOrderItemAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallOrderItemAtSummaryTransformer.transform,
-    ),
+    data: transformedData,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: pages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

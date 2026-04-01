@@ -17,64 +17,99 @@ export async function postEcommerceMallAdminSearchReindex(props: {
   admin: AdminPayload;
   body: IEcommerceMallSearchIndicesReindexRequest;
 }): Promise<IEcommerceMallSearchIndicesReindexJob> {
-  // Determine which entity types to reindex, default to all types if not specified
   const entityTypes = props.body.entityTypes ?? [
     "product",
     "category",
     "review",
+    "all",
   ];
-  const specificEntityIds = props.body.entityIds;
-  // Generate unique job UUID for tracking the reindexing operation
-  const jobId: string & tags.Format<"uuid"> = v4();
-  // Calculate total entity count based on requested entity types
-  let totalEntityCount: number = 0;
-  if (specificEntityIds && specificEntityIds.length > 0) {
-    // If specific entity IDs are provided, count them directly
-    totalEntityCount = specificEntityIds.length;
+  const entityIds = props.body.entityIds ?? [];
+  // Count total entities to reindex
+  let totalEntityCount = 0;
+  if (entityTypes.includes("all")) {
+    // Count all products
+    const productCount = await MyGlobal.prisma.ecommerce_mall_products.count({
+      where: { deleted_at: null },
+    });
+    totalEntityCount += productCount;
+    // Count all categories
+    const categoryCount = await MyGlobal.prisma.ecommerce_mall_categories.count(
+      {
+        where: { deleted_at: null },
+      },
+    );
+    totalEntityCount += categoryCount;
+    // Count all reviews
+    const reviewCount = await MyGlobal.prisma.ecommerce_mall_reviews.count({
+      where: { deleted_at: null },
+    });
+    totalEntityCount += reviewCount;
   } else {
-    // Calculate count based on entity types, querying each relevant table
-    const counts = await Promise.all([
-      entityTypes.includes("product") || entityTypes.includes("all")
-        ? MyGlobal.prisma.ecommerce_mall_products
-            .count({ where: { deleted_at: null } })
-            .catch(() => 0)
-        : Promise.resolve(0),
-      entityTypes.includes("category") || entityTypes.includes("all")
-        ? MyGlobal.prisma.ecommerce_mall_categories
-            .count({ where: { deleted_at: null } })
-            .catch(() => 0)
-        : Promise.resolve(0),
-      entityTypes.includes("review") || entityTypes.includes("all")
-        ? MyGlobal.prisma.ecommerce_mall_reviews
-            .count({ where: { deleted_at: null } })
-            .catch(() => 0)
-        : Promise.resolve(0),
-    ]);
-    totalEntityCount = counts.reduce((sum, count) => sum + count, 0);
+    // Count specific entity types
+    if (entityTypes.includes("product")) {
+      const productCount = await MyGlobal.prisma.ecommerce_mall_products.count({
+        where: {
+          deleted_at: null,
+          ...(entityIds.length > 0 && {
+            id: { in: entityIds as (string & tags.Format<"uuid">)[] },
+          }),
+        },
+      });
+      totalEntityCount += productCount;
+    }
+    if (entityTypes.includes("category")) {
+      const categoryCount =
+        await MyGlobal.prisma.ecommerce_mall_categories.count({
+          where: {
+            deleted_at: null,
+            ...(entityIds.length > 0 && {
+              id: { in: entityIds as (string & tags.Format<"uuid">)[] },
+            }),
+          },
+        });
+      totalEntityCount += categoryCount;
+    }
+    if (entityTypes.includes("review")) {
+      const reviewCount = await MyGlobal.prisma.ecommerce_mall_reviews.count({
+        where: {
+          deleted_at: null,
+          ...(entityIds.length > 0 && {
+            id: { in: entityIds as (string & tags.Format<"uuid">)[] },
+          }),
+        },
+      });
+      totalEntityCount += reviewCount;
+    }
   }
-  // Convert entityTypes to string array for job record
-  const jobEntityTypes: string[] = entityTypes;
-  // Create timestamp strings for job creation (using ISO 8601 format)
+  // Create reindex job record
+  const jobId: string & tags.Format<"uuid"> = v4();
   const now = new Date();
-  const createdAt: string & tags.Format<"date-time"> = toISOStringSafe(now);
-  const updatedAt: string & tags.Format<"date-time"> = toISOStringSafe(now);
-  const completedAt: (string & tags.Format<"date-time">) | null = null;
-  // Estimate completion time based on entity count (1 second per entity, max 10 minutes)
-  const estimatedSeconds = Math.min(totalEntityCount, 600);
-  const minutes = Math.floor(estimatedSeconds / 60);
-  const seconds = estimatedSeconds % 60;
-  const estimatedCompletionTime: (string & tags.Format<"duration">) | null =
-    estimatedSeconds > 0 ? `PT${minutes}M${seconds}S` : "PT0S";
-  // Create and return the job object with all required fields
-  const job: IEcommerceMallSearchIndicesReindexJob = {
+  const job = await MyGlobal.prisma.ecommerce_mall_search_indices.create({
+    data: {
+      id: jobId,
+      entity_id: "00000000-0000-0000-0000-000000000000", // Job tracking ID placeholder
+      entity_type: "reindex_job",
+      title: `Reindex Job: ${entityTypes.join(", ")}`,
+      searchable_text: `Reindexing entities: ${entityTypes.join(", ")}`,
+      status: "queued",
+      metadata: JSON.stringify({
+        entityTypes: entityTypes as string[],
+        entityIds: entityIds as string[],
+        createdBy: props.admin.id,
+      }),
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    },
+  });
+  return {
     id: jobId,
-    entityTypes: jobEntityTypes,
-    totalEntityCount: totalEntityCount as number & tags.Type<"int32">,
-    status: "queued" as const,
-    createdAt,
-    updatedAt,
-    completedAt,
-    estimatedCompletionTime,
+    entityTypes: entityTypes as string[],
+    totalEntityCount: totalEntityCount,
+    status: "queued" as "queued" | "processing" | "completed" | "failed",
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    completedAt: null,
+    estimatedCompletionTime: null,
   } satisfies IEcommerceMallSearchIndicesReindexJob;
-  return job;
 }

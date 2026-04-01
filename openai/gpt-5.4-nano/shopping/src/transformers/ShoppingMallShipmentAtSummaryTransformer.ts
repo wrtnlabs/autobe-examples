@@ -3,6 +3,7 @@ import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/ISh
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -22,11 +23,6 @@ export namespace ShoppingMallShipmentAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         order: ShoppingMallOrderAtSummaryTransformer.select(),
-        orderItems: {
-          select: {
-            id: true,
-          },
-        },
         shipmentConfirmation: {
           select: {
             tracking_url: true,
@@ -34,6 +30,12 @@ export namespace ShoppingMallShipmentAtSummaryTransformer {
             carrier_name: true,
             confirmation_type: true,
             confirmed_at: true,
+            deleted_at: true,
+          },
+        },
+        orderItems: {
+          select: {
+            id: true,
           },
         },
       },
@@ -47,13 +49,26 @@ export namespace ShoppingMallShipmentAtSummaryTransformer {
       order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
       sellerSnapshotId: input.seller_snapshot_id,
       status: input.status,
-      trackingUrl: input.shipmentConfirmation?.tracking_url ?? null,
-      trackingNumber: input.shipmentConfirmation?.tracking_number ?? null,
-      carrierName: input.shipmentConfirmation?.carrier_name ?? null,
-      confirmationType: input.shipmentConfirmation?.confirmation_type ?? null,
-      confirmedAt: input.shipmentConfirmation?.confirmed_at
-        ? input.shipmentConfirmation.confirmed_at.toISOString()
-        : null,
+      trackingUrl:
+        input.shipmentConfirmation?.deleted_at === null
+          ? (input.shipmentConfirmation.tracking_url ?? null)
+          : null,
+      trackingNumber:
+        input.shipmentConfirmation?.deleted_at === null
+          ? (input.shipmentConfirmation.tracking_number ?? null)
+          : null,
+      carrierName:
+        input.shipmentConfirmation?.deleted_at === null
+          ? (input.shipmentConfirmation.carrier_name ?? null)
+          : null,
+      confirmationType:
+        input.shipmentConfirmation?.deleted_at === null
+          ? (input.shipmentConfirmation.confirmation_type ?? null)
+          : null,
+      confirmedAt:
+        input.shipmentConfirmation?.deleted_at === null
+          ? input.shipmentConfirmation.confirmed_at.toISOString()
+          : null,
       createdAt: input.created_at.toISOString(),
       deletedAt: input.deleted_at ? input.deleted_at.toISOString() : null,
     };

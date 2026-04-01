@@ -23,7 +23,7 @@ export async function patchShoppingMallAdminAdminPromotionRequests(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.shopping_mall_admin_promotion_requestsWhereInput = {
+  const whereInput = {
     deleted_at: null,
     ...(props.body.status && { status: props.body.status }),
     ...(props.body.submittedAtFrom && {
@@ -32,46 +32,40 @@ export async function patchShoppingMallAdminAdminPromotionRequests(props: {
     ...(props.body.submittedAtTo && {
       submitted_at: { lte: new Date(props.body.submittedAtTo) },
     }),
+    ...(props.body.search && {
+      reason: {
+        contains: props.body.search,
+      },
+    }),
   } satisfies Prisma.shopping_mall_admin_promotion_requestsWhereInput;
-  if (props.body.search) {
-    whereInput.reason = {
-      contains: props.body.search,
-    };
-  }
-  const orderByInput: Prisma.shopping_mall_admin_promotion_requestsOrderByWithRelationInput =
-    props.body.sort === "submitted_at"
+  const orderByInput =
+    (props.body.sort ?? "submitted_at") === "submitted_at"
       ? { submitted_at: props.body.order ?? "desc" }
-      : props.body.sort === "responded_at"
+      : (props.body.sort ?? "submitted_at") === "responded_at"
         ? { responded_at: props.body.order ?? "desc" }
-        : props.body.sort === "created_at"
-          ? { created_at: props.body.order ?? "desc" }
-          : ({
-              submitted_at: "desc",
-            } satisfies Prisma.shopping_mall_admin_promotion_requestsOrderByWithRelationInput);
-  const selectInput =
-    ShoppingMallAdminPromotionRequestAtSummaryTransformer.select();
-  const data =
-    await MyGlobal.prisma.shopping_mall_admin_promotion_requests.findMany({
+        : { created_at: props.body.order ?? "desc" };
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.shopping_mall_admin_promotion_requests.findMany({
       where: whereInput,
       skip,
       take: limit,
       orderBy: orderByInput,
-      ...selectInput,
-    });
-  const total =
-    await MyGlobal.prisma.shopping_mall_admin_promotion_requests.count({
+      ...ShoppingMallAdminPromotionRequestAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.shopping_mall_admin_promotion_requests.count({
       where: whereInput,
-    });
+    }),
+  ]);
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallAdminPromotionRequestAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallAdminPromotionRequestAtSummaryTransformer.transform,
+    ),
   };
 }

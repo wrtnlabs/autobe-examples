@@ -2,8 +2,10 @@ import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/l
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallRefundRequestSnapshotTransformer {
@@ -15,6 +17,11 @@ export namespace EcommerceMallRefundRequestSnapshotTransformer {
     return {
       select: {
         id: true,
+        refundRequest: { select: { id: true } },
+        customerSnapshots: true,
+        sellerSnapshot: true,
+        adminSubtype: true,
+        ofSuperAdmin: true,
         actor_type: true,
         action_type: true,
         status_before: true,
@@ -27,31 +34,6 @@ export namespace EcommerceMallRefundRequestSnapshotTransformer {
         metadata_after: true,
         created_at: true,
         deleted_at: true,
-        refundRequest: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_refund_requestsFindManyArgs,
-        customerSnapshots: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_refund_request_snapshot_of_customersFindManyArgs,
-        sellerSnapshot: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_refund_request_snapshot_of_sellersFindManyArgs,
-        adminSubtype: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_refund_request_snapshot_of_adminsFindManyArgs,
-        ofSuperAdmin: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_refund_request_snapshot_of_super_adminsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_refund_request_snapshotsFindManyArgs;
   }
@@ -72,23 +54,36 @@ export namespace EcommerceMallRefundRequestSnapshotTransformer {
         | "reason_updated"
         | "response_added"
       >(input.action_type),
-      statusBefore: typia.assert<
-        "pending" | "approved" | "rejected" | "refunded" | null | undefined
-      >(input.status_before),
-      statusAfter: typia.assert<
-        "pending" | "approved" | "rejected" | "refunded" | null | undefined
-      >(input.status_after),
-      reasonBefore: input.reason_before,
-      reasonAfter: input.reason_after,
-      responseBefore: input.response_before,
-      responseAfter: input.response_after,
-      metadataBefore: input.metadata_before,
-      metadataAfter: input.metadata_after,
+      statusBefore:
+        input.status_before === undefined || input.status_before === null
+          ? undefined
+          : typia.assert<
+              | "pending"
+              | "approved"
+              | "rejected"
+              | "refunded"
+              | null
+              | undefined
+            >(input.status_before),
+      statusAfter:
+        input.status_after === undefined || input.status_after === null
+          ? undefined
+          : typia.assert<
+              | "pending"
+              | "approved"
+              | "rejected"
+              | "refunded"
+              | null
+              | undefined
+            >(input.status_after),
+      reasonBefore: input.reason_before ?? undefined,
+      reasonAfter: input.reason_after ?? undefined,
+      responseBefore: input.response_before ?? undefined,
+      responseAfter: input.response_after ?? undefined,
+      metadataBefore: input.metadata_before ?? undefined,
+      metadataAfter: input.metadata_after ?? undefined,
       createdAt: toISOStringSafe(input.created_at),
-      deletedAt:
-        input.deleted_at !== null && input.deleted_at !== undefined
-          ? toISOStringSafe(input.deleted_at)
-          : null,
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

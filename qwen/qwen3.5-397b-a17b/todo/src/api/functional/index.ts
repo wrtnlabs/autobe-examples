@@ -1,1 +1,1 @@
-export * as todoApp from "./todoApp/index";
+export * as multiUserTodo from "./multiUserTodo/index";

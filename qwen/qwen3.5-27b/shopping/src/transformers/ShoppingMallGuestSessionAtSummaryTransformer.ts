@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallGuestSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallGuestSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallGuestSessionAtSummaryTransformer {
@@ -14,11 +16,7 @@ export namespace ShoppingMallGuestSessionAtSummaryTransformer {
     return {
       select: {
         id: true,
-        guest: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_guestsFindManyArgs,
+        guest: { select: { id: true } },
         ip: true,
         href: true,
         referrer: true,
@@ -30,6 +28,12 @@ export namespace ShoppingMallGuestSessionAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallGuestSession.ISummary> {
+    const now = new Date();
+    const expiredAt = new Date(input.expired_at);
+    let status: "active" | "expired" | "revoked" = "active";
+    if (now >= expiredAt) {
+      status = "expired";
+    }
     return {
       id: input.id,
       userId: input.guest.id,
@@ -38,7 +42,7 @@ export namespace ShoppingMallGuestSessionAtSummaryTransformer {
       referrer: input.referrer ?? null,
       createdAt: input.created_at.toISOString(),
       expiredAt: input.expired_at.toISOString(),
-      status: input.expired_at < new Date() ? "expired" : "active",
+      status,
     };
   }
 }

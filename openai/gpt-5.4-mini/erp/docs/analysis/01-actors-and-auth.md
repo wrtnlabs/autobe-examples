@@ -1,4 +1,4 @@
-**hrmTimeTracking — Actor definitions, permission matrix, authentication, session, account lifecycle**
+**erpHrmTime — Actor definitions, permission matrix, authentication, session, account lifecycle**
 
 Actor definitions, permission matrix, authentication, session, account lifecycle
 
@@ -8,90 +8,116 @@ Define all user actor types with their identity, permissions, and access boundar
 
 ## guest Actor
 
-A guest is an unauthenticated person who has not yet entered the platform as a signed-in user. This actor has no access to organization-specific work areas or employee-facing features until an account is created and a sign-in is completed. Guests are limited to the public entry points needed to begin using the platform, such as account creation and access to the sign-in experience. They do not have an organization context because they are not yet associated with any organization through an active session. A guest cannot act on behalf of an organization, manage any team member, or view protected business records. The guest state ends once the person authenticates and becomes a member actor. If a guest tries to reach protected areas without signing in, access is denied. The system treats guest access as separate from all authenticated user access, so no privileged permissions are available in this state.
+A guest is an unauthenticated person who has not signed in to the platform. Guests do not have access to organization-scoped work areas or member-only information. They are outside the normal permission model used for employees and organization owners. A guest can reach only the parts of the experience that are available before account access is established. They cannot act on behalf of an organization because no organization context is selected for them. They also cannot exercise any role-based permissions because role assignment applies only after membership exists. If a guest tries to use protected features, the platform must treat the request as unauthorized. Guests become a member actor only after they complete the account and organization entry flow.
 
 ### Guest Actor
 
-A guest is the unauthenticated actor state for a person who has not yet signed in to the platform. In this state, the person has no organization context and is treated as a non-member state until authentication is completed.
+A guest is an unauthenticated visitor whose account access has not been established. Guests exist before sign-in and therefore have no selected organization context. They are outside the membership model used for signed-in users and organization members.
 
-A guest has no role within an organization because role assignment applies only after a signed-in user enters an organization context. No organization permissions are available to a guest.
+Guests do not have role-based permissions because roles apply only after a user becomes a member of an organization. Guests cannot operate on behalf of any organization.
 
-A guest can access only the public entry point for account creation and the sign-in experience. These entry points are the only permitted paths for beginning authenticated use of the platform.
+Protected features are blocked for guests. If a guest attempts to access a protected feature, the system treats the attempt as unauthorized.
 
-If a guest attempts to access any protected area, access is denied.
-
-A guest cannot act on behalf of an organization, cannot access member-only business records, and cannot perform organization-scoped actions before authentication.
+Guests can only reach parts of the platform that are available before sign-in. They do not have access to organization-scoped work areas or member-only information until they complete the account access flow and become a member actor.
 
 ```mermaid
 flowchart LR
-    A["Guest"] -->|"Use public entry point"| B["Account creation entry"]
-    A -->|"Use public entry point"| C["Sign-in experience"]
-    A -->|"Attempt protected area access"| D["Access denied"]
-    C -->|"Authenticate"| E["Member actor"]
+    A["Unauthenticated visitor"] -->|"Before sign-in access"| B["Guest actor"]
+    B -->|"Protected feature attempt"| C["Unauthorized access boundary"]
+    B -->|"Sign-in completed"| D["Member actor"]
 ```
-
 
 ## member Actor
 
-A member is an authenticated user who belongs to one or more organizations and works within a selected organization context. This actor represents the signed-in identity that can carry permissions assigned through an organization role. A member may have different access levels in different organizations because roles are managed separately within each organization. The member actor can be linked to a shared global profile that stays consistent across organizations. Members may also be associated with employee records inside organizations where they participate. The access boundary for a member is defined by the active organization context and the permissions attached to that role. Some members have full control as owners, while others are limited to manager or employee capabilities. A member can remain signed in while switching between organizations, but the active context must be clear before any scoped access is allowed. If a member loses organization membership or assigned access, the available actions are reduced accordingly. Member access is therefore authenticated, role-based, and organization-aware.
+A member is a signed-in user who has access to one or more organizations through membership. Members act within the organization context they have currently selected. Their access is controlled by the role assigned in that organization, and the same person can have different roles in different organizations. Some members are organization owners with full access, while others may have manager or employee-level access, or a custom role with selected permissions. Members can only use features that match their assigned permissions in the active organization. If a member switches to another organization, the available access changes with that organization’s membership and role. A member may also belong to multiple organizations and move between them without logging out. When membership is removed or deactivated, that person no longer has the same access boundaries in that organization.
 
-### Member Actor Identity
+### Member Actor
 
-A member is an authenticated user who belongs to one or more organizations.
-A member acts within a selected organization context when accessing organization-scoped information.
-A member’s access is role-based and depends on the role assigned within the selected organization.
-A member may have different access boundaries in different organizations because roles are managed separately in each organization.
-A member remains the same authenticated user when switching between organizations, but the active organization context changes.
-A member’s global profile is shared across all organizations the member belongs to.
-A member may be associated with employee records in organizations where the member participates.
+A member is a signed-in user who accesses the system through one or more organization memberships.
 
-```mermaid
-flowchart LR
-    A["Authenticated user"] --> B["Member in one or more organizations"]
-    B --> C["Selected organization context"]
-    C --> D["Role-based access boundary"]
-    B --> E["Shared global profile"]
-    C --> F["Switch organization context"]
-```
+Members operate within exactly one selected organization context at a time. Their visible access and available actions are determined by the organization membership and the role assigned in that organization.
 
-### Organization Membership and Context
+The same person may belong to multiple organizations. When a member changes the selected organization, the access available to that member changes to match the selected organization membership.
 
-A member has organization membership in each organization where the member participates.
-A member can belong to multiple organizations at the same time.
-A member can work in only one selected organization context at a time.
-A member must have a selected organization context before organization-scoped access is allowed.
-A member can switch organization context without signing out.
-When the member switches organization context, the system applies the permissions and access boundary of the newly selected organization.
-If the member loses membership in an organization, that organization is no longer available as a selected context.
+A member may have different roles in different organizations. Role-based access is evaluated separately for each organization membership, not globally across all organizations.
 
-```mermaid
-sequenceDiagram
-    participant M as "Member"
-    participant S as "System"
-    M->>S: "Switch organization context"
-    S->>S: "Apply the selected organization's role-based access"
-    S-->>M: "Updated active organization context"
-```
+A member's access is limited to the permissions assigned through the role for the selected organization.
 
-### Role-Based Access Levels
+If a member's organization membership is inactive, their access in that organization is no longer available while the inactive membership remains associated with the account.
 
-A member’s role defines the member’s access boundary within the selected organization.
-Owner access provides full access to all organization features and includes management of roles and members.
-Manager access allows access to manager-level capabilities within the organization.
-Employee access allows access to employee-level capabilities within the organization.
-A member may have owner access in one organization and a different access level in another organization.
-A member’s available actions are reduced when the member’s organization membership or role assignment changes.
-A member cannot use organization-scoped features outside the selected organization context.
+### Organization Membership
 
-```mermaid
-flowchart LR
-    A["Member"] --> B["Owner access"]
-    A --> C["Manager access"]
-    A --> D["Employee access"]
-    B --> E["Full organization access"]
-    C --> F["Manager-level access"]
-    D --> G["Employee-level access"]
-```
+An organization membership links a signed-in user to a specific organization and establishes that user's access scope in that organization.
+
+Each membership has a membership status that determines whether the member currently has access in that organization.
+
+A member can have memberships in multiple organizations at the same time.
+
+The member's active access is always evaluated against the selected organization membership, not against other memberships the same user may hold.
+
+When a member belongs to more than one organization, each membership is independent and does not grant access to data or actions in other organizations.
+
+### Role-Based Access
+
+Each organization defines access through roles assigned to its members.
+
+The built-in roles are Owner, Manager, and Employee.
+
+The Owner role has full access to all features and can manage roles and members.
+
+The Manager role can manage employees and projects, approve timesheets, and view reports.
+
+The Employee role can track time, submit timesheets, and view their own data.
+
+Organization owners can create custom roles for their organization.
+
+A custom role has a name and a set of permissions assigned to it.
+
+A member can use only the features allowed by the permissions attached to the role assigned in the selected organization.
+
+### Assigned Permissions
+
+The available permissions are organization management, employee management, employee viewing, project management, project viewing, time management, time approval, viewing all time records, and report viewing.
+
+Permissions granted to a member apply only within the organization where the role is assigned.
+
+A member with organization management permission can edit organization settings.
+
+A member with employee management permission can add, edit, and deactivate employees.
+
+A member with employee viewing permission can view the employee list and details.
+
+A member with project management permission can create, edit, and delete projects and tasks.
+
+A member with project viewing permission can view projects and tasks.
+
+A member with time management permission can edit or delete any employee's timelogs.
+
+A member with time approval permission can approve or reject timesheets.
+
+A member with permission to view all time records can view all employees' timelogs and timesheets.
+
+A member with report viewing permission can view organization reports.
+
+### Switching Organization Context
+
+A member who belongs to multiple organizations can switch between those organizations without logging out.
+
+After switching, the member continues as the same signed-in user, but the active access context changes to the newly selected organization.
+
+A member can only act within the organization that is currently selected.
+
+When the selected organization changes, the member's effective role and permissions also change to those assigned in the newly selected organization.
+
+### Membership Status
+
+Membership status indicates whether a member's access in an organization is currently active.
+
+A member with an inactive membership does not have the same access boundaries as an active member in that organization.
+
+If a membership is removed or deactivated, the member can no longer use the access that depended on that membership in that organization.
+
+Membership status is evaluated per organization, so one inactive membership does not affect the member's access in other organizations where they remain active.
 
 # Authentication Flows
 
@@ -104,59 +130,58 @@ Define user registration and login flows including validation and error handling
 ### Registration
 
 Users can register with an email address and password.
-When a user registers, the system creates a user account and an initial organization context as part of the sign-up flow.
-When the email address already belongs to an existing user account, the registration request is rejected.
-When the email address has a pending invitation to one or more organizations, the user becomes associated with those organizations after registration.
-A user can belong to multiple organizations through registration and invitation-based membership.
-Each registered user has a shared profile that can be used across every organization they belong to.
-Registration is available to guests only; a member who already has an account does not register again for the same account.
+During registration, a user creates a new account and the account can be associated with an organization as part of the initial sign-up flow.
+If the email address is already in use, registration is rejected.
+If required registration information is missing, registration is rejected.
+A user who signs up with an email address that matches a pending organization invitation is automatically added to the pending organization memberships defined in the invitation.
+A user account created through registration supports a shared profile across all organizations the user later joins.
 
 ```mermaid
 sequenceDiagram
-    participant G as "Guest"
+    participant U as "User"
     participant S as "System"
-    G->>S: "Submit registration details"
-    S->>S: "Create account and initial organization context"
-    S->>S: "Apply any pending organization associations"
-    S-->>G: "Registration success or rejection"
+    U->>S: "Submit registration details"
+    S->>S: "Validate account information"
+    S->>S: "Create account and apply any pending organization invitations"
+    S-->>U: "Registration success or rejection"
 ```
 
 ### Login
 
-Users can log in with an email address and password.
-When login succeeds, the user selects one organization to work in.
-After an organization is selected, the user performs subsequent actions within that organization context.
-A user who belongs to multiple organizations can switch between organizations without logging out.
-A user who belongs to one organization can still log in and continue working in that single organization context.
-When the email address or password is not valid, the login request is rejected.
-When the user account exists but the user does not have access to the selected organization, the login flow does not establish that organization context.
+Users can log in with email and password.
+When login succeeds, the user becomes authenticated as a member and can continue working in an organization context.
+If the email address or password is invalid, login is rejected.
+If a user belongs to multiple organizations, the login flow requires the user to select which organization to work in before subsequent actions are scoped.
+All actions performed after login are scoped to the selected organization until the user switches organization.
+A user can switch organization context without logging out.
 
 ```mermaid
 sequenceDiagram
-    participant M as "Member"
+    participant U as "User"
     participant S as "System"
-    M->>S: "Submit email and password"
+    U->>S: "Submit email and password"
     S->>S: "Verify credentials"
-    S-->>M: "Prompt to select an organization or reject login"
-    M->>S: "Select organization"
-    S-->>M: "Organization context becomes active"
+    S->>S: "Load accessible organizations"
+    S->>U: "Prompt for organization selection when needed"
+    U->>S: "Select organization"
+    S-->>U: "Authenticated session in selected organization"
 ```
 
 ### Authentication
 
-Authentication is based on a user proving control of the registered email address through the matching password.
-The system recognizes the user account after successful authentication and uses that account for access to the selected organization.
-All authenticated actions are scoped to the currently selected organization.
-A user who is authenticated in one organization remains the same person when switching to another organization they belong to.
-If authentication fails, the system does not grant access to organization-scoped actions.
-If the user is not authenticated, the system treats the person as a guest.
-Authentication rules apply consistently across registration and login so that the same user account is used for future access.
+Authentication is based on a user proving identity with email and password.
+A successful authentication establishes the user as a signed-in member with access governed by the selected organization context.
+A user remains associated with the organizations they belong to, and access is limited to the currently selected organization.
+If authentication is attempted with unrecognized credentials, the request is rejected.
+If a user has access to more than one organization, the system does not treat the login as complete until an organization is selected for the current work context.
+Authentication supports users who belong to multiple organizations without requiring separate accounts for each organization.
 
 ```mermaid
 flowchart LR
-    G["Guest"] -->|"Register or log in"| A["Authenticated user"]
-    A -->|"Select organization"| O["Active organization context"]
-    O -->|"Perform scoped actions"| S["Organization-scoped access"]
+    A["Unauthenticated visitor"] -->|"Register"| B["User account created"]
+    B -->|"Log in"| C["Authenticated member"]
+    C -->|"Select organization"| D["Organization context"]
+    D -->|"Switch organization"| D
 ```
 
 ## Session and Logout
@@ -165,53 +190,58 @@ Define session behavior and logout from a user perspective.
 
 ### Session
 
-Users maintain a signed-in session after authentication and can continue working within the selected organization context until they end the session or it expires through normal sign-out behavior. A user who belongs to more than one organization can switch between organizations without signing out, and all actions remain limited to the currently selected organization.
+A signed-in user works within a selected organization context for all subsequent actions.
 
-When a user is signed in, the system keeps the session tied to that user account and to the selected organization context. If the user changes organization, the session remains active and subsequent actions apply only to the newly selected organization. If the user is not signed in, the system does not allow access to organization-scoped actions.
+The selected organization context applies to all actions until the user changes it or ends the session.
+
+A user who belongs to multiple organizations can switch between organizations without signing out.
+
+When the user switches organizations, the system uses the newly selected organization context for subsequent actions.
+
+The session must always reflect the user's current organization context, so the user only sees data for the selected organization.
 
 ```mermaid
 sequenceDiagram
     participant U as "User"
     participant S as "System"
-    U->>S: "Sign in"
-    S->>S: "Create active session"
     U->>S: "Select organization"
-    S->>S: "Set selected organization context"
-    U->>S: "Switch organization"
-    S->>S: "Keep session active and update context"
+    S->>S: "Set current organization context"
+    U->>S: "Perform subsequent action"
+    S->>S: "Use selected organization context"
 ```
 
 ### Logout
 
-When a signed-in user chooses to log out, the system ends the current session and removes access to the selected organization context. After logout, the user must sign in again before performing any organization-scoped action.
+A signed-in user can end the current session by logging out.
 
-If a user is signed in to one organization context and logs out, the logout applies to that active session. Logging out does not change the user’s account, profile, or membership records.
+After logout, the user is no longer signed in and no longer has an active organization context.
+
+After logout, the user must sign in again before performing any signed-in action.
+
+Logging out does not change the user's account profile or membership records.
 
 ```mermaid
-sequenceDiagram
-    participant U as "User"
-    participant S as "System"
-    U->>S: "Log out"
-    S->>S: "End the active session"
-    S-->>U: "Access ends"
+flowchart LR
+    A["Signed-in session"] -->|"Logout"| B["Signed-out state"]
 ```
 
 ### Account Security
 
-The system requires users to sign in with their email and password before they can access organization-scoped features. A user can change their password while signed in, and the updated password is used for future sign-in attempts.
+Users can change their password.
 
-The system treats the user account as separate from organization membership. If a user loses access to one organization, their user account remains available unless the account itself is deleted through the account lifecycle rules defined elsewhere.
+The system keeps the user's shared profile separate from organization-specific membership data.
 
-If a user account is deleted, the system preserves the user’s account-level history only as allowed by the account lifecycle rules, and the user can no longer use that account to sign in. If the deleted user had employee records in other organizations, those records are marked as deactivated as defined in the account lifecycle rules.
+When a user deletes their account, the system applies the account deletion rules defined in the account lifecycle requirements.
 
-```mermaid
-flowchart LR
-    A["Signed-in user"] --> B["Change password"]
-    B --> C["Future sign-ins use the new password"]
-    A --> D["Delete account"]
-    D --> E["Account can no longer be used to sign in"]
-    D --> F["Employee records in other organizations are deactivated"]
-```
+If the user is the sole owner of an organization, the user must transfer ownership or delete the organization before the account can be deleted.
+
+When a user deletes their account, the user's employee records in other organizations are marked as deactivated.
+
+A user account may belong to multiple organizations, and account changes apply to the shared account rather than to a single organization membership.
+
+The user's profile is shared across all organizations the user belongs to, so profile changes are visible in every organization.
+
+If the user has pending invitations associated with the email address, signing up with that email automatically adds the user to the pending organizations.
 
 # Account Lifecycle
 
@@ -224,55 +254,57 @@ Define how users create accounts, delete accounts, and change passwords.
 ### Account Creation
 
 Users can create an account using an email address and password.
-An account creation request also creates an organization during initial sign-up.
-The organization created during sign-up becomes the user’s first organization context.
-The account can later belong to multiple organizations.
-If the email address already exists as a user account, the system does not create a duplicate account.
-If the email address matches a pending invitation, the user is added to the invited organization when the account is created.
-The user’s global profile is available from the new account and is shared across every organization the user joins.
+
+When a new account is created, the user may also create an organization during the initial sign-up process.
+
+If the email address was previously invited to one or more organizations, the newly created account is automatically associated with those pending organizations.
+
+An account may belong to multiple organizations over time.
 
 ```mermaid
 sequenceDiagram
-    participant G as "Guest"
+    participant U as "User"
     participant S as "System"
-    participant O as "Organization"
-    G->>S: "Create account with email and password"
+    U->>S: "Create account with email and password"
     S->>S: "Create user account"
-    S->>S: "Create organization during initial sign-up"
-    S->>O: "Associate account with the new organization"
-    S-->>G: "Account created"
+    S->>S: "Attach pending organization invitations if any"
+    S-->>U: "Account created"
 ```
 
 ### Account Deletion
 
-A user can delete their account.
-If the user is the sole owner of an organization, the user must transfer ownership or delete the organization before account deletion can proceed.
-When an account is deleted, the user’s employee records in other organizations are marked as deactivated.
-When an organization is deleted as part of this lifecycle, the owner’s account remains but is no longer associated with any organization.
-When an organization is deleted, all organization-scoped operational data is permanently removed.
-Account deletion does not remove the user’s shared profile from organizations that still reference the account unless those organization memberships are also removed by the organization lifecycle.
+Users can delete their own account.
+
+If a user is the sole owner of an organization, the user must transfer ownership or delete the organization before deleting the account.
+
+When an account is deleted, the user's employee records in other organizations are marked as deactivated.
+
+A deleted account no longer remains associated with organizations that are not preserved through the deactivation behavior described above.
+
+If the user still has sole ownership of an organization, account deletion is rejected until the ownership constraint is resolved.
 
 ```mermaid
 flowchart LR
-    A["Request account deletion"] --> B["Check sole owner status"]
+    A["Delete account request"] --> B["Check sole ownership"]
     B -->|"Yes"| C["Transfer ownership or delete organization first"]
-    B -->|"No"| D["Delete account"]
-    D --> E["Mark employee records in other organizations as deactivated"]
-    D --> F["Preserve remaining organization context as applicable"]
+    B -->|"No"| D["Deactivate employee records in other organizations"]
+    D --> E["Delete account"]
 ```
 
 ### Password Change
 
-A user can change their password after signing in.
-The password change action applies to the user’s account and does not create a new account.
-After a password change, the user continues to use the same account and organization memberships.
-A password change is part of account lifecycle management and is independent of organization-specific data.
+Users can change their password after signing in.
+
+Password changes apply to the user's account and affect future sign-in attempts.
+
+If the user does not provide the required current account credentials for password change, the request is rejected.
 
 ```mermaid
 sequenceDiagram
-    participant M as "Member"
+    participant U as "User"
     participant S as "System"
-    M->>S: "Request password change"
-    S->>S: "Update account password"
-    S-->>M: "Password changed"
+    U->>S: "Request password change"
+    S->>S: "Validate current credentials"
+    S->>S: "Update password"
+    S-->>U: "Password changed"
 ```

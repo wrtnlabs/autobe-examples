@@ -10,97 +10,68 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../decorators/payload/SuperAdminPayload";
 import { EcommerceMallSuperAdminAtSummaryTransformer } from "../transformers/EcommerceMallSuperAdminAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallSuperAdminSuperAdmins(props: {
-  superAdmin: SuperadminPayload;
+  superAdmin: SuperAdminPayload;
   body: IEcommerceMallSuperAdmin.IRequest;
 }): Promise<IPageIEcommerceMallSuperAdmin.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.ecommerce_mall_super_adminsWhereInput = {
+  const whereInput = {
     deleted_at: null,
-  };
-  if (props.body.filterEmail !== undefined) {
-    whereInput.email = {
-      contains: props.body.filterEmail,
-      mode: "insensitive",
-    };
-  }
-  if (props.body.filterDisplayName !== undefined) {
-    whereInput.display_name = {
-      contains: props.body.filterDisplayName,
-      mode: "insensitive",
-    };
-  }
-  if (props.body.filterFullName !== undefined) {
-    whereInput.full_name = {
-      contains: props.body.filterFullName,
-      mode: "insensitive",
-    };
-  }
-  if (props.body.filterStatus !== undefined) {
-    whereInput.status = props.body.filterStatus;
-  }
-  if (
-    props.body.filterGradeMin !== undefined ||
-    props.body.filterGradeMax !== undefined
-  ) {
-    if (
-      props.body.filterGradeMin !== undefined &&
-      props.body.filterGradeMax !== undefined
-    ) {
-      whereInput.grade = {
-        gte: props.body.filterGradeMin,
-        lte: props.body.filterGradeMax,
-      };
-    } else if (props.body.filterGradeMin !== undefined) {
-      whereInput.grade = { gte: props.body.filterGradeMin };
-    } else {
-      whereInput.grade = { lte: props.body.filterGradeMax };
-    }
-  }
-  if (
-    props.body.filterCreatedAtStart !== undefined ||
-    props.body.filterCreatedAtEnd !== undefined
-  ) {
-    if (
-      props.body.filterCreatedAtStart !== undefined &&
-      props.body.filterCreatedAtEnd !== undefined
-    ) {
-      whereInput.created_at = {
-        gte: props.body.filterCreatedAtStart,
-        lte: props.body.filterCreatedAtEnd,
-      };
-    } else if (props.body.filterCreatedAtStart !== undefined) {
-      whereInput.created_at = { gte: props.body.filterCreatedAtStart };
-    } else {
-      whereInput.created_at = { lte: props.body.filterCreatedAtEnd };
-    }
-  }
+    ...(props.body.filterEmail !== undefined && {
+      email: { contains: props.body.filterEmail, mode: "insensitive" as const },
+    }),
+    ...(props.body.filterDisplayName !== undefined && {
+      display_name: {
+        contains: props.body.filterDisplayName,
+        mode: "insensitive" as const,
+      },
+    }),
+    ...(props.body.filterFullName !== undefined && {
+      full_name: {
+        contains: props.body.filterFullName,
+        mode: "insensitive" as const,
+      },
+    }),
+    ...(props.body.filterStatus !== undefined && {
+      status: props.body.filterStatus,
+    }),
+    ...(props.body.filterGradeMin !== undefined && {
+      grade: { gte: props.body.filterGradeMin },
+    }),
+    ...(props.body.filterGradeMax !== undefined && {
+      grade: { lte: props.body.filterGradeMax },
+    }),
+    ...(props.body.filterCreatedAtStart !== undefined && {
+      created_at: { gte: new Date(props.body.filterCreatedAtStart) },
+    }),
+    ...(props.body.filterCreatedAtEnd !== undefined && {
+      created_at: { lte: new Date(props.body.filterCreatedAtEnd) },
+    }),
+  } satisfies Prisma.ecommerce_mall_super_adminsWhereInput;
   const orderByInput = (
-    props.body.sortBy === "created_at"
-      ? { created_at: props.body.sortOrder === "descending" ? "desc" : "asc" }
-      : props.body.sortBy === "grade"
-        ? { grade: props.body.sortOrder === "descending" ? "desc" : "asc" }
-        : props.body.sortBy === "status"
-          ? { status: props.body.sortOrder === "descending" ? "desc" : "asc" }
-          : { created_at: "desc" }
+    props.body.sortBy === "grade"
+      ? { grade: props.body.sortOrder === "descending" ? "desc" : "asc" }
+      : props.body.sortBy === "status"
+        ? { status: props.body.sortOrder === "descending" ? "desc" : "asc" }
+        : { created_at: props.body.sortOrder === "descending" ? "desc" : "asc" }
   ) satisfies Prisma.ecommerce_mall_super_adminsOrderByWithRelationInput;
-  const data = await MyGlobal.prisma.ecommerce_mall_super_admins.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: [orderByInput],
-    ...EcommerceMallSuperAdminAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.ecommerce_mall_super_admins.count({
-    where: whereInput,
-  });
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_super_admins.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: orderByInput,
+      ...EcommerceMallSuperAdminAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.ecommerce_mall_super_admins.count({ where: whereInput }),
+  ]);
   return {
     data: await ArrayUtil.asyncMap(
       data,

@@ -27,101 +27,87 @@ export async function patchRedditLikeGuestSessions(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // For guest actor, only query guest's own sessions
-  // Guest authorization restricts to the authenticated guest
+  const now = toISOStringSafe(new Date());
   const whereInput: Prisma.reddit_like_guest_sessionsWhereInput = {
     reddit_like_guest_id: props.guest.id,
   };
-  // Apply date range filters
-  if (
-    props.body.dateRangeStart !== null &&
-    props.body.dateRangeStart !== undefined
-  ) {
-    whereInput.created_at = {
-      gte: new Date(props.body.dateRangeStart),
+  if (props.body.activeOnly === true) {
+    whereInput.expired_at = {
+      gt: now,
     };
   }
+  const createdAtFilter: Prisma.DateTimeFilter = {};
   if (
-    props.body.dateRangeEnd !== null &&
-    props.body.dateRangeEnd !== undefined
+    props.body.dateRangeStart !== undefined &&
+    props.body.dateRangeStart !== null
   ) {
-    whereInput.created_at = {
-      ...(whereInput.created_at as Prisma.DateTimeFilter | undefined),
-      lte: new Date(props.body.dateRangeEnd),
-    };
+    createdAtFilter.gte = props.body.dateRangeStart;
   }
-  // Apply IP address filter
-  if (props.body.ipAddress !== null && props.body.ipAddress !== undefined) {
+  if (
+    props.body.dateRangeEnd !== undefined &&
+    props.body.dateRangeEnd !== null
+  ) {
+    createdAtFilter.lte = props.body.dateRangeEnd;
+  }
+  if (Object.keys(createdAtFilter).length > 0) {
+    whereInput.created_at = createdAtFilter;
+  }
+  if (props.body.ipAddress !== undefined && props.body.ipAddress !== null) {
     whereInput.ip = {
       contains: props.body.ipAddress,
     };
   }
-  // Apply active only filter
-  if (props.body.activeOnly === true) {
-    whereInput.OR = [
-      { expired_at: { gt: new Date() } },
-      { expired_at: { equals: null } as unknown as Prisma.DateTimeFilter },
-    ];
-  }
-  // Fetch sessions paginated
+  const total = await MyGlobal.prisma.reddit_like_guest_sessions.count({
+    where: whereInput,
+  });
   const sessions = await MyGlobal.prisma.reddit_like_guest_sessions.findMany({
     where: whereInput,
-    skip,
+    skip: skip,
     take: limit,
-    orderBy: { created_at: "desc" },
+    orderBy: {
+      created_at: "desc",
+    },
     select: {
       id: true,
-      reddit_like_guest_id: true,
       ip: true,
       href: true,
       referrer: true,
       created_at: true,
       expired_at: true,
-    } satisfies Prisma.reddit_like_guest_sessionsSelect,
-  });
-  // Get total count
-  const total = await MyGlobal.prisma.reddit_like_guest_sessions.count({
-    where: whereInput,
-  });
-  // Fetch the guest user details once
-  const guestEntity =
-    await MyGlobal.prisma.reddit_like_guests.findUniqueOrThrow({
-      where: { id: props.guest.id },
-      select: {
-        id: true,
-        device_fingerprint: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      } satisfies Prisma.reddit_like_guestsSelect,
-    });
-  const sessionCount = await MyGlobal.prisma.reddit_like_guest_sessions.count({
-    where: {
-      reddit_like_guest_id: { in: [props.guest.id] },
+      guest: {
+        select: {
+          id: true,
+          device_fingerprint: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+          sessions: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      },
     },
   });
-  const userSummary: IRedditLikeGuest.ISummary = {
-    id: guestEntity.id,
-    device_fingerprint: guestEntity.device_fingerprint,
-    created_at: toISOStringSafe(guestEntity.created_at),
-    updated_at: toISOStringSafe(guestEntity.updated_at),
-    deleted_at: guestEntity.deleted_at
-      ? toISOStringSafe(guestEntity.deleted_at)
-      : null,
-    session_count: sessionCount,
-  } satisfies IRedditLikeGuest.ISummary;
-  // Transform sessions to the response format
-  const sessionData = await ArrayUtil.asyncMap(
-    sessions,
-    async (session): Promise<IRedditLikeMemberSession.ISummary> => {
+  const data: IRedditLikeMemberSession.ISummary[] = await Promise.all(
+    sessions.map(async (session) => {
       const isActive =
-        session.expired_at === null
-          ? true
-          : new Date(session.expired_at) > new Date();
+        session.expired_at === null ||
+        toISOStringSafe(session.expired_at) > now;
       return {
         id: session.id,
-        actorType: "guest",
-        user: userSummary,
+        actorType: "guest" as const,
+        user: {
+          id: session.guest.id,
+          device_fingerprint: session.guest.device_fingerprint,
+          created_at: toISOStringSafe(session.guest.created_at),
+          updated_at: toISOStringSafe(session.guest.updated_at),
+          deleted_at: session.guest.deleted_at
+            ? toISOStringSafe(session.guest.deleted_at)
+            : null,
+          session_count: session.guest.sessions.length,
+        } satisfies IRedditLikeGuest.ISummary,
         ip: session.ip,
         href: session.href,
         referrer: session.referrer,
@@ -131,11 +117,11 @@ export async function patchRedditLikeGuestSessions(props: {
           ? toISOStringSafe(session.expired_at)
           : null,
         isActive: isActive,
-      } satisfies IRedditLikeMemberSession.ISummary;
-    },
+      };
+    }),
   );
   return {
-    data: sessionData,
+    data,
     pagination: {
       current: page,
       limit: limit,

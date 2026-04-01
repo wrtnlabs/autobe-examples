@@ -15,9 +15,13 @@ import { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
+import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 
 export namespace EcommerceMallSnapshotTransformer {
   export type Payload = Prisma.ecommerce_mall_snapshotsGetPayload<
@@ -32,20 +36,8 @@ export namespace EcommerceMallSnapshotTransformer {
         version: true,
         created_at: true,
         updated_at: true,
-        actor: {
-          select: {
-            id: true,
-            email: true,
-            status: true,
-            created_at: true,
-            deleted_at: true,
-          },
-        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
-        entity: true,
-        orderItemProductSnapshots: true,
-        orderItemVariantSnapshots: true,
-        orderItemSellerSnapshots: true,
-        notificationOfAdminSnapshot: true,
+        actor: EcommerceMallCustomerAtSummaryTransformer.select(),
+        entity: EcommerceMallProductAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_snapshotsFindManyArgs;
   }
@@ -54,15 +46,19 @@ export namespace EcommerceMallSnapshotTransformer {
   ): Promise<IEcommerceMallSnapshot> {
     return {
       id: input.id,
-      entity_id: input.entity_id,
+      entity_id: input.entity.id,
       entity_type: input.entity_type,
       snapshot_data: input.snapshot_data,
       version: input.version,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      actor_id: input.actor?.id ?? null,
-      actor: input.actor ?? (null as IEcommerceMallSnapshot["actor"]),
-      entity: input.entity as unknown as IEcommerceMallSnapshot["entity"],
+      actor_id: input.actor?.id ?? undefined,
+      actor: input.actor
+        ? await EcommerceMallCustomerAtSummaryTransformer.transform(input.actor)
+        : null,
+      entity: await EcommerceMallProductAtSummaryTransformer.transform(
+        input.entity,
+      ),
     };
   }
 }

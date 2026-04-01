@@ -9,6 +9,7 @@ import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IShoppingMallSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -40,6 +41,15 @@ export namespace ShoppingMallOrderItemTransformer {
         productVariant: ShoppingMallProductVariantAtSummaryTransformer.select(),
         sellerSnapshot: ShoppingMallSnapshotAtSummaryTransformer.select(),
         shipment: ShoppingMallShipmentAtSummaryTransformer.select(),
+        cancellationRequests: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_cancellation_requestsFindManyArgs,
+        refundRequests: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_refund_requestsFindManyArgs,
+        review: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_reviewsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_order_itemsFindManyArgs;
   }
@@ -64,14 +74,14 @@ export namespace ShoppingMallOrderItemTransformer {
       shoppingMallOrderId: input.shopping_mall_order_id,
       shoppingMallProductVariantId: input.shopping_mall_product_variant_id,
       sellerSnapshotId: input.seller_snapshot_id,
-      shoppingMallShipmentId: input.shopping_mall_shipment_id,
-      sellerPriceAtPurchase: Number(input.seller_price_at_purchase),
+      shoppingMallShipmentId: input.shopping_mall_shipment_id ?? null,
+      sellerPriceAtPurchase: input.seller_price_at_purchase,
       quantity: input.quantity,
       lineItemStatus: input.line_item_status,
       placedAt: input.placed_at.toISOString(),
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at ? input.deleted_at.toISOString() : null,
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

@@ -15,18 +15,21 @@ export async function deleteEcommerceMallCustomerWishlistItemsWishlistItemId(pro
   customer: CustomerPayload;
   wishlistItemId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const wishlistItem =
+  // Verify the wishlist item exists and get owner information
+  const item =
     await MyGlobal.prisma.ecommerce_mall_wishlist_items.findUniqueOrThrow({
       where: { id: props.wishlistItemId },
-      select: { id: true, customer_id: true },
     });
-  if (wishlistItem.customer_id !== props.customer.id) {
+  // Verify the item belongs to this customer (ownership check)
+  if (item.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
+  // Soft delete by marking deleted_at timestamp (atomically)
   await MyGlobal.prisma.ecommerce_mall_wishlist_items.update({
-    where: { id: props.wishlistItemId },
+    where: { id: props.wishlistItemId, customer_id: props.customer.id },
     data: {
       deleted_at: new Date(),
+      updated_at: new Date(),
     },
   });
 }

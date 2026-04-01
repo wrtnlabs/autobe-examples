@@ -39,9 +39,10 @@ export namespace HrmPlatformTimerAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IHrmPlatformTimer.ISummary> {
-    const endTime = input.stopped_at ?? new Date();
-    const durationMs = endTime.getTime() - input.started_at.getTime();
-    const durationMinutes = Math.floor(durationMs / 60000);
+    const now = new Date();
+    const startMs = input.started_at.getTime();
+    const endMs = input.stopped_at ? input.stopped_at.getTime() : now.getTime();
+    const durationMinutes = Math.floor((endMs - startMs) / 60000);
     return {
       id: input.id,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
@@ -52,14 +53,12 @@ export namespace HrmPlatformTimerAtSummaryTransformer {
       ),
       task: input.task
         ? await HrmPlatformTaskAtSummaryTransformer.transform(input.task)
-        : undefined,
-      started_at: toISOStringSafe(input.started_at),
-      stopped_at: input.stopped_at
-        ? toISOStringSafe(input.stopped_at)
-        : undefined,
-      description: input.description ?? undefined,
+        : null,
+      started_at: input.started_at.toISOString(),
+      stopped_at: input.stopped_at?.toISOString() ?? null,
+      description: input.description ?? null,
       duration_minutes: durationMinutes,
-      created_at: toISOStringSafe(input.created_at),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

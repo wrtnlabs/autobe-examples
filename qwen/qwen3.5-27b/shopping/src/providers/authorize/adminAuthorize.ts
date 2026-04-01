@@ -9,13 +9,14 @@ export async function adminAuthorize(request: {
   const payload: AdminPayload = jwtAuthorize({ request }) as AdminPayload;
 
   if (payload.type !== "admin") {
-    throw new ForbiddenException(`You're not admin`);
+    throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
   const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
+      status: "active",
     },
   });
 

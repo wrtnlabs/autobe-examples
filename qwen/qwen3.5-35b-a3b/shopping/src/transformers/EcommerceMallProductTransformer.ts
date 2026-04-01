@@ -6,8 +6,10 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCategoryAtSummaryTransformer } from "./EcommerceMallCategoryAtSummaryTransformer";
 import { EcommerceMallProductImageTransformer } from "./EcommerceMallProductImageTransformer";
@@ -34,11 +36,11 @@ export namespace EcommerceMallProductTransformer {
         category: EcommerceMallCategoryAtSummaryTransformer.select(),
         images: EcommerceMallProductImageTransformer.select(),
         variants: EcommerceMallProductVariantTransformer.select(),
-        productSnapshots: true,
-        variantSnapshots: true,
-        reviews: true,
-        wishlistItems: true,
-        entitySnapshots: true,
+        productSnapshots: { select: {} },
+        variantSnapshots: { select: {} },
+        reviews: { select: {} },
+        wishlistItems: { select: {} },
+        entitySnapshots: { select: {} },
       },
     } satisfies Prisma.ecommerce_mall_productsFindManyArgs;
   }

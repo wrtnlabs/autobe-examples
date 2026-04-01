@@ -16,56 +16,73 @@ export async function deleteErpHrmTimeTrackingMemberProjectsProjectIdMemberships
   projectId: string & tags.Format<"uuid">;
   membershipId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    const membership =
-      await tx.erp_hrm_time_tracking_project_memberships.findUniqueOrThrow({
-        where: { id: props.membershipId },
-        select: {
-          id: true,
-          project_id: true,
-          employee_id: true,
-          deleted_at: true,
-          created_at: true,
-          updated_at: true,
-        },
-      });
-    if (membership.deleted_at !== null) {
-      throw new HttpException("Membership is not currently active", 409);
-    }
-    if (membership.project_id !== props.projectId) {
-      throw new HttpException(
-        "Membership does not belong to the specified project",
-        409,
-      );
-    }
-    const project = await tx.erp_hrm_time_tracking_projects.findUniqueOrThrow({
-      where: { id: props.projectId },
+  const now = toISOStringSafe(
+    undefined as unknown as Parameters<typeof toISOStringSafe>[0],
+  );
+  const [membership, project] = await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.erp_hrm_time_tracking_project_memberships.findFirst({
+      where: {
+        id: props.membershipId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        project_id: true,
+        employee_id: true,
+      },
+    }),
+    MyGlobal.prisma.erp_hrm_time_tracking_projects.findFirst({
+      where: {
+        id: props.projectId,
+        deleted_at: null,
+      },
       select: {
         id: true,
         erp_hrm_time_tracking_organization_id: true,
-        deleted_at: true,
+      },
+    }),
+  ]);
+  if (
+    membership === null ||
+    membership.project_id !== props.projectId ||
+    project === null
+  ) {
+    throw new HttpException("Membership not found", 404);
+  }
+  const actorProjectMembership =
+    await MyGlobal.prisma.erp_hrm_time_tracking_project_memberships.findFirst({
+      where: {
+        project_id: props.projectId,
+        employee_id: props.member.id,
+        deleted_at: null,
+        membership_role: "project-lead",
+      },
+      select: { id: true },
+    });
+  if (actorProjectMembership === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.erp_hrm_time_tracking_project_memberships.update({
+      where: { id: membership.id },
+      data: {
+        deleted_at: now,
+        updated_at: now,
       },
     });
-    if (project.deleted_at !== null) {
-      throw new HttpException("Project is deleted", 404);
-    }
-    // authorization placeholder
-    // activity log placeholder
-    const now = new Date();
-    await tx.erp_hrm_time_tracking_project_memberships.update({
-      where: { id: props.membershipId },
-      data: { deleted_at: now, updated_at: now },
-    });
+    const logId = v4(
+      undefined as unknown as Parameters<typeof v4>[0],
+    ) as string;
     await tx.erp_hrm_time_tracking_activity_log_entries.create({
       data: {
-        id: v4(),
+        id: logId as string & tags.Format<"uuid">,
         organization_id: project.erp_hrm_time_tracking_organization_id,
         performed_by_member_id: props.member.id,
         action_type: "project_membership_removed",
-        target_entity_type: "project_membership",
+        target_entity_type: "erp_hrm_time_tracking_project_memberships",
         target_entity_id: membership.id,
-        summary: "Project membership removed",
-        details: undefined,
+        summary: "Removed project membership",
+        details: `projectId=${props.projectId}, membershipId=${membership.id}`,
         occurred_at: now,
         created_at: now,
         updated_at: now,

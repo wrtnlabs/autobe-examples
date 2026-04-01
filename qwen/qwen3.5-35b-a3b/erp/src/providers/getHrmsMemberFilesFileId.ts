@@ -11,7 +11,8 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { HrmsFileTransformer } from "../transformers/HrmsFileTransformer";
+import { HrmsMemberAtSummaryTransformer } from "../transformers/HrmsMemberAtSummaryTransformer";
+import { HrmsOrganizationAtSummaryTransformer } from "../transformers/HrmsOrganizationAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,18 +24,58 @@ export async function getHrmsMemberFilesFileId(props: {
     where: {
       id: props.fileId,
       deleted_at: null,
-    } satisfies Prisma.hrms_filesWhereInput,
-    ...HrmsFileTransformer.select(),
+    },
+    select: {
+      id: true,
+      filename: true,
+      storage_path: true,
+      mime_type: true,
+      file_size: true,
+      file_category: true,
+      owner_type: true,
+      validation_status: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      organization_id: true,
+      organization: HrmsOrganizationAtSummaryTransformer.select(),
+      owner: HrmsMemberAtSummaryTransformer.select(),
+    },
   });
-  const memberOrg = await MyGlobal.prisma.hrms_organization_members.findFirst({
-    where: {
-      hrms_member_id: props.member.id,
-      hrms_organization_id: file.organization.id,
-    } satisfies Prisma.hrms_organization_membersWhereInput,
-    select: { id: true, hrms_organization_id: true },
-  });
-  if (memberOrg === null) {
+  const memberOrganization =
+    await MyGlobal.prisma.hrms_organization_members.findFirstOrThrow({
+      where: {
+        member: {
+          id: props.member.id,
+        },
+        deleted_at: null,
+      },
+      select: {
+        organization: { select: { id: true } },
+      },
+    });
+  if (file.organization_id !== memberOrganization.organization.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return await HrmsFileTransformer.transform(file);
+  return {
+    id: file.id,
+    organization_id: file.organization_id,
+    owner_id: file.owner?.id ?? undefined,
+    filename: file.filename,
+    storage_path: file.storage_path,
+    mime_type: file.mime_type,
+    file_size: file.file_size,
+    file_category: file.file_category,
+    owner_type: file.owner_type ?? undefined,
+    validation_status: file.validation_status,
+    created_at: toISOStringSafe(file.created_at),
+    updated_at: toISOStringSafe(file.updated_at),
+    deleted_at: file.deleted_at ? toISOStringSafe(file.deleted_at) : null,
+    organization: await HrmsOrganizationAtSummaryTransformer.transform(
+      file.organization,
+    ),
+    owner: file.owner
+      ? await HrmsMemberAtSummaryTransformer.transform(file.owner)
+      : null,
+  };
 }

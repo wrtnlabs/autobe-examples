@@ -17,12 +17,10 @@ export async function getShoppingMallMemberInventoryRecordsInventoryRecordId(pro
   member: MemberPayload;
   inventoryRecordId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallInventoryRecord> {
-  const inventoryRecord =
+  const record =
     await MyGlobal.prisma.shopping_mall_inventory_records.findUniqueOrThrow({
       where: { id: props.inventoryRecordId },
       ...ShoppingMallInventoryRecordTransformer.select(),
     });
-  return await ShoppingMallInventoryRecordTransformer.transform(
-    inventoryRecord,
-  );
+  return await ShoppingMallInventoryRecordTransformer.transform(record);
 }

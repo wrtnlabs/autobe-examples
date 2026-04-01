@@ -17,10 +17,13 @@ export async function getShoppingMallMemberProductImagesProductImageId(props: {
   member: MemberPayload;
   productImageId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallProductImage> {
-  const record =
+  const productImage =
     await MyGlobal.prisma.shopping_mall_product_images.findUniqueOrThrow({
-      where: { id: props.productImageId },
+      where: {
+        id: props.productImageId,
+        deleted_at: null,
+      },
       ...ShoppingMallProductImageTransformer.select(),
     });
-  return await ShoppingMallProductImageTransformer.transform(record);
+  return await ShoppingMallProductImageTransformer.transform(productImage);
 }

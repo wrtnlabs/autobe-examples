@@ -6,94 +6,44 @@ import { IPageIShoppingMallOrderItem } from "../../../../../api/structures/IPage
 import { IShoppingMallOrderItem } from "../../../../../api/structures/IShoppingMallOrderItem";
 import { SellerAuth } from "../../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../../decorators/payload/SellerPayload";
-import { getShoppingMallSellerOrdersOrderIdItemsItemId } from "../../../../../providers/getShoppingMallSellerOrdersOrderIdItemsItemId";
+import { getShoppingMallSellerOrdersItemsItemId } from "../../../../../providers/getShoppingMallSellerOrdersItemsItemId";
 import { patchShoppingMallSellerOrdersItems } from "../../../../../providers/patchShoppingMallSellerOrdersItems";
+import { putShoppingMallSellerOrdersItemsItemId } from "../../../../../providers/putShoppingMallSellerOrdersItemsItemId";
 
-@Controller("/shoppingMall/seller/orders")
+@Controller("/shoppingMall/seller/orders/items")
 export class ShoppingmallSellerOrdersItemsController {
   /**
-   * Retrieve detailed information about a specific order item within a customer's order.
+   * Retrieve a filtered and paginated list of order items.
    *
-   * This operation returns comprehensive details about a single purchased item including the product variant configuration, quantity, unit price, current fulfillment status, and references to historical snapshots that preserve the product state at order time. The order item maintains dual references: current entities (product variant, seller) for operational purposes and historical snapshots (product snapshot, product variant snapshot) ensuring order records remain accurate even if products or variants are modified after purchase.
+   * This operation provides flexible querying of order items with support for filtering by order, seller, status, and date ranges. Customers use this to view their order history with item-level details, while sellers use it to manage order items requiring fulfillment.
    *
-   * The order item status indicates the current fulfillment state: PAID (payment confirmed), SHIPPED (sent to customer), DELIVERED (received by customer), CANCELLED (order cancelled before shipment), or REFUNDED (refund processed after delivery). Each order item maintains its own independent status separate from other items in the same order.
+   * Supports comprehensive pagination with configurable page sizes and sorting options. Response includes order item summary information optimized for list displays, including product details, variant information, quantities, prices, and current status.
    *
-   * This endpoint is accessible to the customer who owns the order, the seller who listed the product, and administrators. The orderId path parameter ensures the item is retrieved within the context of its parent order, providing proper authorization scope.
-   *
-   * Related operations include GET /customers/orders for viewing the complete order list, GET /customers/orders/{orderId} for full order details, POST /customers/order-items/{itemId}/cancellation for requesting item cancellation, POST /customers/order-items/{itemId}/refund for requesting item refund, and POST /customers/order-items/{itemId}/review for submitting a product review after delivery.
+   * For customer order history, filter by order ID to retrieve all items in a specific order. For seller fulfillment workflows, filter by seller ID and status to identify items requiring action (paid, shipped, delivered).
    *
    * @param connection
-   * @param orderId Target order's ID (UUID format)
-   * @param itemId Target order item's ID (UUID format)
+   * @param body Search criteria and pagination parameters for order items
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the shopping_mall_order_items table by itemId and verify the shopping_mall_order_id matches the provided orderId path parameter.
+   * @x-autobe-specification Query shopping_mall_order_items table with pagination and filtering.
    *
-   * Join with shopping_mall_product_snapshots to retrieve the historical product state (name, description, base price, category) at order time.
+   * Apply filters based on request criteria:
+   * - shopping_mall_order_id: filter items belonging to specific order
+   * - shopping_mall_seller_id: filter items for specific seller (seller dashboard)
+   * - status: filter by item status (paid, shipped, delivered, cancelled, refunded)
+   * - created_at range: filter by order date range
    *
-   * Join with shopping_mall_product_variant_snapshots to retrieve the historical variant state (SKU code, option values, price, stock quantity) at order time.
+   * Join with shopping_mall_products for product name and image, shopping_mall_product_variants for option values, shopping_mall_orders for order number.
    *
-   * Join with shopping_mall_sellers to retrieve current seller information (shop name, shop description).
+   * For customer access: validate customer owns the order (via shopping_mall_orders.customer_id).
+   * For seller access: validate seller ID matches authenticated seller.
+   * For admin access: allow unrestricted queries.
    *
-   * Verify authorization: the authenticated user must be either (1) the customer who owns the order (shopping_mall_orders.customer_id matches authenticated customer), (2) the seller who listed the product (shopping_mall_order_items.shopping_mall_seller_id matches authenticated seller), or (3) an administrator.
-   *
-   * Return the order item with all joined snapshot and seller data. If the order item is soft-deleted (deleted_at is not null) and the user is not an administrator, return 404 Not Found.
-   *
-   * Handle edge cases: if orderId does not exist, return 404. If itemId does not exist or does not belong to the specified orderId, return 404. If user lacks authorization, return 403 Forbidden.
+   * Return cursor-based pagination with sortable fields: created_at, status, price.
+   * Default sort: created_at DESC (newest first).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":orderId/items/:itemId")
-  public async at(
-    @SellerAuth()
-    seller: SellerPayload,
-    @TypedParam("orderId")
-    orderId: string & tags.Format<"uuid">,
-    @TypedParam("itemId")
-    itemId: string & tags.Format<"uuid">,
-  ): Promise<IShoppingMallOrderItem> {
-    try {
-      return await getShoppingMallSellerOrdersOrderIdItemsItemId({
-        seller,
-        orderId,
-        itemId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a filtered and paginated list of order items based on the authenticated user's role and permissions.
-   *
-   * This operation provides comprehensive order item search capabilities for different actors. For sellers, it returns order items containing their products filtered by fulfillment status (PAID, SHIPPED, DELIVERED, CANCELLED, REFUNDED). For customers, it returns order items from their purchase history. For administrators, it provides platform-wide order item visibility.
-   *
-   * The endpoint supports advanced filtering including status-based filtering, date range queries, and seller/product-based filtering. Response includes order item summary information optimized for list displays including product name, variant details, quantity, unit price, current status, and seller information.
-   *
-   * Supports comprehensive pagination with configurable page sizes and sorting options by creation date, status, or price. Each order item in the response includes references to the parent order, product variant, and seller for complete context.
-   *
-   * Authentication is required. The returned order items are automatically scoped based on the authenticated user's role - sellers see items for their products, customers see items from their orders, and administrators see all items.
-   *
-   * @param connection
-   * @param body Search criteria and pagination parameters for filtering order items
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query shopping_mall_order_items table with pagination and filtering based on authenticated user's role.
-   *
-   * For seller actors: Filter by shopping_mall_seller_id matching the authenticated seller's ID. Apply status filter if provided (PAID, SHIPPED, DELIVERED, CANCELLED, REFUNDED). Join with shopping_mall_products, shopping_mall_product_variants, and shopping_mall_orders for complete item information.
-   *
-   * For customer actors: Filter by joining with shopping_mall_orders where customer_id matches authenticated customer. Apply status and date range filters if provided.
-   *
-   * For admin actors: Return all order items with optional seller, status, and date range filters.
-   *
-   * Support cursor-based or offset pagination with configurable limit (default 20, max 100). Sort by created_at DESC by default, with options for status, quantity, or unit_price.
-   *
-   * Include soft-deleted items only for admin actors. Exclude items where deleted_at is not null for customer and seller queries.
-   *
-   * Return IPageIShoppingMallOrderItem.ISummary with pagination metadata (page, limit, total count) and data array containing order item summaries with product name, variant SKU, quantity, unit price, status, seller shop name, and order number.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch("items")
+  @TypedRoute.Patch()
   public async index(
     @SellerAuth()
     seller: SellerPayload,
@@ -103,6 +53,97 @@ export class ShoppingmallSellerOrdersItemsController {
     try {
       return await patchShoppingMallSellerOrdersItems({
         seller,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve detailed information about a specific order item by its unique identifier.
+   *
+   * This operation returns complete order item details including the purchased quantity, unit price at time of purchase, current item status, and references to the associated product, product variant, and seller. The response includes all information needed to display order item details to customers or manage fulfillment for sellers.
+   *
+   * Order items maintain independent status tracking (paid, shipped, delivered, cancelled, refunded) to support individual item cancellation and refund workflows. The price is snapshotted at purchase time to preserve the transaction state regardless of subsequent product price changes.
+   *
+   * @param connection
+   * @param itemId Order item UUID identifier
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Query shopping_mall_order_items table by primary key UUID.
+   *
+   * Join with shopping_mall_products to include product name and details.
+   * Join with shopping_mall_product_variants to include variant SKU code and option values.
+   * Join with shopping_mall_sellers to include seller shop name.
+   *
+   * Validate that the requesting user has access to this order item:
+   * - For customers: verify the order item belongs to an order owned by the customer
+   * - For sellers: verify the seller_id matches the authenticated seller
+   * - For administrators: allow access to all order items
+   *
+   * Return 404 if order item not found or user lacks access.
+   * Return complete order item entity with related product, variant, and seller information.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":itemId")
+  public async at(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("itemId")
+    itemId: string & tags.Format<"uuid">,
+  ): Promise<IShoppingMallOrderItem> {
+    try {
+      return await getShoppingMallSellerOrdersItemsItemId({
+        seller,
+        itemId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an order item's status and properties within the order fulfillment workflow.
+   *
+   * This operation allows authorized users to modify order item status as it progresses through the purchase lifecycle. Status transitions follow strict business rules: items move from paid to shipped when sellers dispatch products, from shipped to delivered upon customer confirmation, and to cancelled or refunded when cancellation or refund requests are approved.
+   *
+   * Administrators can perform force operations to cancel or refund items regardless of current status. Sellers can update status for items from their own products during normal fulfillment. The operation validates all status transitions and automatically triggers inventory adjustments when items are cancelled or refunded.
+   *
+   * Returns the complete updated order item including current status, quantity, price, and timestamps. Order item snapshots preserve the state at time of purchase and cannot be modified through this endpoint.
+   *
+   * @param connection
+   * @param itemId Order item unique identifier (UUID format)
+   * @param body Order item update data including new status and modifiable fields
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Update order item status and properties with business rule validation.
+   *
+   * Validate that order item exists and is not soft deleted. Check caller permissions: admin can update any order item, seller can only update items from their products. Validate status transitions according to business rules:
+   * - paid → shipped (seller shipping)
+   * - paid → cancelled (cancellation approved)
+   * - shipped → delivered (delivery confirmation)
+   * - delivered → refunded (refund approved)
+   * - Any → cancelled/refunded (admin force operation)
+   *
+   * Reject invalid status transitions with 400 error. Update status, updated_at timestamp. If status becomes cancelled/refunded, trigger automatic inventory restoration by creating positive inventory records. Return updated order item with all fields including snapshot relation.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":itemId")
+  public async update(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("itemId")
+    itemId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IShoppingMallOrderItem.IUpdate,
+  ): Promise<IShoppingMallOrderItem> {
+    try {
+      return await putShoppingMallSellerOrdersItemsItemId({
+        seller,
+        itemId,
         body,
       });
     } catch (error) {

@@ -26,68 +26,80 @@ export async function postHrmPlatformMemberTimesheetsTimesheetIdReject(props: {
   timesheetId: string & tags.Format<"uuid">;
   body: IHrmPlatformTimesheet.IReject;
 }): Promise<IHrmPlatformTimesheet> {
-  // 1. Fetch timesheet with employee and organization relations
+  // 1. Validate timesheet exists and is not soft-deleted
   const timesheet = await MyGlobal.prisma.hrm_platform_timesheets.findUnique({
     where: { id: props.timesheetId },
-    include: {
-      employee: {
-        select: {
-          hrm_platform_organization_id: true,
-        },
-      },
+    select: {
+      id: true,
+      hrm_platform_employee_id: true,
+      status: true,
+      deleted_at: true,
     },
   });
-  if (timesheet === null) {
+  if (timesheet === null || timesheet.deleted_at !== null) {
     throw new HttpException("Timesheet not found", 404);
   }
-  // 2. Validate timesheet status is 'submitted'
+  // 2. Check status is 'submitted' - reject with 409 if not
   if (timesheet.status !== "submitted") {
     throw new HttpException(
-      `Timesheet cannot be rejected in '${timesheet.status}' status`,
+      `Timesheet is in '${timesheet.status}' status and cannot be rejected`,
       409,
     );
   }
-  // 3. Verify member has time:approve permission for the organization
+  // 3. Verify member has time:approve permission in the same organization
   const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
     {
       where: {
-        hrm_platform_organization_id:
-          timesheet.employee.hrm_platform_organization_id,
         hrm_platform_user_id: props.member.id,
+        deleted_at: null,
       },
-      include: {
-        role: {
-          include: {
-            permissions: {
-              include: {
-                permission: true,
-              },
-            },
-          },
-        },
+      select: {
+        hrm_platform_organization_id: true,
+        hrm_platform_role_id: true,
       },
     },
   );
-  if (!memberEmployee || !memberEmployee.role) {
-    throw new HttpException("Forbidden", 403);
+  if (memberEmployee === null) {
+    throw new HttpException("Member not found", 403);
   }
-  const hasApprovePermission = memberEmployee.role.permissions.some(
-    (rp) => rp.permission.code === "time:approve",
-  );
-  if (!hasApprovePermission) {
-    throw new HttpException("Forbidden", 403);
+  // Check if member belongs to the same organization as the timesheet's employee
+  const timesheetEmployee =
+    await MyGlobal.prisma.hrm_platform_employees.findUnique({
+      where: { id: timesheet.hrm_platform_employee_id },
+      select: {
+        hrm_platform_organization_id: true,
+      },
+    });
+  if (
+    timesheetEmployee === null ||
+    memberEmployee.hrm_platform_organization_id !==
+      timesheetEmployee.hrm_platform_organization_id
+  ) {
+    throw new HttpException(
+      "Timesheet does not belong to your organization",
+      403,
+    );
   }
-  // 4. Validate rejection_reason is provided and non-empty
+  // Check if role has time:approve permission
+  const hasPermission =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
+      where: {
+        hrm_platform_role_id: memberEmployee.hrm_platform_role_id,
+        hrm_platform_permission_id: "time:approve",
+      },
+    });
+  if (hasPermission === null) {
+    throw new HttpException("Insufficient permissions", 403);
+  }
+  // 4. Validate rejection reason
   if (
     props.body.rejection_reason === null ||
-    props.body.rejection_reason === undefined
+    props.body.rejection_reason.trim().length === 0
   ) {
     throw new HttpException("Rejection reason is required", 400);
   }
-  if (props.body.rejection_reason.trim().length === 0) {
-    throw new HttpException("Rejection reason cannot be empty", 400);
-  }
-  // 5. Update timesheet
+  // 5. Update timesheet to rejected status
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
   await MyGlobal.prisma.hrm_platform_timesheets.update({
     where: { id: props.timesheetId },
     data: {
@@ -98,29 +110,31 @@ export async function postHrmPlatformMemberTimesheetsTimesheetIdReject(props: {
       updated_at: new Date(),
     },
   });
-  // 6. Create activity log
-  const activityId = v4();
+  // 6. Create activity log entry
   await MyGlobal.prisma.hrm_platform_activity_logs.create({
     data: {
-      id: activityId,
-      organization_id: timesheet.employee.hrm_platform_organization_id,
-      user_id: props.member.id,
+      id: v4(),
       action_type: "timesheet:rejected",
       target_entity: "timesheet",
       target_id: props.timesheetId,
       details: JSON.stringify({
         rejection_reason: props.body.rejection_reason,
-        reviewed_at: new Date().toISOString(),
+        employee_id: timesheet.hrm_platform_employee_id,
       }),
       created_at: new Date(),
+      organization: {
+        connect: { id: memberEmployee.hrm_platform_organization_id },
+      },
+      user: {
+        connect: { id: props.member.id },
+      },
     },
   });
-  // 7. Fetch updated timesheet with all relations
+  // 7. Return updated timesheet
   const updated =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
       where: { id: props.timesheetId },
       ...HrmPlatformTimesheetTransformer.select(),
     });
-  // 8. Transform and return
   return await HrmPlatformTimesheetTransformer.transform(updated);
 }

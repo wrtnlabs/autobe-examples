@@ -19,19 +19,22 @@ export async function postRedditLikeOwnerAttachmentsAttachmentIdGenerateThumbnai
   attachmentId: string & tags.Format<"uuid">;
   body: IRedditLikeAttachmentThumbnail.ICreate;
 }): Promise<IRedditLikeAttachmentThumbnail> {
-  // Verify the attachment exists
+  // Verify attachment exists
   const attachment =
     await MyGlobal.prisma.reddit_like_attachments.findUniqueOrThrow({
       where: { id: props.attachmentId },
     });
-  // Create the thumbnail using the collector
+  // Collect data for thumbnail creation
+  const createData = await RedditLikeAttachmentThumbnailCollector.collect({
+    body: props.body,
+    redditLikeAttachments: { id: attachment.id },
+  });
+  // Create the thumbnail record
   const created =
     await MyGlobal.prisma.reddit_like_attachment_thumbnails.create({
-      data: await RedditLikeAttachmentThumbnailCollector.collect({
-        body: props.body,
-        redditLikeAttachments: { id: attachment.id },
-      }),
+      data: createData,
       ...RedditLikeAttachmentThumbnailTransformer.select(),
     });
+  // Transform and return
   return await RedditLikeAttachmentThumbnailTransformer.transform(created);
 }

@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -23,10 +24,6 @@ export namespace ShoppingMallCategoryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        // Loaded for completeness; DTO is flat and does not expose these.
-        parentCategory: true,
-        childCategories: true,
-        products: true,
       },
     } satisfies Prisma.shopping_mall_categoriesFindManyArgs;
   }

@@ -28,14 +28,18 @@ export async function postShoppingMallAuthSellerLogin(props: {
       password_hash: true,
     },
   });
-  if (!seller) throw new HttpException("Invalid credentials", 401);
+  if (!seller) {
+    throw new HttpException("Invalid credentials", 401);
+  }
   // 2. Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     seller.password_hash,
   );
-  if (!isValid) throw new HttpException("Invalid credentials", 401);
-  // 3. Check account status is active (not banned)
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  // 3. Check account status is active
   if (seller.status !== "active") {
     throw new HttpException("Account is banned", 403);
   }
@@ -53,60 +57,52 @@ export async function postShoppingMallAuthSellerLogin(props: {
       revoked_at: new Date(),
     },
   });
-  // 6. Create new session
+  // 6. Generate JWT tokens
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessToken = jwt.sign(
+    {
+      type: "seller",
+      id: seller.id,
+      session_id: v4(),
+      created_at: new Date().toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refreshToken = jwt.sign(
+    {
+      type: "seller",
+      id: seller.id,
+      session_id: v4(),
+      tokenType: "refresh",
+      created_at: new Date().toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  // 7. Create new session with tokens
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
       id: v4(),
       shopping_mall_seller_id: seller.id,
+      access_token: accessToken,
+      refresh_token: refreshToken,
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: new Date().toISOString(),
-      expired_at: accessExpires.toISOString(),
-      access_token: "",
-      refresh_token: "",
-      revoked_at: null,
+      created_at: new Date(),
+      expired_at: accessExpires,
     },
   });
-  // 7. Generate JWT tokens
-  const token = {
-    access: jwt.sign(
-      {
-        type: "seller",
-        id: seller.id,
-        session_id: session.id,
-        created_at: new Date().toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "seller",
-        id: seller.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: new Date().toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpires.toISOString(),
-    refreshable_until: refreshExpires.toISOString(),
-  };
-  // 8. Update session with actual tokens
-  await MyGlobal.prisma.shopping_mall_seller_sessions.update({
-    where: { id: session.id },
-    data: {
-      access_token: token.access,
-      refresh_token: token.refresh,
-    },
-  });
-  // 9. Return IAuthorized
+  // 8. Return IAuthorized
   return {
     ...(await ShoppingMallSellerTransformer.transform(seller)),
-    token,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires.toISOString(),
+      refreshable_until: refreshExpires.toISOString(),
+    },
   } satisfies IShoppingMallSeller.IAuthorized;
 }

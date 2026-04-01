@@ -31,6 +31,10 @@ export namespace HrmPlatformTaskCollector {
       assignedEmployee: props.body.assigned_employee_id
         ? { connect: { id: props.body.assigned_employee_id } }
         : undefined,
+      children: undefined,
+      histories: undefined,
+      taskTimelogs: undefined,
+      timers: undefined,
     } satisfies Prisma.hrm_platform_tasksCreateInput;
   }
 }

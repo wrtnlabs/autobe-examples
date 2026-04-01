@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia from "typia";
 
 import { IRedditLikeReport } from "../../../../api/structures/IRedditLikeReport";
-import { AdminAuth } from "../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { postRedditLikeMemberReports } from "../../../../providers/postRedditLikeMemberReports";
 
 @Controller("/redditLike/member/reports")
@@ -43,8 +43,8 @@ export class RedditlikeMemberReportsController {
    */
   @TypedRoute.Post()
   public async create(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedBody()
     body: IRedditLikeReport.ICreate,
   ): Promise<IRedditLikeReport> {

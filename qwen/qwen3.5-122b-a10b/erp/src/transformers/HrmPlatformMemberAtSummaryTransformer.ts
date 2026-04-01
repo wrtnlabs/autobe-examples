@@ -15,9 +15,21 @@ export namespace HrmPlatformMemberAtSummaryTransformer {
       select: {
         id: true,
         email: true,
+        password_hash: true,
         display_name: true,
         avatar_image: true,
         phone_number: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        sessions: true,
+        passwordResets: true,
+        emailVerifications: true,
+        employees: true,
+        employeeSnapshots: true,
+        taskHistories: true,
+        reviewedTimesheets: true,
+        activityLogs: true,
       },
     } satisfies Prisma.hrm_platform_membersFindManyArgs;
   }
@@ -28,8 +40,8 @@ export namespace HrmPlatformMemberAtSummaryTransformer {
       id: input.id,
       email: input.email,
       display_name: input.display_name,
-      avatar_image: input.avatar_image ?? undefined,
-      phone_number: input.phone_number ?? undefined,
+      avatar_image: input.avatar_image ?? null,
+      phone_number: input.phone_number ?? null,
     };
   }
 }

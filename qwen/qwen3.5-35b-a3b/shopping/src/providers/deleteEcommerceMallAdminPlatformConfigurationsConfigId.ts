@@ -15,22 +15,15 @@ export async function deleteEcommerceMallAdminPlatformConfigurationsConfigId(pro
   admin: AdminPayload;
   configId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const configuration =
-    await MyGlobal.prisma.ecommerce_mall_platform_configurations.findUniqueOrThrow(
-      {
-        where: { id: props.configId },
-        select: { id: true, deleted_at: true },
-      },
-    );
-  if (configuration.deleted_at !== null) {
-    throw new HttpException("Configuration is already deleted", 400);
-  }
   await MyGlobal.prisma.ecommerce_mall_platform_configurations.update({
-    where: { id: props.configId },
+    where: {
+      id: props.configId,
+      deleted_at: null,
+    },
     data: {
-      deleted_at: new Date(),
+      deleted_at: new Date().toISOString(),
       is_active: false,
-      updated_at: new Date(),
+      updated_at: new Date().toISOString(),
     },
   });
 }

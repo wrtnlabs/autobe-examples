@@ -1,0 +1,106 @@
+/// Shopping carts for customers, providing a persistent workspace for items
+/// before checkout. Each customer has exactly one active cart that persists
+/// across sessions. Cart items are stored separately in {@link
+/// shopping_mall_cart_items} with variant references and quantity tracking.
+///
+/// @namespace cart
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Timestamp when the cart was first created.
+  created_at DateTime
+  
+  /// Timestamp when the cart was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the cart was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  items shopping_mall_cart_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([customer_id])
+}
+
+/// Individual items in shopping carts, each referencing a specific product
+/// variant with quantity and price snapshot at time of addition.
+///
+/// Cart items are subsidiary entities managed through their parent {@link
+/// shopping_mall_carts}. Each item represents a specific product variant
+/// with a defined quantity and unit price captured at the time of addition.
+/// The unique constraint on (cart_id, product_variant_id) ensures the same
+/// variant cannot appear multiple times in a cart; instead, quantities are
+/// combined when adding the same variant again.
+///
+/// Price is denormalized as a snapshot to maintain consistent display and
+/// checkout calculation even if the product variant's price changes later.
+/// Temporal fields track item lifecycle with soft delete support via
+/// deleted_at.
+///
+/// @namespace cart
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent cart's {@link shopping_mall_carts.id}.
+  shopping_mall_cart_id String
+  
+  /// Product variant's {@link shopping_mall_product_variants.id}.
+  shopping_mall_product_variant_id String
+  
+  /// Quantity of this variant in the cart.
+  quantity Int
+  
+  /// Unit price snapshot at time of adding to cart, used for consistent
+  /// display and checkout calculation.
+  price Float
+  
+  /// Timestamp when this item was added to the cart.
+  created_at DateTime
+  
+  /// Timestamp when this item was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this item was soft deleted (removed from cart). Null if
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cart shopping_mall_carts @relation(fields: [shopping_mall_cart_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_product_variant_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_cart_id, shopping_mall_product_variant_id], map: "shopping_mall_cart_items_shopping_mall_cart_id_shoppin_0bb750f8")
+  @@index([shopping_mall_cart_id])
+}

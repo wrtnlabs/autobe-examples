@@ -3,6 +3,8 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import type { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import type { IHrmPlatformEmployeeContract } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployeeContract";
+import type { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import type { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import type { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -15,7 +17,7 @@ import { prepare_random_hrm_platform_employee_contract } from "../prepare/prepar
 export async function generate_random_hrm_platform_member_employees_contracts_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IHrmPlatformEmployeeContract.ICreate> | undefined;
+    body?: DeepPartial<IHrmPlatformEmployeeContract.ICreate>;
     params: {
       employeeId: string;
     };
@@ -27,8 +29,8 @@ export async function generate_random_hrm_platform_member_employees_contracts_cr
     await api.functional.hrmPlatform.member.employees.contracts.create(
       connection,
       {
-        body: prepared,
         employeeId: props.params.employeeId,
+        body: prepared,
       },
     );
   return result;

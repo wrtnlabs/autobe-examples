@@ -16,22 +16,14 @@ export async function deleteHrmPlatformMemberProjectsProjectIdMembersEmployeeId(
   projectId: string & tags.Format<"uuid">;
   employeeId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify project exists and get its organization
-  const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
-    where: { id: props.projectId },
-    select: {
-      id: true,
-      hrm_platform_organization_id: true,
-      deleted_at: true,
+  // Step 1: Verify project exists and get organization context
+  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
+    {
+      where: { id: props.projectId, deleted_at: null },
+      select: { id: true, hrm_platform_organization_id: true },
     },
-  });
-  if (project === null) {
-    throw new HttpException("Project not found", 404);
-  }
-  if (project.deleted_at !== null) {
-    throw new HttpException("Project not found", 404);
-  }
-  // Verify membership exists
+  );
+  // Step 2: Verify employee membership exists with deleted_at: null
   const membership =
     await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
@@ -39,85 +31,55 @@ export async function deleteHrmPlatformMemberProjectsProjectIdMembersEmployeeId(
         hrm_platform_employee_id: props.employeeId,
         deleted_at: null,
       },
-      select: {
-        id: true,
-        hrm_platform_employee_id: true,
-        hrm_platform_project_id: true,
-      },
     });
   if (membership === null) {
-    throw new HttpException("Membership not found", 404);
+    throw new HttpException("Project membership not found", 404);
   }
-  // Verify employee exists and belongs to the same organization
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findUnique({
-    where: { id: props.employeeId },
-    select: {
-      id: true,
-      hrm_platform_organization_id: true,
-      hrm_platform_role_id: true,
-      deleted_at: true,
-    },
-  });
-  if (employee === null) {
-    throw new HttpException("Employee not found", 404);
-  }
-  if (employee.deleted_at !== null) {
-    throw new HttpException("Employee not found", 404);
-  }
-  if (
-    employee.hrm_platform_organization_id !==
-    project.hrm_platform_organization_id
-  ) {
-    throw new HttpException("Employee not found", 404);
-  }
-  // Verify current member has project:manage permission
-  // Get member's employee record in the project's organization
-  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
-    {
+  // Step 3: Check authorization - verify current user has project:manage permission
+  // Get the current member's employee record in the project's organization
+  const currentEmployee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirst({
       where: {
         hrm_platform_user_id: props.member.id,
         hrm_platform_organization_id: project.hrm_platform_organization_id,
         deleted_at: null,
       },
-      select: {
-        id: true,
-        hrm_platform_role_id: true,
-      },
-    },
-  );
-  if (memberEmployee === null) {
-    throw new HttpException("Forbidden", 403);
+    });
+  if (currentEmployee === null) {
+    throw new HttpException("You are not a member of this organization", 403);
   }
-  // Find the project:manage permission by code (permissions are global, not org-scoped)
-  const permission = await MyGlobal.prisma.hrm_platform_permissions.findFirst({
-    where: {
-      code: "project:manage",
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-    },
-  });
-  if (permission === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Check if the member's role has this permission
-  const hasPermission =
-    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
+  // Get the role permissions for the current user's role
+  const rolePermissions =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
       where: {
-        hrm_platform_role_id: memberEmployee.hrm_platform_role_id,
-        hrm_platform_permission_id: permission.id,
+        hrm_platform_role_id: currentEmployee.hrm_platform_role_id,
         deleted_at: null,
       },
+      select: { hrm_platform_permission_id: true },
     });
-  if (hasPermission === null) {
+  // Get the permission ID for project:manage
+  const projectManagePermission =
+    await MyGlobal.prisma.hrm_platform_permissions.findFirst({
+      where: {
+        code: "project:manage",
+        deleted_at: null,
+      },
+      select: { id: true },
+    });
+  if (projectManagePermission === null) {
+    throw new HttpException("Permission not found", 500);
+  }
+  // Check if current user has the permission
+  const hasPermission = rolePermissions.some(
+    (rp) => rp.hrm_platform_permission_id === projectManagePermission.id,
+  );
+  if (!hasPermission) {
     throw new HttpException("Forbidden", 403);
   }
-  // Perform soft delete on the membership
+  // Step 4: Perform soft delete by updating deleted_at timestamp
+  const now = new Date();
   await MyGlobal.prisma.hrm_platform_project_members.update({
     where: { id: membership.id },
-    data: {
-      deleted_at: new Date(),
-    },
+    data: { deleted_at: now },
   });
 }

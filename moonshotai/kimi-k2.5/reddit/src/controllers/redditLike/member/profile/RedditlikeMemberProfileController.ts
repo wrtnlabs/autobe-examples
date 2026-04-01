@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia from "typia";
 
 import { IRedditLikeMember } from "../../../../api/structures/IRedditLikeMember";
-import { AdminAuth } from "../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { putRedditLikeMemberProfile } from "../../../../providers/putRedditLikeMemberProfile";
 
 @Controller("/redditLike/member/profile")
@@ -29,8 +29,8 @@ export class RedditlikeMemberProfileController {
    */
   @TypedRoute.Put()
   public async update(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedBody()
     body: IRedditLikeMember.IUpdate,
   ): Promise<IRedditLikeMember> {

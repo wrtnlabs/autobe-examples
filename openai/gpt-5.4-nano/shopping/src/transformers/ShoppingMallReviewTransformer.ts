@@ -5,6 +5,7 @@ import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -24,8 +25,17 @@ export namespace ShoppingMallReviewTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        shopping_mall_order_item_id: true,
+        orderItem: {
+          select: {
+            id: true,
+          },
+        },
         product: ShoppingMallProductAtSummaryTransformer.select(),
+        customer: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.shopping_mall_reviewsFindManyArgs;
   }
@@ -37,14 +47,14 @@ export namespace ShoppingMallReviewTransformer {
       rating: input.rating,
       body: input.body ?? null,
       is_public: input.is_public,
-      orderItem: input.shopping_mall_order_item_id,
+      orderItem: input.orderItem.id,
       product: await ShoppingMallProductAtSummaryTransformer.transform(
         input.product,
       ),
-      author: {},
+      author: {} as IShoppingMallMember.ISummary,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

@@ -26,45 +26,10 @@ export async function putHrmPlatformMemberDepartmentsDepartmentId(props: {
       select: {
         id: true,
         hrm_platform_organization_id: true,
-        parent_department_id: true,
         deleted_at: true,
       } satisfies Prisma.hrm_platform_departmentsSelect,
     });
-  // 2. Verify user has org:manage permission for the organization
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      hrm_platform_user_id: props.member.id,
-      hrm_platform_organization_id: department.hrm_platform_organization_id,
-      deleted_at: null,
-    },
-    select: {
-      hrm_platform_role_id: true,
-    } satisfies Prisma.hrm_platform_employeesSelect,
-  });
-  if (!employee) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
-    where: { id: employee.hrm_platform_role_id },
-    include: {
-      permissions: {
-        select: {
-          permission: {
-            select: {
-              code: true,
-            },
-          },
-        },
-      },
-    },
-  });
-  const hasOrgManagePermission = role?.permissions.some(
-    (rp) => rp.permission.code === "org:manage",
-  );
-  if (!hasOrgManagePermission) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // 3. Check name uniqueness within organization if name is being updated
+  // 2. Check name uniqueness within organization (exclude current department)
   if (props.body.name !== undefined) {
     const existing = await MyGlobal.prisma.hrm_platform_departments.findFirst({
       where: {
@@ -76,33 +41,41 @@ export async function putHrmPlatformMemberDepartmentsDepartmentId(props: {
     });
     if (existing) {
       throw new HttpException(
-        "Department name must be unique within organization",
+        "Department name already exists in this organization",
         400,
       );
     }
   }
-  // 4. Validate parent_department_id if provided
+  // 3. Validate parent_department_id if provided
   if (props.body.parent_department_id !== undefined) {
-    if (props.body.parent_department_id === null) {
-      // Setting parent to null is allowed (top-level department)
-    } else {
-      // Validate parent exists in same organization
-      const parent = await MyGlobal.prisma.hrm_platform_departments.findFirst({
-        where: {
-          id: props.body.parent_department_id,
-          hrm_platform_organization_id: department.hrm_platform_organization_id,
-          deleted_at: null,
-        } satisfies Prisma.hrm_platform_departmentsWhereInput,
+    if (props.body.parent_department_id !== null) {
+      // Validate parent exists, not deleted, and in same organization
+      const parent = await MyGlobal.prisma.hrm_platform_departments.findUnique({
+        where: { id: props.body.parent_department_id },
+        select: {
+          id: true,
+          hrm_platform_organization_id: true,
+          deleted_at: true,
+          parent_department_id: true,
+        } satisfies Prisma.hrm_platform_departmentsSelect,
       });
       if (!parent) {
+        throw new HttpException("Parent department not found", 400);
+      }
+      if (parent.deleted_at !== null) {
+        throw new HttpException("Cannot set deleted department as parent", 400);
+      }
+      if (
+        parent.hrm_platform_organization_id !==
+        department.hrm_platform_organization_id
+      ) {
         throw new HttpException(
-          "Parent department must exist in the same organization",
+          "Parent department must be in the same organization",
           400,
         );
       }
-      // Prevent circular references - check if department is already ancestor of proposed parent
-      const ancestors = await getAncestors(props.body.parent_department_id);
-      if (ancestors.includes(department.id)) {
+      // Check for circular reference
+      if (parent.parent_department_id === props.departmentId) {
         throw new HttpException(
           "Cannot create circular reference in department hierarchy",
           400,
@@ -110,7 +83,7 @@ export async function putHrmPlatformMemberDepartmentsDepartmentId(props: {
       }
     }
   }
-  // 5. Update department
+  // 4. Update the department
   await MyGlobal.prisma.hrm_platform_departments.update({
     where: { id: props.departmentId },
     data: {
@@ -122,33 +95,13 @@ export async function putHrmPlatformMemberDepartmentsDepartmentId(props: {
         parent_department_id: props.body.parent_department_id,
       }),
       updated_at: new Date(),
-    },
+    } satisfies Prisma.hrm_platform_departmentsUpdateInput,
   });
-  // 6. Return updated department
+  // 5. Return updated department
   const updated =
     await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
       where: { id: props.departmentId },
       ...HrmPlatformDepartmentTransformer.select(),
     });
   return await HrmPlatformDepartmentTransformer.transform(updated);
-}
-async function getAncestors(departmentId: string): Promise<string[]> {
-  const ancestors: string[] = [];
-  let currentId: string | null = departmentId;
-  while (currentId) {
-    const dept: {
-      parent_department_id: string | null;
-    } | null = await MyGlobal.prisma.hrm_platform_departments.findUnique({
-      where: { id: currentId },
-      select: {
-        parent_department_id: true,
-      } satisfies Prisma.hrm_platform_departmentsSelect,
-    });
-    if (!dept?.parent_department_id) {
-      break;
-    }
-    ancestors.push(dept.parent_department_id);
-    currentId = dept.parent_department_id;
-  }
-  return ancestors;
 }

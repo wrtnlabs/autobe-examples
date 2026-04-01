@@ -4,8 +4,10 @@ import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
@@ -20,7 +22,6 @@ export namespace RedditCommunityCommentSnapshotAtSummaryTransformer {
         content: true,
         version: true,
         created_at: true,
-        comment: true,
         author: RedditCommunityMemberAtSummaryTransformer.select(),
         post: true,
         parentComment: true,
@@ -34,7 +35,7 @@ export namespace RedditCommunityCommentSnapshotAtSummaryTransformer {
       id: input.id,
       content: input.content,
       version: input.version,
-      created_at: input.created_at.toISOString(),
+      created_at: toISOStringSafe(input.created_at),
       author: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.author,
       ),

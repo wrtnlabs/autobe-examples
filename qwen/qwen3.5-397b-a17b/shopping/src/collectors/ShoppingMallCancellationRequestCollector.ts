@@ -10,25 +10,18 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallCancellationRequestCollector {
   export async function collect(props: {
     body: IShoppingMallCancellationRequest.ICreate;
+    shoppingMallOrderItems: IEntity;
     shoppingMallCustomers: IEntity;
   }) {
-    const id: string = v4();
     return {
-      // Scalar fields
-      id,
+      id: v4(),
       reason: props.body.reason,
-      status: "PENDING",
-      requested_at: new Date(),
-      responded_at: null,
+      status: "pending",
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relations
-      orderItem: { connect: { id: props.body.order_item_id } },
+      orderItem: { connect: { id: props.shoppingMallOrderItems.id } },
       customer: { connect: { id: props.shoppingMallCustomers.id } },
-      respondedSeller: undefined,
-      // HasMany relations
-      snapshots: undefined,
     } satisfies Prisma.shopping_mall_cancellation_requestsCreateInput;
   }
 }

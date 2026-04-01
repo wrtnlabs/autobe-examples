@@ -7,44 +7,34 @@ import typia, { tags } from "typia";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace HrmPlatformDepartmentAtSummaryTransformer {
-  export function select() {
+  export type Payload = Prisma.hrm_platform_departmentsGetPayload<
+    ReturnType<typeof select>
+  >;
+  export function select(): Prisma.hrm_platform_departmentsFindManyArgs {
     return {
       select: {
         id: true,
         name: true,
         description: true,
-        parent: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            parent: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-              },
-            },
-          },
-        },
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        organization: true,
+        childDepartments: true,
+        employees: true,
       },
     } satisfies Prisma.hrm_platform_departmentsFindManyArgs;
   }
-  export type Payload = Prisma.hrm_platform_departmentsGetPayload<
-    ReturnType<typeof select>
-  >;
   export async function transform(
     input: Payload,
   ): Promise<IHrmPlatformDepartment.ISummary> {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? null,
-      parent: input.parent
-        ? await HrmPlatformDepartmentAtSummaryTransformer.transform(
-            input.parent as Payload,
-          )
-        : null,
+      description: input.description ?? undefined,
+      parent: null,
+      created_at: toISOStringSafe(input.created_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

@@ -17,12 +17,6 @@ export async function patchShoppingMallMemberAddresses(props: {
   member: MemberPayload;
   body: IShoppingMallAddress.ICreate;
 }): Promise<IShoppingMallAddress> {
-  // Prefer id from body if present; otherwise throw because we cannot address which row to patch.
-  const addressId = (
-    props.body as IShoppingMallAddress.ICreate & {
-      id?: string;
-    }
-  ).id;
   const recipientName = props.body.recipient_name;
   const phoneNumber = props.body.phone_number;
   const postalCode = props.body.postal_code;
@@ -30,59 +24,35 @@ export async function patchShoppingMallMemberAddresses(props: {
   const city = props.body.city;
   const streetLine1 = props.body.street_line1;
   const streetLine2 = props.body.street_line2 ?? null;
-  const isDefaultRequested = props.body.is_default ?? false;
-  if (typeof addressId !== "string" || addressId.trim().length === 0) {
-    throw new HttpException("Address id is required", 400);
+  if (
+    recipientName.trim().length === 0 ||
+    phoneNumber.trim().length === 0 ||
+    postalCode.trim().length === 0 ||
+    country.trim().length === 0 ||
+    city.trim().length === 0 ||
+    streetLine1.trim().length === 0
+  ) {
+    throw new HttpException("Incomplete required address fields", 400);
   }
-  if (recipientName.trim().length === 0) {
-    throw new HttpException("Recipient name is required", 400);
-  }
-  if (phoneNumber.trim().length === 0) {
-    throw new HttpException("Phone number is required", 400);
-  }
-  if (postalCode.trim().length === 0) {
-    throw new HttpException("Postal code is required", 400);
-  }
-  if (country.trim().length === 0) {
-    throw new HttpException("Country is required", 400);
-  }
-  if (city.trim().length === 0) {
-    throw new HttpException("City is required", 400);
-  }
-  if (streetLine1.trim().length === 0) {
-    throw new HttpException("Street address line1 is required", 400);
-  }
-  // Ensure the record exists for this member.
-  await MyGlobal.prisma.shopping_mall_addresses.findUniqueOrThrow({
-    where: {
-      shopping_mall_customer_id: {
+  const requestedIsDefault = props.body.is_default;
+  const shouldSetIsDefault = requestedIsDefault !== undefined;
+  return await MyGlobal.prisma.$transaction(async (tx) => {
+    const address = await tx.shopping_mall_addresses.findFirstOrThrow({
+      where: {
         shopping_mall_customer_id: props.member.id,
-        id: addressId,
-      } as any,
-    } as any,
-    select: ShoppingMallAddressTransformer.select().select,
-  });
-  const activeCount = await MyGlobal.prisma.shopping_mall_addresses.count({
-    where: {
-      shopping_mall_customer_id: props.member.id,
-      deleted_at: null,
-    },
-  });
-  const shouldSetDefault = isDefaultRequested && activeCount > 0;
-  const updatedAt = toISOStringSafe(new Date());
-  await MyGlobal.prisma.$transaction(async (prisma) => {
-    if (shouldSetDefault) {
-      await prisma.shopping_mall_addresses.updateMany({
-        where: {
-          shopping_mall_customer_id: props.member.id,
-          deleted_at: null,
-          id: { not: addressId },
-        },
-        data: { is_default: false, updated_at: new Date(updatedAt) },
-      });
-    }
-    await prisma.shopping_mall_addresses.update({
-      where: { id: addressId },
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        is_default: true,
+      },
+      orderBy: {
+        is_default: "desc",
+        id: "asc",
+      },
+    });
+    await tx.shopping_mall_addresses.update({
+      where: { id: address.id },
       data: {
         recipient_name: recipientName,
         phone_number: phoneNumber,
@@ -91,18 +61,49 @@ export async function patchShoppingMallMemberAddresses(props: {
         city,
         street_line1: streetLine1,
         street_line2: streetLine2,
-        is_default: shouldSetDefault ? true : false,
-        updated_at: new Date(updatedAt),
+        ...(shouldSetIsDefault && {
+          is_default: requestedIsDefault ?? false,
+        }),
       },
     });
-  });
-  const updated =
-    await MyGlobal.prisma.shopping_mall_addresses.findUniqueOrThrow({
+    const activeCount = await tx.shopping_mall_addresses.count({
       where: {
-        id: addressId,
         shopping_mall_customer_id: props.member.id,
-      } as any,
+        deleted_at: null,
+      },
+    });
+    if (activeCount === 0) {
+      await tx.shopping_mall_addresses.updateMany({
+        where: {
+          shopping_mall_customer_id: props.member.id,
+          deleted_at: null,
+        },
+        data: { is_default: false },
+      });
+    } else if (shouldSetIsDefault && requestedIsDefault === true) {
+      await tx.shopping_mall_addresses.updateMany({
+        where: {
+          shopping_mall_customer_id: props.member.id,
+          deleted_at: null,
+          id: {
+            not: address.id,
+          },
+        },
+        data: { is_default: false },
+      });
+      await tx.shopping_mall_addresses.update({
+        where: { id: address.id },
+        data: { is_default: true },
+      });
+    }
+    const updated = await tx.shopping_mall_addresses.findFirstOrThrow({
+      where: {
+        id: address.id,
+        shopping_mall_customer_id: props.member.id,
+        deleted_at: null,
+      },
       ...ShoppingMallAddressTransformer.select(),
     });
-  return await ShoppingMallAddressTransformer.transform(updated as any);
+    return await ShoppingMallAddressTransformer.transform(updated);
+  });
 }

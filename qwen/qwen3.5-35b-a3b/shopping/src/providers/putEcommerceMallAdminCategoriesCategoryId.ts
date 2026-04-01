@@ -9,7 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { EcommerceMallCategoryAtSummaryTransformer } from "../transformers/EcommerceMallCategoryAtSummaryTransformer";
+import { EcommerceMallCategoryTransformer } from "../transformers/EcommerceMallCategoryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,6 +18,7 @@ export async function putEcommerceMallAdminCategoriesCategoryId(props: {
   categoryId: string & tags.Format<"uuid">;
   body: IEcommerceMallCategory.IUpdate;
 }): Promise<IEcommerceMallCategory> {
+  // Find existing category with all scalar fields for snapshot
   const existing =
     await MyGlobal.prisma.ecommerce_mall_categories.findUniqueOrThrow({
       where: { id: props.categoryId },
@@ -26,87 +27,42 @@ export async function putEcommerceMallAdminCategoriesCategoryId(props: {
         name: true,
         slug: true,
         description: true,
-        parent_id: true,
         display_order: true,
         icon_uri: true,
         is_active: true,
+        parent_id: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
       },
     });
+  // Create snapshot of current state for audit trail
   await MyGlobal.prisma.ecommerce_mall_category_snapshots.create({
     data: {
       id: v4(),
-      snapshot_id: props.categoryId,
-      code: existing.slug,
+      category: { connect: { id: props.categoryId } },
+      code: existing.slug, // Use slug as unique code
       name: existing.name,
-      description: existing.description ?? null,
       slug: existing.slug,
-      parent_id: existing.parent_id ?? null,
-      level: 0,
-      sort_order: existing.display_order,
+      description: existing.description ?? undefined,
       is_active: existing.is_active,
-      created_at: toISOStringSafe(new Date()),
+      parent_id: existing.parent_id ?? undefined,
+      level: 0, // TODO: Calculate actual hierarchy level if needed
+      sort_order: existing.display_order,
+      created_at: existing.created_at,
     },
   });
-  const updateData: Prisma.ecommerce_mall_categoriesUpdateInput = {};
-  if (props.body.name !== undefined) {
-    updateData.name = props.body.name;
-  }
-  if (props.body.description !== undefined) {
-    updateData.description = props.body.description ?? null;
-  }
-  updateData.updated_at = new Date();
+  // Update only modifiable fields (name and description)
   const updated = await MyGlobal.prisma.ecommerce_mall_categories.update({
     where: { id: props.categoryId },
-    data: updateData,
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      parent_id: true,
-      display_order: true,
-      icon_uri: true,
-      is_active: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      parent: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          parent_id: true,
-          display_order: true,
-          is_active: true,
-          created_at: true,
-          updated_at: true,
-          description: true,
-          icon_uri: true,
-          deleted_at: true,
-        },
-      },
+    data: {
+      ...(props.body.name !== undefined && { name: props.body.name }),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
+      updated_at: new Date(),
     },
+    ...EcommerceMallCategoryTransformer.select(),
   });
-  return {
-    id: updated.id,
-    name: updated.name,
-    slug: updated.slug,
-    description: updated.description ?? undefined,
-    display_order: updated.display_order,
-    icon_uri: updated.icon_uri ?? undefined,
-    is_active: updated.is_active,
-    created_at: toISOStringSafe(updated.created_at),
-    updated_at: toISOStringSafe(updated.updated_at),
-    deleted_at:
-      updated.deleted_at !== null && updated.deleted_at !== undefined
-        ? toISOStringSafe(updated.deleted_at)
-        : null,
-    parent: updated.parent
-      ? await EcommerceMallCategoryAtSummaryTransformer.transform(
-          updated.parent,
-        )
-      : undefined,
-  } satisfies IEcommerceMallCategory;
+  return await EcommerceMallCategoryTransformer.transform(updated);
 }

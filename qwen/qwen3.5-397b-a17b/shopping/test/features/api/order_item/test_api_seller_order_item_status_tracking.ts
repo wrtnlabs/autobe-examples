@@ -1,19 +1,19 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
+import type { IShoppingMallCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCart";
 import type { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
 import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
 import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import type { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
-import type { IShoppingMallProductReviewStatistic } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductReviewStatistic";
-import type { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
+import type { IShoppingMallProductOptionDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionDefinition";
+import type { IShoppingMallProductOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionValue";
+import type { IShoppingMallProductRating } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductRating";
 import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import type { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
-import type { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import type { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -28,62 +28,60 @@ import { authorize_customer_refresh } from "../../../authorize/authorize_custome
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
-import { generate_random_shopping_mall_customer_customers_cart_items_create } from "../../../generate/generate_random_shopping_mall_customer_customers_cart_items_create";
+import { generate_random_shopping_mall_customer_cart_items_create } from "../../../generate/generate_random_shopping_mall_customer_cart_items_create";
 import { generate_random_shopping_mall_customer_orders_create } from "../../../generate/generate_random_shopping_mall_customer_orders_create";
 import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
 import { generate_random_shopping_mall_seller_products_variants_create } from "../../../generate/generate_random_shopping_mall_seller_products_variants_create";
-import { generate_random_shopping_mall_seller_shipments_create } from "../../../generate/generate_random_shopping_mall_seller_shipments_create";
 import { prepare_random_shopping_mall_cart_item } from "../../../prepare/prepare_random_shopping_mall_cart_item";
 import { prepare_random_shopping_mall_order } from "../../../prepare/prepare_random_shopping_mall_order";
 import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
 import { prepare_random_shopping_mall_product_variant } from "../../../prepare/prepare_random_shopping_mall_product_variant";
-import { prepare_random_shopping_mall_product_variant_option } from "../../../prepare/prepare_random_shopping_mall_product_variant_option";
-import { prepare_random_shopping_mall_shipment } from "../../../prepare/prepare_random_shopping_mall_shipment";
 
 /**
- * Test that order item status is accurately tracked and returned through the fulfillment lifecycle.
+ * Test seller order item status tracking through fulfillment workflow.
  *
- * This test validates order item retrieval at different status states:
- * 1. PAID status - order placed but not yet shipped
- * 2. SHIPPED status - after seller creates shipment
- * 3. DELIVERED status - after customer confirms delivery
- *
- * For each status, verify the seller can retrieve the order item with correct status value,
- * all snapshot data remains intact, and tracking information is accessible when shipped.
+ * This test verifies that order item status transitions (paid → shipped → delivered)
+ * are correctly reflected when retrieved by the seller. The test sets up a complete
+ * order workflow: seller creates product/variant, customer places order, then seller
+ * updates order item status through the fulfillment process. Each status transition
+ * is validated by retrieving the order item and confirming the status changed while
+ * all other snapshotted data (product, variant, seller info) remains unchanged.
  */
 export async function test_api_seller_order_item_status_tracking(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Setup: Create and authenticate seller
-  const sellerConnection: api.IConnection = { host: connection.host };
-  const sellerAuth = await authorize_seller_join(sellerConnection, {
+  // 1. Setup: Create seller account with known credentials
+  const sellerPassword = RandomGenerator.alphaNumeric(16);
+  const sellerEmail = typia.random<string & tags.Format<"email">>();
+  const sellerJoin = await authorize_seller_join(connection, {
     body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "TestPassword123!",
-      shop_name: RandomGenerator.name(),
-      shop_description: RandomGenerator.paragraph({ sentences: 2 }),
-    } satisfies IShoppingMallSeller.IJoin,
-  });
-  typia.assert(sellerAuth);
-  // Seller needs to be approved by admin (simulated - assuming auto-approval for test)
-  const sellerLoginConnection: api.IConnection = { host: connection.host };
-  await authorize_seller_login(sellerLoginConnection, {
-    body: {
-      email: sellerAuth.email,
-      password: "TestPassword123!",
+      email: sellerEmail,
+      password: sellerPassword,
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: undefined,
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    } satisfies IShoppingMallSeller.IJoin,
+  });
+  typia.assert(sellerJoin);
+  // 2. Seller login with same credentials
+  const sellerConnection: api.IConnection = { host: connection.host };
+  await authorize_seller_login(sellerConnection, {
+    body: {
+      email: sellerEmail,
+      password: sellerPassword,
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IShoppingMallSeller.ILogin,
   });
-  // 2. Seller creates product
-  const product = await api.functional.shoppingMall.seller.products.create(
-    sellerLoginConnection,
+  // 3. Seller creates product
+  const product = await generate_random_shopping_mall_seller_products_create(
+    sellerConnection,
     {
       body: {
-        name: RandomGenerator.paragraph({ sentences: 1 }),
-        description: RandomGenerator.paragraph({ sentences: 3 }),
-        shopping_category_id: typia.random<string & tags.Format<"uuid">>(),
+        name: RandomGenerator.paragraph({ sentences: 2 }),
+        description: RandomGenerator.content({ paragraphs: 3 }),
+        category_id: typia.random<string & tags.Format<"uuid">>(),
         base_price: typia.random<
           number & tags.Type<"uint32"> & tags.Minimum<1000>
         >(),
@@ -91,47 +89,44 @@ export async function test_api_seller_order_item_status_tracking(
     },
   );
   typia.assert(product);
-  // 3. Seller creates product variant
+  // 4. Seller creates product variant
   const variant =
-    await api.functional.shoppingMall.seller.products.variants.create(
-      sellerLoginConnection,
+    await generate_random_shopping_mall_seller_products_variants_create(
+      sellerConnection,
       {
-        productId: product.id,
+        params: { productId: product.id },
         body: {
-          sku_code: `SKU-${RandomGenerator.alphaNumeric(8)}`,
-          price: typia.random<
-            number & tags.Type<"uint32"> & tags.Minimum<1000>
-          >(),
-          stock_quantity: typia.random<
-            number & tags.Type<"int32"> & tags.Minimum<10>
-          >(),
-          options: [
-            {
-              key: "color",
-              value: "Red",
-            } satisfies IShoppingMallProductVariantOption.ICreate,
-          ],
+          sku_code: RandomGenerator.alphaNumeric(12),
+          price_override: null,
+          option_value_ids: [],
         } satisfies IShoppingMallProductVariant.ICreate,
       },
     );
   typia.assert(variant);
-  // 4. Setup: Create and authenticate customer
-  const customerConnection: api.IConnection = { host: connection.host };
-  const customerAuth = await authorize_customer_join(customerConnection, {
+  // 5. Setup: Create customer account with known credentials
+  const customerPassword = RandomGenerator.alphaNumeric(16);
+  const customerEmail = typia.random<string & tags.Format<"email">>();
+  const customerJoin = await authorize_customer_join(connection, {
     body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "CustomerPass123!",
-      nickname: RandomGenerator.name(),
-      phone_number: RandomGenerator.mobile(),
+      email: customerEmail,
+      password: customerPassword,
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: null,
+      ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IShoppingMallCustomer.IJoin,
   });
-  typia.assert(customerAuth);
-  // 5. Customer adds item to cart
+  typia.assert(customerJoin);
+  // 6. Customer login with same credentials
+  const customerConnection: api.IConnection = { host: connection.host };
+  await authorize_customer_login(customerConnection, {
+    body: {
+      email: customerEmail,
+      password: customerPassword,
+    } satisfies IShoppingMallCustomer.ILogin,
+  });
+  // 7. Customer adds variant to cart
   const cartItem =
-    await api.functional.shoppingMall.customer.customers.cart.items.create(
+    await generate_random_shopping_mall_customer_cart_items_create(
       customerConnection,
       {
         body: {
@@ -143,132 +138,143 @@ export async function test_api_seller_order_item_status_tracking(
       },
     );
   typia.assert(cartItem);
-  // 6. Customer places order (creates order item in PAID status)
-  const order = await api.functional.shoppingMall.customer.orders.create(
+  // 8. Customer creates order (this sets order item status to 'paid')
+  const order = await generate_random_shopping_mall_customer_orders_create(
     customerConnection,
     {
       body: {
-        addressId: typia.random<string & tags.Format<"uuid">>(),
+        shopping_mall_address_id: typia.random<string & tags.Format<"uuid">>(),
+        cart_item_ids: [cartItem.id],
       } satisfies IShoppingMallOrder.ICreate,
     },
   );
   typia.assert(order);
-  // Verify order has items
-  TestValidator.predicate("order has items", order.items.length > 0);
-  const orderItem = order.items[0];
-  // 7. Verify PAID status - Seller retrieves order item
-  const paidOrderItem =
-    await api.functional.shoppingMall.seller.orders.items.at(
-      sellerLoginConnection,
-      {
-        orderId: order.id,
-        itemId: orderItem.id,
-      },
-    );
-  typia.assert(paidOrderItem);
-  // Validate PAID status
+  // Get the first order item from the order
+  const orderItem = order.orderItems[0];
+  TestValidator.predicate("order has items", order.orderItems.length > 0);
+  // 9. Seller retrieves order item - verify initial status is 'paid'
+  const initialOrderItem =
+    await api.functional.shoppingMall.seller.orders.items.at(sellerConnection, {
+      itemId: orderItem.id,
+    });
+  typia.assert(initialOrderItem);
   TestValidator.equals(
-    "order item status is PAID",
-    paidOrderItem.status,
-    "PAID",
+    "initial status is paid",
+    initialOrderItem.status,
+    "paid",
   );
-  TestValidator.equals("order item ID matches", paidOrderItem.id, orderItem.id);
-  TestValidator.equals(
-    "quantity matches",
-    paidOrderItem.quantity,
-    orderItem.quantity,
-  );
-  TestValidator.equals(
-    "unit price matches",
-    paidOrderItem.unitPrice,
-    orderItem.unitPrice,
-  );
-  // Validate snapshot data integrity
-  TestValidator.predicate(
-    "product snapshot exists",
-    paidOrderItem.productSnapshot !== undefined,
-  );
-  TestValidator.predicate(
-    "variant snapshot exists",
-    paidOrderItem.productVariantSnapshot !== undefined,
-  );
-  TestValidator.predicate(
-    "seller info exists",
-    paidOrderItem.seller !== undefined,
-  );
-  TestValidator.equals(
-    "seller shop name matches",
-    paidOrderItem.seller.shop_name,
-    sellerAuth.shop_name,
-  );
-  // 8. Seller creates shipment (changes item status to SHIPPED)
-  const shipment = await api.functional.shoppingMall.seller.shipments.create(
-    sellerLoginConnection,
-    {
-      body: {
-        order_item_ids: [orderItem.id],
-        tracking_carrier: "FedEx",
-        tracking_number: `TRACK-${RandomGenerator.alphaNumeric(12)}`,
-      } satisfies IShoppingMallShipment.ICreate,
-    },
-  );
-  typia.assert(shipment);
-  // 9. Verify SHIPPED status - Seller retrieves order item
+  // Store original snapshot data for comparison
+  const originalProductId = (initialOrderItem.product as any).id;
+  const originalVariantId = (initialOrderItem.productVariant as any).id;
+  const originalSellerId = (initialOrderItem.seller as any).id;
+  const originalQuantity = initialOrderItem.quantity;
+  const originalPrice = initialOrderItem.price;
+  // 10. Seller updates order item status to 'shipped'
   const shippedOrderItem =
-    await api.functional.shoppingMall.seller.orders.items.at(
-      sellerLoginConnection,
+    await api.functional.shoppingMall.seller.orders.items.update(
+      sellerConnection,
       {
-        orderId: order.id,
         itemId: orderItem.id,
+        body: {
+          status: "shipped",
+        } satisfies IShoppingMallOrderItem.IUpdate,
       },
     );
   typia.assert(shippedOrderItem);
-  // Validate SHIPPED status
   TestValidator.equals(
-    "order item status is SHIPPED",
+    "status updated to shipped",
     shippedOrderItem.status,
-    "SHIPPED",
+    "shipped",
+  );
+  // 11. Seller retrieves order item - verify status is 'shipped'
+  const retrievedShippedItem =
+    await api.functional.shoppingMall.seller.orders.items.at(sellerConnection, {
+      itemId: orderItem.id,
+    });
+  typia.assert(retrievedShippedItem);
+  TestValidator.equals(
+    "retrieved status is shipped",
+    retrievedShippedItem.status,
+    "shipped",
+  );
+  // Verify snapshot data unchanged
+  TestValidator.equals(
+    "product unchanged",
+    (retrievedShippedItem.product as any).id,
+    originalProductId,
   );
   TestValidator.equals(
-    "order item ID unchanged",
-    shippedOrderItem.id,
-    orderItem.id,
+    "variant unchanged",
+    (retrievedShippedItem.productVariant as any).id,
+    originalVariantId,
+  );
+  TestValidator.equals(
+    "seller unchanged",
+    (retrievedShippedItem.seller as any).id,
+    originalSellerId,
   );
   TestValidator.equals(
     "quantity unchanged",
-    shippedOrderItem.quantity,
-    orderItem.quantity,
-  );
-  // Validate snapshot data still intact after shipment
-  TestValidator.equals(
-    "product snapshot name unchanged",
-    shippedOrderItem.productSnapshot.name,
-    paidOrderItem.productSnapshot.name,
+    retrievedShippedItem.quantity,
+    originalQuantity,
   );
   TestValidator.equals(
-    "variant snapshot SKU unchanged",
-    shippedOrderItem.productVariantSnapshot.sku_code,
-    paidOrderItem.productVariantSnapshot.sku_code,
+    "price unchanged",
+    retrievedShippedItem.price,
+    originalPrice,
   );
-  // 10. Validate shipment tracking information is accessible
-  TestValidator.predicate(
-    "shipment has tracking carrier",
-    shipment.tracking_carrier !== null,
+  // 12. Seller updates order item status to 'delivered'
+  const deliveredOrderItem =
+    await api.functional.shoppingMall.seller.orders.items.update(
+      sellerConnection,
+      {
+        itemId: orderItem.id,
+        body: {
+          status: "delivered",
+        } satisfies IShoppingMallOrderItem.IUpdate,
+      },
+    );
+  typia.assert(deliveredOrderItem);
+  TestValidator.equals(
+    "status updated to delivered",
+    deliveredOrderItem.status,
+    "delivered",
   );
-  TestValidator.predicate(
-    "shipment has tracking number",
-    shipment.tracking_number !== null,
+  // 13. Seller retrieves order item - verify final status is 'delivered'
+  const finalOrderItem =
+    await api.functional.shoppingMall.seller.orders.items.at(sellerConnection, {
+      itemId: orderItem.id,
+    });
+  typia.assert(finalOrderItem);
+  TestValidator.equals(
+    "final status is delivered",
+    finalOrderItem.status,
+    "delivered",
+  );
+  // Verify snapshot data still unchanged after final transition
+  TestValidator.equals(
+    "product still unchanged",
+    (finalOrderItem.product as any).id,
+    originalProductId,
   );
   TestValidator.equals(
-    "tracking carrier matches",
-    shipment.tracking_carrier,
-    "FedEx",
+    "variant still unchanged",
+    (finalOrderItem.productVariant as any).id,
+    originalVariantId,
   );
-  TestValidator.predicate(
-    "shipment has shipped_at timestamp",
-    shipment.shipped_at !== null,
+  TestValidator.equals(
+    "seller still unchanged",
+    (finalOrderItem.seller as any).id,
+    originalSellerId,
   );
-  // Note: DELIVERED status would require customer delivery confirmation
-  // which may involve a separate endpoint not in our available API list.
-  // The test validates PAID → SHIPPED transition successfully.
+  TestValidator.equals(
+    "quantity still unchanged",
+    finalOrderItem.quantity,
+    originalQuantity,
+  );
+  TestValidator.equals(
+    "price still unchanged",
+    finalOrderItem.price,
+    originalPrice,
+  );
 }

@@ -15,8 +15,11 @@ export namespace HrmPlatformEmployeeContractCollector {
     const id: string = v4();
     return {
       id,
-      start_date: props.body.start_date,
-      end_date: props.body.end_date ?? null,
+      start_date: new Date(props.body.start_date),
+      end_date:
+        props.body.end_date !== undefined && props.body.end_date !== null
+          ? new Date(props.body.end_date)
+          : null,
       pay_rate: props.body.pay_rate,
       pay_period: props.body.pay_period,
       working_hours_per_week: props.body.working_hours_per_week,

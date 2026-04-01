@@ -18,11 +18,21 @@ export async function putShoppingMallAdminCustomersCustomerId(props: {
   customerId: string & tags.Format<"uuid">;
   body: IShoppingMallCustomer.IUpdate;
 }): Promise<IShoppingMallCustomer> {
-  const updateData: {
-    display_name?: string;
-    phone_number?: string | null;
-    updated_at: Date;
-  } = {
+  // Find the customer and verify they exist and are not soft-deleted
+  const customer =
+    await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
+      where: {
+        id: props.customerId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        display_name: true,
+        phone_number: true,
+      },
+    });
+  // Build update data with only provided fields
+  const updateData: Prisma.shopping_mall_customersUpdateInput = {
     updated_at: new Date(),
   };
   if (props.body.display_name !== undefined) {
@@ -31,13 +41,12 @@ export async function putShoppingMallAdminCustomersCustomerId(props: {
   if (props.body.phone_number !== undefined) {
     updateData.phone_number = props.body.phone_number;
   }
+  // Update the customer record
   const updated = await MyGlobal.prisma.shopping_mall_customers.update({
-    where: {
-      id: props.customerId,
-      deleted_at: null,
-    },
+    where: { id: props.customerId },
     data: updateData,
     ...ShoppingMallCustomerTransformer.select(),
   });
+  // Transform and return the updated customer
   return await ShoppingMallCustomerTransformer.transform(updated);
 }

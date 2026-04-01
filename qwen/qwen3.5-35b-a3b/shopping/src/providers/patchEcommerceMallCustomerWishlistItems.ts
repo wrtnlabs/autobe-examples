@@ -24,104 +24,70 @@ export async function patchEcommerceMallCustomerWishlistItems(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const productFilter: Prisma.ecommerce_mall_productsWhereInput = {
-    deleted_at: null,
-    status: "active",
-  };
-  if (props.body.search) {
-    productFilter.name = {
-      contains: props.body.search,
-      mode: "insensitive",
-    };
-  }
-  if (props.body.category_id) {
-    productFilter.category_id = props.body.category_id;
-  }
-  if (
-    props.body.min_price !== undefined ||
-    props.body.max_price !== undefined
-  ) {
-    if (
-      props.body.min_price !== undefined &&
-      props.body.max_price !== undefined
-    ) {
-      productFilter.variants = {
-        some: {
-          AND: [
-            { base_price: { gte: props.body.min_price } },
-            { base_price: { lte: props.body.max_price } },
-          ],
-        },
-      };
-    } else if (props.body.min_price !== undefined) {
-      productFilter.variants = {
-        some: {
-          base_price: { gte: props.body.min_price },
-        },
-      };
-    } else if (props.body.max_price !== undefined) {
-      productFilter.variants = {
-        some: {
-          base_price: { lte: props.body.max_price },
-        },
-      };
-    }
-  }
   const whereInput: Prisma.ecommerce_mall_wishlist_itemsWhereInput = {
     customer_id: props.customer.id,
     deleted_at: null,
-    product: productFilter,
-  };
-  const orderByInput = (() => {
-    if (
-      props.body.sort &&
-      props.body.direction &&
-      (props.body.sort === "created_at" ||
-        props.body.sort === "name" ||
-        props.body.sort === "base_price")
-    ) {
-      switch (props.body.sort) {
-        case "created_at":
-          return {
-            created_at: props.body.direction === "asc" ? "asc" : "desc",
-          };
-        case "name":
-          return {
-            product: {
-              name: props.body.direction === "asc" ? "asc" : "desc",
+    product: {
+      deleted_at: null,
+      status: "active",
+      ...(props.body.min_price !== undefined && {
+        variants: {
+          some: {
+            sale_price: {
+              gte: props.body.min_price,
             },
-          };
-        case "base_price":
-          return {
-            product: {
-              base_price: props.body.direction === "asc" ? "asc" : "desc",
+          },
+        },
+      }),
+      ...(props.body.max_price !== undefined && {
+        variants: {
+          some: {
+            sale_price: {
+              lte: props.body.max_price,
             },
-          };
-        default:
-          return { created_at: "desc" };
-      }
-    }
-    return { created_at: "desc" };
-  })() satisfies Prisma.ecommerce_mall_wishlist_itemsOrderByWithRelationInput;
-  const total = await MyGlobal.prisma.ecommerce_mall_wishlist_items.count({
-    where: whereInput,
-  });
-  const items = await MyGlobal.prisma.ecommerce_mall_wishlist_items.findMany({
+          },
+        },
+      }),
+    },
+    ...(props.body.search !== undefined && {
+      product: {
+        name: {
+          contains: props.body.search,
+          mode: "insensitive",
+        },
+      },
+    }),
+    ...(props.body.category_id !== undefined && {
+      product: {
+        category_id: props.body.category_id,
+      },
+    }),
+  } satisfies Prisma.ecommerce_mall_wishlist_itemsWhereInput;
+  const orderByInput = (
+    props.body.sort === "name"
+      ? [{ product: { name: props.body.direction ?? "asc" } }]
+      : props.body.sort === "base_price"
+        ? [{ product: { base_price: props.body.direction ?? "asc" } }]
+        : [{ created_at: props.body.direction ?? "desc" }]
+  ) satisfies Prisma.ecommerce_mall_wishlist_itemsOrderByWithRelationInput[];
+  const data = await MyGlobal.prisma.ecommerce_mall_wishlist_items.findMany({
     where: whereInput,
     skip,
     take: limit,
     orderBy: orderByInput,
     ...EcommerceMallWishlistItemAtSummaryTransformer.select(),
   });
-  const data = await ArrayUtil.asyncMap(
-    items,
-    EcommerceMallWishlistItemAtSummaryTransformer.transform,
-  );
+  const total = await MyGlobal.prisma.ecommerce_mall_wishlist_items.count({
+    where: whereInput,
+  });
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallWishlistItemAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,

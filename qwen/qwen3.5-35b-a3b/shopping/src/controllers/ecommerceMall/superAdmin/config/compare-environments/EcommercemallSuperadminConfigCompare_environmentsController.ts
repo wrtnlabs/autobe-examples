@@ -5,7 +5,7 @@ import typia from "typia";
 import { IEcommerceMallPlatformConfigurationComparison } from "../../../../../api/structures/IEcommerceMallPlatformConfigurationComparison";
 import { IPageIEcommerceMallPlatformConfigurationComparison } from "../../../../../api/structures/IPageIEcommerceMallPlatformConfigurationComparison";
 import { SuperadminAuth } from "../../../../../decorators/SuperadminAuth";
-import { SuperadminPayload } from "../../../../../decorators/payload/SuperadminPayload";
+import { SuperAdminPayload } from "../../../../../decorators/payload/SuperAdminPayload";
 import { patchEcommerceMallSuperAdminConfigCompareEnvironments } from "../../../../../providers/patchEcommerceMallSuperAdminConfigCompareEnvironments";
 
 @Controller("/ecommerceMall/superAdmin/config/compare-environments")
@@ -52,7 +52,7 @@ export class EcommercemallSuperadminConfigCompare_environmentsController {
   @TypedRoute.Patch()
   public async compareEnvironments(
     @SuperadminAuth()
-    superAdmin: SuperadminPayload,
+    superAdmin: SuperAdminPayload,
     @TypedBody()
     body: IEcommerceMallPlatformConfigurationComparison.IRequest,
   ): Promise<IPageIEcommerceMallPlatformConfigurationComparison.ISummary> {

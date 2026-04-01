@@ -12,7 +12,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { HrmPlatformEmployeeTransformer } from "../transformers/HrmPlatformEmployeeTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,97 +20,143 @@ export async function putHrmPlatformMemberEmployeesEmployeeId(props: {
   employeeId: string & tags.Format<"uuid">;
   body: IHrmPlatformEmployee.IUpdate;
 }): Promise<IHrmPlatformEmployee> {
-  // 1. Fetch employee with organization and role context
+  // Find employee to verify existence and get organization context
   const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        id: props.employeeId,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
+      where: { id: props.employeeId },
       select: {
         id: true,
         hrm_platform_organization_id: true,
-        hrm_platform_role_id: true,
+        deleted_at: true,
       },
     });
-  // 2. Verify employee:manage permission in the organization
-  const roleWithPermission = await MyGlobal.prisma.hrm_platform_roles.findFirst(
-    {
-      where: {
-        id: employee.hrm_platform_role_id,
-        hrm_platform_organization_id: employee.hrm_platform_organization_id,
-        permissions: {
-          some: {
-            permission: {
-              code: "employee:manage",
-            },
-          },
-        },
-      },
-    },
-  );
-  if (!roleWithPermission) {
-    throw new HttpException("Forbidden", 403);
+  // Check if soft-deleted
+  if (employee.deleted_at !== null) {
+    throw new HttpException("Employee not found", 404);
   }
-  // 3. Validate department exists in organization if provided
-  let departmentId: (string & tags.Format<"uuid">) | undefined = undefined;
+  // Validate department if provided
   if (
     props.body.departmentId !== undefined &&
     props.body.departmentId !== null
   ) {
-    const department = await MyGlobal.prisma.hrm_platform_departments.findFirst(
-      {
-        where: {
-          id: props.body.departmentId,
-          hrm_platform_organization_id: employee.hrm_platform_organization_id,
-          deleted_at: null,
-        },
+    await MyGlobal.prisma.hrm_platform_departments.findFirstOrThrow({
+      where: {
+        id: props.body.departmentId,
+        hrm_platform_organization_id: employee.hrm_platform_organization_id,
+        deleted_at: null,
       },
-    );
-    if (!department) {
-      throw new HttpException("Department not found in organization", 400);
-    }
-    departmentId = props.body.departmentId;
+    });
   }
-  // 4. Validate employmentType if provided
-  let employmentType:
-    | "full-time"
-    | "part-time"
-    | "contractor"
-    | "intern"
-    | undefined = undefined;
-  if (
-    props.body.employmentType !== undefined &&
-    props.body.employmentType !== null
-  ) {
-    employmentType = typia.assert<
-      "full-time" | "part-time" | "contractor" | "intern"
-    >(props.body.employmentType);
-  }
-  // 5. Update employee record
-  const data: Prisma.hrm_platform_employeesUpdateInput = {
-    ...(departmentId !== undefined && {
-      hrm_platform_department_id: departmentId,
-    }),
-    ...(props.body.position !== undefined &&
-      props.body.position !== null && {
-        position: props.body.position,
-      }),
-    ...(employmentType !== undefined && {
-      employment_type: employmentType,
-    }),
-    updated_at: new Date(),
-  };
+  // Update employee
   await MyGlobal.prisma.hrm_platform_employees.update({
     where: { id: props.employeeId },
-    data,
+    data: {
+      ...(props.body.departmentId !== undefined &&
+        props.body.departmentId !== null && {
+          hrm_platform_department_id: props.body.departmentId,
+        }),
+      ...(props.body.position !== undefined &&
+        props.body.position !== null && {
+          position: props.body.position,
+        }),
+      ...(props.body.employmentType !== undefined &&
+        props.body.employmentType !== null && {
+          employment_type: props.body.employmentType,
+        }),
+      updated_at: new Date(),
+    },
   });
-  // 6. Fetch updated employee with all relations for transformation
+  // Fetch updated employee with full relations
   const updated =
     await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
       where: { id: props.employeeId },
-      ...HrmPlatformEmployeeTransformer.select(),
+      select: {
+        id: true,
+        hrm_platform_user_id: true,
+        hrm_platform_organization_id: true,
+        hrm_platform_role_id: true,
+        hrm_platform_department_id: true,
+        position: true,
+        employment_type: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            display_name: true,
+            avatar_image: true,
+            phone_number: true,
+          },
+        },
+        role: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            description: true,
+            is_builtin: true,
+            created_at: true,
+            deleted_at: true,
+          },
+        },
+        department: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
+      },
     });
-  // 7. Transform and return
-  return await HrmPlatformEmployeeTransformer.transform(updated);
+  return {
+    id: updated.id,
+    userId: updated.hrm_platform_user_id,
+    organizationId: updated.hrm_platform_organization_id,
+    roleId: updated.hrm_platform_role_id,
+    departmentId: updated.hrm_platform_department_id ?? null,
+    position: updated.position ?? null,
+    employmentType: updated.employment_type as
+      | "full-time"
+      | "part-time"
+      | "contractor"
+      | "intern",
+    status: updated.status as "active" | "deactivated",
+    createdAt: updated.created_at.toISOString(),
+    updatedAt: updated.updated_at.toISOString(),
+    deletedAt: updated.deleted_at?.toISOString() ?? null,
+    user: {
+      id: updated.user.id,
+      email: updated.user.email,
+      display_name: updated.user.display_name,
+      avatar_image: updated.user.avatar_image ?? null,
+      phone_number: updated.user.phone_number ?? null,
+    },
+    role: {
+      id: updated.role.id,
+      code: updated.role.code,
+      name: updated.role.name,
+      description: updated.role.description ?? null,
+      is_builtin: updated.role.is_builtin,
+      permissions: [],
+      created_at: updated.role.created_at.toISOString(),
+      deleted_at: updated.role.deleted_at?.toISOString() ?? null,
+    },
+    department: updated.department
+      ? {
+          id: updated.department.id,
+          name: updated.department.name,
+          description: updated.department.description ?? null,
+          parent_department: null,
+          created_at: updated.department.created_at.toISOString(),
+          updated_at: updated.department.updated_at.toISOString(),
+          deleted_at: updated.department.deleted_at?.toISOString() ?? null,
+        }
+      : null,
+  };
 }

@@ -14,8 +14,12 @@ export namespace HrmsTimelogCollector {
   }) {
     const id: string = v4();
     return {
-      // Scalar fields
       id,
+      employee: { connect: { id: props.hrmsEmployees.id } },
+      project: { connect: { id: props.body.project_id } },
+      task: props.body.task_id
+        ? { connect: { id: props.body.task_id } }
+        : undefined,
       billable: props.body.billable,
       created_at: new Date(),
       date: new Date(props.body.date),
@@ -23,12 +27,6 @@ export namespace HrmsTimelogCollector {
       duration_minutes: props.body.duration_minutes,
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relations
-      employee: { connect: { id: props.hrmsEmployees.id } },
-      project: { connect: { id: props.body.project_id } },
-      task: props.body.task_id
-        ? { connect: { id: props.body.task_id } }
-        : undefined,
     } satisfies Prisma.hrms_timelogsCreateInput;
   }
 }

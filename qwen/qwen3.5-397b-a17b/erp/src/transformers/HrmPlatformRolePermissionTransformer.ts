@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformRolePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRolePermission";
 import { ArrayUtil } from "@nestia/e2e";
@@ -29,8 +30,8 @@ export namespace HrmPlatformRolePermissionTransformer {
   ): Promise<IHrmPlatformRolePermission> {
     return {
       id: input.id,
-      role: await HrmPlatformRoleAtSummaryTransformer.transform(input.role),
       permission: input.permission,
+      role: await HrmPlatformRoleAtSummaryTransformer.transform(input.role),
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,

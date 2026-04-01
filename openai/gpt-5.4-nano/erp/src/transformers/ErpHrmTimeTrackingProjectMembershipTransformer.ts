@@ -4,8 +4,10 @@ import { IErpHrmTimeTrackingProject } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IErpHrmTimeTrackingProjectMembership } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingProjectMembership";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeTrackingMemberAtSummaryTransformer } from "./ErpHrmTimeTrackingMemberAtSummaryTransformer";
 import { ErpHrmTimeTrackingProjectAtSummaryTransformer } from "./ErpHrmTimeTrackingProjectAtSummaryTransformer";
@@ -19,8 +21,6 @@ export namespace ErpHrmTimeTrackingProjectMembershipTransformer {
     return {
       select: {
         id: true,
-        project_id: true,
-        employee_id: true,
         membership_role: true,
         created_at: true,
         updated_at: true,
@@ -38,15 +38,15 @@ export namespace ErpHrmTimeTrackingProjectMembershipTransformer {
       project: await ErpHrmTimeTrackingProjectAtSummaryTransformer.transform(
         input.project,
       ),
-      project_id: input.project_id,
+      project_id: input.project.id,
       employee: await ErpHrmTimeTrackingMemberAtSummaryTransformer.transform(
         input.employee,
       ),
-      employee_id: input.employee_id,
+      employee_id: input.employee.id,
       membership_role: input.membership_role,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

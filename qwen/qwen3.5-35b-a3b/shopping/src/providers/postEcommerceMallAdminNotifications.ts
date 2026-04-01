@@ -8,7 +8,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { EcommerceMallNotificationCollector } from "../collectors/EcommerceMallNotificationCollector";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
 import { EcommerceMallNotificationTransformer } from "../transformers/EcommerceMallNotificationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -18,132 +17,86 @@ export async function postEcommerceMallAdminNotifications(props: {
   admin: AdminPayload;
   body: IEcommerceMallNotification.ICreate;
 }): Promise<IEcommerceMallNotification> {
-  const result = await MyGlobal.prisma.$transaction(
-    async (tx: Prisma.TransactionClient) => {
-      const id: string & tags.Format<"uuid"> = v4();
-      const notificationCreateData =
-        await EcommerceMallNotificationCollector.collect({
-          body: props.body,
-        });
-      const created = await tx.ecommerce_mall_notifications.create({
-        data: {
-          ...notificationCreateData,
-          recipients: {
-            create: props.body.recipients.map((recipient: any) => ({
-              id: v4() as string & tags.Format<"uuid">,
-              recipient_type: recipient.recipient_type,
-              recipient_id: recipient.recipient_id,
-              read_status: "unread",
-              created_at: toISOStringSafe(new Date()),
-              updated_at: toISOStringSafe(new Date()),
-            })),
-          },
-        },
-        ...EcommerceMallNotificationTransformer.select(),
-      });
-      const recipients =
-        await tx.ecommerce_mall_notification_recipients.findMany({
-          where: { notification_id: created.id },
-        });
-      for (const recipient of recipients) {
-        let actor: {
-          id: string;
-        } | null = null;
-        switch (recipient.recipient_type) {
-          case "customer":
-            actor = await tx.ecommerce_mall_customers.findFirst({
-              where: { id: recipient.recipient_id, deleted_at: null },
-              select: { id: true },
-            });
-            break;
-          case "seller":
-            actor = await tx.ecommerce_mall_sellers.findFirst({
-              where: { id: recipient.recipient_id, deleted_at: null },
-              select: { id: true },
-            });
-            break;
-          case "admin":
-            actor = await tx.ecommerce_mall_admins.findFirst({
-              where: { id: recipient.recipient_id, deleted_at: null },
-              select: { id: true },
-            });
-            break;
-          case "superAdmin":
-            actor = await tx.ecommerce_mall_super_admins.findFirst({
-              where: { id: recipient.recipient_id, deleted_at: null },
-              select: { id: true },
-            });
-            break;
-          case "guest":
-            actor = await tx.ecommerce_mall_guests.findFirst({
-              where: { id: recipient.recipient_id, deleted_at: null },
-              select: { id: true },
-            });
-            break;
-        }
-        if (actor === null) {
-          throw new HttpException("Actor not found", 404);
-        }
-        switch (recipient.recipient_type) {
-          case "customer":
-            await tx.ecommerce_mall_notification_of_customers.create({
-              data: {
-                id: v4() as string & tags.Format<"uuid">,
-                notification: { connect: { id: created.id } },
-                customer: { connect: { id: actor.id } },
-                created_at: toISOStringSafe(new Date()),
-                updated_at: toISOStringSafe(new Date()),
-              },
-            });
-            break;
-          case "seller":
-            await tx.ecommerce_mall_notification_of_sellers.create({
-              data: {
-                id: v4() as string & tags.Format<"uuid">,
-                notification: { connect: { id: created.id } },
-                seller: { connect: { id: actor.id } },
-                created_at: toISOStringSafe(new Date()),
-                updated_at: toISOStringSafe(new Date()),
-              },
-            });
-            break;
-          case "admin":
-            await tx.ecommerce_mall_notification_of_admins.create({
-              data: {
-                id: v4() as string & tags.Format<"uuid">,
-                notification: { connect: { id: created.id } },
-                admin: { connect: { id: actor.id } },
-                created_at: toISOStringSafe(new Date()),
-                updated_at: toISOStringSafe(new Date()),
-              },
-            });
-            break;
-          case "superAdmin":
-            await tx.ecommerce_mall_notification_of_super_admins.create({
-              data: {
-                id: v4() as string & tags.Format<"uuid">,
-                notification: { connect: { id: created.id } },
-                superAdmin: { connect: { id: actor.id } },
-                created_at: toISOStringSafe(new Date()),
-                updated_at: toISOStringSafe(new Date()),
-              },
-            });
-            break;
-          case "guest":
-            await tx.ecommerce_mall_notification_of_guests.create({
-              data: {
-                id: v4() as string & tags.Format<"uuid">,
-                notification: { connect: { id: created.id } },
-                guest: { connect: { id: actor.id } },
-                created_at: toISOStringSafe(new Date()),
-                updated_at: toISOStringSafe(new Date()),
-              },
-            });
-            break;
-        }
+  const notificationId = v4();
+  const now = new Date();
+  // Validate all recipients exist by actor type
+  for (const recipient of props.body.recipients) {
+    const actorType = (recipient as any).recipient_type;
+    const actorId = (recipient as any).recipient_id;
+    let actorExists = false;
+    switch (actorType) {
+      case "customer": {
+        const customer =
+          await MyGlobal.prisma.ecommerce_mall_customers.findUnique({
+            where: { id: actorId, deleted_at: null },
+          });
+        actorExists = customer !== null;
+        break;
       }
-      return created;
+      case "seller": {
+        const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findUnique({
+          where: { id: actorId, deleted_at: null },
+        });
+        actorExists = seller !== null;
+        break;
+      }
+      case "admin": {
+        const admin = await MyGlobal.prisma.ecommerce_mall_admins.findUnique({
+          where: { id: actorId, deleted_at: null },
+        });
+        actorExists = admin !== null;
+        break;
+      }
+      case "superAdmin": {
+        const superAdmin =
+          await MyGlobal.prisma.ecommerce_mall_super_admins.findUnique({
+            where: { id: actorId, deleted_at: null },
+          });
+        actorExists = superAdmin !== null;
+        break;
+      }
+      case "guest": {
+        const guest = await MyGlobal.prisma.ecommerce_mall_guests.findUnique({
+          where: { id: actorId, deleted_at: null },
+        });
+        actorExists = guest !== null;
+        break;
+      }
+      default: {
+        throw new HttpException(`Invalid recipient type: ${actorType}`, 400);
+      }
+    }
+    if (!actorExists) {
+      throw new HttpException(
+        `Actor ${actorType} with ID ${actorId} not found`,
+        404,
+      );
+    }
+  }
+  // Create notification and all recipient references atomically
+  const created = await MyGlobal.prisma.ecommerce_mall_notifications.create({
+    data: {
+      id: notificationId,
+      title: props.body.title,
+      body: props.body.body,
+      type: props.body.type,
+      status: "unread",
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+      recipients: {
+        create: props.body.recipients.map((recipient) => ({
+          id: v4(),
+          notification_id: notificationId,
+          recipient_type: (recipient as any).recipient_type,
+          recipient_id: (recipient as any).recipient_id,
+          read_status: "unread",
+          created_at: now,
+          updated_at: now,
+        })),
+      },
     },
-  );
-  return EcommerceMallNotificationTransformer.transform(result);
+    ...EcommerceMallNotificationTransformer.select(),
+  });
+  return await EcommerceMallNotificationTransformer.transform(created);
 }

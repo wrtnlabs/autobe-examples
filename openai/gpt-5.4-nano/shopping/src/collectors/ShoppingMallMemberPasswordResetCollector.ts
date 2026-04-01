@@ -10,27 +10,25 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallMemberPasswordResetCollector {
   export async function collect(props: {
     body: IShoppingMallMemberPasswordReset.ICreate;
+    member: IEntity;
   }) {
+    const id: string = v4();
     const now = new Date();
-    // Derive required member relation by token lookup.
-    const existingReset =
-      await MyGlobal.prisma.shopping_mall_member_password_resets.findFirstOrThrow(
-        {
-          where: { token: props.body.token },
-          select: { shopping_mall_member_id: true },
-        },
-      );
+    const toISOStringSafe = (
+      PasswordUtil as unknown as {
+        toISOStringSafe: (value: Date) => string;
+      }
+    ).toISOStringSafe;
+    const nowIso = toISOStringSafe(now);
     return {
-      id: v4(),
+      id,
       token: props.body.token,
-      expires_at: now,
+      expires_at: nowIso,
       used_at: null,
-      created_at: now,
-      updated_at: now,
+      created_at: nowIso,
+      updated_at: nowIso,
       deleted_at: null,
-      member: {
-        connect: { id: existingReset.shopping_mall_member_id },
-      },
+      member: { connect: { id: props.member.id } },
     } satisfies Prisma.shopping_mall_member_password_resetsCreateInput;
   }
 }

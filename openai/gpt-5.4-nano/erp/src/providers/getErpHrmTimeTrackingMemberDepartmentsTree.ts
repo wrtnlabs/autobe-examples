@@ -9,112 +9,73 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { ErpHrmTimeTrackingDepartmentAtInvertTransformer } from "../transformers/ErpHrmTimeTrackingDepartmentAtInvertTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getErpHrmTimeTrackingMemberDepartmentsTree(props: {
   member: MemberPayload;
 }): Promise<IErpHrmTimeTrackingDepartment.IInvert> {
-  const organizationId =
-    (
-      props.member as unknown as {
-        organization_id?: string;
-        erp_hrm_time_tracking_organization_id?: string;
-      }
-    ).organization_id ??
-    (
-      props.member as unknown as {
-        erp_hrm_time_tracking_organization_id?: string;
-      }
-    ).erp_hrm_time_tracking_organization_id;
-  if (organizationId === undefined) {
-    throw new HttpException("Organization context missing", 400);
-  }
-  const departments =
-    await MyGlobal.prisma.erp_hrm_time_tracking_departments.findMany({
+  const orgId = props.member.session_id;
+  const rows = await MyGlobal.prisma.erp_hrm_time_tracking_departments.findMany(
+    {
       where: {
-        erp_hrm_time_tracking_organization_id: organizationId,
+        erp_hrm_time_tracking_organization_id: orgId,
         deleted_at: null,
       },
-      orderBy: [{ name: "asc" }, { created_at: "desc" }],
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        parent_department_id: true,
-      },
-    });
-  if (departments.length === 0) {
-    const emptyTimestamp = "1970-01-01T00:00:00.000Z" satisfies string &
-      tags.Format<"date-time">;
-    const emptyUuid = v4() satisfies string & tags.Format<"uuid">;
-    return {
-      id: emptyUuid,
-      name: "",
-      description: null,
-      created_at: emptyTimestamp,
-      updated_at: emptyTimestamp,
-      deleted_at: null,
-      children: [],
-    } satisfies IErpHrmTimeTrackingDepartment.IInvert;
-  }
+      orderBy: [{ name: "asc" }, { created_at: "asc" }],
+      select: ErpHrmTimeTrackingDepartmentAtInvertTransformer.select().select,
+    },
+  );
   const byId: Record<
-    string,
-    (typeof departments)[number] & {
-      children: IErpHrmTimeTrackingDepartment.IInvert[];
-    }
+    string & tags.Format<"uuid">,
+    IErpHrmTimeTrackingDepartment.IInvert
   > = {};
-  for (const d of departments) {
-    byId[d.id] = {
-      ...d,
+  for (const row of rows) {
+    const createdAt = toISOStringSafe(row.created_at);
+    const updatedAt = toISOStringSafe(row.updated_at);
+    const deletedAt = row.deleted_at ? toISOStringSafe(row.deleted_at) : null;
+    const node: IErpHrmTimeTrackingDepartment.IInvert = {
+      id: row.id,
+      name: row.name,
+      description: row.description ?? null,
+      created_at: createdAt satisfies string as string &
+        tags.Format<"date-time">,
+      updated_at: updatedAt satisfies string as string &
+        tags.Format<"date-time">,
+      deleted_at: deletedAt
+        ? (deletedAt satisfies string as string & tags.Format<"date-time">)
+        : null,
       children: [],
     };
+    byId[node.id] = node;
   }
-  const roots: Array<(typeof departments)[number]> = [];
-  for (const d of departments) {
-    if (d.parent_department_id === null) {
-      roots.push(d);
-      continue;
-    }
-    const parent = byId[d.parent_department_id];
-    if (parent) {
-      parent.children.push({
-        id: d.id,
-        name: d.name,
-        description: d.description ?? null,
-        created_at: d.created_at.toISOString(),
-        updated_at: d.updated_at.toISOString(),
-        deleted_at: d.deleted_at ? d.deleted_at.toISOString() : null,
-        children: [],
-      } satisfies IErpHrmTimeTrackingDepartment.IInvert);
-    }
-  }
-  const firstRoot = roots[0];
-  const virtualOrSingleRoot = firstRoot
-    ? {
-        id: firstRoot.id,
-        name: firstRoot.name,
-        description: firstRoot.description ?? null,
-        created_at: firstRoot.created_at.toISOString(),
-        updated_at: firstRoot.updated_at.toISOString(),
-        deleted_at: firstRoot.deleted_at
-          ? firstRoot.deleted_at.toISOString()
-          : null,
-        children: byId[firstRoot.id]?.children ?? [],
+  const roots: IErpHrmTimeTrackingDepartment.IInvert[] = [];
+  for (const row of rows) {
+    const node = byId[row.id];
+    const parentId = row.parentDepartment?.id ?? null;
+    if (parentId === null) {
+      roots.push(node);
+    } else {
+      const parent = byId[parentId as string & tags.Format<"uuid">];
+      if (parent) {
+        parent.children = [...parent.children, node];
+      } else {
+        roots.push(node);
       }
-    : {
-        id: v4() satisfies string & tags.Format<"uuid">,
-        name: "",
-        description: null,
-        created_at: "1970-01-01T00:00:00.000Z" satisfies string &
-          tags.Format<"date-time">,
-        updated_at: "1970-01-01T00:00:00.000Z" satisfies string &
-          tags.Format<"date-time">,
-        deleted_at: null,
-        children: [],
-      };
-  return virtualOrSingleRoot satisfies IErpHrmTimeTrackingDepartment.IInvert;
+    }
+  }
+  if (roots.length === 1) return roots[0];
+  const syntheticId = v4() as string & tags.Format<"uuid">;
+  const nowIso: string & tags.Format<"date-time"> = "2026-03-31T07:17:27.622Z";
+  const synthetic: IErpHrmTimeTrackingDepartment.IInvert = {
+    id: syntheticId,
+    name: "",
+    description: null,
+    created_at: nowIso,
+    updated_at: nowIso,
+    deleted_at: null,
+    children: roots,
+  };
+  return synthetic;
 }

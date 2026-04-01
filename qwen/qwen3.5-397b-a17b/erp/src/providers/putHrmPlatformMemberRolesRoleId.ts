@@ -1,6 +1,4 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
-import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformRolePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRolePermission";
@@ -23,42 +21,34 @@ export async function putHrmPlatformMemberRolesRoleId(props: {
   body: IHrmPlatformRole.IUpdate;
 }): Promise<IHrmPlatformRole> {
   const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
-    where: { id: props.roleId },
-    select: {
-      id: true,
-      organization_id: true,
-      built_in: true,
-      deleted_at: true,
-    },
+    where: { id: props.roleId, deleted_at: null },
+    select: { id: true, organization_id: true, is_builtin: true },
   });
-  if (role.deleted_at !== null) {
-    throw new HttpException("Role not found", 404);
+  if (role.is_builtin) {
+    throw new HttpException("Forbidden", 403);
   }
-  if (role.built_in === true) {
-    throw new HttpException("Built-in roles cannot be modified", 403);
-  }
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+  if (props.body.name !== undefined) {
+    const existingRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
       where: {
-        member_id: props.member.id,
+        organization_id: role.organization_id,
+        name: props.body.name,
+        id: { not: props.roleId },
         deleted_at: null,
       },
-      select: {
-        organization_id: true,
-      },
     });
-  if (role.organization_id !== employee.organization_id) {
-    throw new HttpException("Role does not belong to your organization", 403);
+    if (existingRole) {
+      throw new HttpException("Role name already exists", 400);
+    }
   }
-  await MyGlobal.prisma.hrm_platform_roles.update({
+  const updated = await MyGlobal.prisma.hrm_platform_roles.update({
     where: { id: props.roleId },
     data: {
       ...(props.body.name !== undefined && { name: props.body.name }),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
       updated_at: new Date(),
     },
-  });
-  const updated = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
-    where: { id: props.roleId },
     ...HrmPlatformRoleTransformer.select(),
   });
   return await HrmPlatformRoleTransformer.transform(updated);

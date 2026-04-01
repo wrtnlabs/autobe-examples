@@ -18,50 +18,64 @@ export async function patchShoppingMallAdminAdminRefundRequests(props: {
   admin: AdminPayload;
   body: IShoppingMallRefundRequest.IRequest;
 }): Promise<IPageIShoppingMallRefundRequest.ISummary> {
-  const pageInput = props.body.page ?? 1;
-  const limitInput = props.body.limit ?? 100;
-  const page = pageInput;
-  const limit = limitInput;
-  const skip = (page - 1) * limit;
+  if (props.admin.type !== "admin") {
+    throw new HttpException("Forbidden", 403);
+  }
+  await MyGlobal.prisma.shopping_mall_admins.findFirstOrThrow({
+    where: {
+      id: props.admin.id,
+      deleted_at: null,
+    },
+  });
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 50;
+  const safePage = page < 1 ? 1 : page;
+  const safeLimit = limit < 1 ? 1 : limit;
+  const skip = (safePage - 1) * safeLimit;
   const where = {
     deleted_at: null,
-    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.status !== undefined &&
+      props.body.status !== null && {
+        status: props.body.status,
+      }),
     ...(props.body.shoppingMallOrderItemId !== undefined && {
       shopping_mall_order_item_id: props.body.shoppingMallOrderItemId,
     }),
     ...(props.body.customerReason !== undefined && {
       customer_reason: {
         contains: props.body.customerReason,
-        mode: "insensitive" as Prisma.QueryMode,
+        mode: "insensitive",
       },
     }),
-    ...(props.body.sellerComment !== undefined && {
-      seller_comment:
-        props.body.sellerComment === null
+    ...(props.body.sellerComment !== null &&
+      props.body.sellerComment !== undefined && {
+        seller_comment: {
+          contains: props.body.sellerComment,
+          mode: "insensitive",
+        },
+      }),
+    ...(props.body.decisionedAt !== null && {
+      decisioned_at:
+        props.body.decisionedAt === null
           ? null
-          : {
-              contains: props.body.sellerComment,
-              mode: "insensitive" as Prisma.QueryMode,
-            },
+          : new Date(props.body.decisionedAt),
     }),
-    ...(props.body.decisionedAt !== undefined && {
-      decisioned_at: props.body.decisionedAt,
-    }),
-    ...(props.body.createdAt !== undefined && {
-      created_at: props.body.createdAt,
-    }),
-  };
+    ...(props.body.createdAt !== undefined &&
+      props.body.createdAt !== null && {
+        created_at: new Date(props.body.createdAt),
+      }),
+  } satisfies Prisma.shopping_mall_refund_requestsWhereInput;
   const [rows, total] = await Promise.all([
     MyGlobal.prisma.shopping_mall_refund_requests.findMany({
       where,
-      orderBy: [{ created_at: "desc" }, { id: "asc" }],
       skip,
-      take: limit,
+      take: safeLimit,
+      orderBy: [{ created_at: "desc" }, { id: "asc" }],
       select: {
         id: true,
         shopping_mall_order_item_id: true,
-        customer_reason: true,
         status: true,
+        customer_reason: true,
         seller_comment: true,
         decisioned_at: true,
         created_at: true,
@@ -72,22 +86,22 @@ export async function patchShoppingMallAdminAdminRefundRequests(props: {
     MyGlobal.prisma.shopping_mall_refund_requests.count({ where }),
   ]);
   return {
+    pagination: {
+      current: safePage,
+      limit: safeLimit,
+      records: total,
+      pages: Math.ceil(total / safeLimit),
+    },
     data: rows.map((r) => ({
       id: r.id,
       shoppingMallOrderItemId: r.shopping_mall_order_item_id,
       customerReason: r.customer_reason,
       status: r.status,
       sellerComment: r.seller_comment,
-      decisionedAt: r.decisioned_at ? toISOStringSafe(r.decisioned_at) : null,
-      createdAt: toISOStringSafe(r.created_at),
-      updatedAt: toISOStringSafe(r.updated_at),
-      deletedAt: r.deleted_at ? toISOStringSafe(r.deleted_at) : null,
+      decisionedAt: r.decisioned_at ? r.decisioned_at.toISOString() : null,
+      createdAt: r.created_at.toISOString(),
+      updatedAt: r.updated_at.toISOString(),
+      deletedAt: r.deleted_at ? r.deleted_at.toISOString() : null,
     })),
-    pagination: {
-      current: page,
-      limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    },
   } satisfies IPageIShoppingMallRefundRequest.ISummary;
 }

@@ -13,69 +13,111 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { RedditLikeCommunityAtSummaryTransformer } from "../transformers/RedditLikeCommunityAtSummaryTransformer";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { RedditLikeAttachmentAtSummaryTransformer } from "../transformers/RedditLikeAttachmentAtSummaryTransformer";
+import { RedditLikeMemberAtSummaryTransformer } from "../transformers/RedditLikeMemberAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditLikeMemberSubscriptions(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   body: IRedditLikeCommunitySubscription.IRequest;
 }): Promise<IPageIRedditLikeCommunity.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build order by based on sort parameter
-  let orderBy: Prisma.reddit_like_community_subscriptionsOrderByWithRelationInput;
-  if (props.body.sort === "name") {
-    orderBy = { community: { name: "asc" } };
-  } else if (props.body.sort === "-name") {
-    orderBy = { community: { name: "desc" } };
-  } else if (props.body.sort === "created_at") {
-    orderBy = { created_at: "asc" };
-  } else {
-    // Default: sort by subscription created_at descending (newest first)
-    orderBy = { created_at: "desc" };
-  }
-  // Build where clause
-  const where = {
-    reddit_like_member_id: props.member.id,
-    deleted_at: null,
-    community: {
-      deleted_at: null,
-      ...(props.body.search && {
-        name: { contains: props.body.search, mode: "insensitive" as const },
-      }),
-    },
-  } satisfies Prisma.reddit_like_community_subscriptionsWhereInput;
-  // Query subscriptions with community data
+  // Build community search filter if provided
+  const communityWhere = (
+    props.body.search
+      ? {
+          deleted_at: null,
+          name: {
+            contains: props.body.search,
+            mode: "insensitive" as const,
+          },
+        }
+      : { deleted_at: null }
+  ) satisfies Prisma.reddit_like_communitiesWhereInput;
+  // Determine sort order
+  const sort = props.body.sort ?? "-created_at";
+  const orderBy = (
+    sort === "name"
+      ? { community: { name: "asc" as const } }
+      : sort === "-name"
+        ? { community: { name: "desc" as const } }
+        : sort === "created_at"
+          ? { created_at: "asc" as const }
+          : { created_at: "desc" as const }
+  ) satisfies Prisma.reddit_like_community_subscriptionsOrderByWithRelationInput;
+  // Fetch subscriptions with community data
   const subscriptions =
     await MyGlobal.prisma.reddit_like_community_subscriptions.findMany({
-      where,
+      where: {
+        reddit_like_member_id: props.member.id,
+        deleted_at: null,
+        community: communityWhere,
+      },
       skip,
       take: limit,
       orderBy,
       select: {
-        community: RedditLikeCommunityAtSummaryTransformer.select(),
+        community: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+            owner: RedditLikeMemberAtSummaryTransformer.select(),
+            iconAttachment: RedditLikeAttachmentAtSummaryTransformer.select(),
+            subscriptions: {
+              where: { deleted_at: null },
+              select: { id: true },
+            } satisfies Prisma.reddit_like_community_subscriptionsFindManyArgs,
+          },
+        },
       },
     });
-  // Get total count
+  // Get total count for pagination
   const total = await MyGlobal.prisma.reddit_like_community_subscriptions.count(
     {
-      where,
+      where: {
+        reddit_like_member_id: props.member.id,
+        deleted_at: null,
+        community: communityWhere,
+      },
     },
   );
-  // Transform communities
-  const communities = await ArrayUtil.asyncMap(subscriptions, async (sub) =>
-    RedditLikeCommunityAtSummaryTransformer.transform(sub.community),
+  // Transform to response DTOs
+  const data: IRedditLikeCommunity.ISummary[] = await ArrayUtil.asyncMap(
+    subscriptions,
+    async (sub) => {
+      const community = sub.community;
+      return {
+        id: community.id,
+        name: community.name,
+        description: community.description,
+        owner: await RedditLikeMemberAtSummaryTransformer.transform(
+          community.owner,
+        ),
+        icon: community.iconAttachment
+          ? await RedditLikeAttachmentAtSummaryTransformer.transform(
+              community.iconAttachment,
+            )
+          : null,
+        subscriberCount: community.subscriptions.length,
+        createdAt: community.created_at.toISOString(),
+      } satisfies IRedditLikeCommunity.ISummary;
+    },
   );
   return {
-    data: communities,
+    data,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-  };
+    },
+  } satisfies IPageIRedditLikeCommunity.ISummary;
 }

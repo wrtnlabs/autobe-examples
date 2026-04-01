@@ -6,37 +6,42 @@ import {
 } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
-import { IPageIShoppingMallInventoryRecord } from "../../../../../../structures/IPageIShoppingMallInventoryRecord";
 import { IShoppingMallInventoryRecord } from "../../../../../../structures/IShoppingMallInventoryRecord";
+import { IShoppingMallProductInventoryRecord } from "../../../../../../structures/IShoppingMallProductInventoryRecord";
 
 /**
- * Create a new inventory record to track stock movement for a product variant.
+ * Adjust inventory stock quantity for a specific product variant by creating a new inventory record.
  *
- * This operation enables sellers to manage inventory levels by recording stock changes with explicit reasons. Each inventory record captures a single movement event, whether it's adding stock through manual restocking or receiving returned items from cancellations and refunds, or subtracting stock through adjustments for losses or damages.
+ * This operation allows sellers to manage stock levels for their product variants by recording inventory changes. Positive quantity_change values represent restocking (adding inventory), while negative values represent stock reductions due to adjustments, losses, or manual corrections.
  *
- * The quantity_change field determines the direction and magnitude of the stock movement. Positive values increase available stock (typical for RESTOCK, CANCELLATION, or REFUND reasons), while negative values decrease stock (typical for ADJUSTMENT or LOSS reasons). The system automatically maintains an audit trail by never allowing modification or deletion of inventory records once created.
+ * Each inventory adjustment requires a reason explaining the change, such as restock, damaged goods, inventory correction, or promotional allocation. The system maintains an immutable audit trail of all stock movements, and the current stock quantity is calculated by summing all quantity_change values for the variant.
  *
- * The reason field must be one of the predefined codes: RESTOCK for manual inventory additions, ORDER for stock reserved during order placement, ADJUSTMENT for manual corrections, CANCELLATION for stock returned when orders are cancelled, REFUND for stock returned when refunds are approved, or LOSS for damaged or lost items. An optional reference_id can link this movement to a specific business entity such as an order item, cancellation request, or refund request.
- *
- * Current stock quantity for the variant is always calculated by summing all quantity_change values from the complete inventory history, ensuring real-time accuracy and full audit traceability. This operation is restricted to sellers who own the product containing the target variant.
+ * The variant must belong to a product owned by the authenticated seller. The operation validates that the variant exists and is not deleted. After successful adjustment, the new inventory record is returned with the calculated current stock level.
  *
  * @param props.connection
- * @param props.productId Target product's ID (UUID format, identifies the product containing the variant)
- * @param props.variantId Target product variant's ID (UUID format, identifies the specific variant to update inventory for)
- * @param props.body Inventory movement details including quantity change, reason code, and optional reference to triggering business entity
+ * @param props.productId Product ID (UUID format)
+ * @param props.variantId Variant ID scoped to the product (UUID format)
+ * @param props.body Inventory adjustment details with quantity change and reason
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Create a new inventory record for the specified product variant. Validate that the variant exists and belongs to a product owned by the authenticated seller. The quantity_change field accepts positive integers for stock increases (RESTOCK, CANCELLATION, REFUND reasons) and negative integers for stock decreases (ADJUSTMENT, LOSS reasons). The reason field must be one of: RESTOCK, ORDER, ADJUSTMENT, CANCELLATION, REFUND, or LOSS. The reference_id is optional and can link to related business entities like order_item_id, cancellation_request_id, or refund_request_id. After inserting the inventory record, the variant's stock_quantity should be recalculated by summing all quantity_change values from inventory records belonging to this variant. Return the created inventory record with all fields including the generated id and created_at timestamp.
+ * @x-autobe-specification Validate that the product exists and is owned by the authenticated seller.
+ * Validate that the variant exists, belongs to the specified product, and is not deleted.
+ * Validate quantity_change is non-zero (must be positive for restock or negative for adjustment).
+ * Validate reason is provided and not empty.
+ * Create a new shopping_mall_product_inventory_records entry with product_variant_id, quantity_change, reason, and created_at timestamp.
+ * Calculate current stock by summing all quantity_change values for this variant from shopping_mall_product_inventory_records.
+ * Return the created inventory record with current stock quantity.
+ * Handle edge cases: variant not found, variant belongs to different product, seller doesn't own product, zero quantity_change, empty reason.
  * @path /shoppingMall/seller/products/:productId/variants/:variantId/inventory
- * @accessor api.functional.shoppingMall.seller.products.variants.inventory.create
+ * @accessor api.functional.shoppingMall.seller.products.variants.inventory.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function create(
+export async function update(
   connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
+  props: update.Props,
+): Promise<update.Response> {
   return true === connection.simulate
-    ? create.simulate(connection, props)
+    ? update.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -46,138 +51,32 @@ export async function create(
           },
         },
         {
-          ...create.METADATA,
-          path: create.path(props),
+          ...update.METADATA,
+          path: update.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace create {
+export namespace update {
   export type Props = {
     /**
-     * Target product's ID (UUID format, identifies the product containing the variant)
+     * Product ID (UUID format)
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Target product variant's ID (UUID format, identifies the specific variant to update inventory for)
+     * Variant ID scoped to the product (UUID format)
      */
     variantId: string & tags.Format<"uuid">;
 
     /**
-     * Inventory movement details including quantity change, reason code, and optional reference to triggering business entity
+     * Inventory adjustment details with quantity change and reason
      */
-    body: IShoppingMallInventoryRecord.ICreate;
+    body: IShoppingMallProductInventoryRecord.ICreate;
   };
-  export type Body = IShoppingMallInventoryRecord.ICreate;
-  export type Response = IShoppingMallInventoryRecord;
-
-  export const METADATA = {
-    method: "POST",
-    path: "/shoppingMall/seller/products/:productId/variants/:variantId/inventory",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/variants/${encodeURIComponent(props.variantId ?? "null")}/inventory`;
-  export const random = (): IShoppingMallInventoryRecord =>
-    typia.random<IShoppingMallInventoryRecord>();
-  export const simulate = (
-    connection: IConnection,
-    props: create.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: create.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("productId")(() => typia.assert(props.productId));
-      assert.param("variantId")(() => typia.assert(props.variantId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve a filtered and paginated list of inventory movement records for a specific product variant.
- *
- * This operation provides comprehensive inventory audit trail access, allowing sellers to track all stock movements for their product variants. Each inventory record represents an immutable stock movement event with quantity change (positive for increases like restocks or cancellations, negative for decreases like orders or losses), reason code indicating the business event that triggered the movement, and timestamp.
- *
- * Supports advanced filtering by reason code (RESTOCK, ORDER, ADJUSTMENT, CANCELLATION, REFUND, LOSS), date range queries on creation timestamp, and flexible pagination with configurable page sizes and sorting options. The response includes inventory record summaries optimized for list displays with movement details and contextual information.
- *
- * Authorization requires seller access to the owning product or administrator privileges. The endpoint validates that the variant belongs to the specified product before returning results.
- *
- * @param props.connection
- * @param props.productId Target product's ID (UUID format, global scope)
- * @param props.variantId Target variant's ID (UUID format, scoped to product)
- * @param props.body Search criteria and pagination parameters for inventory record filtering
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_inventory_records table filtered by product_variant_id matching the variantId path parameter. Validate that the variant belongs to the product specified in productId path parameter. Apply search filters from request body: reason code filtering (RESTOCK, ORDER, ADJUSTMENT, CANCELLATION, REFUND, LOSS), date range filtering on created_at, pagination with page and limit parameters, and sorting options. Join with shopping_mall_product_variants to verify variant ownership and product association. Return cursor-based or offset-based pagination with inventory record summaries including quantity_change, reason, reference_id, and created_at. Authorization: seller actor must own the product (variant's shopping_mall_product_id must belong to authenticated seller). Admin actors can access all inventory records.
- * @path /shoppingMall/seller/products/:productId/variants/:variantId/inventory
- * @accessor api.functional.shoppingMall.seller.products.variants.inventory.index
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function index(
-  connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
-  return true === connection.simulate
-    ? index.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...index.METADATA,
-          path: index.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace index {
-  export type Props = {
-    /**
-     * Target product's ID (UUID format, global scope)
-     */
-    productId: string & tags.Format<"uuid">;
-
-    /**
-     * Target variant's ID (UUID format, scoped to product)
-     */
-    variantId: string & tags.Format<"uuid">;
-
-    /**
-     * Search criteria and pagination parameters for inventory record filtering
-     */
-    body: IShoppingMallInventoryRecord.IRequest;
-  };
-  export type Body = IShoppingMallInventoryRecord.IRequest;
-  export type Response = IPageIShoppingMallInventoryRecord.ISummary;
+  export type Body = IShoppingMallProductInventoryRecord.ICreate;
+  export type Response = IShoppingMallProductInventoryRecord;
 
   export const METADATA = {
     method: "PATCH",
@@ -194,16 +93,16 @@ export namespace index {
 
   export const path = (props: Omit<Props, "body">) =>
     `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/variants/${encodeURIComponent(props.variantId ?? "null")}/inventory`;
-  export const random = (): IPageIShoppingMallInventoryRecord.ISummary =>
-    typia.random<IPageIShoppingMallInventoryRecord.ISummary>();
+  export const random = (): IShoppingMallProductInventoryRecord =>
+    typia.random<IShoppingMallProductInventoryRecord>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: update.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(props),
+      path: update.path(props),
       contentType: "application/json",
     });
     try {
@@ -224,21 +123,29 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific inventory record by its unique identifier from the shopping_mall_inventory_records table.
+ * Retrieve a specific inventory record by its unique identifier.
  *
- * This operation returns detailed information about a single inventory movement event, including the quantity change (positive for stock increases like restocks or cancellations, negative for decreases like orders or losses), the reason code indicating the business event that triggered the movement, an optional reference to the triggering business entity, and the timestamp when the movement occurred.
+ * This operation returns detailed information about a single stock movement event, including the quantity change amount, reason code, and timestamp. Inventory records are immutable audit trail entries that track all stock changes for product variants.
  *
- * Inventory records are immutable audit trail entries that are never modified or deleted, maintaining complete history for inventory reconciliation and compliance. Each record belongs to a specific product variant, and sellers can only access inventory records for variants they own.
- *
- * The endpoint requires the product ID, variant ID, and record ID in the path to ensure proper authorization scoping. The system validates that the inventory record's product_variant_id matches the provided variantId and that the variant belongs to the authenticated seller.
+ * Records are automatically created during order placement, cancellation, refund processing, and manual seller inventory adjustments. This endpoint provides access to individual records for audit and dispute resolution purposes.
  *
  * @param props.connection
- * @param props.productId Target product's ID (global scope, UUID format)
- * @param props.variantId Target product variant's ID (global scope, UUID format)
- * @param props.recordId Target inventory record's ID (global scope, UUID format)
+ * @param props.productId Product ID (UUID format)
+ * @param props.variantId Product variant ID (UUID format)
+ * @param props.recordId Inventory record ID (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query shopping_mall_inventory_records table by recordId. Verify the record exists and that the product_variant_id matches the variantId from path parameter. Perform authorization check: ensure the variant belongs to a product owned by the authenticated seller. Return the complete inventory record including id, product_variant_id, quantity_change, reason, reference_id, and created_at. If record not found or authorization fails, return 404. The productId in path is used for hierarchical context but the primary lookup is by recordId with variant ownership validation.
+ * @x-autobe-specification Query shopping_mall_inventory_records table by record ID.
+ *
+ * Verify the inventory record exists and the associated variant belongs to the specified product:
+ * 1. Fetch inventory record by recordId
+ * 2. Join with shopping_mall_product_variants to get product_variant_id
+ * 3. Verify shopping_mall_product_id matches productId
+ * 4. Return 404 if record not found or product/variant mismatch
+ *
+ * Return complete inventory record with all fields: id, product_variant_id, quantity_change, reason, created_at.
+ *
+ * Authorization: Only seller who owns the product can access inventory records for their variants.
  * @path /shoppingMall/seller/products/:productId/variants/:variantId/inventory/:recordId
  * @accessor api.functional.shoppingMall.seller.products.variants.inventory.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -267,17 +174,17 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Target product's ID (global scope, UUID format)
+     * Product ID (UUID format)
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Target product variant's ID (global scope, UUID format)
+     * Product variant ID (UUID format)
      */
     variantId: string & tags.Format<"uuid">;
 
     /**
-     * Target inventory record's ID (global scope, UUID format)
+     * Inventory record ID (UUID format)
      */
     recordId: string & tags.Format<"uuid">;
   };

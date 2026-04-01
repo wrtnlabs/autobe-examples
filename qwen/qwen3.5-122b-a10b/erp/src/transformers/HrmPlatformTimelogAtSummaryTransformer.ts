@@ -34,6 +34,9 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
         employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
         project: HrmPlatformProjectAtSummaryTransformer.select(),
         task: HrmPlatformTaskAtSummaryTransformer.select(),
+        timesheetTimelogs: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_timesheet_timelogsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_timelogsFindManyArgs;
   }
@@ -42,9 +45,9 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
   ): Promise<IHrmPlatformTimelog.ISummary> {
     return {
       id: input.id,
-      date: toISOStringSafe(input.date),
+      date: input.date.toISOString(),
       duration_minutes: input.duration_minutes,
-      description: input.description ?? undefined,
+      description: input.description ?? null,
       billable: input.billable,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,
@@ -54,10 +57,10 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
       ),
       task: input.task
         ? await HrmPlatformTaskAtSummaryTransformer.transform(input.task)
-        : undefined,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+        : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

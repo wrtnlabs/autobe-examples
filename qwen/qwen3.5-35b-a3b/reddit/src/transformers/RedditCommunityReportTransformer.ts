@@ -5,8 +5,10 @@ import { IRedditCommunityReport } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityCommunityAtSummaryTransformer } from "./RedditCommunityCommunityAtSummaryTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
@@ -28,8 +30,8 @@ export namespace RedditCommunityReportTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        actionHistories: true,
-        systemLogs: true,
+        actionHistories: {},
+        systemLogs: {},
       },
     } satisfies Prisma.reddit_community_reportsFindManyArgs;
   }
@@ -44,13 +46,13 @@ export namespace RedditCommunityReportTransformer {
       community: await RedditCommunityCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-      target_type: typia.assert<"comment" | "post">(input.target_type),
+      target_type: input.target_type as "comment" | "post",
       target_id: input.target_id,
       reason: input.reason,
-      status: typia.assert<"pending" | "approved" | "dismissed">(input.status),
+      status: input.status as "pending" | "approved" | "dismissed",
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
       deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-    };
+    } satisfies IRedditCommunityReport;
   }
 }

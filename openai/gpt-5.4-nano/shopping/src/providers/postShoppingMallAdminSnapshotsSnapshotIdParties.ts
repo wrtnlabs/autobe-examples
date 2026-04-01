@@ -18,35 +18,42 @@ export async function postShoppingMallAdminSnapshotsSnapshotIdParties(props: {
   snapshotId: string & tags.Format<"uuid">;
   body: IShoppingMallSnapshotParty.ICreate;
 }): Promise<IShoppingMallSnapshotParty> {
-  await MyGlobal.prisma.shopping_mall_snapshots.findUniqueOrThrow({
-    where: { id: props.snapshotId },
-    select: { id: true },
+  const admin = await MyGlobal.prisma.shopping_mall_admins.findUnique({
+    where: { id: props.admin.id },
+    select: { id: true, deleted_at: true },
   });
-  try {
-    const now = toISOStringSafe(new Date());
-    const created = await MyGlobal.prisma.shopping_mall_snapshot_parties.create(
-      {
+  if (admin === null || admin.deleted_at !== null) {
+    throw new HttpException("You're not enrolled", 403);
+  }
+  const now = toISOStringSafe(new Date());
+  const created = await MyGlobal.prisma.$transaction(async (prisma) => {
+    await prisma.shopping_mall_snapshots.findUniqueOrThrow({
+      where: { id: props.snapshotId },
+      select: { id: true },
+    });
+    try {
+      return await prisma.shopping_mall_snapshot_parties.create({
         data: {
-          id: v4() as string & tags.Format<"uuid">,
+          id: v4(),
+          shopping_mall_snapshot_id: props.snapshotId,
           party_type: props.body.partyType,
           party_id: props.body.partyId,
           can_view: props.body.canView,
-          shopping_mall_snapshot_id: props.snapshotId,
           deleted_at: null,
-          created_at: new Date(now),
-          updated_at: new Date(now),
+          created_at: now,
+          updated_at: now,
         },
         ...ShoppingMallSnapshotPartyTransformer.select(),
-      },
-    );
-    return await ShoppingMallSnapshotPartyTransformer.transform(created);
-  } catch (err: unknown) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === "P2002"
-    ) {
-      throw new HttpException("Snapshot party entry already exists", 409);
+      });
+    } catch (e: unknown) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        throw new HttpException("Snapshot party already exists", 409);
+      }
+      throw e;
     }
-    throw err;
-  }
+  });
+  return await ShoppingMallSnapshotPartyTransformer.transform(created);
 }

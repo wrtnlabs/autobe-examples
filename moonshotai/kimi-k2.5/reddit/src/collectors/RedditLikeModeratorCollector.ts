@@ -9,13 +9,11 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace RedditLikeModeratorCollector {
   export async function collect(props: { body: IRedditLikeModerator.ICreate }) {
-    const id: string = v4();
-    const now = new Date();
     return {
-      id,
+      id: v4(),
       can_add_moderators: props.body.canAddModerators ?? false,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
       member: { connect: { id: props.body.memberId } },
       community: { connect: { id: props.body.communityId } },

@@ -26,96 +26,79 @@ export async function putHrmPlatformMemberTimesheetsTimesheetId(props: {
   timesheetId: string & tags.Format<"uuid">;
   body: IHrmPlatformTimesheet.IUpdate;
 }): Promise<IHrmPlatformTimesheet> {
-  // 1. Retrieve and validate timesheet exists and is not soft-deleted
-  const timesheet = await MyGlobal.prisma.hrm_platform_timesheets.findUnique({
-    where: { id: props.timesheetId },
-    select: {
-      id: true,
-      hrm_platform_employee_id: true,
-      status: true,
-      week_start_date: true,
-      deleted_at: true,
-    },
-  });
-  if (timesheet === null || timesheet.deleted_at !== null) {
-    throw new HttpException("Timesheet not found", 404);
-  }
-  const currentStatus = timesheet.status as
-    | "draft"
-    | "submitted"
-    | "approved"
-    | "rejected";
-  const newStatus = props.body.status;
-  // 2. Authorization checks
-  if (newStatus === "submitted") {
-    // Requester must be the timesheet owner
-    // Find the employee record for this member (hrm_platform_user_id references hrm_platform_members.id)
-    const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-      where: {
-        hrm_platform_user_id: props.member.id,
-        deleted_at: null,
+  // Step 1: Retrieve timesheet
+  const timesheet =
+    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+      where: { id: props.timesheetId },
+      select: {
+        id: true,
+        hrm_platform_employee_id: true,
+        status: true,
+        week_start_date: true,
+        deleted_at: true,
       },
     });
-    if (
-      employee === null ||
-      employee.id !== timesheet.hrm_platform_employee_id
-    ) {
-      throw new HttpException(
-        "Forbidden: You are not the owner of this timesheet",
-        403,
-      );
-    }
-  } else if (newStatus === "approved" || newStatus === "rejected") {
-    // Requester must have time:approve permission
-    // Check if member has a role with time:approve permission
-    const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-      where: {
-        hrm_platform_user_id: props.member.id,
-        deleted_at: null,
-      },
+  // Step 2: Check soft-deleted
+  if (timesheet.deleted_at !== null) {
+    throw new HttpException("Timesheet not found", 404);
+  }
+  // Step 3: Get employee for authorization
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
+      where: { id: timesheet.hrm_platform_employee_id },
       select: {
+        id: true,
+        hrm_platform_user_id: true,
         hrm_platform_role_id: true,
       },
     });
-    if (employee === null || employee.hrm_platform_role_id === null) {
-      throw new HttpException(
-        "Forbidden: You do not have permission to approve timesheets",
-        403,
-      );
-    }
-    // Check if role has time:approve permission via role_permissions junction
-    const hasApprovePermission =
-      await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-        where: {
-          hrm_platform_role_id: employee.hrm_platform_role_id,
-          permission: {
-            code: "time:approve",
+  // Step 4: Authorization checks
+  const newStatus = props.body.status;
+  if (newStatus !== undefined) {
+    if (newStatus === "submitted") {
+      // Must be the timesheet owner
+      if (employee.hrm_platform_user_id !== props.member.id) {
+        throw new HttpException("Forbidden", 403);
+      }
+    } else if (newStatus === "approved" || newStatus === "rejected") {
+      // Must have time:approve permission
+      const permission =
+        await MyGlobal.prisma.hrm_platform_permissions.findFirst({
+          where: { code: "time:approve" },
+          select: { id: true },
+        });
+      if (!permission) {
+        throw new HttpException("Forbidden", 403);
+      }
+      const hasPermission =
+        await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
+          where: {
+            hrm_platform_role_id: employee.hrm_platform_role_id,
+            hrm_platform_permission_id: permission.id,
           },
-        },
-      });
-    if (hasApprovePermission === null) {
-      throw new HttpException(
-        "Forbidden: You do not have permission to approve timesheets",
-        403,
-      );
+        });
+      if (!hasPermission) {
+        throw new HttpException("Forbidden", 403);
+      }
     }
   }
-  // 3. Status transition validation
-  const validTransitions: Record<string, string[]> = {
-    draft: ["submitted"],
-    submitted: ["approved", "rejected"],
-    approved: [],
-    rejected: ["draft"],
-  };
-  if (newStatus && !validTransitions[currentStatus]?.includes(newStatus)) {
-    throw new HttpException(
-      `Invalid status transition from ${currentStatus} to ${newStatus}`,
-      400,
-    );
+  // Step 5: Validate status transitions
+  const currentStatus = timesheet.status;
+  if (newStatus !== undefined) {
+    const validTransitions: Record<string, string[]> = {
+      draft: ["submitted"],
+      submitted: ["approved", "rejected"],
+      rejected: ["draft"],
+      approved: [],
+    };
+    const allowed = validTransitions[currentStatus] ?? [];
+    if (!allowed.includes(newStatus)) {
+      throw new HttpException("Invalid status transition", 400);
+    }
   }
-  // 4. Business rule validation
+  // Step 6: Business rule validations
   if (newStatus === "submitted") {
-    // Check if timesheet has at least one timelog
+    // Check has at least one timelog
     const timelogCount =
       await MyGlobal.prisma.hrm_platform_timesheet_timelogs.count({
         where: { hrm_platform_timesheet_id: props.timesheetId },
@@ -123,7 +106,7 @@ export async function putHrmPlatformMemberTimesheetsTimesheetId(props: {
     if (timelogCount === 0) {
       throw new HttpException("Cannot submit empty timesheet", 400);
     }
-    // Check for duplicate timesheet in same week
+    // Check no duplicate timesheet for same employee and week
     const duplicate = await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
       where: {
         hrm_platform_employee_id: timesheet.hrm_platform_employee_id,
@@ -133,35 +116,29 @@ export async function putHrmPlatformMemberTimesheetsTimesheetId(props: {
         deleted_at: null,
       },
     });
-    if (duplicate !== null) {
-      throw new HttpException(
-        "A timesheet for this week is already submitted or approved",
-        400,
-      );
+    if (duplicate) {
+      throw new HttpException("Timesheet already exists for this week", 400);
     }
   }
-  // 5. Build update data
-  const updateData: Prisma.hrm_platform_timesheetsUpdateInput = {
-    ...(newStatus && { status: newStatus }),
-    ...(newStatus === "submitted" && {
-      submitted_at: new Date(),
-    }),
-    ...(newStatus === "approved" || newStatus === "rejected"
-      ? {
-          reviewed_at: new Date(),
-          hrm_platform_member_id: props.member.id,
-        }
-      : {}),
-    ...(props.body.rejection_reason !== undefined && {
-      rejection_reason: props.body.rejection_reason,
-    }),
-    updated_at: new Date(),
-  };
+  // Step 7: Build update data
+  const updateData: Prisma.hrm_platform_timesheetsUpdateInput = {};
+  if (newStatus !== undefined) {
+    updateData.status = newStatus;
+  }
+  if (newStatus === "submitted") {
+    updateData.submitted_at = new Date();
+  }
+  if (newStatus === "approved" || newStatus === "rejected") {
+    updateData.reviewed_at = new Date();
+  }
+  if (props.body.rejection_reason !== undefined) {
+    updateData.rejection_reason = props.body.rejection_reason;
+  }
   await MyGlobal.prisma.hrm_platform_timesheets.update({
     where: { id: props.timesheetId },
     data: updateData,
   });
-  // 6. Return transformed timesheet
+  // Step 8: Fetch and return updated timesheet
   const updated =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
       where: { id: props.timesheetId },

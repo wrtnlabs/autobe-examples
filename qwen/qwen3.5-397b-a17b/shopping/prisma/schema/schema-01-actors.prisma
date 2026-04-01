@@ -1,0 +1,194 @@
+/// Customer profile information extending basic authentication with display
+/// name and phone number. Each customer has exactly one profile linked to
+/// their identity in {@link shopping_mall_customers}. Profile data is
+/// editable by the customer and changes are tracked in {@link
+/// shopping_mall_customer_profile_snapshots} for audit trail.
+///
+/// @namespace actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id}.
+  shopping_mall_customer_id String
+  
+  /// Customer's public display name shown in orders, reviews, and profile
+  /// pages.
+  display_name String
+  
+  /// Customer's contact phone number for order notifications and support.
+  phone_number String
+  
+  /// Timestamp when the profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the profile was soft deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_customer_profile_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_customer_id])
+}
+
+/// Seller shop profile information extending the seller actor with
+/// business-facing details. Contains shop name, description, and logo image
+/// that customers view. Each seller has exactly one profile (1:1
+/// relationship). Approval status is tracked separately in
+/// shopping_mall_seller_approval_requests.
+///
+/// @namespace actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Seller's {@link shopping_mall_sellers.id}. Unique constraint enforces 1:1
+  /// relationship.
+  seller_id String
+  
+  /// Public-facing shop name displayed to customers.
+  shop_name String
+  
+  /// Shop description providing business details to customers.
+  description String
+  
+  /// Shop logo image URL for brand identification.
+  logo_image_uri String
+  
+  /// Timestamp when the profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the profile was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_seller_profile_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([seller_id])
+}
+
+/// Immutable snapshots of seller profile changes preserving shop name,
+/// description, and logo at each modification point. Used for audit trail
+/// and dispute resolution. Each snapshot represents the complete state of a
+/// seller profile at a specific moment in time.
+///
+/// @namespace actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Target's {@link shopping_mall_seller_profiles.id}.
+  shopping_mall_seller_profile_id String
+  
+  /// Shop name at the time of snapshot.
+  shop_name String
+  
+  /// Shop description at the time of snapshot.
+  description String
+  
+  /// Shop logo image URL at the time of snapshot.
+  logo_image_uri String?
+  
+  /// Timestamp when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  sellerProfile shopping_mall_seller_profiles @relation(fields: [shopping_mall_seller_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_profile_id, created_at], map: "shopping_mall_seller_profile_snapshots_shopping_mall_s_dc4fe99a")
+}
+
+/// Immutable point-in-time snapshots of customer profile changes for audit
+/// trail and data recovery. Each snapshot captures the display name and
+/// phone number at the moment of profile modification, enabling historical
+/// reconstruction and dispute resolution. References {@link
+/// shopping_mall_customer_profiles} and {@link shopping_mall_customers}.
+///
+/// @namespace actors
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer's {@link shopping_mall_customers.id}.
+  customer_id String
+  
+  /// Customer profile's {@link shopping_mall_customer_profiles.id}.
+  customer_profile_id String
+  
+  /// Snapshot of customer's display name at time of change.
+  display_name String
+  
+  /// Snapshot of customer's phone number at time of change.
+  phone_number String?
+  
+  /// Timestamp when the snapshot was created (when profile was modified).
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customerProfile shopping_mall_customer_profiles @relation(fields: [customer_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([customer_profile_id], map: "shopping_mall_customer_profile_snapshots_customer_prof_9f4e8485")
+  // spellchecker: ignore-next-line
+  @@index([customer_id, created_at], map: "shopping_mall_customer_profile_snapshots_customer_id_c_19c3b149")
+}

@@ -23,32 +23,35 @@ export async function patchShoppingMallSellers(props: {
   const whereInput: Prisma.shopping_mall_sellersWhereInput = {
     deleted_at: null,
   };
-  if (props.body.search !== undefined) {
+  if (props.body.search !== undefined && props.body.search !== "") {
     whereInput.shop_name = {
       contains: props.body.search,
       mode: "insensitive",
     };
   }
-  if (props.body.email !== undefined) {
+  if (props.body.email !== undefined && props.body.email !== "") {
     whereInput.email = {
       contains: props.body.email,
       mode: "insensitive",
     };
   }
-  if (props.body.approval_status !== undefined) {
+  if (
+    props.body.approval_status !== undefined &&
+    props.body.approval_status !== ""
+  ) {
     whereInput.approval_status = props.body.approval_status;
   }
-  if (props.body.status !== undefined) {
+  if (props.body.status !== undefined && props.body.status !== "") {
     whereInput.status = props.body.status;
   }
   const sortField = props.body.sort ?? "created_at";
-  const sortOrder = (props.body.sortOrder ?? "desc") as "asc" | "desc";
+  const sortOrder = props.body.sortOrder ?? "desc";
   const orderByInput: Prisma.shopping_mall_sellersOrderByWithRelationInput =
-    sortField === "created_at"
-      ? { created_at: sortOrder }
-      : sortField === "shop_name"
-        ? { shop_name: sortOrder }
-        : { approval_status: sortOrder };
+    sortField === "shop_name"
+      ? { shop_name: sortOrder === "asc" ? "asc" : "desc" }
+      : sortField === "approval_status"
+        ? { approval_status: sortOrder === "asc" ? "asc" : "desc" }
+        : { created_at: sortOrder === "asc" ? "asc" : "desc" };
   const data = await MyGlobal.prisma.shopping_mall_sellers.findMany({
     where: whereInput,
     skip,
@@ -69,7 +72,7 @@ export async function patchShoppingMallSellers(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
     data: transformedData,
   };
 }

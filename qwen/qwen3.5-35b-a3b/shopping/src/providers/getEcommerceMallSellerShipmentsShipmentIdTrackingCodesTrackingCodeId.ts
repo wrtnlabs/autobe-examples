@@ -24,16 +24,22 @@ export async function getEcommerceMallSellerShipmentsShipmentIdTrackingCodesTrac
   const trackingCode =
     await MyGlobal.prisma.ecommerce_mall_shipment_tracking_codes.findUniqueOrThrow(
       {
-        where: {
-          id: props.trackingCodeId,
-          shipment_id: props.shipmentId,
-        },
+        where: { id: props.trackingCodeId },
         ...EcommerceMallShipmentTrackingCodeTransformer.select(),
       },
     );
+  if (trackingCode.shipment.id !== props.shipmentId) {
+    throw new HttpException(
+      "Tracking code does not belong to the specified shipment",
+      404,
+    );
+  }
   const shipment =
-    trackingCode.shipment as unknown as IEcommerceMallShipment.ISummary;
-  if ((shipment as any).shipment_owner_id !== props.seller.id) {
+    await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
+      where: { id: props.shipmentId },
+      select: { seller: true },
+    });
+  if (shipment.seller.id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await EcommerceMallShipmentTrackingCodeTransformer.transform(

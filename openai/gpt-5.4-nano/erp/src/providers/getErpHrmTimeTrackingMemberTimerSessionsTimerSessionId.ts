@@ -9,7 +9,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { ErpHrmTimeTrackingTimerSessionTransformer } from "../transformers/ErpHrmTimeTrackingTimerSessionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,31 +16,28 @@ export async function getErpHrmTimeTrackingMemberTimerSessionsTimerSessionId(pro
   member: MemberPayload;
   timerSessionId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingTimerSession> {
-  const member = props.member;
-  const employee =
-    await MyGlobal.prisma.erp_hrm_time_tracking_members.findFirstOrThrow({
-      where: {
-        id: member.id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        organization_id: true,
-      } as any,
-    });
+  // Ensure member exists and is not soft-deleted
+  await MyGlobal.prisma.erp_hrm_time_tracking_members.findUniqueOrThrow({
+    where: {
+      id: props.member.id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+    },
+  });
   const timerSession =
-    await MyGlobal.prisma.erp_hrm_time_tracking_timer_sessions.findFirstOrThrow(
+    await MyGlobal.prisma.erp_hrm_time_tracking_timer_sessions.findUniqueOrThrow(
       {
         where: {
           id: props.timerSessionId,
-          organization_id: employee.organization_id,
-          employee_id: employee.id,
-          deleted_at: null,
         },
-        ...(ErpHrmTimeTrackingTimerSessionTransformer.select() as any),
       },
     );
-  return await ErpHrmTimeTrackingTimerSessionTransformer.transform(
-    timerSession as any,
-  );
+  // Access control: only the owning employee can read this session
+  if (timerSession.employee_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // NOTE: Do not use typia.assert/guard for Prisma types.
+  return timerSession as unknown as IErpHrmTimeTrackingTimerSession;
 }

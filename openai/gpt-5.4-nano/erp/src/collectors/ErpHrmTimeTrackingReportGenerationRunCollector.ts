@@ -8,25 +8,28 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace ErpHrmTimeTrackingReportGenerationRunCollector {
-  type StableRecord = Record<string, string>;
-  function stableStringify(obj: StableRecord): string {
-    const keys = Object.keys(obj).sort();
-    const ordered: StableRecord = {};
-    for (const k of keys) ordered[k] = obj[k];
-    return JSON.stringify(ordered);
-  }
+  const serializeParametersSummary = (
+    parameters: Record<string, string>,
+  ): string => {
+    const sortedKeys = Object.keys(parameters).sort();
+    const sorted: Record<string, string> = {};
+    for (const k of sortedKeys) sorted[k] = parameters[k];
+    return JSON.stringify(sorted);
+  };
   export async function collect(props: {
     body: IErpHrmTimeTrackingReportGenerationRun.ICreate;
   }) {
+    const id = v4();
+    const createdAt = new Date();
     return {
-      id: v4(),
+      id,
       status: "pending",
-      parameters_summary: stableStringify(props.body.parameters),
+      parameters_summary: serializeParametersSummary(props.body.parameters),
       started_at: null,
       finished_at: null,
       error_message: null,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: createdAt,
+      updated_at: createdAt,
       deleted_at: null,
       reportDefinition: { connect: { id: props.body.reportDefinitionId } },
       reportOutputs: undefined,

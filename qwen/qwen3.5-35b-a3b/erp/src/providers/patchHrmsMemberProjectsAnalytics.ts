@@ -18,23 +18,46 @@ export async function patchHrmsMemberProjectsAnalytics(props: {
   member: MemberPayload;
   body: IHrmsProject.IRequest;
 }): Promise<IPageIHrmsProject.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 100, 100);
-  const skip = (page - 1) * limit;
-  const projectWhere: Prisma.hrms_projectsWhereInput = {
+  // Get the member's organization context from organization_members
+  const organizationMembers =
+    await MyGlobal.prisma.hrms_organization_members.findMany({
+      where: {
+        hrms_member_id: props.member.id,
+        deleted_at: null,
+      },
+      take: 1,
+    });
+  if (organizationMembers.length === 0) {
+    throw new HttpException("Organization context not found", 404);
+  }
+  const organizationMember = organizationMembers[0];
+  const organizationId = organizationMember.hrms_organization_id;
+  // Build where clause for projects
+  const projectsWhere: Prisma.hrms_projectsWhereInput = {
+    hrms_organization_id: organizationId,
     deleted_at: null,
-    status: props.body.status ?? undefined,
+    ...(props.body.status ? { status: props.body.status } : {}),
   };
-  const organizationId = getOrganizationIdFromMember(props.member);
-  projectWhere.hrms_organization_id = organizationId;
+  // Calculate pagination
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  // Get total count
   const total = await MyGlobal.prisma.hrms_projects.count({
-    where: projectWhere,
+    where: projectsWhere,
   });
+  // Fetch projects with analytics
   const projects = await MyGlobal.prisma.hrms_projects.findMany({
-    where: projectWhere,
+    where: projectsWhere,
     skip,
     take: limit,
-    orderBy: getOrderBy(props.body.sort_by, props.body.order),
+    orderBy: {
+      ...(props.body.sort_by === "project_name"
+        ? { name: props.body.order ?? "asc" }
+        : props.body.sort_by === "budget_utilization"
+          ? { budget_hours: props.body.order ?? "desc" }
+          : { created_at: props.body.order ?? "desc" }),
+    } satisfies Prisma.hrms_projectsOrderByWithRelationInput,
     select: {
       id: true,
       name: true,
@@ -48,114 +71,61 @@ export async function patchHrmsMemberProjectsAnalytics(props: {
       created_at: true,
       updated_at: true,
       organization: {
-        select: { name: true },
+        select: { id: true, name: true },
       },
-      _count: {
-        select: {
-          tasks: true,
+      timelogs: {
+        where: {
+          deleted_at: null,
+          ...(props.body.date_from
+            ? { date: { gte: new Date(props.body.date_from + "T00:00:00Z") } }
+            : {}),
+          ...(props.body.date_to
+            ? { date: { lte: new Date(props.body.date_to + "T23:59:59Z") } }
+            : {}),
         },
+        select: { duration_minutes: true },
+      },
+      tasks: {
+        select: { status: true, deleted_at: true },
       },
     },
   });
-  const projectIds = projects.map((p) => p.id);
-  const timelogWhereBase: Prisma.hrms_timelogsWhereInput = {
-    deleted_at: null,
-    project_id: {
-      in: projectIds,
-    },
-  };
-  const timelogWhere: Prisma.hrms_timelogsWhereInput = {
-    ...timelogWhereBase,
-  };
-  if (props.body.date_from || props.body.date_to) {
-    const dateFilter: Prisma.hrms_timelogsWhereInput["date"] = {};
-    if (props.body.date_from) {
-      const [year, month, day] = props.body.date_from
-        .split("-")
-        .map((part) => parseInt(part, 10));
-      dateFilter.gte = new Date(year, month - 1, day, 0, 0, 0, 0);
-    }
-    if (props.body.date_to) {
-      const [year, month, day] = props.body.date_to
-        .split("-")
-        .map((part) => parseInt(part, 10));
-      dateFilter.lte = new Date(year, month - 1, day, 23, 59, 59, 999);
-    }
-    timelogWhere.date = dateFilter;
-  }
-  const timelogAggregations = await MyGlobal.prisma.hrms_timelogs.groupBy({
-    by: ["project_id"],
-    where: timelogWhere,
-    _sum: {
-      duration_minutes: true,
-    },
-    _count: {
-      id: true,
-    },
-  });
-  const timelogMap = new Map(
-    timelogAggregations.map((t) => [
-      t.project_id,
-      {
-        duration_minutes: t._sum.duration_minutes ?? 0,
-        count: t._count.id ?? 0,
-      },
-    ]),
-  );
-  const taskAggregations = await MyGlobal.prisma.hrms_tasks.groupBy({
-    by: ["hrms_project_id", "status"] as any,
-    where: {
-      hrms_project_id: {
-        in: projectIds,
-      },
-      deleted_at: null,
-    },
-    _count: {
-      id: true,
-    },
-  });
-  const taskMap = new Map(
-    projects.map((project) => [
-      project.id,
-      { pending: 0, in_progress: 0, completed: 0, closed: 0 },
-    ]),
-  );
-  taskAggregations.forEach((t) => {
-    const projectTaskCounts = taskMap.get(t.hrms_project_id) || {
-      pending: 0,
-      in_progress: 0,
-      completed: 0,
-      closed: 0,
-    };
-    const count = t._count.id ?? 0;
-    if (t.status === "open" || t.status === "pending") {
-      projectTaskCounts.pending += count;
-    } else if (t.status === "in-progress") {
-      projectTaskCounts.in_progress += count;
-    } else if (t.status === "completed") {
-      projectTaskCounts.completed += count;
-    } else if (t.status === "closed") {
-      projectTaskCounts.closed += count;
-    }
-    taskMap.set(t.hrms_project_id, projectTaskCounts);
-  });
-  const data = projects.map((project) => {
-    const timelogData = timelogMap.get(project.id) ?? {
-      duration_minutes: 0,
-      count: 0,
-    };
-    const taskCounts = taskMap.get(project.id) ?? {
-      pending: 0,
-      in_progress: 0,
-      completed: 0,
-      closed: 0,
-    };
-    const actualHours = timelogData.duration_minutes / 60;
-    const plannedHours = project.budget_hours ?? 0;
-    const budgetUtilization =
-      project.budget_hours !== null && project.budget_hours > 0
+  // Transform projects to analytics format
+  const data = await ArrayUtil.asyncMap(projects, async (project) => {
+    const actualMinutes = project.timelogs.reduce(
+      (
+        sum: number,
+        tl: {
+          duration_minutes: number | null;
+        },
+      ) => sum + (tl.duration_minutes ?? 0),
+      0,
+    );
+    const actualHours = actualMinutes / 60;
+    const pendingTasks = project.tasks.filter(
+      (task: { status: string; deleted_at: Date | null }) =>
+        !task.deleted_at &&
+        (task.status === "open" || task.status === "pending"),
+    ).length;
+    const inProgressTasks = project.tasks.filter(
+      (task: { status: string; deleted_at: Date | null }) =>
+        !task.deleted_at && task.status === "in-progress",
+    ).length;
+    const completedTasks = project.tasks.filter(
+      (task: { status: string; deleted_at: Date | null }) =>
+        !task.deleted_at && task.status === "completed",
+    ).length;
+    const closedTasks = project.tasks.filter(
+      (task: { status: string; deleted_at: Date | null }) =>
+        !task.deleted_at && task.status === "closed",
+    ).length;
+    const budgetUtilizationPercentage =
+      project.budget_hours && project.budget_hours > 0
         ? (actualHours / project.budget_hours) * 100
         : null;
+    const safeStatus = typia.assert<"active" | "completed" | "archived">(
+      project.status,
+    );
     return {
       id: project.id,
       name: project.name,
@@ -163,50 +133,34 @@ export async function patchHrmsMemberProjectsAnalytics(props: {
       color_code: project.color_code,
       organization_id: project.hrms_organization_id,
       organization_name: project.organization.name,
-      status: project.status as "active" | "completed" | "archived",
+      status: safeStatus,
       budget_hours: project.budget_hours,
-      start_date: project.start_date?.toISOString() ?? null,
-      end_date: project.end_date?.toISOString() ?? null,
-      planned_hours: plannedHours,
+      start_date: project.start_date
+        ? toISOStringSafe(project.start_date)
+        : null,
+      end_date: project.end_date ? toISOStringSafe(project.end_date) : null,
+      planned_hours: project.budget_hours ?? 0,
       actual_hours: actualHours,
-      budget_utilization_percentage: budgetUtilization,
-      total_tasks: project._count.tasks,
-      pending_tasks: taskCounts.pending,
-      in_progress_tasks: taskCounts.in_progress,
-      completed_tasks: taskCounts.completed,
-      closed_tasks: taskCounts.closed,
-      timelog_count: timelogData.count,
-      created_at: project.created_at.toISOString(),
-      updated_at: project.updated_at.toISOString(),
+      budget_utilization_percentage: budgetUtilizationPercentage,
+      total_tasks: project.tasks.filter(
+        (t: { deleted_at: Date | null }) => !t.deleted_at,
+      ).length,
+      pending_tasks: pendingTasks,
+      in_progress_tasks: inProgressTasks,
+      completed_tasks: completedTasks,
+      closed_tasks: closedTasks,
+      timelog_count: project.timelogs.length,
+      created_at: toISOStringSafe(project.created_at),
+      updated_at: toISOStringSafe(project.updated_at),
     } satisfies IHrmsProject.ISummary;
   });
   return {
+    data,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: data,
   } satisfies IPageIHrmsProject.ISummary;
-}
-function getOrganizationIdFromMember(
-  member: MemberPayload,
-): string & tags.Format<"uuid"> {
-  throw new Error(
-    "Organization context must be provided via member payload or session",
-  );
-}
-function getOrderBy(
-  sort_by: string | undefined,
-  order: "asc" | "desc" | undefined,
-): Prisma.hrms_projectsOrderByWithRelationInput {
-  const direction = order === "desc" ? "desc" : "asc";
-  if (sort_by === "project_name") {
-    return { name: direction };
-  }
-  if (sort_by === "created_at") {
-    return { created_at: direction };
-  }
-  return { created_at: direction };
 }

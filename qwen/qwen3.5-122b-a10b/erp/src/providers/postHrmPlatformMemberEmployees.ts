@@ -21,140 +21,119 @@ export async function postHrmPlatformMemberEmployees(props: {
   member: MemberPayload;
   body: IHrmPlatformEmployee.ICreate;
 }): Promise<IHrmPlatformEmployee> {
-  // Get member's organization from their existing employee record
+  // Validate hrm_platform_user_id is provided
+  if (props.body.hrm_platform_user_id === undefined) {
+    throw new HttpException("hrm_platform_user_id is required", 400);
+  }
+  const userId = props.body.hrm_platform_user_id;
+  // Validate user existence
+  const user = await MyGlobal.prisma.hrm_platform_members.findUnique({
+    where: { id: userId },
+    select: { id: true, deleted_at: true },
+  });
+  if (user === null) {
+    throw new HttpException("User not found", 404);
+  }
+  if (user.deleted_at !== null) {
+    throw new HttpException("User not found", 404);
+  }
+  // Get session to validate it exists
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findUnique(
+    {
+      where: { id: props.member.session_id },
+      select: { id: true, hrm_platform_member_id: true, expired_at: true },
+    },
+  );
+  if (session === null || session.expired_at <= new Date()) {
+    throw new HttpException("Session not found", 404);
+  }
+  // Get organization from member's existing employee record
   const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
     {
       where: {
-        hrm_platform_user_id: props.member.id,
+        hrm_platform_user_id: userId,
         deleted_at: null,
       },
-      select: {
-        hrm_platform_organization_id: true,
-        hrm_platform_role_id: true,
-      },
+      select: { hrm_platform_organization_id: true },
     },
   );
-  if (!memberEmployee) {
-    throw new HttpException("Member not enrolled in any organization", 403);
+  if (memberEmployee === null) {
+    throw new HttpException("Member has no organization context", 400);
   }
   const organizationId = memberEmployee.hrm_platform_organization_id;
-  const memberRoleId = memberEmployee.hrm_platform_role_id;
-  // Validate organization exists
+  // Validate organization exists and is not deleted
   const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findFirst({
-      where: {
-        id: organizationId,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.hrm_platform_organizations.findUnique({
+      where: { id: organizationId },
+      select: { id: true, deleted_at: true },
     });
-  if (!organization) {
+  if (organization === null || organization.deleted_at !== null) {
     throw new HttpException("Organization not found", 404);
   }
-  // Validate member has employee:manage permission via role_permissions
-  const roleHasPermission =
-    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-      where: {
-        hrm_platform_role_id: memberRoleId,
-        permission: {
-          code: "employee:manage",
-        },
-      },
-    });
-  if (!roleHasPermission) {
-    throw new HttpException(
-      "Forbidden: missing employee:manage permission",
-      403,
-    );
+  // Validate role existence and organization membership
+  const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
+    where: { id: props.body.hrm_platform_role_id },
+    select: { id: true, hrm_platform_organization_id: true, deleted_at: true },
+  });
+  if (role === null) {
+    throw new HttpException("Role not found", 400);
   }
-  // Resolve user ID
-  let userId: string & tags.Format<"uuid">;
-  if (props.body.hrm_platform_user_id) {
-    userId = props.body.hrm_platform_user_id;
-    const user = await MyGlobal.prisma.hrm_platform_members.findFirst({
-      where: {
-        id: userId,
-        deleted_at: null,
-      },
-    });
-    if (!user) {
-      throw new HttpException("User not found", 404);
-    }
-  } else if (props.body.email) {
-    const member = await MyGlobal.prisma.hrm_platform_members.findFirst({
-      where: {
-        email: props.body.email,
-        deleted_at: null,
-      },
-    });
-    if (!member) {
-      throw new HttpException("User not found", 404);
-    }
-    userId = member.id;
-  } else {
-    throw new HttpException(
-      "Either hrm_platform_user_id or email must be provided",
-      400,
-    );
+  if (role.deleted_at !== null) {
+    throw new HttpException("Role not found", 400);
   }
-  // Validate role exists in organization
-  const role = await MyGlobal.prisma.hrm_platform_roles.findFirst({
+  if (role.hrm_platform_organization_id !== organizationId) {
+    throw new HttpException("Role does not belong to this organization", 400);
+  }
+  // Validate uniqueness: no existing employee with same [organization_id, user_id]
+  const existing = await MyGlobal.prisma.hrm_platform_employees.findUnique({
     where: {
-      id: props.body.hrm_platform_role_id,
-      hrm_platform_organization_id: organizationId,
-      deleted_at: null,
+      hrm_platform_organization_id_hrm_platform_user_id: {
+        hrm_platform_organization_id: organizationId,
+        hrm_platform_user_id: userId,
+      },
     },
   });
-  if (!role) {
-    throw new HttpException("Role not found in organization", 404);
-  }
-  // Validate department if provided
-  if (props.body.hrm_platform_department_id) {
-    const department = await MyGlobal.prisma.hrm_platform_departments.findFirst(
-      {
-        where: {
-          id: props.body.hrm_platform_department_id,
-          hrm_platform_organization_id: organizationId,
-          deleted_at: null,
-        },
-      },
-    );
-    if (!department) {
-      throw new HttpException("Department not found in organization", 404);
-    }
-  }
-  // Validate uniqueness constraint
-  const existing = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      hrm_platform_organization_id: organizationId,
-      hrm_platform_user_id: userId,
-      deleted_at: null,
-    },
-  });
-  if (existing) {
+  if (existing !== null) {
     throw new HttpException(
       "Employee already exists in this organization",
       409,
     );
   }
+  // Validate department if provided
+  if (
+    props.body.hrm_platform_department_id !== undefined &&
+    props.body.hrm_platform_department_id !== null
+  ) {
+    const department =
+      await MyGlobal.prisma.hrm_platform_departments.findUnique({
+        where: { id: props.body.hrm_platform_department_id },
+        select: {
+          id: true,
+          hrm_platform_organization_id: true,
+          deleted_at: true,
+        },
+      });
+    if (department === null) {
+      throw new HttpException("Department not found", 400);
+    }
+    if (department.deleted_at !== null) {
+      throw new HttpException("Department not found", 400);
+    }
+    if (department.hrm_platform_organization_id !== organizationId) {
+      throw new HttpException(
+        "Department does not belong to this organization",
+        400,
+      );
+    }
+  }
   // Create employee record using collector
   const created = await MyGlobal.prisma.hrm_platform_employees.create({
     data: await HrmPlatformEmployeeCollector.collect({
       body: props.body,
-      hrmPlatformOrganizations: { id: organizationId } as IEntity,
+      user: { id: userId },
+      hrmPlatformOrganizations: { id: organizationId },
     }),
     ...HrmPlatformEmployeeTransformer.select(),
-  });
-  // Record activity log
-  await MyGlobal.prisma.hrm_platform_activity_logs.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      user_id: props.member.id,
-      organization_id: organizationId,
-      action_type: "employee:create",
-      target_entity: "employee",
-      target_id: created.id,
-      created_at: new Date(),
-    },
   });
   return await HrmPlatformEmployeeTransformer.transform(created);
 }

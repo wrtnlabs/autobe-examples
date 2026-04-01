@@ -6,17 +6,25 @@ import { GuestPayload } from "../../decorators/payload/GuestPayload";
 export async function guestAuthorize(request: {
   headers: { authorization?: string };
 }): Promise<GuestPayload> {
-  let payload: GuestPayload;
-  try {
-    payload = jwtAuthorize({ request }) as GuestPayload;
-  } catch {
-    throw new UnauthorizedException("Unauthorized");
-  }
+  const payload = jwtAuthorize({ request }) as GuestPayload;
 
   if (payload.type !== "guest") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  void MyGlobal;
+  try {
+    const guestSession = await MyGlobal.prisma.erp_hrm_time_tracking_guest_sessions.findFirst({
+      where: {
+        id: payload.session_id,
+      },
+    });
+
+    if (guestSession === null) {
+      throw new ForbiddenException("You're not enrolled");
+    }
+  } catch {
+    throw new UnauthorizedException("Invalid authorization");
+  }
+
   return payload;
 }

@@ -22,50 +22,43 @@ export async function postShoppingMallMemberOrders(props: {
   member: MemberPayload;
   body: IShoppingMallOrder.ICreate;
 }): Promise<IShoppingMallOrder> {
+  const paymentId = props.body.shopping_mall_payment_id;
   const payment =
     await MyGlobal.prisma.shopping_mall_payments.findUniqueOrThrow({
-      where: { id: props.body.shopping_mall_payment_id },
+      where: { id: paymentId },
       select: {
         id: true,
         status: true,
+        paid_at: true,
         deleted_at: true,
         orderForPayment: {
-          select: {
-            id: true,
-            shopping_customer_id: true,
-          },
+          select: { shopping_customer_id: true },
         },
       },
     });
   if (payment.deleted_at !== null) {
-    throw new HttpException("Payment not found", 404);
+    throw new HttpException("Payment is deleted", 400);
   }
-  const paymentOrder = payment.orderForPayment;
-  if (
-    paymentOrder === null ||
-    paymentOrder.shopping_customer_id !== props.member.id
-  ) {
+  const paymentBelongsToMember =
+    payment.orderForPayment?.shopping_customer_id === props.member.id;
+  if (!paymentBelongsToMember) {
     throw new HttpException("Forbidden", 403);
   }
-  if (payment.status !== "succeeded") {
+  const paymentIsSuccessful =
+    payment.paid_at !== null || payment.status === "succeeded";
+  if (!paymentIsSuccessful) {
     throw new HttpException("Payment not successful", 400);
   }
-  const created = await MyGlobal.prisma.$transaction(async (tx) => {
-    const orderCreate = await ShoppingMallOrderCollector.collect({
-      body: props.body,
-      customer: props.member,
-    });
-    const createdOrder = await tx.shopping_mall_orders.create({
-      data: orderCreate,
-      select: {
-        id: true,
-      },
-    });
-    const full = await tx.shopping_mall_orders.findUniqueOrThrow({
-      where: { id: createdOrder.id },
+  const createdOrder = await MyGlobal.prisma.$transaction(async (tx) => {
+    const created = await tx.shopping_mall_orders.create({
+      data: await ShoppingMallOrderCollector.collect({
+        body: props.body,
+        customer: props.member,
+        payment,
+      }),
       ...ShoppingMallOrderTransformer.select(),
     });
-    return full;
+    return created;
   });
-  return await ShoppingMallOrderTransformer.transform(created);
+  return await ShoppingMallOrderTransformer.transform(createdOrder);
 }

@@ -1,0 +1,197 @@
+/// User-created posts within communities supporting three content types:
+/// text, link, or image. Each post belongs to exactly one community and is
+/// authored by one member. Type-specific content fields (text_content,
+/// link_url, image_path) are mutually exclusive based on post_type
+/// discriminator. Vote scores and comment counts are computed at query time
+/// for feed display.
+///
+/// @namespace post
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Author's {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Community's {@link reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// Post title displayed in feeds and post detail view.
+  title String
+  
+  /// Content type discriminator: text, link, or image.
+  post_type String
+  
+  /// Text body content for text-type posts. Null for link/image posts.
+  text_content String?
+  
+  /// External URL for link-type posts. Null for text/image posts.
+  link_url String?
+  
+  /// Storage path for single image post. Null for text/link posts. Multiple
+  /// images stored in reddit_community_post_images.
+  image_path String?
+  
+  /// Post creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  images reddit_community_post_images[]
+  snapshots reddit_community_post_snapshots[]
+  comments reddit_community_comments[]
+  votes reddit_community_post_votes[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id, created_at], map: "reddit_community_posts_reddit_community_community_id_c_ede20472")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_posts_reddit_community_member_id_crea_b4877c90")
+  @@index([post_type])
+}
+
+/// Image attachments for image-type posts. Supports multiple images per post
+/// with ordering. Stores file metadata including storage path, size, MIME
+/// type, and dimensions. Managed through parent post entity.
+///
+/// @namespace post
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent post's {@link reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// Storage path or URL for the image file.
+  file_path String
+  
+  /// File size in bytes.
+  file_size Int
+  
+  /// MIME type of the image (e.g., image/jpeg, image/png).
+  mime_type String
+  
+  /// Image width in pixels.
+  width Int
+  
+  /// Image height in pixels.
+  height Int
+  
+  /// Display order for multiple images on the same post.
+  sort_order Int
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, sort_order], map: "reddit_community_post_images_reddit_community_post_id__9406f64c")
+}
+
+/// Point-in-time snapshots of post state for audit trail, compliance, and
+/// content recovery.
+///
+/// Captures complete post state including title, content, type, author,
+/// community, and metrics at specific moments. Immutable append-only records
+/// enable content recovery and historical analysis.
+///
+/// @namespace post
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the post being snapshotted. {@link
+  /// reddit_community_posts.id}.
+  reddit_community_post_id String
+  
+  /// Post author at time of snapshot. {@link reddit_community_members.id}.
+  reddit_community_member_id String
+  
+  /// Community where post was published. {@link
+  /// reddit_community_communities.id}.
+  reddit_community_community_id String
+  
+  /// Post title at time of snapshot.
+  title String
+  
+  /// Content type: TEXT, LINK, or IMAGE.
+  post_type String
+  
+  /// Text body for TEXT type posts.
+  text_content String?
+  
+  /// URL for LINK type posts.
+  link_url String?
+  
+  /// Image file path for IMAGE type posts.
+  image_path String?
+  
+  /// Cached vote score (upvotes minus downvotes) at snapshot time.
+  vote_score Int
+  
+  /// Total comment count at snapshot time.
+  comment_count Int
+  
+  /// Snapshot creation timestamp.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_community_member_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id], map: "reddit_community_post_snapshots_reddit_community_commu_fab30093")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_post_snapshots_reddit_community_post__d8065680")
+}

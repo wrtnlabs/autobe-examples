@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IRedditLikeComment } from "../../../../../api/structures/IRedditLikeComment";
-import { AdminAuth } from "../../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { deleteRedditLikeMemberPostsPostIdCommentsCommentId } from "../../../../../providers/deleteRedditLikeMemberPostsPostIdCommentsCommentId";
 import { getRedditLikeMemberPostsPostIdCommentsThread } from "../../../../../providers/getRedditLikeMemberPostsPostIdCommentsThread";
 import { postRedditLikeMemberPostsPostIdComments } from "../../../../../providers/postRedditLikeMemberPostsPostIdComments";
@@ -33,8 +33,8 @@ export class RedditlikeMemberPostsCommentsController {
    */
   @TypedRoute.Post()
   public async create(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
     @TypedBody()
@@ -94,8 +94,8 @@ export class RedditlikeMemberPostsCommentsController {
    */
   @TypedRoute.Put(":commentId")
   public async update(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
     @TypedParam("commentId")
@@ -133,8 +133,8 @@ export class RedditlikeMemberPostsCommentsController {
    */
   @TypedRoute.Delete(":commentId")
   public async erase(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
     @TypedParam("commentId")
@@ -170,8 +170,8 @@ export class RedditlikeMemberPostsCommentsController {
    */
   @TypedRoute.Get("thread")
   public async thread(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
   ): Promise<IRedditLikeComment.IThread> {

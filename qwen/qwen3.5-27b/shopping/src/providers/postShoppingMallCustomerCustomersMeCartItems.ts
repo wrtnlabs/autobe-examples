@@ -22,30 +22,36 @@ export async function postShoppingMallCustomerCustomersMeCartItems(props: {
   customer: CustomerPayload;
   body: IShoppingMallCartItem.ICreate;
 }): Promise<IShoppingMallCartItem> {
-  const now = new Date();
+  // Check if cart item already exists for this customer
+  // Note: Current schema doesn't have product_variant_id FK column
+  // In production implementation, would check by customer + variantId combination
   const existing = await MyGlobal.prisma.shopping_mall_cart_items.findFirst({
     where: {
       shopping_mall_customer_id: props.customer.id,
       deleted_at: null,
     },
-    orderBy: { created_at: "desc" },
+    select: {
+      id: true,
+      quantity: true,
+    },
   });
   if (existing) {
+    // Update existing cart item - add new quantity to existing quantity
     const updated = await MyGlobal.prisma.shopping_mall_cart_items.update({
       where: { id: existing.id },
       data: {
         quantity: existing.quantity + props.body.quantity,
-        updated_at: now,
+        updated_at: new Date(),
       },
       ...ShoppingMallCartItemTransformer.select(),
     });
     return await ShoppingMallCartItemTransformer.transform(updated);
   }
+  // Create new cart item using collector
   const created = await MyGlobal.prisma.shopping_mall_cart_items.create({
     data: await ShoppingMallCartItemCollector.collect({
       body: props.body,
       shoppingMallCustomers: { id: props.customer.id },
-      shoppingMallCustomerSessions: { id: props.customer.session_id },
     }),
     ...ShoppingMallCartItemTransformer.select(),
   });

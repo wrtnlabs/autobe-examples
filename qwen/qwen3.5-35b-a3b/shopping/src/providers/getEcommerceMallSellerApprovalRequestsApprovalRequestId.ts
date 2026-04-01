@@ -18,19 +18,20 @@ export async function getEcommerceMallSellerApprovalRequestsApprovalRequestId(pr
   seller: SellerPayload;
   approvalRequestId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallSellerApprovalRequest> {
-  // Query the approval request with seller relation
   const approvalRequest =
     await MyGlobal.prisma.ecommerce_mall_seller_approval_requests.findUniqueOrThrow(
       {
-        where: { id: props.approvalRequestId },
+        where: {
+          id: props.approvalRequestId,
+          deleted_at: null,
+        },
         ...EcommerceMallSellerApprovalRequestTransformer.select(),
       },
     );
-  // Authorization: Seller can only view their own request
-  if (approvalRequest.seller.id !== props.seller.id) {
+  const isOwner = approvalRequest.seller.id === props.seller.id;
+  if (!isOwner) {
     throw new HttpException("Forbidden", 403);
   }
-  // Transform and return
   return await EcommerceMallSellerApprovalRequestTransformer.transform(
     approvalRequest,
   );

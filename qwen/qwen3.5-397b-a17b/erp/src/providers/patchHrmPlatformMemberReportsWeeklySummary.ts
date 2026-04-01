@@ -18,55 +18,53 @@ export async function patchHrmPlatformMemberReportsWeeklySummary(props: {
   member: MemberPayload;
   body: IHrmPlatformWeeklySummaryReport.IRequest;
 }): Promise<IPageIHrmPlatformWeeklySummaryReport.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const page: number & tags.Type<"int32"> & tags.Minimum<0> =
+    props.body.page ?? 1;
+  const limit: number & tags.Type<"int32"> & tags.Minimum<0> =
+    props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      member_id: props.member.id,
-      deleted_at: null,
-    },
-    select: {
-      organization_id: true,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Employee record not found", 404);
-  }
-  const whereConditions: Prisma.hrm_platform_timelogsWhereInput = {
-    deleted_at: null,
-    employee: {
-      organization_id: employee.organization_id,
-      deleted_at: null,
-    },
-  };
-  if (props.body.from_date || props.body.to_date) {
-    whereConditions.date = {};
-    if (props.body.from_date) {
-      whereConditions.date.gte = new Date(props.body.from_date);
-    }
-    if (props.body.to_date) {
-      whereConditions.date.lte = new Date(props.body.to_date);
-    }
-  }
-  if (props.body.project_code) {
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+      where: {
+        user_id: props.member.id,
+        deleted_at: null,
+      },
+      select: {
+        organization_id: true,
+      },
+    });
+  let projectId: string | undefined;
+  if (props.body.projectCode !== undefined) {
     const project = await MyGlobal.prisma.hrm_platform_projects.findFirst({
       where: {
-        id: props.body.project_code,
         organization_id: employee.organization_id,
         deleted_at: null,
       },
       select: {
         id: true,
+        name: true,
       },
     });
-    if (!project) {
-      throw new HttpException("Project not found", 404);
+    if (project && project.name === props.body.projectCode) {
+      projectId = project.id;
     }
-    whereConditions.project_id = project.id;
   }
+  const startDate = new Date(props.body.startDate);
+  const endDate = new Date(props.body.endDate);
+  const whereInput = {
+    employee: {
+      organization_id: employee.organization_id,
+      deleted_at: null,
+    },
+    date: {
+      gte: startDate,
+      lte: endDate,
+    },
+    deleted_at: null,
+    ...(projectId && { project_id: projectId }),
+  } satisfies Prisma.hrm_platform_timelogsWhereInput;
   const timelogs = await MyGlobal.prisma.hrm_platform_timelogs.findMany({
-    where: whereConditions,
+    where: whereInput,
     select: {
       id: true,
       date: true,
@@ -74,51 +72,59 @@ export async function patchHrmPlatformMemberReportsWeeklySummary(props: {
       employee_id: true,
     },
     orderBy: {
-      date: "desc",
+      date: "asc",
     },
-    skip,
-    take: limit,
-  });
-  const total = await MyGlobal.prisma.hrm_platform_timelogs.count({
-    where: whereConditions,
   });
   const weeklyData = new Map<
     string,
     {
+      weekStart: Date;
+      weekEnd: Date;
       totalMinutes: number;
       timelogCount: number;
       employeeIds: Set<string>;
     }
   >();
   for (const timelog of timelogs) {
-    const weekStart = getWeekStart(timelog.date);
-    const weekKey = toISOStringSafe(weekStart);
-    if (!weeklyData.has(weekKey)) {
+    const date = timelog.date;
+    const dayOfWeek = date.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const weekStart = new Date(date);
+    weekStart.setDate(date.getDate() + diffToMonday);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+    const weekKey = weekStart.toISOString();
+    const existing = weeklyData.get(weekKey);
+    if (existing) {
+      existing.totalMinutes += timelog.duration_minutes;
+      existing.timelogCount += 1;
+      existing.employeeIds.add(timelog.employee_id);
+    } else {
       weeklyData.set(weekKey, {
-        totalMinutes: 0,
-        timelogCount: 0,
-        employeeIds: new Set(),
+        weekStart,
+        weekEnd,
+        totalMinutes: timelog.duration_minutes,
+        timelogCount: 1,
+        employeeIds: new Set([timelog.employee_id]),
       });
     }
-    const weekData = weeklyData.get(weekKey)!;
-    weekData.totalMinutes += timelog.duration_minutes;
-    weekData.timelogCount += 1;
-    weekData.employeeIds.add(timelog.employee_id);
   }
-  const data: IHrmPlatformWeeklySummaryReport.ISummary[] = [];
-  for (const [weekKey, weekData] of weeklyData.entries()) {
-    const weekStart = new Date(weekKey);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
-    weekEnd.setHours(23, 59, 59, 999);
-    data.push({
-      weekStart: toISOStringSafe(weekStart),
-      weekEnd: toISOStringSafe(weekEnd),
-      totalHours: weekData.totalMinutes / 60,
-      timelogCount: weekData.timelogCount,
-      employeeCount: weekData.employeeIds.size,
-    });
-  }
+  const allWeeks = Array.from(weeklyData.values()).sort((a, b) => {
+    return b.weekStart.getTime() - a.weekStart.getTime();
+  });
+  const total = allWeeks.length;
+  const paginatedWeeks = allWeeks.slice(skip, skip + limit);
+  const data: IHrmPlatformWeeklySummaryReport.ISummary[] = paginatedWeeks.map(
+    (week) => ({
+      weekStart: week.weekStart.toISOString(),
+      weekEnd: week.weekEnd.toISOString(),
+      totalHours: week.totalMinutes / 60,
+      timelogCount: week.timelogCount,
+      employeeCount: week.employeeIds.size,
+    }),
+  );
   return {
     pagination: {
       current: page,
@@ -128,12 +134,4 @@ export async function patchHrmPlatformMemberReportsWeeklySummary(props: {
     } satisfies IPage.IPagination,
     data,
   } satisfies IPageIHrmPlatformWeeklySummaryReport.ISummary;
-}
-function getWeekStart(date: Date): Date {
-  const result = new Date(date);
-  const day = result.getDay();
-  const diff = result.getDate() - day + (day === 0 ? -6 : 1);
-  result.setDate(diff);
-  result.setHours(0, 0, 0, 0);
-  return result;
 }

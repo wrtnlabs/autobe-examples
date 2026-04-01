@@ -18,71 +18,81 @@ export async function patchShoppingMallAdminAdminCancellationRequests(props: {
   admin: AdminPayload;
   body: IShoppingMallCancellationRequest.IRequest;
 }): Promise<IPageIShoppingMallCancellationRequest.ISummary> {
+  const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
+    where: { id: props.admin.id, deleted_at: null },
+    select: { id: true },
+  });
+  if (admin === null) {
+    throw new HttpException("You're not enrolled", 403);
+  }
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  if (page < 1) {
-    throw new HttpException("Invalid page", 400);
-  }
-  if (limit < 1 || limit > 100) {
-    throw new HttpException("Invalid limit", 400);
-  }
-  const sortBy = props.body.sortBy ?? "created_at";
-  const sortDirection = props.body.sortDirection ?? "desc";
-  const where = {
+  const limitRequested = props.body.limit ?? 20;
+  const limit = limitRequested > 100 ? 100 : limitRequested;
+  const skip = (page - 1) * limit;
+  const where: Prisma.shopping_mall_cancellation_requestsWhereInput = {
     ...(props.body.includeDeleted ? {} : { deleted_at: null }),
     ...(props.body.shoppingMallOrderItemId
       ? { shopping_mall_order_item_id: props.body.shoppingMallOrderItemId }
       : {}),
-    ...(props.body.status ? { status: props.body.status } : {}),
-    ...(props.body.requestedAtFrom || props.body.requestedAtTo
+    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
+    ...(props.body.requestedAtFrom !== undefined ||
+    props.body.requestedAtTo !== undefined
       ? {
           requested_at: {
-            ...(props.body.requestedAtFrom
+            ...(props.body.requestedAtFrom !== undefined
               ? { gte: props.body.requestedAtFrom }
               : {}),
-            ...(props.body.requestedAtTo
+            ...(props.body.requestedAtTo !== undefined
               ? { lte: props.body.requestedAtTo }
               : {}),
           },
         }
       : {}),
-    ...(props.body.createdAtFrom || props.body.createdAtTo
+    ...(props.body.createdAtFrom !== undefined ||
+    props.body.createdAtTo !== undefined
       ? {
           created_at: {
-            ...(props.body.createdAtFrom
+            ...(props.body.createdAtFrom !== undefined
               ? { gte: props.body.createdAtFrom }
               : {}),
-            ...(props.body.createdAtTo ? { lte: props.body.createdAtTo } : {}),
+            ...(props.body.createdAtTo !== undefined
+              ? { lte: props.body.createdAtTo }
+              : {}),
           },
         }
       : {}),
-    ...(props.body.sellerDecisionedAtFrom || props.body.sellerDecisionedAtTo
+    ...(props.body.sellerDecisionedAtFrom !== undefined ||
+    props.body.sellerDecisionedAtTo !== undefined
       ? {
           seller_decisioned_at: {
-            ...(props.body.sellerDecisionedAtFrom
+            ...(props.body.sellerDecisionedAtFrom !== undefined
               ? { gte: props.body.sellerDecisionedAtFrom }
               : {}),
-            ...(props.body.sellerDecisionedAtTo
+            ...(props.body.sellerDecisionedAtTo !== undefined
               ? { lte: props.body.sellerDecisionedAtTo }
               : {}),
           },
         }
       : {}),
-  } satisfies Prisma.shopping_mall_cancellation_requestsWhereInput;
-  const orderBy = (
+  };
+  const direction = props.body.sortDirection ?? "desc";
+  const sortBy = props.body.sortBy ?? "created_at";
+  const orderBy: Prisma.Enumerable<Prisma.shopping_mall_cancellation_requestsOrderByWithRelationInput> =
     sortBy === "requested_at"
-      ? { requested_at: sortDirection }
+      ? [{ requested_at: direction }, { created_at: "desc" }, { id: "desc" }]
       : sortBy === "seller_decisioned_at"
-        ? { seller_decisioned_at: sortDirection }
-        : { created_at: sortDirection }
-  ) satisfies Prisma.shopping_mall_cancellation_requestsOrderByWithRelationInput;
-  const skip = (page - 1) * limit;
-  const [records, total] = await Promise.all([
-    MyGlobal.prisma.shopping_mall_cancellation_requests.findMany({
+        ? [
+            { seller_decisioned_at: direction },
+            { created_at: "desc" },
+            { id: "desc" },
+          ]
+        : [{ created_at: direction }, { id: "desc" }];
+  const items =
+    await MyGlobal.prisma.shopping_mall_cancellation_requests.findMany({
       where,
+      orderBy,
       skip,
       take: limit,
-      orderBy,
       select: {
         id: true,
         shopping_mall_order_item_id: true,
@@ -95,30 +105,33 @@ export async function patchShoppingMallAdminAdminCancellationRequests(props: {
         updated_at: true,
         deleted_at: true,
       },
-    }),
-    MyGlobal.prisma.shopping_mall_cancellation_requests.count({ where }),
-  ]);
+    });
+  const records =
+    await MyGlobal.prisma.shopping_mall_cancellation_requests.count({ where });
   return {
-    data: records.map((r) => ({
-      id: typia.assert(r.id),
-      shopping_mall_order_item_id: typia.assert(r.shopping_mall_order_item_id),
-      reason: r.reason,
-      requested_at: toISOStringSafe(r.requested_at),
-      status: r.status,
-      seller_decisioned_at:
-        r.seller_decisioned_at === null
-          ? null
-          : toISOStringSafe(r.seller_decisioned_at),
-      seller_response_reason: r.seller_response_reason,
-      created_at: toISOStringSafe(r.created_at),
-      updated_at: toISOStringSafe(r.updated_at),
-      deleted_at: r.deleted_at === null ? null : toISOStringSafe(r.deleted_at),
-    })),
     pagination: {
       current: page,
       limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+      records,
+      pages: Math.ceil(records / limit),
+    },
+    data: items.map((x) => {
+      return {
+        id: x.id,
+        shopping_mall_order_item_id: x.shopping_mall_order_item_id,
+        reason: x.reason,
+        requested_at: toISOStringSafe(x.requested_at),
+        status: x.status,
+        seller_decisioned_at:
+          x.seller_decisioned_at === null
+            ? null
+            : toISOStringSafe(x.seller_decisioned_at),
+        seller_response_reason: x.seller_response_reason,
+        created_at: toISOStringSafe(x.created_at),
+        updated_at: toISOStringSafe(x.updated_at),
+        deleted_at:
+          x.deleted_at === null ? null : toISOStringSafe(x.deleted_at),
+      } satisfies IShoppingMallCancellationRequest.ISummary;
+    }),
   };
 }

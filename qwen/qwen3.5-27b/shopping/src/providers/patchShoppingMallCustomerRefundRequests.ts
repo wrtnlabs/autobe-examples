@@ -23,31 +23,21 @@ export async function patchShoppingMallCustomerRefundRequests(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.shopping_mall_refund_requestsWhereInput = {
+  const whereInput = {
     deleted_at: null,
     shopping_mall_customer_id: props.customer.id,
-    ...(props.body.status !== undefined && {
-      status: props.body.status,
-    }),
+    ...(props.body.status !== undefined && { status: props.body.status }),
     ...(props.body.requestedAtFrom !== undefined && {
-      requested_at: {
-        gte: new Date(props.body.requestedAtFrom),
-      },
+      requested_at: { gte: new Date(props.body.requestedAtFrom) },
     }),
     ...(props.body.requestedAtTo !== undefined && {
-      requested_at: {
-        lte: new Date(props.body.requestedAtTo),
-      },
+      requested_at: { lte: new Date(props.body.requestedAtTo) },
     }),
     ...(props.body.respondedAtFrom !== undefined && {
-      responded_at: {
-        gte: new Date(props.body.respondedAtFrom),
-      },
+      responded_at: { gte: new Date(props.body.respondedAtFrom) },
     }),
     ...(props.body.respondedAtTo !== undefined && {
-      responded_at: {
-        lte: new Date(props.body.respondedAtTo),
-      },
+      responded_at: { lte: new Date(props.body.respondedAtTo) },
     }),
   } satisfies Prisma.shopping_mall_refund_requestsWhereInput;
   const data = await MyGlobal.prisma.shopping_mall_refund_requests.findMany({

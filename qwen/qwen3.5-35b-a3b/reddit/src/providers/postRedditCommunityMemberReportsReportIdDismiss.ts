@@ -12,8 +12,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { RedditCommunityCommunityAtSummaryTransformer } from "../transformers/RedditCommunityCommunityAtSummaryTransformer";
-import { RedditCommunityMemberAtSummaryTransformer } from "../transformers/RedditCommunityMemberAtSummaryTransformer";
 import { RedditCommunityReportTransformer } from "../transformers/RedditCommunityReportTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -22,61 +20,56 @@ export async function postRedditCommunityMemberReportsReportIdDismiss(props: {
   member: MemberPayload;
   reportId: string & tags.Format<"uuid">;
 }): Promise<IRedditCommunityReport> {
-  // Query the report with nested relations and verify it exists with pending status
-  const existingReport =
-    await MyGlobal.prisma.reddit_community_reports.findFirst({
-      where: {
-        id: props.reportId,
-        status: "pending",
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        reporter_id: true,
-        community_id: true,
-        status: true,
+  // Query report with relations needed for transformer
+  const report =
+    await MyGlobal.prisma.reddit_community_reports.findUniqueOrThrow({
+      where: { id: props.reportId },
+      include: {
+        reporter: {
+          include: {
+            userAvatarFiles: true,
+            karma: true,
+          },
+        },
+        community: {
+          include: {
+            owner: {
+              include: {
+                userAvatarFiles: true,
+                karma: true,
+              },
+            },
+            icon: true,
+          },
+        },
       },
     });
-  if (existingReport === null) {
-    throw new HttpException("Report not found or already resolved", 404);
+  // Verify report is pending (cannot dismiss already resolved reports)
+  if (report.status !== "pending") {
+    throw new HttpException("Report is not pending", 400);
   }
-  // Verify the requesting member is a moderator of the community
+  // Verify member is moderator of the community
   const moderator = await MyGlobal.prisma.reddit_community_moderators.findFirst(
     {
       where: {
         reddit_community_moderator_id: props.member.id,
-        community: { id: existingReport.community_id },
-        deleted_at: null,
+        community: {
+          id: report.community_id,
+        },
       },
     },
   );
   if (moderator === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Update the report status to dismissed
-  const updatedReport = await MyGlobal.prisma.reddit_community_reports.update({
-    where: {
-      id: props.reportId,
-    },
+  // Update report to dismissed status
+  const updated = await MyGlobal.prisma.reddit_community_reports.update({
+    where: { id: props.reportId },
     data: {
       status: "dismissed",
       updated_at: new Date(),
     },
-    select: {
-      id: true,
-      reporter: RedditCommunityMemberAtSummaryTransformer.select(),
-      community: RedditCommunityCommunityAtSummaryTransformer.select(),
-      target_type: true,
-      target_id: true,
-      reason: true,
-      status: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      systemLogs: true,
-      actionHistories: true,
-    },
+    ...RedditCommunityReportTransformer.select(),
   });
-  // Transform and return the updated report
-  return await RedditCommunityReportTransformer.transform(updatedReport);
+  return await RedditCommunityReportTransformer.transform(updated);
 }

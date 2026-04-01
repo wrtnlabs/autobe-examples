@@ -3,8 +3,10 @@ import { IRedditCommunityFile } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IRedditCommunityFileCdnLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityFileCdnLog";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityFileAtSummaryTransformer } from "./RedditCommunityFileAtSummaryTransformer";
 
@@ -16,6 +18,7 @@ export namespace RedditCommunityFileCdnLogTransformer {
     return {
       select: {
         id: true,
+        reddit_community_file_id: true,
         cdn_node_identifier: true,
         cache_status: true,
         http_status_code: true,
@@ -38,20 +41,20 @@ export namespace RedditCommunityFileCdnLogTransformer {
   ): Promise<IRedditCommunityFileCdnLog> {
     return {
       id: input.id,
-      reddit_community_file_id: input.file.id,
+      reddit_community_file_id: input.reddit_community_file_id,
       cdn_node_identifier: input.cdn_node_identifier,
       cache_status: input.cache_status,
       http_status_code: input.http_status_code,
       response_size_bytes: input.response_size_bytes,
       cache_hit_bytes: input.cache_hit_bytes,
       origin_fetch_bytes: input.origin_fetch_bytes,
-      delivered_at: input.delivered_at.toISOString(),
+      delivered_at: toISOStringSafe(input.delivered_at),
       user_agent: input.user_agent ?? undefined,
       ip_address: input.ip_address ?? undefined,
       region: input.region ?? undefined,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       file: await RedditCommunityFileAtSummaryTransformer.transform(input.file),
     };
   }

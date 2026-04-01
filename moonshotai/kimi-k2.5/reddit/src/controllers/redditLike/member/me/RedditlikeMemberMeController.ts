@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia from "typia";
 
 import { IRedditLikeMember } from "../../../../api/structures/IRedditLikeMember";
-import { AdminAuth } from "../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { getRedditLikeMemberMe } from "../../../../providers/getRedditLikeMemberMe";
 
 @Controller("/redditLike/member/me")
@@ -26,8 +26,8 @@ export class RedditlikeMemberMeController {
    */
   @TypedRoute.Get()
   public async at(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
   ): Promise<IRedditLikeMember> {
     try {
       return await getRedditLikeMemberMe({

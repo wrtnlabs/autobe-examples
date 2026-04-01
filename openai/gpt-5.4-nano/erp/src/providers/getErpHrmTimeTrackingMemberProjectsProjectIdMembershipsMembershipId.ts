@@ -21,23 +21,21 @@ export async function getErpHrmTimeTrackingMemberProjectsProjectIdMembershipsMem
   membershipId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingProjectMembership> {
   const membership =
-    await MyGlobal.prisma.erp_hrm_time_tracking_project_memberships.findUniqueOrThrow(
+    await MyGlobal.prisma.erp_hrm_time_tracking_project_memberships.findFirstOrThrow(
       {
-        where: { id: props.membershipId },
+        where: {
+          id: props.membershipId,
+          project_id: props.projectId,
+          deleted_at: null,
+          employee_id: props.member.id,
+        },
         ...ErpHrmTimeTrackingProjectMembershipTransformer.select(),
       },
     );
-  if (membership.project_id !== props.projectId) {
-    throw new HttpException("Not Found", 404);
-  }
-  // active-only visibility
-  if (membership.deleted_at !== null) {
-    throw new HttpException("Not Found", 404);
-  }
-  // employee-perspective: only the caller's own employee membership is visible
-  if (membership.employee_id !== props.member.id) {
-    throw new HttpException("Not Found", 404);
-  }
+  await MyGlobal.prisma.erp_hrm_time_tracking_projects.findUniqueOrThrow({
+    where: { id: props.projectId },
+    select: { id: true },
+  });
   return await ErpHrmTimeTrackingProjectMembershipTransformer.transform(
     membership,
   );

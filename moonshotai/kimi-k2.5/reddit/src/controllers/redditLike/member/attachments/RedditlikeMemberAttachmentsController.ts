@@ -3,8 +3,8 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IRedditLikeAttachment } from "../../../../api/structures/IRedditLikeAttachment";
-import { AdminAuth } from "../../../../decorators/AdminAuth";
-import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
+import { MemberAuth } from "../../../../decorators/MemberAuth";
+import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { deleteRedditLikeMemberAttachmentsAttachmentId } from "../../../../providers/deleteRedditLikeMemberAttachmentsAttachmentId";
 import { postRedditLikeMemberAttachments } from "../../../../providers/postRedditLikeMemberAttachments";
 
@@ -51,8 +51,8 @@ export class RedditlikeMemberAttachmentsController {
    */
   @TypedRoute.Post()
   public async create(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedBody()
     body: IRedditLikeAttachment.ICreate,
   ): Promise<IRedditLikeAttachment> {
@@ -119,8 +119,8 @@ export class RedditlikeMemberAttachmentsController {
    */
   @TypedRoute.Delete(":attachmentId")
   public async erase(
-    @AdminAuth()
-    member: AdminPayload,
+    @MemberAuth()
+    member: MemberPayload,
     @TypedParam("attachmentId")
     attachmentId: string & tags.Format<"uuid">,
   ): Promise<void> {

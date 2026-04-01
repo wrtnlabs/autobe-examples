@@ -18,7 +18,7 @@ export async function getShoppingMallMemberCartsCartIdItemsCartItemId(props: {
   cartId: string & tags.Format<"uuid">;
   cartItemId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallCartItem> {
-  await MyGlobal.prisma.shopping_mall_carts.findFirstOrThrow({
+  const cart = await MyGlobal.prisma.shopping_mall_carts.findFirst({
     where: {
       id: props.cartId,
       shopping_mall_member_id: props.member.id,
@@ -28,14 +28,19 @@ export async function getShoppingMallMemberCartsCartIdItemsCartItemId(props: {
       id: true,
     },
   });
-  const cartItem =
-    await MyGlobal.prisma.shopping_mall_cart_items.findFirstOrThrow({
-      where: {
-        id: props.cartItemId,
-        shopping_mall_cart_id: props.cartId,
-        deleted_at: null,
-      },
-      ...ShoppingMallCartItemTransformer.select(),
-    });
-  return await ShoppingMallCartItemTransformer.transform(cartItem);
+  if (cart === null) {
+    throw new HttpException("Not Found", 404);
+  }
+  const cartItem = await MyGlobal.prisma.shopping_mall_cart_items.findFirst({
+    where: {
+      id: props.cartItemId,
+      shopping_mall_cart_id: props.cartId,
+      deleted_at: null,
+    },
+    ...ShoppingMallCartItemTransformer.select(),
+  });
+  if (cartItem === null) {
+    throw new HttpException("Not Found", 404);
+  }
+  return ShoppingMallCartItemTransformer.transform(cartItem);
 }

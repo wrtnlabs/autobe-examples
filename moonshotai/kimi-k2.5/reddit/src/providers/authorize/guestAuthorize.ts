@@ -32,7 +32,7 @@ export async function guestAuthorize(request: {
   });
 
   if (session === null) {
-    throw new ForbiddenException("Session expired");
+    throw new ForbiddenException("Session has expired");
   }
 
   return payload;

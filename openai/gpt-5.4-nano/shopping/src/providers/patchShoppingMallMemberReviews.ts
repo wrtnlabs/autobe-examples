@@ -20,52 +20,42 @@ export async function patchShoppingMallMemberReviews(props: {
 }): Promise<IPageIShoppingMallReview.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  const includeDeleted = props.body.includeDeleted ?? false;
-  const sort = props.body.sort ?? "newest";
-  const where = {
-    ...(includeDeleted
-      ? {}
-      : ({
-          deleted_at: null,
-        } satisfies Prisma.shopping_mall_reviewsWhereInput)),
-    ...(props.body.shoppingMallProductId
-      ? ({
-          shopping_mall_product_id: props.body.shoppingMallProductId,
-        } satisfies Prisma.shopping_mall_reviewsWhereInput)
-      : {}),
-    ...(props.body.shoppingMallOrderItemId
-      ? ({
-          shopping_mall_order_item_id: props.body.shoppingMallOrderItemId,
-        } satisfies Prisma.shopping_mall_reviewsWhereInput)
-      : {}),
-    ...(props.body.shoppingMallCustomerId
-      ? ({
-          shopping_mall_customer_id: props.body.shoppingMallCustomerId,
-        } satisfies Prisma.shopping_mall_reviewsWhereInput)
-      : ({
-          shopping_mall_customer_id: props.member.id,
-        } satisfies Prisma.shopping_mall_reviewsWhereInput)),
-  } satisfies Prisma.shopping_mall_reviewsWhereInput;
-  if (
-    props.body.shoppingMallCustomerId !== undefined &&
-    props.body.shoppingMallCustomerId !== props.member.id
-  ) {
-    throw new HttpException("Forbidden", 403);
+  const shoppingMallCustomerId =
+    props.body.shoppingMallCustomerId ?? props.member.id;
+  // Authorization gating: member callers can only view their own reviews.
+  if (props.body.shoppingMallCustomerId !== undefined) {
+    if (shoppingMallCustomerId !== props.member.id) {
+      throw new HttpException("Forbidden", 403);
+    }
   }
+  const where = {
+    shopping_mall_customer_id: shoppingMallCustomerId,
+    ...(props.body.shoppingMallProductId !== undefined && {
+      shopping_mall_product_id: props.body.shoppingMallProductId,
+    }),
+    ...(props.body.shoppingMallOrderItemId !== undefined && {
+      shopping_mall_order_item_id: props.body.shoppingMallOrderItemId,
+    }),
+    ...(props.body.includeDeleted === undefined ||
+    props.body.includeDeleted === false
+      ? { deleted_at: null as unknown as Date }
+      : {}),
+  } satisfies Prisma.shopping_mall_reviewsWhereInput;
   const orderBy =
-    sort === "newest"
-      ? ([
-          { updated_at: "desc" },
-          { created_at: "desc" },
-        ] satisfies Prisma.shopping_mall_reviewsOrderByWithRelationInput[])
-      : ([
-          { updated_at: "asc" },
-          { created_at: "asc" },
-        ] satisfies Prisma.shopping_mall_reviewsOrderByWithRelationInput[]);
-  const [items, total] = await MyGlobal.prisma.$transaction([
+    props.body.sort === "oldest"
+      ? ({
+          updated_at: "asc" as const,
+          created_at: "asc" as const,
+        } satisfies Prisma.shopping_mall_reviewsOrderByWithRelationInput)
+      : ({
+          updated_at: "desc" as const,
+          created_at: "desc" as const,
+        } satisfies Prisma.shopping_mall_reviewsOrderByWithRelationInput);
+  const skip = (page - 1) * limit;
+  const [rows, total] = await MyGlobal.prisma.$transaction([
     MyGlobal.prisma.shopping_mall_reviews.findMany({
       where,
-      skip: (page - 1) * limit,
+      skip,
       take: limit,
       orderBy,
       select: {
@@ -83,37 +73,27 @@ export async function patchShoppingMallMemberReviews(props: {
     }),
     MyGlobal.prisma.shopping_mall_reviews.count({ where }),
   ]);
-  const data = await ArrayUtil.asyncMap(items, async (r) => {
-    const id = typia.assert<string & tags.Format<"uuid">>(r.id);
-    const shoppingMallProductId = typia.assert<string & tags.Format<"uuid">>(
-      r.shopping_mall_product_id,
-    );
-    const shoppingMallOrderItemId = typia.assert<string & tags.Format<"uuid">>(
-      r.shopping_mall_order_item_id,
-    );
-    const shoppingMallCustomerId = typia.assert<string & tags.Format<"uuid">>(
-      r.shopping_mall_customer_id,
-    );
-    return {
-      id,
-      shoppingMallProductId,
-      shoppingMallOrderItemId,
-      shoppingMallCustomerId,
-      rating: r.rating,
-      body: r.body === null ? null : r.body,
-      isPublic: r.is_public,
-      deletedAt: r.deleted_at === null ? null : toISOStringSafe(r.deleted_at),
-      createdAt: toISOStringSafe(r.created_at),
-      updatedAt: toISOStringSafe(r.updated_at),
-    } satisfies IShoppingMallReview.ISummary;
-  });
   return {
     pagination: {
       current: page,
       limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : Math.ceil(total / limit),
     },
-    data,
+    data: rows.map(
+      (r) =>
+        ({
+          id: r.id,
+          shoppingMallProductId: r.shopping_mall_product_id,
+          shoppingMallOrderItemId: r.shopping_mall_order_item_id,
+          shoppingMallCustomerId: r.shopping_mall_customer_id,
+          rating: r.rating,
+          body: r.body ?? null,
+          isPublic: r.is_public,
+          deletedAt: r.deleted_at === null ? null : r.deleted_at.toISOString(),
+          createdAt: r.created_at.toISOString(),
+          updatedAt: r.updated_at.toISOString(),
+        }) satisfies IShoppingMallReview.ISummary,
+    ),
   };
 }

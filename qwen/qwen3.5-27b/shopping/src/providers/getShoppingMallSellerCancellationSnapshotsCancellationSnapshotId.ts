@@ -21,12 +21,46 @@ export async function getShoppingMallSellerCancellationSnapshotsCancellationSnap
   seller: SellerPayload;
   cancellationSnapshotId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallCancellationSnapshot> {
+  // Fetch the snapshot with cancellation request and order item details for authorization
   const snapshot =
+    await MyGlobal.prisma.shopping_mall_cancellation_snapshots.findUniqueOrThrow(
+      {
+        where: { id: props.cancellationSnapshotId },
+        select: {
+          id: true,
+          snapshot_data: true,
+          created_at: true,
+          cancellationRequest: {
+            select: {
+              id: true,
+              orderItem: {
+                select: {
+                  id: true,
+                  seller: {
+                    select: {
+                      id: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    );
+  // Authorization: Verify seller owns the product in this cancellation request
+  if (snapshot.cancellationRequest.orderItem.seller.id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Fetch the full snapshot with transformer select for response
+  const fullSnapshot =
     await MyGlobal.prisma.shopping_mall_cancellation_snapshots.findUniqueOrThrow(
       {
         where: { id: props.cancellationSnapshotId },
         ...ShoppingMallCancellationSnapshotTransformer.select(),
       },
     );
-  return await ShoppingMallCancellationSnapshotTransformer.transform(snapshot);
+  return await ShoppingMallCancellationSnapshotTransformer.transform(
+    fullSnapshot,
+  );
 }

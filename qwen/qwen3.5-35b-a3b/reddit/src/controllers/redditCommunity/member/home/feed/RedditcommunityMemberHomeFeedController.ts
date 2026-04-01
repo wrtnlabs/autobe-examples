@@ -4,9 +4,6 @@ import typia from "typia";
 
 import { IPageIRedditCommunityFeedQuery } from "../../../../../api/structures/IPageIRedditCommunityFeedQuery";
 import { IRedditCommunityFeedQuery } from "../../../../../api/structures/IRedditCommunityFeedQuery";
-import { MemberAuth } from "../../../../../decorators/MemberAuth";
-import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
-import { patchRedditCommunityMemberHomeFeed } from "../../../../../providers/patchRedditCommunityMemberHomeFeed";
 
 @Controller("/redditCommunity/member/home/feed")
 export class RedditcommunityMemberHomeFeedController {
@@ -45,19 +42,10 @@ export class RedditcommunityMemberHomeFeedController {
    */
   @TypedRoute.Patch()
   public async index(
-    @MemberAuth()
-    member: MemberPayload,
     @TypedBody()
     body: IRedditCommunityFeedQuery.IRequest,
   ): Promise<IPageIRedditCommunityFeedQuery.ISummary> {
-    try {
-      return await patchRedditCommunityMemberHomeFeed({
-        member,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
+    body;
+    return typia.random<IPageIRedditCommunityFeedQuery.ISummary>();
   }
 }

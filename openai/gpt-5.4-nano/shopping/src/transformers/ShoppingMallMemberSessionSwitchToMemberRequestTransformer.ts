@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallMemberSessionSwitchToMemberRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMemberSessionSwitchToMemberRequest";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -14,6 +15,9 @@ export namespace ShoppingMallMemberSessionSwitchToMemberRequestTransformer {
     return {
       select: {
         id: true,
+        href: true,
+        referrer: true,
+        ip: true,
         created_at: true,
         expired_at: true,
         member: {
@@ -21,9 +25,6 @@ export namespace ShoppingMallMemberSessionSwitchToMemberRequestTransformer {
             id: true,
           },
         },
-        href: true,
-        referrer: true,
-        ip: true,
       },
     } satisfies Prisma.shopping_mall_member_sessionsFindManyArgs;
   }
@@ -33,7 +34,7 @@ export namespace ShoppingMallMemberSessionSwitchToMemberRequestTransformer {
     return {
       href: input.href,
       referrer: input.referrer,
-      ip: input.ip,
+      ip: input.ip.length ? input.ip : undefined,
     };
   }
 }

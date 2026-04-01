@@ -22,73 +22,76 @@ export async function patchHrmPlatformMemberEmployees(props: {
   member: MemberPayload;
   body: IHrmPlatformEmployee.IRequest;
 }): Promise<IPageIHrmPlatformEmployee.ISummary> {
-  // Resolve member's organization context
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        hrm_platform_user_id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        hrm_platform_organization_id: true,
-      },
-    });
+  // Find member's employee record to get organization context
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      hrm_platform_user_id: props.member.id,
+      deleted_at: null,
+    },
+    select: {
+      hrm_platform_organization_id: true,
+    },
+  });
+  if (!employee) {
+    throw new HttpException("Member has no employee record", 403);
+  }
+  const organizationId = employee.hrm_platform_organization_id;
   // Build where clause
-  const whereInput: Prisma.hrm_platform_employeesWhereInput = {
-    hrm_platform_organization_id: employee.hrm_platform_organization_id,
+  const where: Prisma.hrm_platform_employeesWhereInput = {
+    hrm_platform_organization_id: organizationId,
     deleted_at: null,
-    ...(props.body.name && {
-      user: {
-        display_name: {
-          contains: props.body.name,
-          mode: "insensitive",
-        },
+  };
+  // Apply name filter (ILIKE on display_name via JOIN with members)
+  if (props.body.name !== undefined) {
+    where.user = {
+      display_name: {
+        contains: props.body.name,
+        mode: "insensitive",
       },
-    }),
-    ...(props.body.departmentId && {
-      hrm_platform_department_id: props.body.departmentId,
-    }),
-    ...(props.body.employmentType && {
-      employment_type: props.body.employmentType,
-    }),
-    ...(props.body.status && {
-      status: props.body.status,
-    }),
-  } satisfies Prisma.hrm_platform_employeesWhereInput;
-  // Build order by
-  const orderByInput: Prisma.hrm_platform_employeesOrderByWithRelationInput =
-    props.body.sort && props.body.order
-      ? ({ [props.body.sort]: props.body.order } as const)
-      : { created_at: "desc" as const };
+    } satisfies Prisma.hrm_platform_membersWhereInput;
+  }
+  // Apply department filter
+  if (props.body.departmentId !== undefined) {
+    where.hrm_platform_department_id = props.body.departmentId;
+  }
+  // Apply employment type filter
+  if (props.body.employmentType !== undefined) {
+    where.employment_type = props.body.employmentType;
+  }
+  // Apply status filter
+  if (props.body.status !== undefined) {
+    where.status = props.body.status;
+  }
   // Pagination
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Fetch data
+  // Sorting
+  const orderBy: Prisma.hrm_platform_employeesOrderByWithRelationInput = {
+    created_at: props.body.order ?? "desc",
+  };
+  // Execute query for data
   const data = await MyGlobal.prisma.hrm_platform_employees.findMany({
-    where: whereInput,
+    where,
     skip,
     take: limit,
-    orderBy:
-      orderByInput satisfies Prisma.hrm_platform_employeesOrderByWithRelationInput,
+    orderBy,
     ...HrmPlatformEmployeeAtSummaryTransformer.select(),
   });
-  // Fetch total count
-  const total = await MyGlobal.prisma.hrm_platform_employees.count({
-    where: whereInput,
-  });
+  // Execute query for total count
+  const total = await MyGlobal.prisma.hrm_platform_employees.count({ where });
   // Transform results
-  const transformed = await ArrayUtil.asyncMap(
+  const transformedData = await ArrayUtil.asyncMap(
     data,
     HrmPlatformEmployeeAtSummaryTransformer.transform,
   );
   return {
+    data: transformedData,
     pagination: {
       current: page,
       limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformed,
   } satisfies IPageIHrmPlatformEmployee.ISummary;
 }

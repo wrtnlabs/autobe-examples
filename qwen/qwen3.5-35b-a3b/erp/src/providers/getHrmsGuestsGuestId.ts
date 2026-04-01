@@ -12,8 +12,6 @@ import { HrmsGuestTransformer } from "../transformers/HrmsGuestTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
-// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 export async function getHrmsGuestsGuestId(props: {
   guestId: string & tags.Format<"uuid">;
 }): Promise<IHrmsGuest> {

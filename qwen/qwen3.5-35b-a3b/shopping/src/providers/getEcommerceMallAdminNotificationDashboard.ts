@@ -17,70 +17,87 @@ export async function getEcommerceMallAdminNotificationDashboard(props: {
   admin: AdminPayload;
 }): Promise<IEcommerceMallNotificationDashboard> {
   const adminId = props.admin.id;
-  // Count unread notifications for this admin
-  const unreadCount = await MyGlobal.prisma.ecommerce_mall_notifications.count({
-    where: {
-      status: "unread",
-      notificationOfSuperAdmin: {
-        ...({ some: { admin_id: adminId } } as any),
-      },
-    },
-  });
-  // Fetch 10 most recent notifications with their status
-  const recentNotificationsRaw =
-    await MyGlobal.prisma.ecommerce_mall_notifications.findMany({
+  const unreadCountResult =
+    await MyGlobal.prisma.ecommerce_mall_notification_recipients.aggregate({
       where: {
-        notificationOfSuperAdmin: {
-          ...({ some: { admin_id: adminId } } as any),
-        },
+        recipient_type: "admin",
+        recipient_id: adminId,
+        read_status: "unread",
+        deleted_at: null,
       },
-      orderBy: { created_at: "desc" },
-      take: 10,
-      select: {
+      _count: {
         id: true,
-        title: true,
-        body: true,
-        type: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
       },
     });
-  // Transform to notification summaries using manual mapping (no transformer available for ISummary)
-  const recentNotifications = recentNotificationsRaw.map((notification) => ({
-    id: notification.id as string & tags.Format<"uuid">,
-    title: notification.title,
-    body: notification.body,
-    type: notification.type,
-    status: notification.status,
-    created_at: toISOStringSafe(notification.created_at),
-    updated_at: toISOStringSafe(notification.updated_at),
-  }));
-  // Check for system alerts (platform_announcement or system_alert type with unread status)
-  const systemAlertCount =
-    await MyGlobal.prisma.ecommerce_mall_notifications.count({
+  const unreadCount: number & tags.Type<"int32"> = unreadCountResult._count
+    .id as unknown as number & tags.Type<"int32">;
+  const recentNotificationRecords =
+    await MyGlobal.prisma.ecommerce_mall_notification_recipients.findMany({
       where: {
-        status: "unread",
-        type: {
-          in: ["platform_announcement", "system_alert"],
+        recipient_type: "admin",
+        recipient_id: adminId,
+        deleted_at: null,
+      },
+      orderBy: {
+        notification: {
+          created_at: "desc",
         },
-        notificationOfSuperAdmin: {
-          ...({ some: { admin_id: adminId } } as any),
+      },
+      take: 10,
+      include: {
+        notification: true,
+      },
+    });
+  const notificationSummaries: IEcommerceMallNotification.ISummary[] =
+    await ArrayUtil.asyncMap(recentNotificationRecords, async (record) => ({
+      id: record.notification.id,
+      title: record.notification.title,
+      body: record.notification.body,
+      type: record.notification.type,
+      status: record.read_status,
+      created_at: toISOStringSafe(record.notification.created_at),
+      updated_at: toISOStringSafe(record.notification.updated_at),
+    }));
+  const totalUnread: number & tags.Type<"int32"> = unreadCount;
+  const systemAlertRecords =
+    await MyGlobal.prisma.ecommerce_mall_notification_recipients.findMany({
+      where: {
+        recipient_type: "admin",
+        recipient_id: adminId,
+        read_status: "unread",
+        deleted_at: null,
+        notification: {
+          type: {
+            in: ["platform_announcement", "system_alert"] as const,
+          },
         },
+      },
+      take: 1,
+      include: {
+        notification: true,
       },
     });
   const systemAlert: IEcommerceMallNotificationDashboard["systemAlert"] =
-    systemAlertCount > 0
+    systemAlertRecords.length > 0
       ? {
           hasAlert: true,
-          alertLevel: "critical" as const,
+          alertMessage:
+            systemAlertRecords[0]?.notification.body === undefined
+              ? undefined
+              : systemAlertRecords[0]?.notification.body,
+          alertLevel:
+            systemAlertRecords[0]?.notification.type === "system_alert"
+              ? "warning"
+              : systemAlertRecords[0]?.notification.type ===
+                  "platform_announcement"
+                ? "info"
+                : undefined,
         }
       : undefined;
   return {
-    unreadCount: unreadCount as number & tags.Type<"int32">,
-    recentNotifications:
-      recentNotifications as IEcommerceMallNotification.ISummary[],
-    totalUnread: unreadCount as number & tags.Type<"int32">,
+    unreadCount,
+    recentNotifications: notificationSummaries,
+    totalUnread,
     systemAlert,
   } satisfies IEcommerceMallNotificationDashboard;
 }

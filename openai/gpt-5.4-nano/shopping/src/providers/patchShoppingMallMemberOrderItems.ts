@@ -18,138 +18,78 @@ export async function patchShoppingMallMemberOrderItems(props: {
   member: MemberPayload;
   body: IShoppingMallOrderItem.IRequest;
 }): Promise<IPageIShoppingMallOrderItem.ISummary> {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if (
-    props.body.shoppingOrderId !== undefined &&
-    props.body.shoppingOrderId !== null &&
-    !uuidRegex.test(props.body.shoppingOrderId)
-  ) {
-    throw new HttpException("Invalid shoppingOrderId", 400);
-  }
-  if (
-    props.body.productVariantId !== undefined &&
-    props.body.productVariantId !== null &&
-    !uuidRegex.test(props.body.productVariantId)
-  ) {
-    throw new HttpException("Invalid productVariantId", 400);
-  }
-  if (
-    props.body.sellerSnapshotId !== undefined &&
-    props.body.sellerSnapshotId !== null &&
-    !uuidRegex.test(props.body.sellerSnapshotId)
-  ) {
-    throw new HttpException("Invalid sellerSnapshotId", 400);
-  }
-  if (props.body.shipmentId !== undefined && props.body.shipmentId !== null) {
-    if (!uuidRegex.test(props.body.shipmentId)) {
-      throw new HttpException("Invalid shipmentId", 400);
-    }
-  }
-  if (props.body.placedAtFrom !== undefined) {
-    if (typeof props.body.placedAtFrom !== "string") {
-      throw new HttpException("Invalid placedAtFrom", 400);
-    }
-  }
-  if (props.body.placedAtTo !== undefined) {
-    if (typeof props.body.placedAtTo !== "string") {
-      throw new HttpException("Invalid placedAtTo", 400);
-    }
-  }
-  if (props.body.createdAtFrom !== undefined) {
-    if (typeof props.body.createdAtFrom !== "string") {
-      throw new HttpException("Invalid createdAtFrom", 400);
-    }
-  }
-  if (props.body.createdAtTo !== undefined) {
-    if (typeof props.body.createdAtTo !== "string") {
-      throw new HttpException("Invalid createdAtTo", 400);
-    }
-  }
-  if (props.body.updatedAtFrom !== undefined) {
-    if (typeof props.body.updatedAtFrom !== "string") {
-      throw new HttpException("Invalid updatedAtFrom", 400);
-    }
-  }
-  if (props.body.updatedAtTo !== undefined) {
-    if (typeof props.body.updatedAtTo !== "string") {
-      throw new HttpException("Invalid updatedAtTo", 400);
-    }
-  }
-  if (props.body.lineItemStatus !== undefined) {
-    if (
-      props.body.lineItemStatus === "" ||
-      props.body.lineItemStatus.length > 64
-    ) {
-      throw new HttpException("Invalid lineItemStatus", 400);
-    }
-  }
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  const orderByInput = (() => {
-    const dir = props.body.sortDirection ?? "desc";
-    const sortBy = props.body.sortBy;
-    if (sortBy === undefined) {
-      return [
-        { placed_at: dir as unknown as Prisma.SortOrder },
-        { created_at: dir as unknown as Prisma.SortOrder },
-        { id: dir as unknown as Prisma.SortOrder },
-      ];
+  const uuidOrUndef = (
+    v: (string & tags.Format<"uuid">) | undefined,
+  ): (string & tags.Format<"uuid">) | undefined => v;
+  const shoppingOrderId = uuidOrUndef(props.body.shoppingOrderId);
+  const productVariantId = uuidOrUndef(props.body.productVariantId);
+  const sellerSnapshotId = uuidOrUndef(props.body.sellerSnapshotId);
+  const shipmentId = props.body.shipmentId;
+  const allowedStatuses: ReadonlySet<string> = new Set([
+    "created",
+    "shipped",
+    "delivered",
+    "cancellation_requested",
+    "refund_requested",
+    "cancelled",
+    "refunded",
+  ]);
+  if (props.body.lineItemStatus !== undefined) {
+    const status = props.body.lineItemStatus;
+    if (allowedStatuses.has(status) === false) {
+      throw new HttpException("Invalid line item status", 400);
     }
-    if (sortBy === "placed_at") {
-      return [
-        { placed_at: dir as unknown as Prisma.SortOrder },
-        { created_at: "desc" as unknown as Prisma.SortOrder },
-        { id: "desc" as unknown as Prisma.SortOrder },
-      ];
-    }
-    if (sortBy === "created_at") {
-      return [
-        { created_at: dir as unknown as Prisma.SortOrder },
-        { placed_at: "desc" as unknown as Prisma.SortOrder },
-        { id: "desc" as unknown as Prisma.SortOrder },
-      ];
-    }
-    if (sortBy === "updated_at") {
-      return [
-        { updated_at: dir as unknown as Prisma.SortOrder },
-        { placed_at: "desc" as unknown as Prisma.SortOrder },
-        { id: "desc" as unknown as Prisma.SortOrder },
-      ];
-    }
-    if (sortBy === "seller_price_at_purchase") {
-      return [
-        { seller_price_at_purchase: dir as unknown as Prisma.SortOrder },
-        { placed_at: "desc" as unknown as Prisma.SortOrder },
-        { id: "desc" as unknown as Prisma.SortOrder },
-      ];
-    }
-    throw new HttpException("Invalid sortBy", 400);
-  })();
-  const whereInput = {
+  }
+  const sortBy = props.body.sortBy ?? "placed_at";
+  const sortDirection = props.body.sortDirection ?? "desc";
+  const orderBy =
+    sortBy === "placed_at"
+      ? ({
+          placed_at: sortDirection,
+        } satisfies Prisma.shopping_mall_order_itemsOrderByWithRelationInput)
+      : sortBy === "created_at"
+        ? ({
+            created_at: sortDirection,
+          } satisfies Prisma.shopping_mall_order_itemsOrderByWithRelationInput)
+        : sortBy === "updated_at"
+          ? ({
+              updated_at: sortDirection,
+            } satisfies Prisma.shopping_mall_order_itemsOrderByWithRelationInput)
+          : ({
+              placed_at: "desc",
+            } satisfies Prisma.shopping_mall_order_itemsOrderByWithRelationInput);
+  const directionForSecondary = sortDirection === "asc" ? "asc" : "desc";
+  const where = {
     deleted_at: null,
-    ...(props.body.shoppingOrderId !== undefined && {
-      shopping_mall_order_id: props.body.shoppingOrderId,
+    ...(shoppingOrderId !== undefined && {
+      shopping_mall_order_id: shoppingOrderId,
     }),
-    ...(props.body.productVariantId !== undefined && {
-      shopping_mall_product_variant_id: props.body.productVariantId,
+    ...(productVariantId !== undefined && {
+      shopping_mall_product_variant_id: productVariantId,
     }),
-    ...(props.body.sellerSnapshotId !== undefined && {
-      seller_snapshot_id: props.body.sellerSnapshotId,
+    ...(sellerSnapshotId !== undefined && {
+      seller_snapshot_id: sellerSnapshotId,
     }),
     ...(props.body.lineItemStatus !== undefined && {
       line_item_status: props.body.lineItemStatus,
+    }),
+    ...(shipmentId !== undefined && {
+      shopping_mall_shipment_id:
+        shipmentId === null
+          ? null
+          : (shipmentId as string & tags.Format<"uuid">),
     }),
     ...(props.body.placedAtFrom !== undefined ||
     props.body.placedAtTo !== undefined
       ? {
           placed_at: {
             ...(props.body.placedAtFrom !== undefined && {
-              gte: props.body.placedAtFrom,
+              gte: new Date(props.body.placedAtFrom),
             }),
             ...(props.body.placedAtTo !== undefined && {
-              lte: props.body.placedAtTo,
+              lte: new Date(props.body.placedAtTo),
             }),
           },
         }
@@ -159,10 +99,10 @@ export async function patchShoppingMallMemberOrderItems(props: {
       ? {
           created_at: {
             ...(props.body.createdAtFrom !== undefined && {
-              gte: props.body.createdAtFrom,
+              gte: new Date(props.body.createdAtFrom),
             }),
             ...(props.body.createdAtTo !== undefined && {
-              lte: props.body.createdAtTo,
+              lte: new Date(props.body.createdAtTo),
             }),
           },
         }
@@ -172,31 +112,34 @@ export async function patchShoppingMallMemberOrderItems(props: {
       ? {
           updated_at: {
             ...(props.body.updatedAtFrom !== undefined && {
-              gte: props.body.updatedAtFrom,
+              gte: new Date(props.body.updatedAtFrom),
             }),
             ...(props.body.updatedAtTo !== undefined && {
-              lte: props.body.updatedAtTo,
+              lte: new Date(props.body.updatedAtTo),
             }),
           },
         }
       : {}),
-    ...(props.body.shipmentId !== undefined
-      ? {
-          shopping_mall_shipment_id:
-            props.body.shipmentId === null ? null : props.body.shipmentId,
-        }
-      : {}),
     order: {
       deleted_at: null,
-      shopping_customer_id: props.member.id,
-    } satisfies Prisma.shopping_mall_ordersWhereInput,
+      customer: {
+        id: props.member.id,
+        deleted_at: null,
+      },
+    },
   } satisfies Prisma.shopping_mall_order_itemsWhereInput;
-  const [items, total] = await Promise.all([
+  const skip = (page - 1) * limit;
+  const [items, total] = await MyGlobal.prisma.$transaction([
     MyGlobal.prisma.shopping_mall_order_items.findMany({
-      where: whereInput,
+      where,
       skip,
       take: limit,
-      orderBy: orderByInput,
+      orderBy: [
+        {
+          ...(orderBy as unknown as Prisma.shopping_mall_order_itemsOrderByWithRelationInput),
+        },
+        { created_at: directionForSecondary },
+      ],
       select: {
         id: true,
         shopping_mall_order_id: true,
@@ -212,26 +155,28 @@ export async function patchShoppingMallMemberOrderItems(props: {
         deleted_at: true,
       },
     }),
-    MyGlobal.prisma.shopping_mall_order_items.count({
-      where: whereInput,
-    }),
+    MyGlobal.prisma.shopping_mall_order_items.count({ where }),
   ]);
   return {
-    data: items.map((record) => ({
-      id: record.id,
-      shopping_mall_order_id: record.shopping_mall_order_id,
-      shopping_mall_product_variant_id: record.shopping_mall_product_variant_id,
-      seller_snapshot_id: record.seller_snapshot_id,
-      shopping_mall_shipment_id: record.shopping_mall_shipment_id,
-      seller_price_at_purchase: record.seller_price_at_purchase,
-      quantity: record.quantity,
-      line_item_status: record.line_item_status,
-      placed_at: toISOStringSafe(record.placed_at),
-      created_at: toISOStringSafe(record.created_at),
-      updated_at: toISOStringSafe(record.updated_at),
+    data: items.map((r) => ({
+      id: r.id,
+      shopping_mall_order_id: r.shopping_mall_order_id,
+      shopping_mall_product_variant_id: r.shopping_mall_product_variant_id,
+      seller_snapshot_id: r.seller_snapshot_id,
+      shopping_mall_shipment_id: r.shopping_mall_shipment_id,
+      seller_price_at_purchase: r.seller_price_at_purchase,
+      quantity: r.quantity,
+      line_item_status: r.line_item_status,
+      placed_at: r.placed_at.toISOString() as string & tags.Format<"date-time">,
+      created_at: r.created_at.toISOString() as string &
+        tags.Format<"date-time">,
+      updated_at: r.updated_at.toISOString() as string &
+        tags.Format<"date-time">,
       deleted_at:
-        record.deleted_at === null ? null : toISOStringSafe(record.deleted_at),
-    })) as IShoppingMallOrderItem.ISummary[],
+        r.deleted_at === null
+          ? null
+          : (r.deleted_at.toISOString() as string & tags.Format<"date-time">),
+    })) satisfies IShoppingMallOrderItem.ISummary[],
     pagination: {
       current: page,
       limit,

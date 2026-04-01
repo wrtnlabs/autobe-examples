@@ -11,30 +11,25 @@ export namespace ShoppingMallOrderItemCollector {
   export async function collect(props: {
     body: IShoppingMallOrderItem.ICreate;
   }) {
-    const id: string = v4();
-    const now: Date = new Date();
     return {
-      id,
+      id: v4(),
       seller_price_at_purchase: props.body.seller_price_at_purchase,
       quantity: props.body.quantity,
       line_item_status: props.body.line_item_status,
       placed_at: new Date(props.body.placed_at),
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      order: {
-        connect: { id: props.body.shopping_mall_order_id },
-      },
+      order: { connect: { id: props.body.shopping_mall_order_id } },
       productVariant: {
         connect: { id: props.body.shopping_mall_product_variant_id },
       },
-      sellerSnapshot: {
-        connect: { id: props.body.seller_snapshot_id },
-      },
+      sellerSnapshot: { connect: { id: props.body.seller_snapshot_id } },
       shipment:
         props.body.shopping_mall_shipment_id != null
           ? { connect: { id: props.body.shopping_mall_shipment_id } }
           : undefined,
+      // Reverse relations are handled by other collectors; not created here.
       cancellationRequests: undefined,
       refundRequests: undefined,
       review: undefined,

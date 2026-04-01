@@ -24,20 +24,34 @@ export async function getRedditLikeOwnerSessionsMe(props: {
   const session =
     await MyGlobal.prisma.reddit_like_owner_sessions.findUniqueOrThrow({
       where: { id: props.owner.session_id },
+      select: {
+        id: true,
+        ip: true,
+        href: true,
+        referrer: true,
+        created_at: true,
+        expired_at: true,
+        owner: {
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            display_name: true,
+            is_active: true,
+          },
+        },
+      },
     });
-  const owner = await MyGlobal.prisma.reddit_like_owners.findUniqueOrThrow({
-    where: { id: props.owner.id },
-  });
   return {
     id: session.id,
     actorType: "owner",
     actor: {
-      id: owner.id,
-      username: owner.username,
-      displayName: owner.display_name,
-      email: owner.email,
-      isActive: owner.is_active,
-    },
+      id: session.owner.id,
+      username: session.owner.username,
+      displayName: session.owner.display_name,
+      email: session.owner.email,
+      isActive: session.owner.is_active,
+    } satisfies IRedditLikeOwner.ISummary,
     ip: session.ip,
     href: session.href,
     referrer: session.referrer,

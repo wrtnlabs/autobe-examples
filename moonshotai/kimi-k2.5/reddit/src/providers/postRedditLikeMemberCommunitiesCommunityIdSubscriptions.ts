@@ -11,20 +11,20 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { RedditLikeCommunitySubscriptionTransformer } from "../transformers/RedditLikeCommunitySubscriptionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditLikeMemberCommunitiesCommunityIdSubscriptions(props: {
-  member: AdminPayload;
+  member: MemberPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeCommunitySubscription> {
-  // Verify community exists
+  // Validate community exists
   await MyGlobal.prisma.reddit_like_communities.findUniqueOrThrow({
     where: { id: props.communityId },
   });
-  // Check if already actively subscribed
+  // Check for existing active subscription
   const existingSubscription =
     await MyGlobal.prisma.reddit_like_community_subscriptions.findFirst({
       where: {
@@ -39,6 +39,7 @@ export async function postRedditLikeMemberCommunitiesCommunityIdSubscriptions(pr
       409,
     );
   }
+  const now = new Date().toISOString();
   // Create new subscription
   const created =
     await MyGlobal.prisma.reddit_like_community_subscriptions.create({
@@ -46,11 +47,20 @@ export async function postRedditLikeMemberCommunitiesCommunityIdSubscriptions(pr
         id: v4(),
         reddit_like_member_id: props.member.id,
         reddit_like_community_id: props.communityId,
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: now,
+        updated_at: now,
         deleted_at: null,
       },
-      ...RedditLikeCommunitySubscriptionTransformer.select(),
     });
-  return await RedditLikeCommunitySubscriptionTransformer.transform(created);
+  // Fetch with full relations using transformer select
+  const subscription =
+    await MyGlobal.prisma.reddit_like_community_subscriptions.findUniqueOrThrow(
+      {
+        where: { id: created.id },
+        ...RedditLikeCommunitySubscriptionTransformer.select(),
+      },
+    );
+  return await RedditLikeCommunitySubscriptionTransformer.transform(
+    subscription,
+  );
 }

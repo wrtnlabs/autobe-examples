@@ -18,18 +18,22 @@ export async function postErpHrmTimeTrackingMemberActivityLogEntries(props: {
   member: MemberPayload;
   body: IErpHrmTimeTrackingActivityLogEntry.ICreate;
 }): Promise<IErpHrmTimeTrackingActivityLogEntry> {
-  await MyGlobal.prisma.erp_hrm_time_tracking_members.findUniqueOrThrow({
-    where: { id: props.member.id },
-    select: { id: true },
-  });
+  const performedByMember =
+    await MyGlobal.prisma.erp_hrm_time_tracking_members.findFirstOrThrow({
+      where: { id: props.member.id, deleted_at: null },
+      select: { id: true },
+    });
+  const organization =
+    await MyGlobal.prisma.erp_hrm_time_tracking_organizations.findFirstOrThrow({
+      where: { id: (props.member as any).organization_id },
+      select: { id: true },
+    });
   const created =
     await MyGlobal.prisma.erp_hrm_time_tracking_activity_log_entries.create({
       data: await ErpHrmTimeTrackingActivityLogEntryCollector.collect({
         body: props.body,
-        organization: {
-          id: props.member.session_id as string & tags.Format<"uuid">,
-        } satisfies IEntity,
-        performedByMember: { id: props.member.id } satisfies IEntity,
+        organization: organization,
+        performedByMember: performedByMember,
       }),
       ...ErpHrmTimeTrackingActivityLogEntryTransformer.select(),
     });

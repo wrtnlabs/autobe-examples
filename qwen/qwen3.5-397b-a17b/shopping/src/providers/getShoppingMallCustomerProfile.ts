@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -9,20 +10,20 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { ShoppingMallCustomerAtProfileTransformer } from "../transformers/ShoppingMallCustomerAtProfileTransformer";
+import { ShoppingMallCustomerProfileTransformer } from "../transformers/ShoppingMallCustomerProfileTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getShoppingMallCustomerProfile(props: {
   customer: CustomerPayload;
-}): Promise<IShoppingMallCustomer.IProfile> {
-  const customer =
-    await MyGlobal.prisma.shopping_mall_customers.findUniqueOrThrow({
+}): Promise<IShoppingMallCustomerProfile> {
+  const profile =
+    await MyGlobal.prisma.shopping_mall_customer_profiles.findFirstOrThrow({
       where: {
-        id: props.customer.id,
+        shopping_mall_customer_id: props.customer.id,
         deleted_at: null,
       },
-      ...ShoppingMallCustomerAtProfileTransformer.select(),
+      ...ShoppingMallCustomerProfileTransformer.select(),
     });
-  return await ShoppingMallCustomerAtProfileTransformer.transform(customer);
+  return await ShoppingMallCustomerProfileTransformer.transform(profile);
 }

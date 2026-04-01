@@ -6,8 +6,10 @@ import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structure
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 import { EcommerceMallOrderItemAtSummaryTransformer } from "./EcommerceMallOrderItemAtSummaryTransformer";
@@ -22,15 +24,11 @@ export namespace EcommerceMallCancellationRequestAtSummaryTransformer {
         id: true,
         status: true,
         reason: true,
-        seller_response: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
         customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        seller: true,
-        inventoryRecords: true,
-        snapshots: true,
       },
     } satisfies Prisma.ecommerce_mall_cancellation_requestsFindManyArgs;
   }
@@ -43,7 +41,7 @@ export namespace EcommerceMallCancellationRequestAtSummaryTransformer {
       reason: input.reason,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at?.toISOString() ?? undefined,
       customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),

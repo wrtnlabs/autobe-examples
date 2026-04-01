@@ -14,14 +14,12 @@ export namespace HrmsProjectMemberCollector {
   }) {
     const id: string = v4();
     return {
-      // Scalar fields
       id,
       role: props.body.role,
       status: "active",
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // Belongs to relations
       employee: { connect: { id: props.body.employee_id } },
       project: { connect: { id: props.hrmsProjects.id } },
     } satisfies Prisma.hrms_project_membersCreateInput;

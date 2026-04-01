@@ -21,14 +21,24 @@ export async function postRedditLikeModeratorModerators(props: {
   moderator: ModeratorPayload;
   body: IRedditLikeModerator.ICreate;
 }): Promise<IRedditLikeModerator> {
-  // Verify community exists and get owner info for authorization
-  const community =
-    await MyGlobal.prisma.reddit_like_communities.findUniqueOrThrow({
-      where: { id: props.body.communityId },
-      select: { id: true, owner_id: true },
-    });
-  // Authorization: requester must be community owner OR moderator with can_add_moderators
+  // Verify requesting moderator has permission to add moderators
+  // by checking if they are the owner or have can_add_moderators permission
+  const community = await MyGlobal.prisma.reddit_like_communities.findFirst({
+    where: {
+      id: props.body.communityId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      owner_id: true,
+    },
+  });
+  if (community === null) {
+    throw new HttpException("Community not found", 404);
+  }
+  // Check if requester is the owner
   const isOwner = community.owner_id === props.moderator.id;
+  // If not owner, check if requester has can_add_moderators permission
   if (!isOwner) {
     const requesterModerator =
       await MyGlobal.prisma.reddit_like_moderators.findFirst({
@@ -38,12 +48,18 @@ export async function postRedditLikeModeratorModerators(props: {
           can_add_moderators: true,
           deleted_at: null,
         },
+        select: {
+          id: true,
+        },
       });
-    if (!requesterModerator) {
-      throw new HttpException("Forbidden", 403);
+    if (requesterModerator === null) {
+      throw new HttpException(
+        "Forbidden - insufficient permissions to add moderators",
+        403,
+      );
     }
   }
-  // Prevent duplicate: check if target member is already a moderator
+  // Check if target member already is a moderator in this community
   const existingModerator =
     await MyGlobal.prisma.reddit_like_moderators.findFirst({
       where: {
@@ -51,18 +67,22 @@ export async function postRedditLikeModeratorModerators(props: {
         community_id: props.body.communityId,
         deleted_at: null,
       },
+      select: {
+        id: true,
+      },
     });
-  if (existingModerator) {
-    throw new HttpException("Conflict", 409);
+  if (existingModerator !== null) {
+    throw new HttpException(
+      "This user is already a moderator in this community",
+      409,
+    );
   }
-  // Create the moderator using Collector for write side
-  const collected = await RedditLikeModeratorCollector.collect({
-    body: props.body,
-  });
+  // Create the moderator role
   const created = await MyGlobal.prisma.reddit_like_moderators.create({
-    data: collected,
+    data: await RedditLikeModeratorCollector.collect({
+      body: props.body,
+    }),
     ...RedditLikeModeratorTransformer.select(),
   });
-  // Transform and return using Transformer for read side
   return await RedditLikeModeratorTransformer.transform(created);
 }

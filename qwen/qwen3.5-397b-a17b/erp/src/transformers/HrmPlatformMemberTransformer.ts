@@ -16,7 +16,7 @@ export namespace HrmPlatformMemberTransformer {
         id: true,
         email: true,
         display_name: true,
-        avatar_url: true,
+        avatar_image: true,
         phone_number: true,
         created_at: true,
         updated_at: true,
@@ -28,12 +28,12 @@ export namespace HrmPlatformMemberTransformer {
     return {
       id: input.id,
       email: input.email,
-      displayName: input.display_name,
-      avatarUrl: input.avatar_url ?? null,
-      phoneNumber: input.phone_number ?? null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      display_name: input.display_name,
+      avatar_image: input.avatar_image ?? undefined,
+      phone_number: input.phone_number ?? undefined,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

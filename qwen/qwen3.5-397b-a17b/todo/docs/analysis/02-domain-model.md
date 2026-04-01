@@ -1,4 +1,4 @@
-**todoApp — Business concepts, relationships, and states from user perspective**
+**multiUserTodo — Business concepts, relationships, and states from user perspective**
 
 Business concepts, relationships, and states from user perspective
 
@@ -8,51 +8,69 @@ Describe what each concept means in the business domain and its key attributes.
 
 ## User Concept
 
-A User represents an individual account holder who owns and manages their private todo items. Each user is identified by a unique email address that serves as their primary identifier within the system. Users have a password that secures access to their account and todo data. Each user has a display name that represents them within the application. The display name can be edited by the user at any time. Users exist in complete isolation from one another, with no ability to view or access other users' profiles or todos. When a user deletes their account, all their todos are permanently removed, including those in the trash. The user concept embodies the privacy-first nature of the application where each person's data remains entirely separate. Users are the sole owners of their todos and edit histories. The system enforces strict boundaries ensuring users can only interact with their own data.
+A User represents an individual account holder in the multi-user todo application. Each user is identified by their email address, which serves as their unique account identifier. Users authenticate themselves using a password associated with their email. Every user has a display name that appears within their personal workspace. The display name can be modified by the user at any time. Users own their todos privately, with no visibility into other users' tasks. When a user deletes their account, all associated todos are permanently removed, including those in the trash. The user concept establishes the foundation for private, individual task management within a shared application platform. Each user operates independently with complete isolation from other users' data.
 
-### User Account and Identity
+### User Account
 
-A User represents an individual account holder who owns and manages their private todo items. Each user is identified by a unique email address that serves as their primary identifier within the system. Users have a password that secures access to their account and todo data. Each user has a display name that represents them within the application. The display name can be edited by the user at any time. Users are the sole owners of their todos and edit histories, with exclusive ownership boundaries that prevent any other user from accessing or modifying their data.
+A User represents an individual account holder in the multi-user todo application. Each user operates within their own individual workspace, completely isolated from other users. The application supports multiple users on a shared platform, but each user's data remains private and inaccessible to others. A user account establishes the identity of the account holder and serves as the foundation for private task management. Users own their todos exclusively, with no ability to view, access, or share another user's todos.
 
-### User Privacy and Isolation
+### Email Identification
 
-Users exist in complete isolation from one another, with no ability to view or access other users' profiles or todos. Each user's todos are completely private. There is no way to view, access, or share another user's todos. The system enforces strict boundaries ensuring users can only interact with their own data. This embodies the privacy-first nature of the application where each person's data remains entirely separate from all other users.
+Each user is identified by their email address, which serves as their unique account identifier. The email address is used during sign up to create a new account. The email address is also used during log in to authenticate the user. No two users can share the same email address. The email address remains constant throughout the account's lifetime and cannot be changed.
 
-### Account Deletion Consequences
+### Password Authentication
 
-When a user deletes their account, all their todos are permanently removed, including those in the trash. This permanent deletion removes all todo data associated with the account without exception. The account deletion action is irreversible and results in complete removal of all user-owned content from the system.
+Users authenticate themselves using a password associated with their email address. The password is set during account creation when the user signs up. Users can change their password at any time after account creation. The password serves as the sole credential for verifying the user's identity during log in. Both email and password are required to access the account.
+
+### Display Name
+
+Every user has a display name that appears within their personal workspace. The display name represents the user's profile identity within the application. Users can edit their display name at any time. The display name is optional during account creation and can be modified throughout the account's lifetime. Other users cannot view a user's display name, as this is a private todo application with complete user isolation.
+
+### Private Ownership
+
+Each user's todos are completely private to that user. Users can only see their own todos. There is no way to view, access, or share another user's todos. This user isolation ensures that all data remains within the individual's workspace. The private ownership model applies to all todos, including those in the trash. No collaboration or sharing features exist in this application.
+
+### Account Deletion
+
+Users can delete their account at any time. When a user deletes their account, all their todos are permanently deleted, including those in the trash. This account deletion cascade ensures no orphaned data remains in the system. The deletion is irreversible and removes all traces of the user's presence from the application. Once an account is deleted, the email address becomes available for a new account registration.
 
 ## Todo Concept
 
-A Todo represents a task or item that a user creates and manages within their personal list. Each todo has a required title that identifies what the task is. Todos can optionally include a description providing additional details about the task. A todo may have an optional start date indicating when work on the task begins. A todo may have an optional due date indicating when the task should be completed. Newly created todos start in an incomplete state by default. Each todo tracks its completion status which toggles between complete and incomplete. Todos display their title, completion status, start date if set, due date if set, and creation date in list views. The creation date is automatically recorded when the todo is first created. Todos belong exclusively to the user who created them and cannot be shared or accessed by others. A todo exists in one of two states: active in the normal list or soft deleted in the trash.
+A Todo represents a task or item that a user needs to track and manage. Each todo has a required title that identifies the task. Users can optionally add a description to provide additional context or details. A todo may have a start date indicating when work should begin. A due date can be set to mark when the task should be completed. Every todo has a completion status that toggles between complete and incomplete states. Todos are created in an incomplete state by default. Each todo belongs to exactly one user and remains private to that owner. The todo concept captures the essential attributes needed for personal task tracking without sharing or collaboration features.
 
-### Todo Definition and Attributes
+### Todo Definition and Core Attributes
 
-A Todo represents a task or item that a user creates and manages within their personal list. Each todo has a title that is required and identifies what the task is. A todo may include an optional description that provides additional details about the task. The description can be left empty when creating or editing a todo. A todo may have an optional start date indicating when work on the task begins. A todo may have an optional due date indicating when the task should be completed. Both start date and due date can be left empty. When a todo is first created, it starts in an incomplete state by default. The creation date is automatically recorded when the todo is first created and cannot be changed.
+A Todo represents a task or item that a user needs to track and manage within the application. Each todo is identified by a required title that serves as the primary means of task identification. Users may optionally add a description to provide additional context or details about the task. A todo may have a start date indicating when work on the task should begin. A due date can be set to mark when the task should be completed. Both start date and due date are optional and can be left empty. The todo serves as the core task tracking entity in the system, capturing all essential attributes needed for personal task management. Each todo belongs to exactly one user and contains the business attributes necessary for effective date tracking and task organization.
 
-### Todo Completion and Display
+### Todo Completion Status
 
-Each todo tracks its completion status which toggles between complete and incomplete. This is a simple toggle between two states. In list views, each todo displays its title, completion status, start date if set, due date if set, and creation date. When viewing a single todo, all details are shown including the full description.
+Every todo has a completion status that indicates whether the task is complete or incomplete. This status operates as a simple toggle between two states: complete and incomplete. When a todo is first created, it is automatically set to the incomplete state by default. Users can change the completion status at any time to reflect the current progress of the task. The completion status provides a clear indication of task progress and enables users to manage their workflow effectively through status management.
 
-### Todo Ownership and State
+### Todo Ownership and Privacy
 
-Todos belong exclusively to the user who created them and cannot be shared or accessed by others. Each user's todos are completely private. There is no way to view, access, or share another user's todos. A todo exists in one of two states: active in the normal list or soft deleted in the trash. When a todo is deleted, it is not permanently removed but moves to the trash where it no longer appears in the normal todo list.
+Each todo is privately owned by a single user and cannot be accessed by any other user. This private task ownership ensures that all todos remain completely confidential to their owner. The single user assignment means that a todo cannot be shared, transferred, or made visible to other users. There is no mechanism to view, access, or collaborate on another user's todos. This ownership model enforces strict privacy boundaries where users can only see and manage their own todos.
 
 ## EditHistory Concept
 
-EditHistory represents a chronological record of changes made to a todo item. Each time a todo is edited, a new history entry is created to capture what changed. Every history entry records the timestamp of when the edit was made. History entries capture the new title value if the title was changed during the edit. History entries capture the new description value if the description was changed during the edit. History entries capture the new start date if the start date was changed during the edit. History entries capture the new due date if the due date was changed during the edit. History entries are displayed sorted from most recent to oldest for easy review. The edit history provides a complete audit trail of all modifications to a todo. When a todo is permanently deleted from the trash, its entire edit history is also permanently removed. Edit history belongs to the todo and exists only as long as the todo exists.
+An EditHistory represents a recorded entry of changes made to a todo item. Each history entry captures when an edit was performed on the todo. The history records what the title was changed to, if the title was modified. Changes to the description are tracked in the history entry. Start date modifications are recorded when they occur. Due date changes are also captured in the edit history. Each edit creates a new history entry, building a complete audit trail. History entries are maintained in order from most recent to oldest. The edit history concept provides transparency into how a todo has evolved over time. When a todo is permanently deleted from trash, its edit history is also removed.
 
-### Edit History Record
+### Edit History Entry Definition
 
-An edit history record is a business concept that tracks all changes made to a todo item over time. Each time a user edits a todo, a new history entry is automatically created to capture what was modified. Every history entry records the exact timestamp of when the edit was made. History entries capture the new title value if the title was changed during the edit. History entries capture the new description value if the description was changed during the edit. History entries capture the new start date if the start date was changed during the edit. History entries capture the new due date if the due date was changed during the edit. If a field was not changed during an edit, that field is not recorded in the history entry. Edit history belongs to the todo and cannot exist independently. Each history entry is permanently associated with the todo it documents.
+An edit history entry represents a recorded change made to a todo item. Each time a todo is edited, the system creates a new history entry to document what was modified.
 
-### Edit History Ordering
+The edit history entry captures when the edit was made, recording the timestamp of the modification. If the title was changed, the history entry records what the title was changed to. If the description was modified, the new description value is stored in the history entry. Changes to the start date are tracked by recording what the start date was changed to. Similarly, due date modifications are captured by storing what the due date was changed to.
 
-Edit history entries are displayed sorted from most recent to oldest for easy review. This chronological ordering allows users to quickly see the latest changes at the top of the history list. The edit history provides a complete audit trail of all modifications made to a todo throughout its lifetime. Users can view the full edit history of any of their todos to understand how the todo has evolved over time. The ordering ensures that the most recent edit appears first, followed by progressively older edits.
+Each history entry serves as an audit trail record, providing a business change log that tracks the evolution of a todo over time. The edit history domain encompasses all modification records associated with a todo, enabling users to understand how their todo has changed since creation.
 
-### Edit History Lifecycle
+A history entry is created only when an actual change occurs to one or more of the tracked fields: title, description, start date, or due date. The edit history entry belongs to exactly one todo and cannot exist independently.
 
-Edit history entries exist only as long as their associated todo exists. When a todo is permanently deleted from the trash, its entire edit history is also permanently removed. The history cannot be recovered once the todo is permanently deleted. Soft-deleted todos in the trash retain their edit history until permanent deletion occurs. The deletion of edit history is automatic and occurs at the same time as the permanent deletion of the parent todo.
+### History Organization and Lifecycle
+
+Edit history entries are organized in a specific order to support user viewing. The history entries are sorted from most recent to oldest, with the latest modification appearing first in the list.
+
+When a user views the edit history of a todo, the system presents all history entries in this recent-to-oldest order, allowing the user to see the most recent changes at the top.
+
+The edit history has a lifecycle tied to its parent todo. When a todo is permanently deleted from the trash, all associated edit history entries are also permanently deleted. This cascade deletion ensures that no orphaned history records remain after the parent todo is removed. The permanent deletion of edit history is irreversible and occurs at the same time as the permanent deletion of the todo itself.
 
 # Domain Relationships
 
@@ -62,43 +80,17 @@ Describe how concepts relate to each other from a business perspective.
 
 Describe how concepts relate to each other in business terms.
 
-### User-Todo Ownership Relationship
+### User-Todo Ownership
 
-Each todo belongs to exactly one user. The user who creates a todo becomes its owner.
-
-A user can own many todos. There is no limit to the number of todos a user can create.
-
-The ownership relationship means:
-- Only the owner can view, edit, complete, or delete their todos
-- Todos are permanently associated with their creating user
-- When a user deletes their account, all todos they own are permanently deleted
-
-The ownership is established at creation time and cannot be transferred to another user.
+Each user owns their own todos. A user can have many todos. Each todo belongs to exactly one user. When a user creates a todo, that todo is automatically associated with the creating user. Users can only view and manage their own todos. There is no way to view or access another user's todos. When a user deletes their account, all todos owned by that user are permanently deleted, including todos in the trash.
 
 ### Todo-EditHistory Association
 
-Each todo has an edit history that tracks all changes made to it.
+Each todo has an edit history. The edit history contains many entries. Each edit history entry belongs to exactly one todo. When a todo is edited, a new entry is added to that todo's edit history. The edit history entries are associated with their parent todo and cannot exist independently. When a todo is permanently deleted from the trash, its edit history is also permanently deleted.
 
-A todo can have many edit history entries. Each time the todo is edited, a new history entry is created and associated with that todo.
+### Privacy Boundaries
 
-The association means:
-- Edit history entries belong to exactly one todo
-- Edit history entries cannot exist without a todo
-- When a todo is permanently deleted, all its edit history entries are also permanently deleted
-
-The edit history provides a chronological record of what changes were made to the todo's title, description, start date, and due date.
-
-### Data Isolation Between Users
-
-Each user's data is completely isolated from all other users.
-
-The ownership relationship enforces strict data isolation:
-- Users can only see their own todos
-- Users cannot view, access, or interact with todos owned by other users
-- There is no shared or public todo functionality
-- Users cannot view other users' profiles or display names
-
-This isolation applies to all operations including viewing todo lists, viewing individual todos, filtering, sorting, and accessing edit history. The system treats each user's data as a separate, private workspace.
+Todos are private to their owner. Each todo belongs to the user who created it. Users cannot view other users' profiles or todos. The system enforces complete isolation between users. A user can only interact with todos they own. There is no sharing mechanism or way to grant access to another user's todos.
 
 ## Lifecycle and Retention
 
@@ -106,25 +98,83 @@ Describe concept lifecycle states and transitions only. Detailed retention/recov
 
 ### Todo Lifecycle States
 
-A todo exists in one of three lifecycle states: active, deleted, or permanently removed.
+A todo exists in one of two completion states: incomplete or complete.
 
-When first created, a todo is in the active state and appears in the user's normal todo list. An active todo can be marked as complete or incomplete, edited, or deleted.
+Newly created todos are in the incomplete state by default.
 
-When a user deletes a todo, it transitions to the deleted state and moves to the trash. In this state, the todo no longer appears in the normal todo list but is retained in the trash for potential recovery. The todo and its edit history remain associated.
+Users can toggle a todo between incomplete and complete states.
 
-When a user permanently deletes a todo from the trash, it transitions to the permanently removed state. The todo and all its edit history entries are removed from the system and cannot be recovered.
+A todo exists in one of two visibility states: active or deleted.
 
-When a user deletes their account, all their todos transition directly to the permanently removed state, regardless of whether they were in the active or deleted state.
+Newly created todos are in the active state by default.
 
-### Deletion and Recovery
+When a user deletes a todo, it transitions from active to deleted state.
 
-The system supports two deletion modes: soft deletion and permanent deletion.
+Deleted todos reside in the trash and do not appear in the active todo list.
 
-Soft deletion moves a todo to the trash, where it is archived and hidden from the normal todo list. The todo remains accessible through the trash view and can be restored. This is the default deletion behavior when a user deletes an active todo.
+```mermaid
+flowchart LR
+    A["incomplete"] <-->|"Toggle completion"| B["complete"]
+    C["active"] -->|"Delete"| D["deleted/trash"]
+    D -->|"Restore"| C
+    D -->|"Permanent delete"| E["permanently removed"]
+```
 
-Permanent deletion removes a todo and its edit history from the system entirely. This action is irreversible. Permanent deletion occurs when a user explicitly chooses to permanently delete a todo from the trash, or when a user deletes their account.
+### Soft Deletion and Trash
 
-Recovery is the process of restoring a deleted todo from the trash back to the active state. When restored, the todo returns to the normal todo list with all its attributes and edit history intact. Only todos in the deleted state (in the trash) can be recovered.
+When a user deletes a todo, the todo is soft deleted rather than permanently removed.
+
+Soft deleted todos are moved to the trash.
+
+Todos in the trash retain all their attributes: title, description, start date, due date, and completion status.
+
+Todos in the trash retain their edit history.
+
+Soft deleted todos are not visible in the normal active todo list.
+
+Users can view their trash to see all soft deleted todos.
+
+The trash is scoped to the individual user; users can only see their own deleted todos.
+
+### Permanent Deletion
+
+Users can permanently delete a todo from the trash.
+
+When a todo is permanently deleted, it is irreversibly removed from the system.
+
+Permanently deleted todos cannot be recovered or restored.
+
+When a todo is permanently deleted, its associated edit history is also permanently deleted.
+
+Account deletion triggers permanent deletion of all todos owned by that user, including todos in the trash.
+
+When a user account is permanently deleted, all edit histories associated with that user's todos are also permanently deleted.
+
+### Edit History Retention
+
+Each todo maintains an edit history that records all modifications made to the todo.
+
+Each edit history entry captures: the timestamp of the edit, the new title (if changed), the new description (if changed), the new start date (if changed), and the new due date (if changed).
+
+Edit history entries are retained for the lifetime of the todo.
+
+Edit history entries are sorted from most recent to oldest when viewed.
+
+Edit history is deleted only when the associated todo is permanently deleted or when the owning user account is deleted.
+
+### Account Deletion and Data Ownership
+
+Each todo is owned by exactly one user account.
+
+When a user deletes their account, all todos owned by that user are permanently deleted.
+
+Account deletion removes all user data including: the user profile, all active todos, all deleted todos in trash, and all edit histories associated with those todos.
+
+Account deletion is irreversible; once an account is deleted, it cannot be recovered.
+
+Users cannot transfer ownership of their todos to another user.
+
+The private nature of the application means todos have no shared ownership; each todo belongs to exactly one user.
 
 # Business Categories and State Flows
 
@@ -136,59 +186,74 @@ Define all business category classifications with their allowed values and descr
 
 ### Todo Completion Status Classification
 
-The todo completion status is a business category that classifies the completion state of a todo item.
+Every todo has a completion status that indicates whether the task has been finished.
 
-The allowed values for completion status are:
-- **Incomplete**: The todo has not been marked as complete. Newly created todos are incomplete by default.
-- **Complete**: The todo has been marked as complete by the user.
+The completion status is a business category with two allowed values:
 
-A todo can only be in one completion status at a time. Users can toggle a todo between incomplete and complete states.
+| Status | Description |
+|--------|-------------|
+| Incomplete | The todo task has not been finished. This is the default status when a todo is first created. |
+| Complete | The todo task has been finished. |
 
-### Todo List Filter Categories
+Users can toggle a todo between incomplete and complete states. The completion status is visible in the todo list view and in the detailed todo view.
 
-The todo list filter category is a business classification that determines which todos are displayed in the list view.
+The completion status is independent of the todo's visibility status (whether it is in the active list or in the trash).
 
-The allowed values for filter categories are:
-- **All todos**: Displays all todos regardless of completion status.
-- **Only complete todos**: Displays only todos marked as complete.
-- **Only incomplete todos**: Displays only todos not marked as complete.
+### Todo Visibility Status Classification
 
-Users can select one filter category to view their todo list. The filter applies to the user's own todos only.
+Every todo has a visibility status that indicates where the todo appears in the application.
 
-### Todo Sorting Categories
+The visibility status is a business category with three allowed values:
 
-The todo sorting category is a business classification that determines the order in which todos appear in the list.
+| Status | Description |
+|--------|-------------|
+| Active | The todo appears in the user's normal todo list. This is the default status when a todo is first created. |
+| Deleted | The todo has been soft deleted and appears only in the trash list. It does not appear in the normal todo list. |
+| Permanently Deleted | The todo has been permanently removed from the system along with its edit history. It cannot be recovered. |
 
-The allowed values for sorting categories are:
-- **Creation date, newest first**: Todos are sorted by creation date with the most recently created appearing first.
-- **Creation date, oldest first**: Todos are sorted by creation date with the earliest created appearing first.
-- **Start date, earliest first**: Todos are sorted by start date with the earliest start date appearing first. Todos without a start date appear at the end.
-- **Start date, latest first**: Todos are sorted by start date with the latest start date appearing first. Todos without a start date appear at the end.
-- **Due date, earliest first**: Todos are sorted by due date with the earliest due date appearing first. Todos without a due date appear at the end.
-- **Due date, latest first**: Todos are sorted by due date with the latest due date appearing first. Todos without a due date appear at the end.
+When a user deletes a todo, it transitions from active to deleted status and moves to the trash. When a user restores a todo from the trash, it transitions from deleted to active status and returns to the normal todo list. When a user permanently deletes a todo from the trash, it transitions to permanently deleted status and is removed from the system.
 
-Users can select one sorting category to order their todo list.
+The visibility status is independent of the todo's completion status.
 
 ## State Transitions
 
 Define valid state transition paths for stateful concepts.
 
-### Todo Completion Status Transitions
+### Todo Completion State Flow
 
-Every todo starts in the incomplete state when created. Users can toggle the completion status between incomplete and complete at any time. Marking a todo as complete changes its status from incomplete to complete. Marking a completed todo as incomplete changes its status from complete to incomplete. This is a simple two-state toggle with no restrictions on when the status can be changed.
+A todo has a completion status that toggles between two states: incomplete and complete.
+
+When a todo is created, it is automatically set to incomplete.
+
+Users can mark an incomplete todo as complete.
+Users can mark a complete todo as incomplete.
+
+This is a simple toggle between the two states with no restrictions.
 
 ```mermaid
 flowchart LR
-    A["incomplete"] <-->|"Toggle Complete"| B["complete"]
+    A["incomplete"] <-->|"Toggle completion"| B["complete"]
 ```
 
 ### Todo Deletion and Recovery Workflow
 
-When a user deletes a todo, it transitions from the active state to the deleted state. Deleted todos appear in the trash and no longer appear in the normal todo list. From the deleted state, a todo can follow one of two paths: it can be restored back to the active state, returning to the normal todo list, or it can be permanently deleted, which removes the todo and its edit history entirely. Permanently deleted todos cannot be recovered. When a user deletes their account, all their todos regardless of state are permanently deleted.
+A todo has a deletion status that determines its visibility and recoverability.
+
+When a todo is created, it is in the active state and appears in the normal todo list.
+
+Users can delete an active todo, which moves it to the deleted state (soft delete).
+A deleted todo no longer appears in the normal todo list but is visible in the trash.
+
+Users can restore a deleted todo from the trash, which returns it to the active state.
+A restored todo reappears in the normal todo list.
+
+Users can permanently delete a deleted todo from the trash.
+A permanently deleted todo is removed from the system and cannot be recovered.
+When a todo is permanently deleted, its edit history is also removed.
 
 ```mermaid
 flowchart LR
     A["active"] -->|"Delete"| B["deleted"]
     B -->|"Restore"| A
-    B -->|"Permanently Delete"| C["permanently deleted"]
+    B -->|"Permanently delete"| C["permanently removed"]
 ```

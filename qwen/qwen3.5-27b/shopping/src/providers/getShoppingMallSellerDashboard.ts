@@ -15,6 +15,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getShoppingMallSellerDashboard(props: {
   seller: SellerPayload;
 }): Promise<IShoppingMallDashboard> {
+  // Count order items for this seller
   const orderItemsCount = await MyGlobal.prisma.shopping_mall_order_items.count(
     {
       where: {
@@ -23,6 +24,7 @@ export async function getShoppingMallSellerDashboard(props: {
       },
     },
   );
+  // Count pending cancellation requests for seller's order items
   const pendingCancellationCount =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.count({
       where: {
@@ -34,6 +36,7 @@ export async function getShoppingMallSellerDashboard(props: {
         },
       },
     });
+  // Count pending refund requests for seller's order items
   const pendingRefundCount =
     await MyGlobal.prisma.shopping_mall_refund_requests.count({
       where: {
@@ -46,7 +49,6 @@ export async function getShoppingMallSellerDashboard(props: {
       },
     });
   return {
-    products_count: undefined,
     order_items_count: orderItemsCount,
     pending_cancellation_count: pendingCancellationCount,
     pending_refund_count: pendingRefundCount,

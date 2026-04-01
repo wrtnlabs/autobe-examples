@@ -14,22 +14,16 @@ export namespace HrmPlatformDepartmentCollector {
   }) {
     const id: string = v4();
     return {
-      // Scalar fields
       id,
       name: props.body.name,
       description: props.body.description ?? null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relations
       organization: { connect: { id: props.hrmPlatformOrganizations.id } },
-      parent: props.body.parent_id
-        ? { connect: { id: props.body.parent_id } }
+      parentDepartment: props.body.parent_department_id
+        ? { connect: { id: props.body.parent_department_id } }
         : undefined,
-      // HasMany relations (not needed for create)
-      children: undefined,
-      employees: undefined,
-      employeeDepartmentHistories: undefined,
     } satisfies Prisma.hrm_platform_departmentsCreateInput;
   }
 }

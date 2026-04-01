@@ -1,0 +1,244 @@
+/// Work containers grouping related tasks and timelogs within an
+/// organization. Each project has a name, color code for UI display, status
+/// (active/archived/completed), optional budget hours, and optional timeline
+/// dates. Projects are organization-scoped for multi-tenancy data isolation.
+///
+/// @namespace Project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization's {@link hrm_platform_organizations.id}.
+  organization_id String
+  
+  /// Project name for identification.
+  name String
+  
+  /// Optional project description detailing purpose and scope.
+  description String?
+  
+  /// Hex color code for UI display and visual identification.
+  color_code String
+  
+  /// Project status: active, archived, or completed.
+  status String
+  
+  /// Optional total estimated budget hours for the project.
+  budget_hours Float?
+  
+  /// Optional project start date.
+  start_date DateTime?
+  
+  /// Optional project end date.
+  end_date DateTime?
+  
+  /// Timestamp when the project was created.
+  created_at DateTime
+  
+  /// Timestamp when the project was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  projectMembers hrm_platform_project_members[]
+  tasks hrm_platform_tasks[]
+  timelogs hrm_platform_timelogs[]
+  timers hrm_platform_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([organization_id, status])
+  @@index([organization_id, created_at])
+}
+
+/// Junction table assigning employees to projects with role attribute
+/// (member or project-lead), enabling team membership tracking.
+///
+/// Links employees to their assigned projects within an organization. Each
+/// membership record specifies the employee's role in the project,
+/// distinguishing between regular members and project leads who have task
+/// management authority. Prevents duplicate assignments through unique
+/// constraint on employee-project pair.
+///
+/// @namespace Project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_project_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Employee's {@link hrm_platform_employees.id}.
+  hrm_platform_employee_id String
+  
+  /// Project's {@link hrm_platform_projects.id}.
+  hrm_platform_project_id String
+  
+  /// Project role: member or project-lead. Project leads can manage tasks
+  /// within their project.
+  role String
+  
+  /// Timestamp when the project membership was created.
+  created_at DateTime
+  
+  /// Timestamp when the project membership was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the project membership was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  project hrm_platform_projects @relation(fields: [hrm_platform_project_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_project_id])
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_employee_id, hrm_platform_project_id], map: "hrm_platform_project_members_hrm_platform_employee_id__5f10afcf")
+}
+
+/// Work items within projects with title, status, priority, estimated hours,
+/// due date, optional assignment to employee, and optional parent task for
+/// subtask hierarchy.
+///
+/// @namespace Project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Parent project's {@link hrm_platform_projects.id}.
+  hrm_platform_project_id String
+  
+  /// Assigned employee's {@link hrm_platform_employees.id}.
+  hrm_platform_employee_id String?
+  
+  /// Parent task's {@link hrm_platform_tasks.id} for subtask hierarchy.
+  parent_task_id String?
+  
+  /// Task title.
+  title String
+  
+  /// Task description.
+  description String?
+  
+  /// Task status: open, in-progress, completed, closed.
+  status String
+  
+  /// Task priority: low, medium, high, urgent.
+  priority String
+  
+  /// Estimated hours to complete the task.
+  estimated_hours Float?
+  
+  /// Task due date.
+  due_date DateTime?
+  
+  /// Creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project hrm_platform_projects @relation(fields: [hrm_platform_project_id], references: [id], onDelete: Cascade)
+  assignee hrm_platform_employees? @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  parentTask hrm_platform_tasks? @relation("recursive", fields: [parent_task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subtasks hrm_platform_tasks[] @relation("recursive")
+  histories hrm_platform_task_histories[]
+  timelogs hrm_platform_timelogs[]
+  timers hrm_platform_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_task_id])
+  @@index([hrm_platform_project_id, status])
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_employee_id, hrm_platform_project_id], map: "hrm_platform_tasks_hrm_platform_employee_id_hrm_platfo_e7ff023c")
+  @@index([due_date])
+  @@index([status, priority])
+}
+
+/// Audit trail entries capturing task status transitions with timestamp, old
+/// status, new status, and the user who made the change. Each entry records
+/// a single status change event for tracking task progression and
+/// accountability. References {@link hrm_platform_tasks} for the task being
+/// tracked and {@link hrm_platform_members} for the actor who made the
+/// change.
+///
+/// @namespace Project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_task_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Task's {@link hrm_platform_tasks.id}.
+  hrm_platform_task_id String
+  
+  /// Member's {@link hrm_platform_members.id}.
+  hrm_platform_member_id String
+  
+  /// Previous task status before the transition (e.g., open, in-progress,
+  /// completed, closed).
+  old_status String
+  
+  /// New task status after the transition (e.g., open, in-progress, completed,
+  /// closed).
+  new_status String
+  
+  /// Timestamp when the status change was recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  task hrm_platform_tasks @relation(fields: [hrm_platform_task_id], references: [id], onDelete: Cascade)
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_member_id])
+  @@index([hrm_platform_task_id, created_at])
+}

@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import { IShoppingMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -21,9 +22,12 @@ export async function getShoppingMallCustomerSessionsSessionId(props: {
   const session =
     await MyGlobal.prisma.shopping_mall_customer_sessions.findUniqueOrThrow({
       where: { id: props.sessionId },
-      ...ShoppingMallCustomerSessionTransformer.select(),
+      select: {
+        shopping_mall_customer_id: true,
+        ...ShoppingMallCustomerSessionTransformer.select().select,
+      },
     });
-  if (session.customer.id !== props.customer.id) {
+  if (session.shopping_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
   return await ShoppingMallCustomerSessionTransformer.transform(session);

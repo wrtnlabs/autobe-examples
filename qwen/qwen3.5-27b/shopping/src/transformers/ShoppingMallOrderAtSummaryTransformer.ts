@@ -3,8 +3,10 @@ import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
 
@@ -23,6 +25,9 @@ export namespace ShoppingMallOrderAtSummaryTransformer {
         orderItems: {
           select: { id: true },
         } satisfies Prisma.shopping_mall_order_itemsFindManyArgs,
+        shipping_address_snapshot: true,
+        updated_at: true,
+        deleted_at: true,
       },
     } satisfies Prisma.shopping_mall_ordersFindManyArgs;
   }
@@ -32,7 +37,7 @@ export namespace ShoppingMallOrderAtSummaryTransformer {
     return {
       id: input.id,
       status: input.status,
-      total_price: Number(input.total_price),
+      total_price: input.total_price,
       order_items_count: input.orderItems.length,
       customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
         input.customer,

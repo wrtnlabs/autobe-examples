@@ -1,7 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIShoppingMallSellerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallSellerSession";
-import { IShoppingMallSellerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerSession";
+import { IPageIShoppingMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallCustomerSession";
+import { IShoppingMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -16,64 +16,69 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchShoppingMallCustomerSessions(props: {
   customer: CustomerPayload;
-  body: IShoppingMallSellerSession.IRequest;
-}): Promise<IPageIShoppingMallSellerSession.ISummary> {
+  body: IShoppingMallCustomerSession.IRequest;
+}): Promise<IPageIShoppingMallCustomerSession.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   const now = new Date();
-  const whereInput = {
+  const whereInput: Prisma.shopping_mall_customer_sessionsWhereInput = {
     shopping_mall_customer_id: props.customer.id,
-    ...(props.body.status === "active" && {
-      expired_at: { gt: now },
+    ...(props.body.search && {
+      ip: { contains: props.body.search },
     }),
-    ...(props.body.status === "expired" && {
-      expired_at: { lte: now },
+    ...(props.body.created_at_from && {
+      created_at: { gte: new Date(props.body.created_at_from) },
     }),
-    ...(props.body.dateFrom && {
-      created_at: { gte: new Date(props.body.dateFrom) },
+    ...(props.body.created_at_to && {
+      created_at: { lte: new Date(props.body.created_at_to) },
     }),
-    ...(props.body.dateTo && {
-      created_at: { lte: new Date(props.body.dateTo) },
+  };
+  const [allSessions, total] = await Promise.all([
+    MyGlobal.prisma.shopping_mall_customer_sessions.findMany({
+      where: whereInput,
+      orderBy: { created_at: "desc" },
+      select: {
+        id: true,
+        ip: true,
+        href: true,
+        referrer: true,
+        created_at: true,
+        expired_at: true,
+      },
     }),
-  } satisfies Prisma.shopping_mall_customer_sessionsWhereInput;
-  const sortParts = (props.body.sort ?? "created_at,desc").split(",");
-  const sortField = sortParts[0] ?? "created_at";
-  const sortOrder = sortParts[1] ?? "desc";
-  const orderByInput = {
-    [sortField]: sortOrder === "asc" ? "asc" : "desc",
-  } satisfies Prisma.shopping_mall_customer_sessionsOrderByWithRelationInput;
-  const data = await MyGlobal.prisma.shopping_mall_customer_sessions.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    select: {
-      id: true,
-      ip: true,
-      created_at: true,
-      expired_at: true,
-    },
-  });
-  const total = await MyGlobal.prisma.shopping_mall_customer_sessions.count({
-    where: whereInput,
-  });
+    MyGlobal.prisma.shopping_mall_customer_sessions.count({
+      where: whereInput,
+    }),
+  ]);
+  const filteredSessions = props.body.status
+    ? allSessions.filter((session) => {
+        const isActive = session.expired_at > now;
+        return props.body.status === "active" ? isActive : !isActive;
+      })
+    : allSessions;
+  const paginatedData = filteredSessions.slice(skip, skip + limit);
+  const filteredTotal = filteredSessions.length;
   return {
+    data: paginatedData.map((session) => {
+      const isActive = session.expired_at > now;
+      const isCurrent = session.id === props.customer.session_id;
+      return {
+        id: session.id,
+        ip: session.ip,
+        href: session.href,
+        referrer: session.referrer,
+        created_at: toISOStringSafe(session.created_at),
+        expired_at: toISOStringSafe(session.expired_at),
+        is_active: isActive,
+        is_current: isCurrent,
+      } satisfies IShoppingMallCustomerSession.ISummary;
+    }),
     pagination: {
       current: page,
       limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      records: filteredTotal,
+      pages: Math.ceil(filteredTotal / limit),
     } satisfies IPage.IPagination,
-    data: data.map(
-      (session) =>
-        ({
-          id: session.id,
-          ip: session.ip,
-          created_at: session.created_at.toISOString(),
-          expired_at: session.expired_at.toISOString(),
-          isActive: session.expired_at > now,
-        }) satisfies IShoppingMallSellerSession.ISummary,
-    ),
-  } satisfies IPageIShoppingMallSellerSession.ISummary;
+  };
 }

@@ -16,7 +16,7 @@ export async function deleteEcommerceMallSellerProductsProductIdVariantsVariantI
   productId: string & tags.Format<"uuid">;
   variantId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Verify product ownership by the seller
+  // Step 1: Verify product exists and belongs to seller
   const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
     where: {
       id: props.productId,
@@ -27,7 +27,7 @@ export async function deleteEcommerceMallSellerProductsProductIdVariantsVariantI
   if (product === null) {
     throw new HttpException("Product not found", 404);
   }
-  // Step 2: Verify the variant exists and belongs to the product
+  // Step 2: Verify variant exists and belongs to product
   const variant =
     await MyGlobal.prisma.ecommerce_mall_product_variants.findFirst({
       where: {
@@ -39,89 +39,82 @@ export async function deleteEcommerceMallSellerProductsProductIdVariantsVariantI
   if (variant === null) {
     throw new HttpException("Variant not found", 404);
   }
-  // Step 3: Check for pending order items with paid or shipped status
-  const paidOrShippedOrders =
+  // Step 3: Check for blocking order items with paid or shipped status
+  const blockingOrderItems =
     await MyGlobal.prisma.ecommerce_mall_order_items.findMany({
       where: {
         variant_snapshot_id: variant.id,
-        deleted_at: null,
-      },
-      include: {
-        order: {
-          select: { status: true },
-        },
       },
     });
-  const hasActiveOrders = paidOrShippedOrders.some((item) => {
-    const order = item.order;
-    return order.status === "paid" || order.status === "shipped";
-  });
-  if (hasActiveOrders) {
+  const hasBlockingOrders = await Promise.all(
+    blockingOrderItems.map(async (item) => {
+      const order = await MyGlobal.prisma.ecommerce_mall_orders.findFirst({
+        where: {
+          id: item.ecommerce_mall_order_id,
+          status: { in: ["paid", "shipped"] },
+          deleted_at: null,
+        },
+      });
+      return order !== null;
+    }),
+  );
+  const hasPaidOrShippedOrders = hasBlockingOrders.some((hasOrder) => hasOrder);
+  if (hasPaidOrShippedOrders) {
     throw new HttpException(
-      "Cannot delete variant with pending paid or shipped orders",
+      "Cannot delete variant with pending order items in paid or shipped status",
       409,
     );
   }
-  // Step 4: Check for pending cancellation requests
-  const relatedOrderItems =
-    await MyGlobal.prisma.ecommerce_mall_order_items.findMany({
-      where: {
-        variant_snapshot_id: variant.id,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
-  const relatedOrderItemIds = relatedOrderItems.map((item) => item.id);
-  const pendingCancellations =
+  // Step 4: Check for blocking cancellation requests
+  const pendingCancellationRequests =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findMany({
       where: {
         order_item_id: {
-          in: relatedOrderItemIds,
+          in: blockingOrderItems.map((item) => item.id),
         },
         status: "pending",
         deleted_at: null,
       },
     });
-  if (pendingCancellations.length > 0) {
+  if (pendingCancellationRequests.length > 0) {
     throw new HttpException(
       "Cannot delete variant with pending cancellation requests",
       409,
     );
   }
-  // Step 5: Check for pending refund requests
-  const pendingRefunds =
+  // Step 5: Check for blocking refund requests
+  const pendingRefundRequests =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findMany({
       where: {
         ecommerce_mall_order_item_id: {
-          in: relatedOrderItemIds,
+          in: blockingOrderItems.map((item) => item.id),
         },
         status: "pending",
         deleted_at: null,
       },
     });
-  if (pendingRefunds.length > 0) {
+  if (pendingRefundRequests.length > 0) {
     throw new HttpException(
       "Cannot delete variant with pending refund requests",
       409,
     );
   }
-  // Step 6: Perform transactional deletion
-  const deleteTimestamp: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(),
-  );
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Soft delete the variant
-    await tx.ecommerce_mall_product_variants.update({
+  // Step 6: Execute soft delete in transaction
+  await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.ecommerce_mall_product_variants.update({
       where: { id: props.variantId },
-      data: { deleted_at: deleteTimestamp },
-    });
-    // Soft delete associated inventory records
-    await tx.ecommerce_mall_inventory_records.updateMany({
+      data: {
+        deleted_at: new Date(),
+      },
+    }),
+    MyGlobal.prisma.ecommerce_mall_inventory_records.updateMany({
       where: {
         ecommerce_mall_product_variant_id: props.variantId,
         deleted_at: null,
       },
-      data: { deleted_at: deleteTimestamp },
-    });
-  });
+      data: {
+        deleted_at: new Date(),
+      },
+    }),
+  ]);
 }

@@ -1,5 +1,4 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
 import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -19,12 +18,48 @@ export async function postHrmPlatformMemberOrganizations(props: {
   member: MemberPayload;
   body: IHrmPlatformOrganization.ICreate;
 }): Promise<IHrmPlatformOrganization> {
-  const created = await MyGlobal.prisma.hrm_platform_organizations.create({
+  const organization = await MyGlobal.prisma.hrm_platform_organizations.create({
     data: await HrmPlatformOrganizationCollector.collect({
       body: props.body,
-      hrmPlatformMembers: { id: props.member.id },
     }),
     ...HrmPlatformOrganizationTransformer.select(),
   });
-  return await HrmPlatformOrganizationTransformer.transform(created);
+  let ownerRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
+    where: {
+      organization_id: organization.id,
+      name: "Owner",
+      is_builtin: true,
+      deleted_at: null,
+    },
+  });
+  if (!ownerRole) {
+    ownerRole = await MyGlobal.prisma.hrm_platform_roles.create({
+      data: {
+        id: v4(),
+        organization_id: organization.id,
+        name: "Owner",
+        description: "Full access to all organization features",
+        is_builtin: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
+      },
+    });
+  }
+  await MyGlobal.prisma.hrm_platform_employees.create({
+    data: {
+      id: v4(),
+      organization_id: organization.id,
+      user_id: props.member.id,
+      role_id: ownerRole.id,
+      department_id: null,
+      position: null,
+      employment_type: "full-time",
+      status: "active",
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+    },
+  });
+  return await HrmPlatformOrganizationTransformer.transform(organization);
 }

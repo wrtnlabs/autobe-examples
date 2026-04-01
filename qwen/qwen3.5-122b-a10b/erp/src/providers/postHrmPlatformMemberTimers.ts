@@ -25,78 +25,59 @@ export async function postHrmPlatformMemberTimers(props: {
   member: MemberPayload;
   body: IHrmPlatformTimer.ICreate;
 }): Promise<IHrmPlatformTimer> {
-  // 1. Find employee for this member
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      hrm_platform_user_id: props.member.id,
-      deleted_at: null,
-    },
-  });
-  if (employee === null) {
-    throw new HttpException("Employee record not found", 404);
-  }
-  // 2. Check for existing active timer (single active timer enforcement)
+  // Resolve employee from member
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+      where: {
+        hrm_platform_user_id: props.member.id,
+        deleted_at: null,
+      },
+      select: { id: true },
+    } satisfies Prisma.hrm_platform_employeesFindFirstOrThrowArgs);
+  // Check for existing active timer (single active timer constraint)
   const existingTimer = await MyGlobal.prisma.hrm_platform_timers.findFirst({
     where: {
       employee_id: employee.id,
       stopped_at: null,
       deleted_at: null,
     },
-  });
+  } satisfies Prisma.hrm_platform_timersFindManyArgs);
   if (existingTimer !== null) {
     throw new HttpException("You already have an active timer", 409);
   }
-  // 3. Validate project exists and belongs to employee's organization
-  const project = await MyGlobal.prisma.hrm_platform_projects.findFirst({
-    where: {
-      id: props.body.project_id,
-      hrm_platform_organization_id: employee.hrm_platform_organization_id,
-      deleted_at: null,
-    },
-  });
-  if (project === null) {
-    throw new HttpException(
-      "Project not found or not in your organization",
-      404,
-    );
-  }
-  // 4. Verify employee is a member of the project
+  // Validate project exists
+  await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow({
+    where: { id: props.body.project_id },
+  } satisfies Prisma.hrm_platform_projectsFindUniqueOrThrowArgs);
+  // Validate employee is a project member
   const projectMember =
     await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
-        hrm_platform_project_id: props.body.project_id,
         hrm_platform_employee_id: employee.id,
+        hrm_platform_project_id: props.body.project_id,
         deleted_at: null,
       },
-    });
+    } satisfies Prisma.hrm_platform_project_membersFindManyArgs);
   if (projectMember === null) {
     throw new HttpException("You are not a member of this project", 403);
   }
-  // 5. Validate task if provided
+  // Validate task if provided
   if (props.body.task_id !== undefined && props.body.task_id !== null) {
-    const task = await MyGlobal.prisma.hrm_platform_tasks.findFirst({
+    await MyGlobal.prisma.hrm_platform_tasks.findFirstOrThrow({
       where: {
         id: props.body.task_id,
         hrm_platform_projects_id: props.body.project_id,
         deleted_at: null,
       },
-    });
-    if (task === null) {
-      throw new HttpException(
-        "Task not found or does not belong to the selected project",
-        404,
-      );
-    }
+    } satisfies Prisma.hrm_platform_tasksFindManyArgs);
   }
-  // 6. Create timer using collector
-  const timerData = await HrmPlatformTimerCollector.collect({
-    body: props.body,
-    employee: employee,
-  });
+  // Create timer using collector
   const timer = await MyGlobal.prisma.hrm_platform_timers.create({
-    data: timerData,
+    data: await HrmPlatformTimerCollector.collect({
+      body: props.body,
+      employee: employee as IEntity,
+    }),
     ...HrmPlatformTimerTransformer.select(),
-  });
-  // 7. Transform and return
+  } satisfies Prisma.hrm_platform_timersCreateArgs);
   return await HrmPlatformTimerTransformer.transform(timer);
 }

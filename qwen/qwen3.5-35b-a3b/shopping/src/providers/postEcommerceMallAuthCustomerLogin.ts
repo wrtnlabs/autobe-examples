@@ -16,86 +16,81 @@ export async function postEcommerceMallAuthCustomerLogin(props: {
   ip: string;
   body: IEcommerceMallCustomer.ILogin;
 }): Promise<IEcommerceMallCustomer.IAuthorized> {
-  const nowIso = new Date().toISOString();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const customer = await MyGlobal.prisma.ecommerce_mall_customers.findFirst({
-    where: { email: props.body.email },
+    where: { email: props.body.email, deleted_at: null },
     select: {
       id: true,
       email: true,
+      password_hash: true,
       status: true,
       created_at: true,
       updated_at: true,
       deleted_at: true,
-      password_hash: true,
     },
   });
   if (!customer) {
     throw new HttpException("Invalid credentials", 401);
   }
-  if (customer.status !== "active") {
-    throw new HttpException("Invalid credentials", 401);
-  }
-  const isValidPassword = await PasswordUtil.verify(
+  const isValid = await PasswordUtil.verify(
     props.body.password,
     customer.password_hash,
   );
-  if (!isValidPassword) {
+  if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  const access_token: string & tags.Format<"password"> = jwt.sign(
-    {
-      type: "customer" as const,
-      customer_id: customer.id,
-      session_id: sessionId,
-      created_at: nowIso,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refresh_token: string & tags.Format<"password"> = jwt.sign(
-    {
-      type: "customer" as const,
-      customer_id: customer.id,
-      session_id: sessionId,
-      tokenType: "refresh" as const,
-      created_at: nowIso,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
+  const accessExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 60 * 60 * 1000,
+  ).toISOString() as string & tags.Format<"date-time">;
+  const refreshExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString() as string & tags.Format<"date-time">;
+  const session: string & tags.Format<"uuid"> = v4() as string &
+    tags.Format<"uuid">;
   await MyGlobal.prisma.ecommerce_mall_customer_sessions.create({
     data: {
-      id: sessionId,
+      id: session,
       ecommerce_mall_customer_id: customer.id,
-      access_token: access_token,
-      refresh_token: refresh_token,
+      access_token: "",
+      refresh_token: "",
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: nowIso,
-      updated_at: nowIso,
-      expired_at: accessExpires.toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      deleted_at: null,
+      expired_at: accessExpires,
     },
   });
-  const result: IEcommerceMallCustomer.IAuthorized = {
+  const tokenPayload = {
+    type: "customer" as const,
     id: customer.id,
-    display_name: customer.email,
+    session_id: session,
+    created_at: new Date().toISOString(),
+  };
+  const access = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "60m",
+    issuer: "autobe",
+  }) as string;
+  const refresh = jwt.sign(
+    { ...tokenPayload, tokenType: "refresh" as const },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  ) as string;
+  const token: IAuthorizationToken = {
+    access,
+    refresh,
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
+  };
+  return {
+    id: customer.id,
+    display_name: "",
     phone_number: null,
     status: customer.status,
     created_at: customer.created_at.toISOString(),
     updated_at: customer.updated_at.toISOString(),
-    deleted_at:
-      customer.deleted_at === null ? null : customer.deleted_at.toISOString(),
+    deleted_at: customer.deleted_at?.toISOString() ?? null,
     email: customer.email,
-    token: {
-      access: access_token,
-      refresh: refresh_token,
-      expired_at: accessExpires.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
-    },
-  };
-  return result;
+    token,
+  } satisfies IEcommerceMallCustomer.IAuthorized;
 }

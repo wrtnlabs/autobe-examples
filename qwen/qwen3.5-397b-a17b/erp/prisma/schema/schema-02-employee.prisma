@@ -1,0 +1,317 @@
+/// Organizational membership records linking users to organizations with
+/// role, department, position, employment type, and status.
+///
+/// Each record represents a user's membership in a specific organization. A
+/// user can have multiple employee records across different organizations.
+/// Each employee has exactly one role, optional department assignment,
+/// position title, employment type classification, and activation status.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization's {@link hrm_platform_organizations.id}.
+  organization_id String
+  
+  /// Member's {@link hrm_platform_members.id}.
+  user_id String
+  
+  /// Role's {@link hrm_platform_roles.id}.
+  role_id String
+  
+  /// Department's {@link hrm_platform_departments.id}.
+  department_id String?
+  
+  /// Job title or position within the organization.
+  position String?
+  
+  /// Employment classification: full-time, part-time, contractor, intern.
+  employment_type String
+  
+  /// Employee status: active or deactivated.
+  status String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user hrm_platform_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role hrm_platform_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  department hrm_platform_departments? @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  contracts hrm_platform_employee_contracts[]
+  projectMembers hrm_platform_project_members[]
+  assignedTasks hrm_platform_tasks[]
+  timelogs hrm_platform_timelogs[]
+  timesheets hrm_platform_timesheets[] @relation("hrm_platform_timesheets_of_employee_id")
+  reviewedTimesheets hrm_platform_timesheets[] @relation("hrm_platform_timesheets_of_reviewed_by_employee_id")
+  timer hrm_platform_timers?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@index([role_id])
+  @@unique([organization_id, user_id])
+  @@index([organization_id, status])
+  @@index([employment_type])
+  @@index([department_id])
+}
+
+/// Historical employment agreements documenting compensation and work terms
+/// for employees. Each employee can have multiple contracts over time with
+/// only one active at a time. References {@link hrm_platform_employees}.
+/// Immutable records preserve employment history.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_employee_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Employee's {@link hrm_platform_employees.id}.
+  hrm_platform_employee_id String
+  
+  /// Contract effective start date.
+  start_date DateTime
+  
+  /// Contract end date. Null indicates ongoing contract.
+  end_date DateTime?
+  
+  /// Compensation rate per pay period unit.
+  pay_rate Float
+  
+  /// Payment frequency: hourly, daily, weekly, or monthly.
+  pay_period String
+  
+  /// Expected weekly working hours.
+  working_hours_per_week Int
+  
+  /// Additional contract terms or comments.
+  notes String?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Last modification timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_employee_id, start_date], map: "hrm_platform_employee_contracts_hrm_platform_employee__aa4b4e2e")
+}
+
+/// Organization-scoped permission sets including built-in roles (Owner,
+/// Manager, Employee) and custom roles.
+///
+/// Each role belongs to exactly one organization and defines a set of
+/// permissions granted to employees assigned to that role. Built-in roles
+/// are system-defined and cannot be deleted, while custom roles can be
+/// created, edited, and deleted by organization owners (when no employees
+/// are assigned).
+///
+/// Roles support many-to-many relationship with permissions through {@link
+/// hrm_platform_role_permissions} junction table. Each employee in an
+/// organization is assigned exactly one role via {@link
+/// hrm_platform_employees.role_id}.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization's {@link hrm_platform_organizations.id}.
+  organization_id String
+  
+  /// Role name (e.g., Owner, Manager, Employee, or custom role name).
+  name String
+  
+  /// Optional description of the role's purpose and responsibilities.
+  description String?
+  
+  /// True for system-built-in roles (Owner, Manager, Employee) that cannot be
+  /// deleted.
+  is_builtin Boolean
+  
+  /// Timestamp when the role was created.
+  created_at DateTime
+  
+  /// Timestamp when the role was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the role was soft-deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_platform_employees[]
+  rolePermissions hrm_platform_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+}
+
+/// Junction table mapping roles to their granted permissions for
+/// many-to-many relationship.
+///
+/// Each row represents one permission granted to a specific role. Built-in
+/// roles (Owner, Manager, Employee) and custom roles both use this table to
+/// define their permission sets. Supports filtering permissions by role and
+/// roles by permission.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to {@link hrm_platform_roles.id}. The role that holds this
+  /// permission.
+  hrm_platform_role_id String
+  
+  /// Permission code (e.g., org:manage, employee:manage, employee:view,
+  /// project:manage, project:view, time:manage, time:approve, time:view_all,
+  /// report:view).
+  permission String
+  
+  /// Timestamp when this permission assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when this permission assignment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this permission assignment was soft deleted (null if
+  /// active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_platform_roles @relation(fields: [hrm_platform_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_role_id, permission], map: "hrm_platform_role_permissions_hrm_platform_role_id_per_5494cd4f")
+}
+
+/// Pending employee invitations by email before account creation. Links
+/// organizations to invited users, tracking invitation lifecycle from
+/// sending through acceptance or expiration. Supports pre-account invitation
+/// workflow where users are automatically added to organizations upon signup
+/// with invited email.
+///
+/// @namespace Employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_invitations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization's {@link hrm_platform_organizations.id}.
+  organization_id String
+  
+  /// Member's {@link hrm_platform_members.id}. Null until user signs up with
+  /// invited email.
+  user_id String?
+  
+  /// Member's {@link hrm_platform_members.id} who sent this invitation.
+  invited_by_id String
+  
+  /// Invited email address. Used to match existing users or create account
+  /// linkage upon signup.
+  email String
+  
+  /// Invitation status: pending, accepted, expired, revoked.
+  status String
+  
+  /// Timestamp when invitation was sent.
+  invited_at DateTime
+  
+  /// Timestamp when invitation expires and becomes invalid.
+  expires_at DateTime
+  
+  /// Timestamp when invitation was accepted. Null if not yet accepted.
+  accepted_at DateTime?
+  
+  /// Created timestamp.
+  created_at DateTime
+  
+  /// Updated timestamp.
+  updated_at DateTime
+  
+  /// Deleted timestamp for soft delete.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user hrm_platform_members? @relation("hrm_platform_invitations_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  invitedBy hrm_platform_members @relation("hrm_platform_invitations_of_invited_by_id", fields: [invited_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@index([invited_by_id])
+  @@unique([organization_id, email])
+  @@index([email])
+  @@index([status])
+  @@index([organization_id, status])
+}

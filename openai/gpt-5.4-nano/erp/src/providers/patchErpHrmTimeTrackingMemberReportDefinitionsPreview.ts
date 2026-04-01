@@ -17,18 +17,5 @@ export async function patchErpHrmTimeTrackingMemberReportDefinitionsPreview(prop
   member: MemberPayload;
   body: IErpHrmTimeTrackingReportDefinition.IRequest;
 }): Promise<IErpHrmTimeTrackingReportOutput.ISummary> {
-  // Temporary implementation to be replaced by generator.
-  return {
-    id: v4() as any,
-    report_generation_run_id: v4() as any,
-    employee_id: v4() as any,
-    project_id: v4() as any,
-    task_id: null,
-    week_start_date_id: null,
-    grouping_sort_key: "",
-    notes: null,
-    created_at: toISOStringSafe(new Date() as any),
-    updated_at: toISOStringSafe(new Date() as any),
-    deleted_at: null,
-  };
+  throw new HttpException("Not implemented", 501);
 }

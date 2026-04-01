@@ -1,4 +1,4 @@
-**todoApp — Business rules, validation constraints, data browsing expectations, error scenarios**
+**multiUserTodo — Business rules, validation constraints, data browsing expectations, error scenarios**
 
 Business rules, validation constraints, data browsing expectations, error scenarios
 
@@ -8,85 +8,75 @@ Per-concept business rules, validation logic, and domain constraints.
 
 ## User Rules
 
-Users must provide a valid email address during registration, and each email address can only be associated with one account. Passwords are required for all user accounts and must be provided during sign up. Each user must have a display name that identifies them within the system. Users can update their display name at any time after account creation. When a user deletes their account, all associated todos are permanently removed, including those in the trash folder. Users cannot access or view other users' profiles, maintaining complete privacy between accounts. The system enforces that email addresses remain unique across all registered users. Account deletion is irreversible and removes all user data from the system. Password changes are allowed for existing users to update their credentials.
+Users must provide both email and password when signing up for an account. Email and password are also required for logging into the system. Users can change their password after account creation. Each user has a display name as part of their profile. Users can edit their display name at any time. When a user deletes their account, all their todos are permanently deleted including those in the trash. Users cannot view other users' profiles as this is a private todo application. Each user's account is isolated and independent from other users. The system enforces that only the account owner can modify their profile information.
 
-### Email and Registration Rules
+### Account Creation and Authentication
 
-Each user must provide a valid email address during registration. The email address must be unique across all registered accounts in the system. Only one account can be associated with a single email address. If a user attempts to register with an email address that is already in use, the registration request is rejected. The email address is required and cannot be left empty during sign up. The system validates that the provided email address follows a valid email format before accepting the registration.
+Users must provide both email and password when creating an account. If email is missing during signup, the request is rejected. If password is missing during signup, the request is rejected. Users must provide both email and password for login authentication. If the provided email and password do not match any existing account during login, the request is rejected. Each user account is uniquely identified by their email address.
 
-### Display Name Rules
+### Password Management
 
-Each user must have a display name that identifies them within the system. The display name is a required field during account creation and cannot be empty. Users can update their display name at any time after account creation. When a user modifies their display name, the change takes effect immediately. There are no restrictions on how often a user can change their display name.
+Users can change their password after account creation. The user must be authenticated to change their password. If the user is not authenticated, the password change request is rejected. The password change applies only to the authenticated user's account.
 
-### Account Deletion Rules
+### Profile Management
 
-When a user deletes their account, all todos associated with that user are permanently removed from the system. This includes todos in the normal list and todos in the trash folder. The account deletion process also removes all edit history entries for the user's todos. Account deletion is irreversible and cannot be undone. Once an account is deleted, all user data is permanently removed and cannot be recovered. The system does not retain any information about deleted accounts.
+Each user has a display name as part of their profile. Users can edit their display name at any time. Only the account owner can modify their profile information. If a user attempts to modify another user's profile, the request is rejected. The display name is optional and can be updated multiple times.
 
-### Privacy and Data Isolation Rules
+### Account Deletion
 
-Each user's profile is completely private and cannot be viewed by other users. Users cannot access or view other users' profiles. The system enforces complete data isolation between user accounts. A user can only see their own todos and cannot view, access, or share another user's todos. There is no functionality to browse or discover other users in the system. All user data remains isolated to the account owner.
+Users can delete their own account. When a user deletes their account, all their todos are permanently deleted. This includes todos in the trash. The account deletion is irreversible. All edit history associated with the user's todos is also permanently deleted. If a user attempts to delete another user's account, the request is rejected.
 
-### Password Management Rules
+### Privacy and Isolation
 
-A password is required for all user accounts during registration. Existing users can change their password at any time to update their credentials. When a user changes their password, the new password replaces the old one immediately. The system requires the user to provide their current password when requesting a password change. If the current password provided is incorrect, the password change request is rejected.
+Users cannot view other users' profiles. This is a private todo application. Each user's account is isolated from other users. Users can only access their own todos. If a user attempts to access another user's todo, the request is rejected. If a user attempts to view another user's profile, the request is rejected. There is no way to share or transfer todos between users.
 
 ## Todo Rules
 
-Every todo must have a title, which is the only required field when creating a new item. The description field is optional and can be left empty without preventing todo creation. Start dates are optional and users may create todos without specifying when work begins. Due dates are optional and todos can exist without a deadline. When a todo is first created, it is automatically set to an incomplete state. Users can assign both a start date and due date to the same todo if needed. The system accepts todos with only a title and no other fields populated. Date fields can be added or modified after the todo is initially created. Todos remain in their current completion state until explicitly changed by the user. A todo cannot be created without providing a title value.
+Every todo must have a title which is required and cannot be empty. Description is optional and can be left empty when creating or editing a todo. Start date is optional and can be omitted when creating a todo. Due date is optional and can be omitted when creating a todo. Newly created todos are incomplete by default. Users can toggle a todo between complete and incomplete states. Users can edit the title, description, start date, and due date of their own todos. Each user can only see and access their own todos. There is no way to view, access, or share another user's todos. Todos are completely private to their owner.
 
-### Todo Creation Requirements
+### Title Validation
 
-Every todo must have a title, which is the only required field when creating a new item. The title cannot be empty or missing during todo creation.
+Every todo must have a title. The title is required when creating a todo and cannot be empty or contain only whitespace. If a title is not provided during todo creation, the request is rejected. If an empty title is submitted, the request is rejected. The title can be updated when editing a todo, but the updated title must also be non-empty. If an edit attempt provides an empty title, the edit is rejected.
 
-The description field is optional and can be left empty without preventing todo creation. A todo with an empty description is valid and functions normally.
+### Optional Field Rules
 
-Start date is optional and users may create todos without specifying when work begins. A todo without a start date is valid.
+The description is optional when creating or editing a todo. Users may leave the description empty or omit it entirely. The start date is optional and may be omitted when creating or editing a todo. The due date is optional and may be omitted when creating or editing a todo. When any optional field is not provided, the system accepts the todo without that field. There is no requirement that start date or due date be set. There is no validation that prevents a due date from being earlier than a start date, as the user did not specify this constraint.
 
-Due date is optional and todos can exist without a deadline. A todo without a due date is valid.
+### Completion State Management
 
-Users can create a todo with only a title and no other fields populated. This minimal todo creation is fully supported.
+When a todo is created, it is marked as incomplete by default. Users can change the completion status of their own todos at any time. Users can mark an incomplete todo as complete. Users can mark a complete todo as incomplete. The completion status toggles between two states: complete and incomplete. There are no intermediate states or additional status values. The completion status can be changed regardless of whether the todo has a start date or due date set.
 
-Users can assign both a start date and due date to the same todo if needed. Date fields can be specified independently of each other.
+### Todo Modification Rules
 
-Date fields can be added or modified after the todo is initially created. A todo created without dates can have dates assigned later through editing.
+Users can edit the title of their own todos. Users can edit the description of their own todos. Users can edit the start date of their own todos. Users can edit the due date of their own todos. Users can edit multiple fields in a single edit operation. Each edit to a todo is recorded in the todo's edit history, sorted from recent to oldest (matching the domain model specification). Users can only edit todos they own. If a user attempts to edit a todo they do not own, the request is rejected. If a todo does not exist, the edit request is rejected.
 
-### Todo Initial State
+### Todo Access Isolation
 
-When a todo is first created, it is automatically set to an incomplete state. This is the default completion state for all new todos.
-
-Todos remain in their current completion state until explicitly changed by the user. The system does not automatically change a todo's completion status based on dates or any other conditions.
-
-A newly created todo is immediately available in the user's todo list with its initial incomplete state.
-
-### Completion State Toggle
-
-Users can mark a todo as complete. This changes the todo's completion status from incomplete to complete.
-
-Users can mark a todo as incomplete. This changes the todo's completion status from complete back to incomplete.
-
-The completion state is a simple toggle between two states: complete and incomplete. There are no intermediate states or additional completion statuses.
-
-The completion state change is immediate and persists until the user changes it again.
+Each todo is owned by exactly one user. Users can only view their own todos. Users cannot view todos owned by other users. There is no capability to share todos with other users. There is no capability to grant access to another user's todos. If a user attempts to access a todo they do not own, the request is rejected as if the todo does not exist. The system does not reveal whether a todo exists if the user does not own it. All todo operations (view, edit, delete, restore) are restricted to the todo owner only.
 
 ## EditHistory Rules
 
-Every edit made to a todo creates a new history entry automatically. Each history entry must record the timestamp of when the edit occurred. History entries capture what the title was changed to, but only if the title was actually modified. The description changes are recorded in history only when the description field is updated. Start date modifications are tracked in history when users change the start date. Due date changes are similarly recorded when the due date field is updated. History entries can contain partial information if only some fields were changed during an edit. The timestamp is required for every history entry and cannot be empty. Users can view the complete edit history showing all changes made to their todos. History entries preserve the state of fields at the time of each edit. When a todo is permanently deleted from trash, its edit history is also removed.
+Every time a todo is edited, a history entry is automatically created. Each history entry records the timestamp when the edit was made. History entries capture what the title was changed to if the title was modified. History entries capture what the description was changed to if the description was modified. History entries capture what the start date was changed to if the start date was modified. History entries capture what the due date was changed to if the due date was modified. Users can view the full edit history of any of their todos. History entries are sorted from most recent to oldest. When a todo is permanently deleted from the trash, its edit history is also permanently deleted. History is tied to the todo lifecycle.
 
 ### Automatic History Entry Creation
 
-Every edit made to a todo automatically creates a new history entry. The system shall create a history entry when any editable field (title, description, start date, or due date) is modified. A timestamp is required on every history entry and cannot be empty. The timestamp records when the edit occurred. History entries are created on every modification to the todo, regardless of how many fields were changed. The timestamp is mandatory for each history entry and the system shall reject any history entry without a valid timestamp.
+Every time a todo is edited, a history entry is automatically created. The system creates this entry without requiring any additional action from the user. History entry creation is mandatory for every edit operation. If a todo edit is successfully completed, a corresponding history entry must exist.
 
-### Field Change Tracking
+### Edit Timestamp Recording
 
-Title changes are tracked in the edit history when the title is modified. The history entry records what the title was changed to. Description changes are recorded in the history only when the description field is actually updated. Start date modifications are logged in the history when users change the start date. Due date changes are captured in the history when the due date field is updated. Each history entry contains only the fields that were actually changed during that edit. Partial edits where only some fields are modified create valid history entries with selective field tracking. If only the title is changed, the history entry records only the title change. If multiple fields are changed, the history entry documents all field changes made in that edit.
+Each history entry records when the edit was made. The timestamp captures the exact moment the edit occurred. The timestamp is automatically generated by the system and cannot be modified by users. The timestamp is required for every history entry.
 
-### History Viewing and Ordering
+### Conditional Field Change Recording
 
-Users can view the complete edit history of any of their todos showing all changes made. History entries preserve the state of fields at the time of each edit, maintaining historical state preservation. The edit history shows a complete edit trail of all modifications. History entries are sorted from most recent to oldest, maintaining edit chronology. Users viewing the history see entries in reverse chronological order with the most recent edit displayed first.
+History entries only record fields that were actually changed during an edit. If the title was modified, the history entry records what the title was changed to. If the title was not modified, no title change is recorded in that history entry. If the description was modified, the history entry records what the description was changed to. If the description was not modified, no description change is recorded. If the start date was modified, the history entry records what the start date was changed to. If the start date was not modified, no start date change is recorded. If the due date was modified, the history entry records what the due date was changed to. If the due date was not modified, no due date change is recorded. A history entry must record at least one field change.
 
-### History Deletion on Permanent Remove
+### Edit History Viewing
 
-When a todo is permanently deleted from the trash, its edit history is also removed. The system shall delete all history entries associated with a todo when that todo is permanently deleted. Permanently deleting a todo from trash cascades the deletion to its edit history. After permanent deletion, neither the todo nor its edit history can be recovered.
+Users can view the full edit history of any of their todos. The edit history displays all history entries for that todo. History entries are sorted from recent to oldest. The most recently created history entry appears first in the list. Users cannot reorder the history display. The full history includes all edits made since the todo was created.
+
+### History Lifecycle Management
+
+Edit history is tied to the todo lifecycle. When a todo is permanently deleted from the trash, its edit history is also permanently deleted. The history cannot exist independently of its parent todo. If a todo is restored from the trash, its edit history is also restored. Soft deleting a todo does not delete its history. Only permanent deletion removes the history entries.
 
 # Data Browsing Expectations
 
@@ -96,17 +86,71 @@ Business expectations for how users browse, find, and navigate through lists of 
 
 Define business expectations for how users find, filter, and browse lists.
 
-### Filtering Rules
+### Todo Filtering Rules
 
-Users can filter their todo list by completion status. The system provides three filter options: all todos, only complete todos, and only incomplete todos. Filtering applies only to the user's own todos. The filter selection does not affect the trash view, which shows all deleted todos regardless of completion status.
+Users can filter their todo list by completion status.
 
-### Sorting Rules
+Three filter options are available:
+- All todos
+- Only complete todos
+- Only incomplete todos
 
-Users can sort their todo list by creation date, start date, or due date. For each sort field, users can choose ascending or descending order. When sorting by creation date, todos can be ordered from newest first or oldest first. When sorting by start date, todos can be ordered from earliest first or latest first. When sorting by due date, todos can be ordered from earliest first or latest first. Todos without a start date appear at the end of the list when sorting by start date. Todos without a due date appear at the end of the list when sorting by due date.
+The filter applies to the user's own todos only. Other users' todos are never included in the filtered results.
 
-### Pagination Rules
+If no todos match the selected filter criteria, an empty list is returned.
 
-The todo list is paginated to manage large numbers of todos. The trash list is also paginated. Pagination allows users to navigate through their todos in manageable chunks. The system maintains consistent pagination behavior across both the main todo list and the trash view.
+The filter state persists while the user remains on the todo list view. Changing the filter resets the list to show matching results.
+
+Filtering does not affect the trash list. The trash list shows all deleted todos regardless of completion status.
+
+### Todo Sorting Rules
+
+Users can sort their todo list by one of the following criteria:
+- Creation date
+- Start date
+- Due date
+
+For creation date sorting, users can choose:
+- Newest first
+- Oldest first
+
+For start date sorting, users can choose:
+- Earliest first
+- Latest first
+
+For due date sorting, users can choose:
+- Earliest first
+- Latest first
+
+Todos without a start date appear at the end of the list when sorting by start date, regardless of whether the sort order is earliest first or latest first.
+
+Todos without a due date appear at the end of the list when sorting by due date, regardless of whether the sort order is earliest first or latest first.
+
+Sorting applies to the user's own todos only. Other users' todos are never included in the sorted results.
+
+The default sort order is creation date, newest first, when no sort preference is specified.
+
+Changing the sort criteria refreshes the list to reflect the new order.
+
+### Todo List Pagination
+
+The todo list is paginated to improve performance and usability.
+
+The trash list is also paginated using the same pagination mechanism.
+
+Each page displays a fixed number of todos. The page size is consistent across all list views.
+
+Users can navigate between pages using page numbers or next and previous controls.
+
+When filters or sorting criteria change, the pagination resets to the first page.
+
+If the user navigates to a page that no longer exists after applying a filter (for example, page 5 when the filtered results only have 3 pages), an error is shown or the user is redirected to the first page.
+
+If there are no todos to display, an empty list is shown with no pagination controls.
+
+Pagination information includes the current page number and the total number of pages available.
+
+Each todo in the paginated list shows: title, completion status, start date (if set), due date (if set), and creation date.
 
 # Error Conditions
 
@@ -116,56 +160,80 @@ Business error scenarios and how the system should respond.
 
 Describe error conditions and expected system responses in natural language.
 
-### Authentication Error Scenarios
+### Authentication and Account Errors
 
-If a user attempts to register with an email address that is already in use, the request is rejected.
+If a user attempts to sign up with an email address that is already registered, the request is rejected.
 
-If a user attempts to register without providing a password, the request is rejected.
+If a user attempts to sign up without providing an email address, the request is rejected.
 
-If a user attempts to log in with an email address that does not exist, the request is rejected.
+If a user attempts to sign up without providing a password, the request is rejected.
+
+If a user attempts to log in with an email address that is not registered, the request is rejected.
 
 If a user attempts to log in with an incorrect password, the request is rejected.
 
-If a user attempts to change their password without providing the current password, the request is rejected.
+If a user attempts to log in without providing an email address, the request is rejected.
+
+If a user attempts to log in without providing a password, the request is rejected.
+
+If a user attempts to change their password without providing the new password, the request is rejected.
 
 If a user attempts to delete their account while not logged in, the request is rejected.
 
-### Todo Creation and Validation Errors
+### Todo Validation Errors
 
 If a user attempts to create a todo without providing a title, the request is rejected.
 
 If a user attempts to create a todo with a due date that is earlier than the start date, the request is rejected.
 
-If a user attempts to create a todo while not logged in, the request is rejected.
+If a user attempts to edit a todo's due date to a date earlier than its start date, the request is rejected.
 
-### Access and Permission Errors
+If a user attempts to edit a todo's start date to a date later than its due date, the request is rejected.
 
-If a user attempts to view a todo that does not exist, the request is rejected.
+When a todo is created without a start date, the start date remains empty.
 
-If a user attempts to view a todo that belongs to another user, the request is rejected.
+When a todo is created without a due date, the due date remains empty.
 
-If a user attempts to edit a todo that belongs to another user, the request is rejected.
+When a todo is created without a description, the description remains empty.
 
-If a user attempts to delete a todo that belongs to another user, the request is rejected.
+### Access Control Exceptions
 
-If a user attempts to mark a todo as complete or incomplete that belongs to another user, the request is rejected.
+If a user attempts to view another user's todo, the request is rejected.
 
-If a user attempts to view the edit history of a todo that belongs to another user, the request is rejected.
+If a user attempts to edit another user's todo, the request is rejected.
 
-If a user attempts to view their trash while not logged in, the request is rejected.
+If a user attempts to delete another user's todo, the request is rejected.
 
-If a user attempts to restore a deleted todo that belongs to another user, the request is rejected.
+If a user attempts to mark another user's todo as complete, the request is rejected.
 
-If a user attempts to permanently delete a todo that belongs to another user, the request is rejected.
+If a user attempts to mark another user's todo as incomplete, the request is rejected.
+
+If a user attempts to view another user's edit history, the request is rejected.
+
+If a user attempts to view another user's trash, the request is rejected.
+
+If a guest attempts to view any todo list, the request is rejected.
+
+If a guest attempts to create a todo, the request is rejected.
 
 ### Operation Failure Cases
 
-If a user attempts to restore a todo from trash that has already been permanently deleted, the request is rejected.
+If a user attempts to view a todo that does not exist, the request is rejected.
 
-If a user attempts to permanently delete a todo that does not exist in their trash, the request is rejected.
+If a user attempts to edit a todo that does not exist, the request is rejected.
 
-If a user attempts to view edit history for a todo that has been permanently deleted, the request is rejected.
+If a user attempts to delete a todo that does not exist, the request is rejected.
 
-If a user attempts to edit a todo that has been deleted (in trash), the request is rejected.
+If a user attempts to mark a todo as complete that does not exist, the request is rejected.
 
-If a user attempts to mark a deleted todo as complete or incomplete, the request is rejected.
+If a user attempts to mark a todo as incomplete that does not exist, the request is rejected.
+
+If a user attempts to view the edit history of a todo that does not exist, the request is rejected.
+
+If a user attempts to restore a todo from trash that does not exist, the request is rejected.
+
+If a user attempts to permanently delete a todo from trash that does not exist, the request is rejected.
+
+If a user attempts to restore a todo that is not in their trash, the request is rejected.
+
+If a user attempts to permanently delete a todo that is not in their trash, the request is rejected.

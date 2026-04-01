@@ -12,51 +12,42 @@ import { IShoppingMallOrder } from "../../../../structures/IShoppingMallOrder";
 export * as items from "./items/index";
 
 /**
- * Create a new order by checking out the customer's shopping cart.
+ * Create a new customer order by processing checkout with selected cart items and shipping address.
  *
- * This endpoint processes the customer's cart and converts it into a formal order. The operation captures a snapshot of all product information at the time of purchase, ensuring order history remains accurate even if products are modified later. The shipping address is recorded as a JSON snapshot to preserve delivery information.
+ * This operation initiates the order placement workflow by creating a record in the shopping_mall_orders table, capturing the complete transaction state including product variants, quantities, prices, and shipping address snapshot. The shipping address fields (recipient_name, recipient_phone, street_address, city, state, postal_code, country) are stored as immutable snapshots in the order record and cannot be modified after creation, ensuring historical accuracy per requirement [101].
  *
- * The checkout process is transactional and atomic. It validates that all cart items are available, decreases stock quantities via inventory records, creates order items with historical snapshots, and clears the cart. If any item becomes unavailable during checkout, the entire operation fails and the cart remains unchanged.
+ * Upon successful order creation, all items from the customer's cart that were included in the order are automatically removed from shopping_mall_cart_items. The order receives a unique order_number for customer-facing reference and support lookup. Order status is derived from the individual order items' statuses in shopping_mall_order_items.
  *
- * Upon successful order creation, the customer receives a complete order object including order number, total price, list of order items with product details, and shipping address. Each order item is initialized with status 'PAID' and can transition through SHIPPED, DELIVERED, CANCELLED, or REFUNDED states.
- *
- * This operation is available only to authenticated customers. The customer's identity is derived from the session token, and the order is automatically associated with their account. Customers can view their order history through GET /orders and access individual order details through GET /orders/{orderId}.
+ * This operation also triggers automatic inventory updates (requirement [75]), creating negative inventory records to deduct stock for each purchased variant.
  *
  * @param props.connection
- * @param props.body Checkout information including the shipping address to use for this order.
+ * @param props.body Order creation request containing the selected shipping address ID from shopping_mall_addresses and optional list of cart item IDs to include in the order. If cart items are not specified, all active cart items from shopping_mall_cart_items are included.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Create a new order from the customer's shopping cart. This is a critical transactional operation that must be executed atomically.
+ * @x-autobe-specification Create order transaction with the following steps:
  *
- * Implementation workflow:
- * 1. Validate the authenticated customer has an active cart with items
- * 2. Verify all cart items are still available (in stock)
- * 3. Load the customer's address by addressId to capture shipping information
- * 4. Generate a unique order_number (sequential or timestamp-based)
- * 5. Calculate total_price from all cart items (quantity × unit_price)
- * 6. Begin database transaction:
- *    a. Create shopping_mall_orders record with customer_id, order_number, total_price, shipping_address_snapshot (JSON of address fields)
- *    b. For each cart item:
- *       - Create shopping_mall_product_snapshots capturing current product state (name, description, base_price, category_id, seller_id)
- *       - Create shopping_mall_product_variant_snapshots capturing current variant state (sku_code, option_values, price, stock_quantity)
- *       - Create shopping_mall_order_items record linking to order, product_variant, product_snapshot, variant_snapshot, seller, with quantity, unit_price, status='PAID'
- *       - Create shopping_mall_inventory_records with negative quantity_change (stock decrease) and reason='ORDER'
- *       - Update shopping_mall_product_variants stock_quantity
- *       - Mark shopping_mall_cart_items for deletion (or delete immediately)
- *    c. Commit transaction
- * 7. Return the complete order with all order items, product snapshots, and seller information
+ * 1. Validate customer has at least one address (required for checkout)
+ * 2. Validate all cart items exist and are available (not deleted, sufficient stock)
+ * 3. Generate unique order_number (format: ORD-YYYYMMDD-XXXXX)
+ * 4. Create shopping_mall_orders record with:
+ *    - customer_id from authenticated session
+ *    - order_number (generated)
+ *    - ordered_at (current timestamp)
+ *    - Shipping address fields snapshotted from selected address (recipient_name, recipient_phone, street_address, city, state, postal_code, country)
+ * 5. Create shopping_mall_order_items for each cart item:
+ *    - Link to order, product, product_variant, seller
+ *    - Copy quantity and price from cart item
+ *    - Set initial status to 'paid'
+ * 6. Remove ordered items from customer's cart (post-order cleanup)
+ * 7. Create inventory records for each variant (stock reduction)
+ * 8. Return complete order with all order items
  *
- * Validation rules:
- * - Cart must not be empty
- * - All items must be available (variant.available = true and stock_quantity > 0)
- * - addressId must belong to the authenticated customer
- * - Customer account must be active (not deleted)
- *
- * Error scenarios:
- * - Empty cart: return 400 with error message
- * - Item unavailable: return 400 listing unavailable items
- * - Invalid addressId: return 404
- * - Concurrent stock depletion: return 409 conflict, cart items remain for retry
+ * Error handling:
+ * - 400 if customer has no addresses
+ * - 400 if cart is empty
+ * - 400 if any cart item is unavailable (deleted variant, insufficient stock)
+ * - 400 if cart item quantity exceeds available stock
+ * - 409 if order_number generation collision (retry with new number)
  * @path /shoppingMall/customer/orders
  * @accessor api.functional.shoppingMall.customer.orders.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -86,7 +77,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Checkout information including the shipping address to use for this order.
+     * Order creation request containing the selected shipping address ID from shopping_mall_addresses and optional list of cart item IDs to include in the order. If cart items are not specified, all active cart items from shopping_mall_cart_items are included.
      */
     body: IShoppingMallOrder.ICreate;
   };
@@ -135,42 +126,29 @@ export namespace create {
 }
 
 /**
- * Retrieve a filtered and paginated list of customer orders with search capabilities.
+ * Retrieve a paginated list of the authenticated customer's order history.
  *
- * This operation provides customers with access to their complete order history, displaying essential order information including order number, order date, total price, and overall order status. The order status is dynamically derived from the status of all order items within each order: if all items are paid the status is paid, if any item is shipped and none are delivered the status is shipped, if all items are delivered the status is delivered, if all items are cancelled the status is cancelled, if all items are refunded the status is refunded, and if items have mixed statuses the order status is partially completed.
+ * This operation returns all orders placed by the authenticated customer, sorted by newest orders first. Each order in the list displays the order number, order date, total price, and overall order status. The order status is derived from the aggregate status of all order items within the order (paid, shipped, delivered, cancelled, or refunded).
  *
- * For administrators, this endpoint provides platform-wide order visibility for oversight and management purposes. Administrators can view all orders across the platform and apply additional filters for operational monitoring.
- *
- * Orders are permanently preserved and cannot be deleted to maintain legal compliance, support dispute resolution, and ensure complete transaction history for both customers and sellers. The soft delete mechanism (deleted_at field) allows orders to be hidden from customer view while maintaining audit trails.
- *
- * Supports comprehensive pagination with configurable page sizes and sorting options. Default sorting is by creation date in descending order (newest orders first). Search filters include date ranges, order status, order number partial matching, and price ranges. Response includes order summary information optimized for list displays, with detailed order information available through the GET /orders/{orderId} endpoint.
+ * Supports comprehensive pagination with configurable page sizes and filtering options including order number search, status filtering, and date range queries. Response includes order summary information optimized for list displays, enabling customers to quickly identify recent purchases and track their order statuses. Select any order from the list to view full details including items, shipping address, and shipment information.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for order list filtering
+ * @param props.body Search criteria and pagination parameters for filtering customer orders
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
  * @x-autobe-specification Query shopping_mall_orders table with pagination and filtering.
  *
- * Authorization logic:
- * - Customer actor: Filter by customer_id = current user's ID (data isolation)
- * - Admin/SuperAdmin actor: No customer filter (view all orders)
+ * For customer actor: Filter by customer_id = authenticated user's ID. For administrator actor: no customer filter (return all orders).
  *
- * Apply search filters from request body:
- * - Date range: created_at >= fromDate AND created_at <= toDate
- * - Status: Filter by derived order status (computed from order items)
- * - Order number: Partial match using LIKE or ILIKE
- * - Price range: total_price >= minPrice AND total_price <= maxPrice
+ * Apply search filters on order_number (partial match), status (exact match or array), ordered_at date range (from/to).
  *
- * Join with shopping_mall_order_items to compute order status from item statuses.
- * Sort by created_at DESC (newest first) by default, support custom sort fields.
- * Implement cursor-based or offset pagination for large result sets.
+ * Sort by ordered_at DESC by default (newest first). Support custom sorting by order_number, total amount if requested.
  *
- * Return IPageIShoppingMallOrder.ISummary with pagination metadata (page, limit, total count) and array of order summaries containing: id, orderNumber, createdAt, totalPrice, status.
+ * Implement cursor-based or offset pagination with limit and page parameters.
  *
- * Edge cases:
- * - Empty result set: Return pagination with data: []
- * - Invalid date range: Return validation error
- * - Unauthorized access: Return 403 Forbidden
+ * Join with shopping_mall_order_items to calculate total price if not stored. Include order item count in summary.
+ *
+ * Return IPageIShoppingMallOrder.ISummary with pagination metadata (page, limit, total count).
  * @path /shoppingMall/customer/orders
  * @accessor api.functional.shoppingMall.customer.orders.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -200,7 +178,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for order list filtering
+     * Search criteria and pagination parameters for filtering customer orders
      */
     body: IShoppingMallOrder.IRequest;
   };
@@ -249,21 +227,27 @@ export namespace index {
 }
 
 /**
- * Retrieve complete details of a specific customer order by its unique identifier.
+ * Retrieve complete details of a specific order by its ID.
  *
- * This endpoint provides comprehensive order information including the order number, placement date, total price, and derived order status. The response includes all order items with product names, variant configurations, quantities, unit prices, and individual item statuses. Each order item references both current entities (product variant, seller) for operational purposes and historical snapshots (product snapshot, product variant snapshot) to preserve accurate purchase history even if products change after ordering.
+ * This operation returns the full order information including the order number, order date, total price, overall status, complete shipping address snapshot (as it was at purchase time), all order items with their individual statuses, and associated shipment tracking information.
  *
- * The shipping address is returned as a snapshot containing recipient name, phone number, street address, city, state/province, postal code, and country - preserving the delivery address used at order time regardless of subsequent customer profile updates. Shipment information includes tracking carrier, tracking number, and delivery lifecycle timestamps (shipped_at, delivered_at, delivery_confirmed_at, auto_delivered_at) for each shipment associated with the order.
+ * Customers can only access their own orders. The shipping address is an immutable snapshot preserved from the time of purchase, ensuring order records remain accurate even if the customer later modifies or deletes addresses from their address book.
  *
- * Order status is computed dynamically from the statuses of all order items within the order. If all items are paid, the order status is paid. If any item is shipped and none are delivered, the status is shipped. If all items are delivered, the status is delivered. If all items are cancelled or refunded, the corresponding status applies. If items have mixed statuses, the order status is partially completed.
- *
- * This operation is accessible to customers viewing their own orders. Administrators can access any order on the platform for oversight purposes. The order detail view supports customer record-keeping, shipment tracking, and dispute resolution reference.
+ * Order items include product name, variant details, quantity, unit price, and individual item status. Shipments provide tracking carrier, tracking number, and delivery confirmation status.
  *
  * @param props.connection
- * @param props.orderId Unique identifier of the target order (UUID format)
+ * @param props.orderId Order ID (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_orders table by orderId UUID. Include cascaded order items from shopping_mall_order_items with product variant references, product snapshots, and seller information. Include shipments from shopping_mall_shipments with tracking carrier, tracking number, and delivery timestamps. Include shipment items from shopping_mall_shipment_items linking order items to shipments. Compute order status dynamically from order item statuses: if all items PAID → paid, if any SHIPPED and none DELIVERED → shipped, if all DELIVERED → delivered, if all CANCELLED → cancelled, if all REFUNDED → refunded, if mixed → partially completed. Return shipping_address_snapshot JSON parsed as recipient_name, phone_number, street_address, city, state_province, postal_code, country. Ensure customer authorization by verifying the order's customer_id matches the authenticated customer.
+ * @x-autobe-specification Query shopping_mall_orders table by order ID with customer ownership validation.
+ *
+ * Verify the authenticated customer owns this order by matching customer_id. Return 404 if order not found or belongs to different customer.
+ *
+ * Eager load related order items from shopping_mall_order_items filtered by shopping_mall_order_id. For each order item, include its snapshot from shopping_mall_order_item_snapshots containing product_name, variant_sku_code, variant_price, seller_shop_name.
+ *
+ * Load associated shipments by joining shopping_mall_shipment_items to shopping_mall_shipments. Include tracking_carrier, tracking_number, shipped_at, confirmed_at for each shipment.
+ *
+ * Return complete order with nested orderItems array and shipments array. Handle case where order has no shipments yet (items not shipped).
  * @path /shoppingMall/customer/orders/:orderId
  * @accessor api.functional.shoppingMall.customer.orders.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -292,7 +276,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the target order (UUID format)
+     * Order ID (UUID format)
      */
     orderId: string & tags.Format<"uuid">;
   };

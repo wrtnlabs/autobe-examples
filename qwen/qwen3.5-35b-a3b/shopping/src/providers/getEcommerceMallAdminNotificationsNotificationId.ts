@@ -19,7 +19,10 @@ export async function getEcommerceMallAdminNotificationsNotificationId(props: {
 }): Promise<IEcommerceMallNotification> {
   const notification =
     await MyGlobal.prisma.ecommerce_mall_notifications.findUniqueOrThrow({
-      where: { id: props.notificationId, deleted_at: null },
+      where: {
+        id: props.notificationId,
+        deleted_at: null,
+      },
       ...EcommerceMallNotificationTransformer.select(),
     });
   return await EcommerceMallNotificationTransformer.transform(notification);

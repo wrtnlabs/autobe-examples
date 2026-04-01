@@ -10,20 +10,19 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditCommunityReportCollector {
   export async function collect(props: {
     body: IRedditCommunityReport.ICreate;
-    redditCommunityMembers: IEntity;
-    redditCommunityMemberSessions: IEntity;
+    reporter: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
       target_type: props.body.target_type,
       target_id: props.body.target_id,
-      reason: props.body.reason.trim(),
+      reason: props.body.reason,
       status: "pending",
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      reporter: { connect: { id: props.redditCommunityMembers.id } },
+      reporter: { connect: { id: props.reporter.id } },
       community: { connect: { id: props.body.community_id } },
     } satisfies Prisma.reddit_community_reportsCreateInput;
   }

@@ -25,7 +25,12 @@ export namespace HrmPlatformProjectAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
-        _count: { select: { projectMemberships: true } },
+        projectMemberships: {
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_project_membersFindManyArgs,
+        _count: {
+          select: { projectMemberships: true },
+        },
       },
     } satisfies Prisma.hrm_platform_projectsFindManyArgs;
   }

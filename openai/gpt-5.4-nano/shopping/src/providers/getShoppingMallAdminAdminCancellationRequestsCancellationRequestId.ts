@@ -18,6 +18,7 @@ export async function getShoppingMallAdminAdminCancellationRequestsCancellationR
   admin: AdminPayload;
   cancellationRequestId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallCancellationRequest> {
+  // authorization is enforced by @AdminAuth; admin is present in props
   const cancellationRequest =
     await MyGlobal.prisma.shopping_mall_cancellation_requests.findFirstOrThrow({
       where: {

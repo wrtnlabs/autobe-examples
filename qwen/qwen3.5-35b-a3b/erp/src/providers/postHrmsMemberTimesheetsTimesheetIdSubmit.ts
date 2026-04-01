@@ -22,77 +22,81 @@ export async function postHrmsMemberTimesheetsTimesheetIdSubmit(props: {
   member: MemberPayload;
   timesheetId: string & tags.Format<"uuid">;
 }): Promise<IHrmsTimesheet> {
-  const now = new Date();
+  // 1. Fetch timesheet with employee relation
   const timesheet = await MyGlobal.prisma.hrms_timesheets.findUniqueOrThrow({
     where: {
       id: props.timesheetId,
       deleted_at: null,
     },
-    select: {
-      id: true,
-      hrms_employee_id: true,
-      week_start_date: true,
-      status: true,
-      employee: {
-        select: {
-          id: true,
-          organization_member_id: true,
-          deleted_at: true,
-        },
+    include: {
+      employee: true,
+    },
+  });
+  // 2. Validate ownership
+  if (timesheet.hrms_employee_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // 3. Validate status is draft (rejected can be resubmitted)
+  if (timesheet.status !== "draft" && timesheet.status !== "rejected") {
+    throw new HttpException("Timesheet is not in draft status", 400);
+  }
+  // 4. Count timelogs for this timesheet (by employee and week date range)
+  const timelogCount = await MyGlobal.prisma.hrms_timelogs.count({
+    where: {
+      employee_id: timesheet.hrms_employee_id,
+      date: {
+        gte: timesheet.week_start_date,
+        lte: timesheet.week_end_date,
       },
     },
   });
-  const employee = timesheet.employee;
-  if (employee.deleted_at !== null) {
-    throw new HttpException("Employee has been deactivated", 400);
+  if (timelogCount === 0) {
+    throw new HttpException("Timesheet must contain at least one timelog", 400);
   }
-  const organizationMember =
-    await MyGlobal.prisma.hrms_organization_members.findFirst({
-      where: {
-        hrms_member_id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        hrms_member_id: true,
-      },
-    });
-  if (organizationMember === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (timesheet.status !== "draft") {
-    throw new HttpException("Timesheet is not in draft status", 400);
-  }
-  const duplicateSubmission = await MyGlobal.prisma.hrms_timesheets.findFirst({
+  // 5. Check for duplicate week submission
+  const existingSubmission = await MyGlobal.prisma.hrms_timesheets.findFirst({
     where: {
-      hrms_employee_id: employee.id,
+      hrms_employee_id: timesheet.hrms_employee_id,
       week_start_date: timesheet.week_start_date,
       status: {
         in: ["submitted", "approved"],
       },
       deleted_at: null,
-      id: {
-        not: props.timesheetId,
-      },
     },
   });
-  if (duplicateSubmission !== null) {
+  if (existingSubmission !== null) {
     throw new HttpException(
-      "Another timesheet for this week is already submitted or approved",
+      "A timesheet for this week is already submitted or approved",
       400,
     );
   }
-  await MyGlobal.prisma.hrms_timesheets.update({
-    where: { id: props.timesheetId },
-    data: {
-      status: "submitted",
-      submitted_at: now,
-      updated_at: now,
+  // 6. Verify employee is active
+  const employee = await MyGlobal.prisma.hrms_employees.findFirst({
+    where: {
+      id: timesheet.hrms_employee_id,
+      deleted_at: null,
     },
   });
-  const updated = await MyGlobal.prisma.hrms_timesheets.findUniqueOrThrow({
-    where: { id: props.timesheetId },
-    ...HrmsTimesheetTransformer.select(),
+  if (employee === null) {
+    throw new HttpException("Employee account has been deactivated", 400);
+  }
+  // 7. Update timesheet status and submitted_at
+  await MyGlobal.prisma.hrms_timesheets.update({
+    where: {
+      id: props.timesheetId,
+    },
+    data: {
+      status: "submitted",
+      submitted_at: new Date(),
+    },
   });
-  return await HrmsTimesheetTransformer.transform(updated);
+  // 8. Fetch and transform updated timesheet
+  const updatedTimesheet =
+    await MyGlobal.prisma.hrms_timesheets.findUniqueOrThrow({
+      where: {
+        id: props.timesheetId,
+      },
+      ...HrmsTimesheetTransformer.select(),
+    });
+  return await HrmsTimesheetTransformer.transform(updatedTimesheet);
 }

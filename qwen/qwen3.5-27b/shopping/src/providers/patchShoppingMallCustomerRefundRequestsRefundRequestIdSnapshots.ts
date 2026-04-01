@@ -20,19 +20,21 @@ export async function patchShoppingMallCustomerRefundRequestsRefundRequestIdSnap
   refundRequestId: string & tags.Format<"uuid">;
   body: IShoppingMallRefundSnapshot.IRequest;
 }): Promise<IPageIShoppingMallRefundSnapshot.ISummary> {
-  // Verify refund request exists and belongs to customer
-  const refundRequest =
-    await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
-      where: {
-        id: props.refundRequestId,
-        shopping_mall_customer_id: props.customer.id,
-        deleted_at: null,
-      },
-    });
-  // Apply pagination defaults
+  // Verify refund request exists and customer owns it
+  await MyGlobal.prisma.shopping_mall_refund_requests.findUniqueOrThrow({
+    where: {
+      id: props.refundRequestId,
+      shopping_mall_customer_id: props.customer.id,
+      deleted_at: null,
+    },
+  });
+  // Apply pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  // Apply sorting
+  const sortBy = props.body.sortBy ?? "created_at";
+  const sortOrder: "asc" | "desc" = props.body.sortOrder ?? "desc";
   // Query snapshots
   const data = await MyGlobal.prisma.shopping_mall_refund_snapshots.findMany({
     where: {
@@ -41,27 +43,28 @@ export async function patchShoppingMallCustomerRefundRequestsRefundRequestIdSnap
     skip,
     take: limit,
     orderBy: {
-      created_at: props.body.sortOrder ?? "desc",
+      [sortBy]: sortOrder,
     },
     ...ShoppingMallRefundSnapshotAtSummaryTransformer.select(),
   });
-  // Count total
+  // Get total count
   const total = await MyGlobal.prisma.shopping_mall_refund_snapshots.count({
     where: {
       shopping_mall_refund_request_id: props.refundRequestId,
     },
   });
-  // Transform and return paginated response
+  // Transform results
+  const transformed = await ArrayUtil.asyncMap(
+    data,
+    ShoppingMallRefundSnapshotAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ShoppingMallRefundSnapshotAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: transformed,
   };
 }

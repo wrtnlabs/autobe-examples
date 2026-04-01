@@ -16,8 +16,6 @@ export async function sellerAuthorize(request: {
     where: {
       id: payload.id,
       deleted_at: null,
-      approval_status: "APPROVED",
-      suspended: false,
     },
   });
 

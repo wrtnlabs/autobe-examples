@@ -21,34 +21,51 @@ export async function patchRedditLikeModeratorPostsPostIdCommentsSorted(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditLikeComment.IRequest;
 }): Promise<IPageIRedditLikeComment.ISummary> {
-  // Verify post exists
-  await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
+  // Verify post exists and get its community
+  const post = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
     where: { id: props.postId },
+    select: { id: true, community_id: true },
   });
-  const page = props.body.page;
-  const limit = props.body.limit;
+  // Verify moderator has permission for this community
+  const moderatorRole = await MyGlobal.prisma.reddit_like_moderators.findFirst({
+    where: {
+      member_id: props.moderator.id,
+      community_id: post.community_id,
+      deleted_at: null,
+    },
+  });
+  if (moderatorRole === null) {
+    throw new HttpException(
+      "Forbidden - not a moderator for this community",
+      403,
+    );
+  }
+  // Calculate pagination
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   // Build where clause
-  const where: Prisma.reddit_like_commentsWhereInput = {
+  const whereInput: Prisma.reddit_like_commentsWhereInput = {
     post_id: props.postId,
-    ...(props.body.search !== null && {
-      content: { contains: props.body.search },
-    }),
-    ...(props.body.authorId !== null && {
-      author_id: props.body.authorId,
-    }),
-    ...(props.body.parentId !== null
-      ? { parent_id: props.body.parentId }
-      : { parent_id: null }),
-    ...(props.body.includeDeleted === false && {
-      is_deleted: false,
-    }),
+    ...(props.body.includeDeleted !== true && { is_deleted: false }),
+    ...(props.body.parentId !== null && { parent_id: props.body.parentId }),
+    ...(props.body.parentId === null && { parent_id: null }),
+    ...(props.body.authorId !== null && { author_id: props.body.authorId }),
+    ...(props.body.search !== null &&
+      props.body.search.length > 0 && {
+        content: {
+          contains: props.body.search,
+          mode: "insensitive" as Prisma.QueryMode,
+        },
+      }),
   };
   // Build orderBy based on sort type
-  let orderBy: Prisma.reddit_like_commentsOrderByWithRelationInput;
+  let orderBy:
+    | Prisma.reddit_like_commentsOrderByWithRelationInput
+    | Prisma.reddit_like_commentsOrderByWithRelationInput[];
   switch (props.body.sort) {
     case "BEST":
-      orderBy = { vote_score: "desc" };
+      orderBy = [{ vote_score: "desc" }, { created_at: "desc" }];
       break;
     case "TOP":
       orderBy = { vote_score: "desc" };
@@ -60,28 +77,29 @@ export async function patchRedditLikeModeratorPostsPostIdCommentsSorted(props: {
       orderBy = { created_at: "asc" };
       break;
     case "CONTROVERSIAL":
-      // High activity with mixed votes - order by absolute vote_score ascending
-      // Comments with scores close to 0 but with activity appear first
-      orderBy = { vote_score: "asc" };
+      // High activity with mixed votes - use abs(vote_score)接近0 with high total votes
+      orderBy = [{ vote_score: "asc" }, { created_at: "desc" }];
       break;
     case "QA":
-      // Threaded view: order by created_at for chronological threading
-      orderBy = { created_at: "asc" };
+      // Threaded - order by parent then created_at for conversation flow
+      orderBy = [{ parent_id: "asc" }, { created_at: "asc" }];
       break;
     default:
       orderBy = { created_at: "desc" };
   }
   // Fetch comments with pagination
   const comments = await MyGlobal.prisma.reddit_like_comments.findMany({
-    where,
+    where: whereInput,
+    orderBy: orderBy,
     skip,
     take: limit,
-    orderBy,
     ...RedditLikeCommentAtSummaryTransformer.select(),
   });
   // Get total count
-  const total = await MyGlobal.prisma.reddit_like_comments.count({ where });
-  // Transform results
+  const total = await MyGlobal.prisma.reddit_like_comments.count({
+    where: whereInput,
+  });
+  // Transform to DTO
   const data = await ArrayUtil.asyncMap(
     comments,
     RedditLikeCommentAtSummaryTransformer.transform,
@@ -90,7 +108,7 @@ export async function patchRedditLikeModeratorPostsPostIdCommentsSorted(props: {
     data,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,

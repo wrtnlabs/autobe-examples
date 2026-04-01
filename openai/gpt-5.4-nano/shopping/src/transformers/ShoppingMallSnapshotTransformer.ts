@@ -4,6 +4,7 @@ import { IShoppingMallSnapshotParty } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IShoppingMallSnapshotPayload } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSnapshotPayload";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -60,8 +61,9 @@ export namespace ShoppingMallSnapshotTransformer {
       payload: input.payload
         ? await ShoppingMallSnapshotPayloadTransformer.transform(input.payload)
         : null,
-      parties: await ArrayUtil.asyncMap(input.snapshotParties, (p) =>
-        ShoppingMallSnapshotPartyAtSummaryTransformer.transform(p),
+      parties: await ArrayUtil.asyncMap(
+        input.snapshotParties,
+        ShoppingMallSnapshotPartyAtSummaryTransformer.transform,
       ),
     };
   }

@@ -23,81 +23,81 @@ export async function patchHrmsMemberProjectsProjectIdTasksTaskIdStatusHistory(p
   taskId: string & tags.Format<"uuid">;
   body: IHrmsTaskStatusHistory.IRequest;
 }): Promise<IPageIHrmsTaskStatusHistory.ISummary> {
-  // Verify task exists and belongs to the specified project
-  const task = await MyGlobal.prisma.hrms_tasks.findUniqueOrThrow({
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const cursor = props.body.cursor;
+  const reverse = props.body.reverse ?? false;
+  await MyGlobal.prisma.hrms_tasks.findFirstOrThrow({
     where: {
       id: props.taskId,
       hrms_project_id: props.projectId,
+      deleted_at: null,
     },
-    select: {
-      id: true,
-      hrms_project_id: true,
-    },
+    select: { id: true },
   });
-  // Build filter WHERE clause
-  const whereClause: Prisma.hrms_task_status_historiesWhereInput = {
+  const baseWhere = {
     hrms_task_id: props.taskId,
     deleted_at: null,
-    ...(props.body.startDate !== undefined && {
-      created_at: {
-        gte: props.body.startDate as string & tags.Format<"date-time">,
-      },
-    }),
-    ...(props.body.endDate !== undefined && {
-      created_at: {
-        lte: props.body.endDate as string & tags.Format<"date-time">,
-      },
-    }),
-    ...(props.body.newStatus !== undefined && {
-      new_status: props.body.newStatus,
-    }),
+  } satisfies Prisma.hrms_task_status_historiesWhereInput;
+  const whereCondition: Prisma.hrms_task_status_historiesWhereInput = {
+    ...baseWhere,
   };
-  // Build pagination
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const safeLimit = limit > 100 ? 100 : limit < 1 ? 1 : limit;
-  const skip = (page - 1) * limit;
-  // Build cursor-based pagination if cursor provided
-  const cursorInput: Prisma.hrms_task_status_historiesWhereInput = props.body
-    .cursor
-    ? {
-        ...whereClause,
-        created_at: props.body.reverse
-          ? { gt: props.body.cursor as string & tags.Format<"date-time"> }
-          : { lt: props.body.cursor as string & tags.Format<"date-time"> },
+  if (
+    props.body.startDate !== undefined ||
+    props.body.endDate !== undefined ||
+    cursor !== undefined
+  ) {
+    const createdAtFilter: Prisma.DateTimeFilter = {};
+    if (props.body.startDate !== undefined) {
+      createdAtFilter.gte = new Date(props.body.startDate);
+    }
+    if (props.body.endDate !== undefined) {
+      createdAtFilter.lte = new Date(props.body.endDate);
+    }
+    if (cursor !== undefined) {
+      if (reverse) {
+        createdAtFilter.gt = new Date(cursor);
+      } else {
+        createdAtFilter.lt = new Date(cursor);
       }
-    : whereClause;
-  // Build orderBy
-  const orderBy: Prisma.hrms_task_status_historiesOrderByWithRelationInput = {
-    created_at: props.body.reverse ? ("asc" as const) : ("desc" as const),
-  };
-  // Query history entries
-  const take = props.body.cursor ? safeLimit : safeLimit;
+    }
+    whereCondition.created_at = createdAtFilter;
+  }
+  if (props.body.newStatus !== undefined) {
+    whereCondition.new_status = props.body.newStatus;
+  }
+  const orderByCondition = reverse
+    ? { created_at: "asc" as const }
+    : { created_at: "desc" as const };
+  const takeValue = cursor !== undefined ? limit + 1 : limit;
   const data = await MyGlobal.prisma.hrms_task_status_histories.findMany({
-    where: cursorInput,
-    orderBy,
-    take,
-    skip: props.body.cursor ? undefined : skip,
+    where: whereCondition,
+    skip: cursor === undefined ? skip : undefined,
+    take: takeValue,
+    orderBy: orderByCondition,
     ...HrmsTaskStatusHistoryAtSummaryTransformer.select(),
   });
-  // Count total records
   const total = await MyGlobal.prisma.hrms_task_status_histories.count({
-    where: whereClause,
+    where: whereCondition,
   });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    HrmsTaskStatusHistoryAtSummaryTransformer.transform,
-  );
-  // Calculate pagination metadata
-  const pagination: IPage.IPagination = {
-    current: props.body.cursor ? 0 : page,
-    limit: safeLimit,
-    records: total,
-    pages: total === 0 ? 0 : Math.ceil(total / safeLimit),
-  };
+  let finalData = data;
+  if (cursor !== undefined) {
+    if (data.length > limit) {
+      finalData = data.slice(0, limit);
+    }
+  }
+  const hasMore = cursor !== undefined && data.length > limit;
   return {
-    data: transformedData,
-    pagination,
+    data: await ArrayUtil.asyncMap(
+      finalData,
+      HrmsTaskStatusHistoryAtSummaryTransformer.transform,
+    ),
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
   };
 }

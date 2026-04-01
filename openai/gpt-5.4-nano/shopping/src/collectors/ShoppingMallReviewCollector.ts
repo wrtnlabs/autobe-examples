@@ -10,8 +10,9 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallReviewCollector {
   export async function collect(props: {
     body: IShoppingMallReview.ICreate;
-    product: IEntity;
-    customer: IEntity;
+    shoppingMallOrderItems: IEntity;
+    shoppingMallProducts: IEntity;
+    shoppingMallMembers: IEntity;
   }) {
     const id: string = v4();
     return {
@@ -22,9 +23,9 @@ export namespace ShoppingMallReviewCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      orderItem: { connect: { id: props.body.shopping_mall_order_item_id } },
-      product: { connect: { id: props.product.id } },
-      customer: { connect: { id: props.customer.id } },
+      orderItem: { connect: { id: props.shoppingMallOrderItems.id } },
+      product: { connect: { id: props.shoppingMallProducts.id } },
+      customer: { connect: { id: props.shoppingMallMembers.id } },
     } satisfies Prisma.shopping_mall_reviewsCreateInput;
   }
 }

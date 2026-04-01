@@ -12,7 +12,7 @@ import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-export async function getErpHrmTimeTrackingMemberTimesheetsTimesheetId(props: {
+export async function getErpHrmTimeTrackingMemberTimesheetId(props: {
   member: MemberPayload;
   timesheetId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTrackingTimesheet> {

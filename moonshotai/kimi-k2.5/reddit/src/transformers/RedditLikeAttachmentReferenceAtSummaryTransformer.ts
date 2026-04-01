@@ -4,8 +4,10 @@ import { IRedditLikeAttachmentReference } from "@ORGANIZATION/PROJECT-api/lib/st
 import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeAttachmentAtSummaryTransformer } from "./RedditLikeAttachmentAtSummaryTransformer";
 
@@ -22,17 +24,17 @@ export namespace RedditLikeAttachmentReferenceAtSummaryTransformer {
         attachment: RedditLikeAttachmentAtSummaryTransformer.select(),
         profileReference: {
           select: {
-            profile_id: true,
+            id: true,
           },
         } satisfies Prisma.reddit_like_attachment_reference_of_profilesFindManyArgs,
         communityReference: {
           select: {
-            community_id: true,
+            id: true,
           },
         } satisfies Prisma.reddit_like_attachment_reference_of_communitiesFindManyArgs,
         postReference: {
           select: {
-            post_id: true,
+            id: true,
           },
         } satisfies Prisma.reddit_like_attachment_reference_of_postsFindManyArgs,
       },
@@ -48,9 +50,9 @@ export namespace RedditLikeAttachmentReferenceAtSummaryTransformer {
       attachment: await RedditLikeAttachmentAtSummaryTransformer.transform(
         input.attachment,
       ),
-      profileId: input.profileReference?.profile_id ?? null,
-      communityId: input.communityReference?.community_id ?? null,
-      postId: input.postReference?.post_id ?? null,
+      profileId: input.profileReference?.id ?? null,
+      communityId: input.communityReference?.id ?? null,
+      postId: input.postReference?.id ?? null,
     };
   }
 }

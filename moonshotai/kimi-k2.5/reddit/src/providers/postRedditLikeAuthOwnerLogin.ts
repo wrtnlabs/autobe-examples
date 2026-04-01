@@ -9,7 +9,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditLikeOwnerTransformer } from "../transformers/RedditLikeOwnerTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,76 +16,91 @@ export async function postRedditLikeAuthOwnerLogin(props: {
   ip: string;
   body: IRedditLikeOwner.ILogin;
 }): Promise<IRedditLikeOwner.IAuthorized> {
-  // 1. Find owner by email with password_hash explicitly included
-  const owner = await MyGlobal.prisma.reddit_like_owners.findFirst({
+  // 1. Find owner by email with password_hash explicitly selected
+  const owner = await MyGlobal.prisma.reddit_like_owners.findUnique({
     where: { email: props.body.email },
     select: {
-      ...RedditLikeOwnerTransformer.select().select,
+      id: true,
+      email: true,
       password_hash: true,
+      username: true,
+      display_name: true,
+      is_active: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
     },
   });
-  // 2. Verify owner exists
-  if (!owner) {
+  if (owner === null) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Verify account is active and not deleted
-  if (!owner.is_active || owner.deleted_at !== null) {
-    throw new HttpException("Account is inactive or deleted", 403);
+  // 2. Check account is active and not deleted
+  if (owner.is_active === false) {
+    throw new HttpException("Account is inactive", 403);
   }
-  // 4. Verify password using PasswordUtil
-  const isPasswordValid = await PasswordUtil.verify(
+  if (owner.deleted_at !== null) {
+    throw new HttpException("Account has been deactivated", 403);
+  }
+  // 3. Verify password
+  const isValid = await PasswordUtil.verify(
     props.body.password,
     owner.password_hash,
   );
-  if (!isPasswordValid) {
+  if (isValid === false) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 5. Calculate token expiration times
-  const now = new Date();
-  const accessExpiresAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
-  const refreshExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const nowISO = toISOStringSafe(now);
-  const accessExpiresISO = toISOStringSafe(accessExpiresAt);
-  const refreshExpiresISO = toISOStringSafe(refreshExpiresAt);
-  // 6. Create new session
-  const sessionId = v4();
-  await MyGlobal.prisma.reddit_like_owner_sessions.create({
+  // 4. Create new session with expiration
+  const accessExpiresTimestamp = Date.now() + 60 * 60 * 1000;
+  const refreshExpiresTimestamp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  const accessExpires = new Date(accessExpiresTimestamp);
+  const refreshExpires = new Date(refreshExpiresTimestamp);
+  const session = await MyGlobal.prisma.reddit_like_owner_sessions.create({
     data: {
-      id: sessionId,
+      id: v4(),
       reddit_like_owner_id: owner.id,
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: nowISO,
-      expired_at: accessExpiresISO,
+      created_at: toISOStringSafe(new Date()),
+      expired_at: toISOStringSafe(accessExpires),
     },
   });
-  // 7. Generate JWT tokens
-  const tokenPayload = {
-    type: "owner",
-    id: owner.id,
-    session_id: sessionId,
-    created_at: nowISO,
-  };
-  const accessToken = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refreshToken = jwt.sign(
-    { ...tokenPayload, tokenType: "refresh" },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  const token: IAuthorizationToken = {
-    access: accessToken,
-    refresh: refreshToken,
-    expired_at: accessExpiresISO,
-    refreshable_until: refreshExpiresISO,
-  };
-  // 8. Transform owner and return authorized response
-  const ownerDto = await RedditLikeOwnerTransformer.transform(owner);
+  // 5. Generate JWT tokens
+  const token = {
+    access: jwt.sign(
+      {
+        type: "owner",
+        id: owner.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "owner",
+        id: owner.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
+  } satisfies IAuthorizationToken;
+  // 6. Return authorized owner
   return {
-    ...ownerDto,
+    id: owner.id,
+    email: owner.email,
+    username: owner.username,
+    display_name: owner.display_name,
+    is_active: owner.is_active,
+    created_at: toISOStringSafe(owner.created_at),
+    updated_at: toISOStringSafe(owner.updated_at),
+    deleted_at: null,
     token,
-  };
+  } satisfies IRedditLikeOwner.IAuthorized;
 }

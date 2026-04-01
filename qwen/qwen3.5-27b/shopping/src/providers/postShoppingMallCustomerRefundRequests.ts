@@ -20,7 +20,7 @@ export async function postShoppingMallCustomerRefundRequests(props: {
   customer: CustomerPayload;
   body: IShoppingMallRefundRequest.ICreate;
 }): Promise<IShoppingMallRefundRequest> {
-  // 1. Find order item and verify it exists
+  // 1. Look up order item to verify ownership
   const orderItem =
     await MyGlobal.prisma.shopping_mall_order_items.findUniqueOrThrow({
       where: {
@@ -31,53 +31,58 @@ export async function postShoppingMallCustomerRefundRequests(props: {
         id: true,
         status: true,
         shopping_mall_order_id: true,
-        shopping_mall_seller_id: true,
-        order: {
-          select: {
-            shopping_mall_customer_id: true,
-          },
-        },
       },
     });
-  // 2. Verify order item belongs to authenticated customer
-  if (orderItem.order.shopping_mall_customer_id !== props.customer.id) {
+  // 2. Look up order to verify customer ownership
+  const order = await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
+    where: {
+      id: orderItem.shopping_mall_order_id,
+      deleted_at: null,
+    },
+    select: {
+      shopping_mall_customer_id: true,
+    },
+  });
+  if (order.shopping_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // 3. Verify order item status is "delivered"
+  // 3. Verify order item status is 'delivered'
   if (orderItem.status !== "delivered") {
     throw new HttpException(
       "Order item must be delivered to request refund",
       400,
     );
   }
-  // 4. Find shipment through junction table to check delivery date
-  const shipmentItem =
-    await MyGlobal.prisma.shopping_mall_shipment_items.findFirst({
-      where: {
-        shopping_mall_order_item_id: props.body.orderItemId,
-      },
-      select: {
-        shipment: {
-          select: {
-            delivered_at: true,
+  // 4. Get delivery date from shipment via shipmentItems junction table
+  const shipment = await MyGlobal.prisma.shopping_mall_shipments.findFirst({
+    where: {
+      shipmentItems: {
+        some: {
+          orderItem: {
+            id: orderItem.id,
           },
         },
       },
-    });
-  if (!shipmentItem || !shipmentItem.shipment.delivered_at) {
-    throw new HttpException("Delivery date not found", 400);
+      delivered_at: { not: null },
+    },
+    select: {
+      delivered_at: true,
+    },
+  });
+  if (!shipment?.delivered_at) {
+    throw new HttpException("Order item delivery date not found", 400);
   }
+  const deliveryDate = shipment.delivered_at;
   // 5. Verify within 7-day refund window
-  const deliveryDate = new Date(shipmentItem.shipment.delivered_at);
   const now = new Date();
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
   if (now.getTime() - deliveryDate.getTime() > sevenDaysMs) {
     throw new HttpException(
-      "Refund request must be within 7 days of delivery",
+      "Refund request must be submitted within 7 days of delivery",
       400,
     );
   }
-  // 6. Check for existing pending refund request
+  // 6. Check no existing pending refund request for this order item
   const existingRefund =
     await MyGlobal.prisma.shopping_mall_refund_requests.findFirst({
       where: {
@@ -92,14 +97,19 @@ export async function postShoppingMallCustomerRefundRequests(props: {
       400,
     );
   }
-  // 7. Create refund request using collector and transformer
+  // 7. Create refund request using collector
   const created = await MyGlobal.prisma.shopping_mall_refund_requests.create({
     data: await ShoppingMallRefundRequestCollector.collect({
       body: props.body,
-      shoppingMallCustomers: { id: props.customer.id },
-      shoppingMallCustomerSessions: { id: props.customer.session_id },
+      shoppingMallCustomers: {
+        id: props.customer.id,
+      } satisfies IEntity,
+      shoppingMallCustomerSessions: {
+        id: props.customer.session_id,
+      } satisfies IEntity,
     }),
     ...ShoppingMallRefundRequestTransformer.select(),
   });
+  // 8. Transform and return result
   return await ShoppingMallRefundRequestTransformer.transform(created);
 }

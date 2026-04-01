@@ -21,144 +21,167 @@ export async function patchEcommerceMallSellerProductsProductIdVariantsVariantId
   variantId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductVariant.IUpdateOption;
 }): Promise<IEcommerceMallProductVariant.ISummary> {
-  // 1. Verify variant exists, belongs to product, and is not deleted
+  const { seller, productId, variantId, body } = props;
+  await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+    where: {
+      id: productId,
+      seller_id: seller.id,
+      deleted_at: null,
+    },
+  });
   const variant =
-    await MyGlobal.prisma.ecommerce_mall_product_variants.findFirst({
+    await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
       where: {
-        id: props.variantId,
-        product_id: props.productId,
+        id: variantId,
+        product_id: productId,
         deleted_at: null,
       },
-      include: {
-        product: {
-          select: { seller_id: true, deleted_at: true },
-        },
+      select: {
+        id: true,
+        sku: true,
+        options: true,
+        base_price: true,
+        sale_price: true,
+        stock_quantity: true,
+        reserved_quantity: true,
+        status: true,
+        sort_order: true,
+        is_default: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        product_id: true,
       },
     });
-  if (!variant) {
-    throw new HttpException("Variant not found", 404);
+  const operations = body.operations;
+  if (operations.length === 0) {
+    throw new HttpException("Operations array cannot be empty", 400);
   }
-  // Verify product is not deleted and seller owns it
-  if (variant.product.deleted_at !== null) {
-    throw new HttpException("Product not found", 404);
-  }
-  if (variant.product.seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // 2. Validate operations array
-  if (!props.body.operations || props.body.operations.length === 0) {
-    throw new HttpException(
-      "Operations array is required and must be non-empty",
-      400,
-    );
-  }
-  // Check for duplicate keys within request and validate add operations
-  const existingKeys = new Set<string>();
-  for (const op of props.body.operations) {
-    if (existingKeys.has(op.key)) {
-      throw new HttpException(`Duplicate option key found: ${op.key}`, 400);
+  const processedOperations = new Set<string>();
+  for (const operation of operations) {
+    if (processedOperations.has(operation.key)) {
+      throw new HttpException("Duplicate option keys in request", 400);
     }
-    existingKeys.add(op.key);
-    // For add operations, verify key doesn't already exist on variant
-    if (op.action === "add") {
-      const existingOption =
-        await MyGlobal.prisma.ecommerce_mall_product_variant_options.findFirst({
-          where: {
-            product_variant_id: props.variantId,
-            key: op.key,
-            deleted_at: null,
-          },
-        });
-      if (existingOption) {
-        throw new HttpException(`Option key already exists: ${op.key}`, 409);
-      }
-    }
+    processedOperations.add(operation.key);
   }
-  // 3. Execute batch operations in transaction
   await MyGlobal.prisma.$transaction(async (tx) => {
-    const operations = props.body.operations;
-    // Add operations
-    for (const op of operations) {
-      if (op.action === "add") {
-        await tx.ecommerce_mall_product_variant_options.create({
-          data: {
-            id: v4(),
-            product_variant_id: props.variantId,
-            key: op.key,
-            value: op.value,
-            created_at: new Date(),
-            updated_at: new Date(),
-          },
-        });
+    for (const operation of operations) {
+      switch (operation.action) {
+        case "add": {
+          await tx.ecommerce_mall_product_variant_options.create({
+            data: {
+              id: v4(),
+              product_variant_id: variantId,
+              key: operation.key,
+              value: operation.value,
+              created_at: new Date(),
+              updated_at: new Date(),
+            },
+          });
+          break;
+        }
+        case "update": {
+          await tx.ecommerce_mall_product_variant_options.update({
+            where: {
+              product_variant_id_key: {
+                product_variant_id: variantId,
+                key: operation.key,
+              },
+              deleted_at: null,
+            },
+            data: {
+              value: operation.value,
+              updated_at: new Date(),
+            },
+          });
+          break;
+        }
+        case "remove": {
+          await tx.ecommerce_mall_product_variant_options.update({
+            where: {
+              product_variant_id_key: {
+                product_variant_id: variantId,
+                key: operation.key,
+              },
+              deleted_at: null,
+            },
+            data: {
+              deleted_at: new Date(),
+            },
+          });
+          break;
+        }
       }
     }
-    // Update operations
-    for (const op of operations) {
-      if (op.action === "update") {
-        await tx.ecommerce_mall_product_variant_options.updateMany({
-          where: {
-            product_variant_id: props.variantId,
-            key: op.key,
-            deleted_at: null,
-          },
-          data: {
-            value: op.value,
-            updated_at: new Date(),
-          },
-        });
-      }
-    }
-    // Remove operations (soft delete)
-    for (const op of operations) {
-      if (op.action === "remove") {
-        await tx.ecommerce_mall_product_variant_options.updateMany({
-          where: {
-            product_variant_id: props.variantId,
-            key: op.key,
-            deleted_at: null,
-          },
-          data: {
-            deleted_at: new Date(),
-          },
-        });
-      }
-    }
-    // 4. Create snapshot after successful operations
-    const variantSnapshotData =
-      await tx.ecommerce_mall_product_variants.findUniqueOrThrow({
-        where: { id: props.variantId },
-        select: {
-          id: true,
-          product_id: true,
-          sku: true,
-          options: true,
-          base_price: true,
-          stock_quantity: true,
-          status: true,
-          created_at: true,
-        },
-      });
-    await tx.ecommerce_mall_product_variant_snapshots.create({
-      data: {
-        id: v4(),
-        product_variant_id: props.variantId,
-        product_id: variantSnapshotData.product_id,
-        sku_code: variantSnapshotData.sku,
-        options: variantSnapshotData.options,
-        price: variantSnapshotData.base_price,
-        stock_quantity: variantSnapshotData.stock_quantity,
-        status: variantSnapshotData.status,
-        created_at: new Date(),
+  });
+  const variantOptions =
+    await MyGlobal.prisma.ecommerce_mall_product_variant_options.findMany({
+      where: {
+        product_variant_id: variantId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        key: true,
+        value: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        product_variant_id: true,
       },
     });
-  });
-  // 5. Fetch updated variant with product reference for transformation
+  const optionsMap = variantOptions.reduce<{
+    [key: string]: string;
+  }>((acc, option) => {
+    acc[option.key] = option.value;
+    return acc;
+  }, {});
   const updatedVariant =
+    await MyGlobal.prisma.ecommerce_mall_product_variants.update({
+      where: {
+        id: variantId,
+      },
+      data: {
+        options: JSON.stringify(optionsMap),
+        updated_at: new Date(),
+      },
+      select: {
+        id: true,
+        sku: true,
+        options: true,
+        base_price: true,
+        sale_price: true,
+        stock_quantity: true,
+        reserved_quantity: true,
+        status: true,
+        sort_order: true,
+        is_default: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
+    });
+  await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.create({
+    data: {
+      id: v4(),
+      product_id: productId,
+      product_variant_id: variantId,
+      sku_code: updatedVariant.sku,
+      options: updatedVariant.options,
+      price: updatedVariant.base_price,
+      stock_quantity: updatedVariant.stock_quantity,
+      status: updatedVariant.status,
+      created_at: new Date(),
+    },
+  });
+  const result =
     await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
-      where: { id: props.variantId },
+      where: {
+        id: variantId,
+      },
       ...EcommerceMallProductVariantAtSummaryTransformer.select(),
     });
   return await EcommerceMallProductVariantAtSummaryTransformer.transform(
-    updatedVariant,
+    result,
   );
 }

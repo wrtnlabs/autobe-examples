@@ -5,8 +5,10 @@ import { IEcommerceMallShipmentTrackingCode } from "@ORGANIZATION/PROJECT-api/li
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallShipmentAtSummaryTransformer } from "./EcommerceMallShipmentAtSummaryTransformer";
 
@@ -32,12 +34,12 @@ export namespace EcommerceMallShipmentTrackingCodeTransformer {
     return {
       id: input.id,
       shipment: await EcommerceMallShipmentAtSummaryTransformer.transform(
-        input.shipment as any,
+        input.shipment,
       ),
       carrier_name: input.carrier_name,
       tracking_code: input.tracking_code,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
     };
   }
 }

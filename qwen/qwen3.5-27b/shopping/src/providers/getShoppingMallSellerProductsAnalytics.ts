@@ -17,18 +17,8 @@ export async function getShoppingMallSellerProductsAnalytics(props: {
   seller: SellerPayload;
 }): Promise<IShoppingMallProductAnalytic> {
   const sellerId = props.seller.id;
-  // 1. Total products count (unique products from order_items for this seller)
-  const totalProductsResult =
-    await MyGlobal.prisma.shopping_mall_order_items.groupBy({
-      by: ["product_snapshot"],
-      where: {
-        shopping_mall_seller_id: sellerId,
-        deleted_at: null,
-      },
-    });
-  const totalProducts = totalProductsResult.length;
-  // 2. Category distribution - extract from product_snapshot JSON
-  const orderItemsWithCategory =
+  // 1. Count total distinct products from order_items for this seller
+  const productSnapshots =
     await MyGlobal.prisma.shopping_mall_order_items.findMany({
       where: {
         shopping_mall_seller_id: sellerId,
@@ -38,49 +28,17 @@ export async function getShoppingMallSellerProductsAnalytics(props: {
         product_snapshot: true,
       },
     });
-  const categoryCountMap = new Map<
-    string,
-    {
-      categoryId: string;
-      categoryName: string;
-      count: number;
-    }
-  >();
-  for (const item of orderItemsWithCategory) {
-    try {
-      const productSnapshot = JSON.parse(item.product_snapshot);
-      const categoryId = productSnapshot.category_id;
-      const categoryName = productSnapshot.category_name;
-      if (categoryId && categoryName) {
-        const existing = categoryCountMap.get(categoryId);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          categoryCountMap.set(categoryId, {
-            categoryId,
-            categoryName,
-            count: 1,
-          });
-        }
-      }
-    } catch {
-      // Skip invalid JSON
-    }
-  }
+  const uniqueProducts = new Set(
+    productSnapshots.map((item) => item.product_snapshot),
+  );
+  const totalProducts = uniqueProducts.size;
+  // 2. Category distribution - cannot determine without products table, return empty
   const categoryDistribution: IShoppingMallProductAnalyticCategoryDistribution[] =
-    Array.from(categoryCountMap.values())
-      .sort((a, b) => b.count - a.count)
-      .map(({ categoryId, categoryName, count }) => ({
-        categoryId: categoryId as string & tags.Format<"uuid">,
-        categoryName,
-        productCount: count,
-      }));
-  // 3. Average rating from reviews
+    [];
+  // 3. Average rating from reviews for this seller's order items
   const averageRatingResult =
     await MyGlobal.prisma.shopping_mall_reviews.aggregate({
-      _avg: {
-        rating: true,
-      },
+      _avg: { rating: true },
       where: {
         deleted_at: null,
         orderItem: {
@@ -89,8 +47,9 @@ export async function getShoppingMallSellerProductsAnalytics(props: {
         },
       },
     });
-  const averageRating = averageRatingResult._avg.rating ?? null;
-  // 4. Total reviews count
+  const averageRating: (number & tags.Minimum<1> & tags.Maximum<5>) | null =
+    averageRatingResult._avg.rating ?? null;
+  // 4. Total reviews count for this seller's products
   const totalReviews = await MyGlobal.prisma.shopping_mall_reviews.count({
     where: {
       deleted_at: null,
@@ -100,44 +59,36 @@ export async function getShoppingMallSellerProductsAnalytics(props: {
       },
     },
   });
-  // 5. Total units sold (exclude pending orders)
+  // 5. Total units sold (sum of quantities, excluding pending orders)
   const unitsSoldResult =
     await MyGlobal.prisma.shopping_mall_order_items.aggregate({
-      _sum: {
-        quantity: true,
-      },
+      _sum: { quantity: true },
       where: {
         shopping_mall_seller_id: sellerId,
         deleted_at: null,
-        status: {
-          not: "pending",
-        },
+        status: { notIn: ["pending"] },
       },
     });
   const totalUnitsSold = unitsSoldResult._sum.quantity ?? 0;
-  // 6. Total revenue (quantity * price) - calculate from order_items
-  const orderItemsForRevenue =
-    await MyGlobal.prisma.shopping_mall_order_items.findMany({
-      where: {
-        shopping_mall_seller_id: sellerId,
-        deleted_at: null,
-        status: {
-          not: "pending",
-        },
-      },
-      select: {
-        quantity: true,
-        price: true,
-      },
-    });
-  const totalRevenue = orderItemsForRevenue.reduce(
+  // 6. Total revenue calculation
+  const orderItems = await MyGlobal.prisma.shopping_mall_order_items.findMany({
+    where: {
+      shopping_mall_seller_id: sellerId,
+      deleted_at: null,
+      status: { notIn: ["pending"] },
+    },
+    select: {
+      quantity: true,
+      price: true,
+    },
+  });
+  const totalRevenue = orderItems.reduce(
     (sum, item) => sum + item.quantity * item.price,
     0,
   );
-  // 7. Out of stock count - cannot determine current stock without products/variants table
-  // Return 0 as we cannot access current inventory data
+  // 7. Out of stock count - cannot determine without product_variants table
   const outOfStockCount = 0;
-  // 8. Suspended seller products count - for sellers viewing their own analytics, this is 0
+  // 8. Suspended seller products count - N/A for seller viewing their own analytics
   const suspendedSellerProductsCount = 0;
   return {
     totalProducts,

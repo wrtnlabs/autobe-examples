@@ -2,8 +2,10 @@ import { IEcommerceMallAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallAddressTransformer {
@@ -14,6 +16,9 @@ export namespace EcommerceMallAddressTransformer {
     return {
       select: {
         id: true,
+        customer: {
+          select: { id: true },
+        },
         recipient_name: true,
         recipient_phone: true,
         street: true,
@@ -23,7 +28,6 @@ export namespace EcommerceMallAddressTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        customer: true,
         orders: true,
         snapshots: true,
       },
@@ -44,6 +48,6 @@ export namespace EcommerceMallAddressTransformer {
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IEcommerceMallAddress;
   }
 }

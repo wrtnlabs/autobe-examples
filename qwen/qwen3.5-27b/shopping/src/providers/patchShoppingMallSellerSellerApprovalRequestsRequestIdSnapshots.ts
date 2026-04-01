@@ -20,8 +20,8 @@ export async function patchShoppingMallSellerSellerApprovalRequestsRequestIdSnap
   requestId: string & tags.Format<"uuid">;
   body: IShoppingMallSellerApprovalSnapshot.IRequest;
 }): Promise<IPageIShoppingMallSellerApprovalSnapshot.ISummary> {
-  // Validate the seller approval request exists and check authorization
-  const request =
+  // Verify the seller approval request exists and belongs to the requesting seller
+  const approvalRequest =
     await MyGlobal.prisma.shopping_mall_seller_approval_requests.findUniqueOrThrow(
       {
         where: {
@@ -33,15 +33,15 @@ export async function patchShoppingMallSellerSellerApprovalRequestsRequestIdSnap
         },
       },
     );
-  // Check if the requesting seller owns this approval request
-  if (request.shopping_mall_seller_id !== props.seller.id) {
+  // Authorization: only the seller who submitted the request can view snapshots
+  if (approvalRequest.shopping_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
   // Extract pagination parameters with defaults
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build WHERE clause
+  // Build where clause with date filters
   const whereInput = {
     shopping_mall_seller_approval_request_id: props.requestId,
     ...(props.body.created_at_from !== undefined && {
@@ -55,13 +55,11 @@ export async function patchShoppingMallSellerSellerApprovalRequestsRequestIdSnap
       },
     }),
   } satisfies Prisma.shopping_mall_seller_approval_snapshotsWhereInput;
-  // Build ORDER BY clause
-  const orderByInput = (
-    props.body.sort_order === "asc"
-      ? { created_at: "asc" as const }
-      : { created_at: "desc" as const }
-  ) satisfies Prisma.shopping_mall_seller_approval_snapshotsOrderByWithRelationInput;
-  // Query snapshots
+  // Build order by clause
+  const orderByInput = {
+    created_at: props.body.sort_order ?? "desc",
+  } satisfies Prisma.shopping_mall_seller_approval_snapshotsOrderByWithRelationInput;
+  // Query snapshots with pagination and filters
   const data =
     await MyGlobal.prisma.shopping_mall_seller_approval_snapshots.findMany({
       where: whereInput,
@@ -70,7 +68,7 @@ export async function patchShoppingMallSellerSellerApprovalRequestsRequestIdSnap
       orderBy: orderByInput,
       ...ShoppingMallSellerApprovalSnapshotAtSummaryTransformer.select(),
     });
-  // Get total count
+  // Get total count for pagination
   const total =
     await MyGlobal.prisma.shopping_mall_seller_approval_snapshots.count({
       where: whereInput,

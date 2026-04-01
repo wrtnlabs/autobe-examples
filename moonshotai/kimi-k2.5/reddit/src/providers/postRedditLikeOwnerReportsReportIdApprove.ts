@@ -26,64 +26,79 @@ export async function postRedditLikeOwnerReportsReportIdApprove(props: {
   owner: OwnerPayload;
   reportId: string & tags.Format<"uuid">;
 }): Promise<IRedditLikeReport> {
-  // Retrieve report with content references
+  // Fetch report with content references
   const report = await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
     where: { id: props.reportId },
     select: {
       id: true,
-      status: true,
-      reporter_id: true,
       community_id: true,
-      reason: true,
-      created_at: true,
-      updated_at: true,
+      status: true,
       reportOfPost: {
         select: {
-          reddit_like_post_id: true,
+          post: { select: { id: true } },
         },
-      },
+      } satisfies Prisma.reddit_like_report_of_postsFindFirstArgs,
       commentReport: {
         select: {
-          comment_id: true,
+          comment: { select: { id: true } },
         },
-      },
+      } satisfies Prisma.reddit_like_report_of_commentsFindFirstArgs,
     },
   });
+  // Verify owner has moderation privileges for this community
+  const community =
+    await MyGlobal.prisma.reddit_like_communities.findUniqueOrThrow({
+      where: { id: report.community_id },
+      select: { owner_id: true },
+    });
+  const isOwner = community.owner_id === props.owner.id;
+  const moderatorRole = await MyGlobal.prisma.reddit_like_moderators.findFirst({
+    where: {
+      member_id: props.owner.id,
+      community_id: report.community_id,
+    },
+  });
+  if (!isOwner && !moderatorRole) {
+    throw new HttpException(
+      "Forbidden - Not a moderator of this community",
+      403,
+    );
+  }
   // Verify report is pending
   if (report.status !== "pending") {
     throw new HttpException(`Report is already ${report.status}`, 400);
   }
-  // Execute approval in transaction
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Delete reported content (post or comment)
-    if (report.reportOfPost) {
-      await tx.reddit_like_posts.delete({
-        where: { id: report.reportOfPost.reddit_like_post_id },
-      });
-    } else if (report.commentReport) {
-      await tx.reddit_like_comments.delete({
-        where: { id: report.commentReport.comment_id },
-      });
-    }
-    // Update report status to approved
-    await tx.reddit_like_reports.update({
-      where: { id: props.reportId },
+  // Soft delete reported content
+  const now = new Date();
+  if (report.reportOfPost) {
+    await MyGlobal.prisma.reddit_like_posts.update({
+      where: { id: report.reportOfPost.post.id },
       data: {
-        status: "approved",
-        updated_at: new Date(),
+        is_deleted: true,
+        deleted_at: now,
+        updated_at: now,
       },
     });
-    // Create audit snapshot
-    await tx.reddit_like_report_snapshots.create({
+  } else if (report.commentReport) {
+    await MyGlobal.prisma.reddit_like_comments.update({
+      where: { id: report.commentReport.comment.id },
       data: {
-        id: v4(),
-        reddit_like_report_id: props.reportId,
-        status: "approved",
-        created_at: new Date(),
+        is_deleted: true,
+        updated_at: now,
       },
     });
+  } else {
+    throw new HttpException("Report has no associated content", 400);
+  }
+  // Update report status to approved
+  await MyGlobal.prisma.reddit_like_reports.update({
+    where: { id: props.reportId },
+    data: {
+      status: "approved",
+      updated_at: now,
+    },
   });
-  // Return updated report using transformer
+  // Fetch updated report with full data and transform
   const updatedReport =
     await MyGlobal.prisma.reddit_like_reports.findUniqueOrThrow({
       where: { id: props.reportId },

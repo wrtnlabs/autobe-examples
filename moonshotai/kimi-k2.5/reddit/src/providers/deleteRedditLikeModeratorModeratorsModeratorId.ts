@@ -15,25 +15,47 @@ export async function deleteRedditLikeModeratorModeratorsModeratorId(props: {
   moderator: ModeratorPayload;
   moderatorId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  // Fetch target moderator with community relation
   const targetModerator =
-    await MyGlobal.prisma.reddit_like_moderators.findUniqueOrThrow({
+    await MyGlobal.prisma.reddit_like_moderators.findUnique({
       where: { id: props.moderatorId },
       select: {
         id: true,
         member_id: true,
+        deleted_at: true,
         community: {
           select: {
             owner_id: true,
-          } satisfies Prisma.reddit_like_communitiesSelect,
+          },
         },
-      } satisfies Prisma.reddit_like_moderatorsSelect,
+      },
     });
-  const isSelfRemoval = props.moderator.id === targetModerator.member_id;
-  const isOwnerRemoval =
-    props.moderator.id === targetModerator.community.owner_id;
-  if (!isSelfRemoval && !isOwnerRemoval) {
+  if (targetModerator === null) {
+    throw new HttpException("Moderator not found", 404);
+  }
+  if (targetModerator.deleted_at !== null) {
+    throw new HttpException("Moderator is already removed", 410);
+  }
+  // Fetch requesting moderator's member_id
+  const requestingModerator =
+    await MyGlobal.prisma.reddit_like_moderators.findUnique({
+      where: { id: props.moderator.id },
+      select: {
+        member_id: true,
+      },
+    });
+  if (requestingModerator === null) {
+    throw new HttpException("Requesting moderator not found", 403);
+  }
+  // Authorization: owner can remove any moderator, or self-removal allowed
+  const isOwner =
+    targetModerator.community.owner_id === requestingModerator.member_id;
+  const isSelfRemoval =
+    targetModerator.member_id === requestingModerator.member_id;
+  if (!isOwner && !isSelfRemoval) {
     throw new HttpException("Forbidden", 403);
   }
+  // Soft delete by setting deleted_at
   await MyGlobal.prisma.reddit_like_moderators.update({
     where: { id: props.moderatorId },
     data: {

@@ -21,15 +21,16 @@ export async function patchShoppingMallAdminSnapshots(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const formatDateTime = (
-    d: Date | null,
-  ): (string & tags.Format<"date-time">) | null => {
-    if (d === null) return null;
-    const iso = toISOStringSafe(d);
-    return typia.assert<string & tags.Format<"date-time">>(iso);
-  };
-  const where: Prisma.shopping_mall_snapshotsWhereInput = {
-    deleted_at: null,
+  const createdAtBound = (() => {
+    const gte = props.body.createdAtFrom;
+    const lte = props.body.createdAtTo;
+    if (gte === undefined && lte === undefined) return undefined;
+    return {
+      ...(gte !== undefined && { gte }),
+      ...(lte !== undefined && { lte }),
+    };
+  })();
+  const where = {
     ...(props.body.sourceType !== undefined && {
       source_type: props.body.sourceType,
     }),
@@ -57,48 +58,43 @@ export async function patchShoppingMallAdminSnapshots(props: {
     ...(props.body.createdByMemberId !== undefined && {
       created_by_member_id: props.body.createdByMemberId,
     }),
-    ...(props.body.createdAtFrom !== undefined ||
-    props.body.createdAtTo !== undefined
-      ? {
-          created_at: {
-            ...(props.body.createdAtFrom !== undefined
-              ? { gte: new Date(props.body.createdAtFrom) }
-              : {}),
-            ...(props.body.createdAtTo !== undefined
-              ? { lte: new Date(props.body.createdAtTo) }
-              : {}),
-          },
-        }
-      : {}),
-    snapshotParties: {
-      some: {
-        can_view: true,
-        deleted_at: null,
-        party_type: "admin",
-        party_id: props.admin.id,
+    ...(createdAtBound !== undefined && { created_at: createdAtBound }),
+  };
+  const orderBy = (
+    props.body.sort === "created_at_asc"
+      ? { created_at: "asc" as const }
+      : props.body.sort === "created_at_desc"
+        ? { created_at: "desc" as const }
+        : props.body.sort === "snapshot_code_asc"
+          ? { snapshot_code: "asc" as const }
+          : props.body.sort === "snapshot_code_desc"
+            ? { snapshot_code: "desc" as const }
+            : { created_at: "desc" as const }
+  ) satisfies Prisma.shopping_mall_snapshotsOrderByWithRelationInput;
+  const partyWhere = {
+    can_view: true,
+    deleted_at: null,
+    party_type: "admin",
+    party_id: props.admin.id,
+  };
+  const visibilityWhere = {
+    snapshotParties: { some: partyWhere },
+  };
+  const [records, rows] = await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.shopping_mall_snapshots.count({
+      where: {
+        ...(where as Prisma.shopping_mall_snapshotsWhereInput),
+        ...(visibilityWhere as Prisma.shopping_mall_snapshotsWhereInput),
       },
-    },
-  } satisfies Prisma.shopping_mall_snapshotsWhereInput;
-  const orderBy = (() => {
-    switch (props.body.sort) {
-      case "created_at_asc":
-        return { created_at: "asc" as const };
-      case "created_at_desc":
-        return { created_at: "desc" as const };
-      case "updated_at_asc":
-        return { updated_at: "asc" as const };
-      case "updated_at_desc":
-        return { updated_at: "desc" as const };
-      default:
-        return { created_at: "desc" as const };
-    }
-  })() satisfies Prisma.shopping_mall_snapshotsOrderByWithRelationInput;
-  const [rows, total] = await MyGlobal.prisma.$transaction([
+    }),
     MyGlobal.prisma.shopping_mall_snapshots.findMany({
-      where,
-      orderBy,
+      where: {
+        ...(where as Prisma.shopping_mall_snapshotsWhereInput),
+        ...(visibilityWhere as Prisma.shopping_mall_snapshotsWhereInput),
+      },
       skip,
       take: limit,
+      orderBy,
       select: {
         id: true,
         snapshot_code: true,
@@ -117,61 +113,35 @@ export async function patchShoppingMallAdminSnapshots(props: {
         deleted_at: true,
       },
     }),
-    MyGlobal.prisma.shopping_mall_snapshots.count({
-      where,
-    }),
   ]);
+  const pages = records === 0 ? 0 : Math.ceil(records / limit);
   return {
     pagination: {
-      current: typia.assert<number & tags.Type<"int32"> & tags.Minimum<0>>(
-        page,
-      ),
-      limit: typia.assert<number & tags.Type<"int32"> & tags.Minimum<0>>(limit),
-      records: typia.assert<number & tags.Type<"int32"> & tags.Minimum<0>>(
-        total,
-      ),
-      pages: typia.assert<number & tags.Type<"int32"> & tags.Minimum<0>>(
-        Math.ceil(total / limit),
-      ),
-    },
-    data: rows.map((r) => ({
-      id: typia.assert<string & tags.Format<"uuid">>(r.id),
-      snapshot_code: r.snapshot_code,
-      source_type: r.source_type,
-      source_entity_id: typia.assert<string & tags.Format<"uuid">>(
-        r.source_entity_id,
-      ),
-      source_seller_id: r.source_seller_id
-        ? typia.assert<string & tags.Format<"uuid">>(r.source_seller_id)
-        : null,
-      source_order_id: r.source_order_id
-        ? typia.assert<string & tags.Format<"uuid">>(r.source_order_id)
-        : null,
-      source_order_item_id: r.source_order_item_id
-        ? typia.assert<string & tags.Format<"uuid">>(r.source_order_item_id)
-        : null,
-      source_review_id: r.source_review_id
-        ? typia.assert<string & tags.Format<"uuid">>(r.source_review_id)
-        : null,
-      source_cancellation_request_id: r.source_cancellation_request_id
-        ? typia.assert<string & tags.Format<"uuid">>(
-            r.source_cancellation_request_id,
-          )
-        : null,
-      source_refund_request_id: r.source_refund_request_id
-        ? typia.assert<string & tags.Format<"uuid">>(r.source_refund_request_id)
-        : null,
-      created_by_member_id: r.created_by_member_id
-        ? typia.assert<string & tags.Format<"uuid">>(r.created_by_member_id)
-        : null,
-      reason: r.reason,
-      created_at: typia.assert<string & tags.Format<"date-time">>(
-        toISOStringSafe(r.created_at),
-      ),
-      updated_at: typia.assert<string & tags.Format<"date-time">>(
-        toISOStringSafe(r.updated_at),
-      ),
-      deleted_at: formatDateTime(r.deleted_at),
-    })),
-  } satisfies IPageIShoppingMallSnapshot.ISummary;
+      current: page,
+      limit,
+      records,
+      pages,
+    } satisfies IPage.IPagination,
+    data: rows.map(
+      (s) =>
+        ({
+          id: s.id,
+          snapshot_code: s.snapshot_code,
+          source_type: s.source_type,
+          source_entity_id: s.source_entity_id,
+          source_seller_id: s.source_seller_id,
+          source_order_id: s.source_order_id,
+          source_order_item_id: s.source_order_item_id,
+          source_review_id: s.source_review_id,
+          source_cancellation_request_id: s.source_cancellation_request_id,
+          source_refund_request_id: s.source_refund_request_id,
+          created_by_member_id: s.created_by_member_id,
+          reason: s.reason,
+          created_at: toISOStringSafe(s.created_at),
+          updated_at: toISOStringSafe(s.updated_at),
+          deleted_at:
+            s.deleted_at === null ? null : toISOStringSafe(s.deleted_at),
+        }) satisfies IShoppingMallSnapshot.ISummary,
+    ),
+  };
 }

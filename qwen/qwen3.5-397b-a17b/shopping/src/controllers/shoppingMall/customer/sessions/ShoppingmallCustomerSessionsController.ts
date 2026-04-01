@@ -2,9 +2,8 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IPageIShoppingMallSellerSession } from "../../../../api/structures/IPageIShoppingMallSellerSession";
+import { IPageIShoppingMallCustomerSession } from "../../../../api/structures/IPageIShoppingMallCustomerSession";
 import { IShoppingMallCustomerSession } from "../../../../api/structures/IShoppingMallCustomerSession";
-import { IShoppingMallSellerSession } from "../../../../api/structures/IShoppingMallSellerSession";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
 import { getShoppingMallCustomerSessionsSessionId } from "../../../../providers/getShoppingMallCustomerSessionsSessionId";
@@ -13,39 +12,23 @@ import { patchShoppingMallCustomerSessions } from "../../../../providers/patchSh
 @Controller("/shoppingMall/customer/sessions")
 export class ShoppingmallCustomerSessionsController {
   /**
-   * Retrieve a filtered and paginated list of authentication sessions for the current user.
+   * Retrieve a list of login sessions for the authenticated user.
    *
-   * This operation provides users with visibility into their login session history, allowing them to monitor account access for security purposes. Sessions include connection metadata such as IP address, login timestamp, and expiration time.
+   * This operation returns session metadata including IP addresses, login locations, creation timestamps, and expiration status. Due to the one-session-per-user security policy specified in requirements, this typically returns only the current active session.
    *
-   * Users can filter sessions by active or expired status, and by date ranges to review recent or historical login activity. This helps users identify unauthorized access attempts and manage their account security.
-   *
-   * The endpoint returns session summaries optimized for list displays, including IP address, login time, expiration time, and current status. Full session details are not exposed for security reasons.
-   *
-   * Authentication is required - the operation returns sessions belonging to the currently authenticated user based on their actor type (customer, seller, admin, or superAdmin).
+   * Supports pagination and filtering by session status (active/expired) for audit purposes. The implementation routes to the appropriate session table (customer, seller, administrator, or super administrator) based on the authenticated user's actor type. Response excludes sensitive token data (access tokens, refresh tokens) for security.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for session filtering
+   * @param body Session search criteria including date range filters, status filter, and pagination parameters
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the appropriate session table based on authenticated user's actor type:
-   * - customer: shopping_mall_customer_sessions
-   * - seller: shopping_mall_seller_sessions
-   * - admin: shopping_mall_admin_sessions
-   * - superAdmin: shopping_mall_super_admin_sessions
+   * @x-autobe-specification Query session table based on authenticated actor type from JWT context. For customer actor, query shopping_mall_customer_sessions. For seller actor, query shopping_mall_seller_sessions. For administrator actor, query shopping_mall_administrator_sessions. For super administrator actor, query shopping_mall_super_administrator_sessions.
    *
-   * Filter by authenticated user's ID (shopping_mall_customer_id, shopping_mall_seller_id, admin_id, or super_admin_id).
+   * Filter sessions by actor ID extracted from authentication token. Apply search criteria from request body: date range filters on created_at, status filter (active if expired_at > now, expired otherwise). Order by created_at descending to show most recent first.
    *
-   * Apply search filters:
-   * - status: 'active' (expired_at > now) or 'expired' (expired_at <= now)
-   * - dateFrom: created_at >= dateFrom
-   * - dateTo: created_at <= dateTo
+   * Return paginated results with session metadata only (id, ip, href, referrer, created_at, expired_at, is_active computed field). Never expose access_token or refresh_token fields in response. Include is_current flag to indicate which session is currently active.
    *
-   * Support pagination with page and limit parameters.
-   * Support sorting by created_at (asc/desc).
-   *
-   * Return session summaries with: id, ip, created_at, expired_at, and computed isActive status.
-   *
-   * Index on (actor_id, created_at) supports efficient querying.
+   * Edge case: Due to one-session-per-user constraint, result set typically contains single active session. Historical expired sessions may exist for audit trail.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -53,8 +36,8 @@ export class ShoppingmallCustomerSessionsController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedBody()
-    body: IShoppingMallSellerSession.IRequest,
-  ): Promise<IPageIShoppingMallSellerSession.ISummary> {
+    body: IShoppingMallCustomerSession.IRequest,
+  ): Promise<IPageIShoppingMallCustomerSession.ISummary> {
     try {
       return await patchShoppingMallCustomerSessions({
         customer,
@@ -69,19 +52,25 @@ export class ShoppingmallCustomerSessionsController {
   /**
    * Retrieve detailed information about a specific authentication session by its unique identifier.
    *
-   * This operation provides session metadata for security auditing and monitoring purposes. The response includes connection details such as the IP address from which the session was initiated, the entry point URL (href), HTTP referrer, session creation timestamp, and expiration timestamp. This information enables administrators to track authentication events and investigate security incidents.
+   * This operation returns complete session metadata including the associated user identifier, session tokens (hashed for security), client information (IP address, referrer URL), and timestamps for creation and expiration. Sessions are system-managed authentication artifacts created automatically during successful login and expired during logout or timeout.
    *
-   * Sessions are created when users successfully authenticate and remain valid until expiration or explicit logout. Each session record forms part of an append-only audit trail that cannot be modified after creation. The session expiration enforces security policies requiring periodic re-authentication.
-   *
-   * This endpoint is intended for administrative oversight. Regular users view their own session status through account profile endpoints rather than querying sessions by ID. Administrators use this operation to investigate suspicious activity, verify authentication events, or audit user access patterns.
-   *
-   * The session ID is a UUID that uniquely identifies the session record across all actor types (customer, seller, administrator, super administrator). The system determines the session's actor type internally based on the session identifier.
+   * This endpoint is typically used for administrative purposes such as session auditing, security investigations, or debugging authentication issues. Regular users do not need to access individual session details directly.
    *
    * @param connection
-   * @param sessionId Target session's unique identifier (UUID format)
+   * @param sessionId Unique identifier of the session (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the session repository to retrieve session details by UUID identifier. The system must determine which session table to query based on the session ID (customer_sessions, seller_sessions, admin_sessions, or super_admin_sessions). Return session metadata including ip, href, referrer, created_at, and expired_at fields. Do not expose JWT tokens or sensitive authentication credentials in the response. Validate that the requesting user has administrator privileges before returning session details. Handle cases where session ID does not exist by returning 404 Not Found. Include actor type information in the response to indicate which user type owns the session.
+   * @x-autobe-specification Query the appropriate session table based on actor type (customer_sessions, seller_sessions, administrator_sessions, or super_administrator_sessions) using the sessionId UUID.
+   *
+   * Retrieve complete session record including: id, actor foreign key, token hashes (access_token_hash, refresh_token_hash where applicable), ip, href, referrer, created_at, expired_at.
+   *
+   * Join with the corresponding actor table to include basic actor information if needed for context.
+   *
+   * Validate that the sessionId exists and is a valid UUID format. Return 404 if session not found.
+   *
+   * Check authorization: only allow access to sessions belonging to the authenticated user, or allow administrators to view any session for audit purposes.
+   *
+   * Return the complete session entity with all fields populated.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":sessionId")

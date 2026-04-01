@@ -1,15 +1,14 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmTimeTrackingDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingDepartment";
-import type { IHrmTimeTrackingEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingEmployee";
-import type { IHrmTimeTrackingMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingMember";
-import type { IHrmTimeTrackingOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingOrganization";
-import type { IHrmTimeTrackingProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingProject";
-import type { IHrmTimeTrackingRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingRole";
-import type { IHrmTimeTrackingTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingTask";
-import type { IHrmTimeTrackingTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingTimelog";
-import type { IHrmTimeTrackingUserAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackingUserAccount";
+import type { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
+import type { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import type { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import type { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
+import type { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
+import type { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import type { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -19,8 +18,8 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_hrm_time_tracking_member_timelogs_create } from "../../../generate/generate_random_hrm_time_tracking_member_timelogs_create";
-import { prepare_random_hrm_time_tracking_timelog } from "../../../prepare/prepare_random_hrm_time_tracking_timelog";
+import { generate_random_erp_hrm_time_member_timelogs_create } from "../../../generate/generate_random_erp_hrm_time_member_timelogs_create";
+import { prepare_random_erp_hrm_time_timelog } from "../../../prepare/prepare_random_erp_hrm_time_timelog";
 
 export async function test_api_timelog_update_own_entry(
   connection: api.IConnection,
@@ -29,122 +28,133 @@ export async function test_api_timelog_update_own_entry(
   const member = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-    } satisfies IHrmTimeTrackingMember.IJoin,
+      password: "1234",
+      name: RandomGenerator.name(),
+      href: "https://example.com/join",
+      referrer: "https://example.com/landing",
+    } satisfies IErpHrmTimeMember.IJoin,
   });
   typia.assert(member);
-  const projectId = typia.random<string & tags.Format<"uuid">>();
-  const initialWorkDate = new Date().toISOString();
-  const originalDescription = RandomGenerator.paragraph({ sentences: 2 });
-  const originalTimelog =
-    await api.functional.hrmTimeTracking.member.timelogs.create(
+  const created = await api.functional.erpHrmTime.member.timelogs.create(
+    memberConnection,
+    {
+      body: {
+        workDate: new Date().toISOString(),
+        durationMinutes: 60,
+        projectId: typia.random<string & tags.Format<"uuid">>(),
+        taskId: null,
+        description: RandomGenerator.paragraph({ sentences: 2 }),
+        billable: true,
+      } satisfies IErpHrmTimeTimelog.ICreate,
+    },
+  );
+  typia.assert(created);
+  const updated = await api.functional.erpHrmTime.member.timelogs.update(
+    memberConnection,
+    {
+      timelogId: created.id,
+      body: {
+        work_date: new Date(Date.now() + 60000).toISOString(),
+        duration_minutes: created.duration_minutes + 15,
+        description: RandomGenerator.paragraph({ sentences: 3 }),
+        billable: !created.billable,
+        erp_hrm_time_project_id: typia.random<string & tags.Format<"uuid">>(),
+        erp_hrm_time_task_id: null,
+      } satisfies IErpHrmTimeTimelog.IUpdate,
+    },
+  );
+  typia.assert(updated);
+  TestValidator.equals("timelog id preserved", updated.id, created.id);
+  TestValidator.equals(
+    "work date updated",
+    updated.work_date,
+    new Date(Date.now() + 60000).toISOString(),
+  );
+  TestValidator.equals(
+    "duration updated",
+    updated.duration_minutes,
+    created.duration_minutes + 15,
+  );
+  TestValidator.notEquals(
+    "description changed",
+    updated.description,
+    created.description,
+  );
+  TestValidator.equals("billable toggled", updated.billable, !created.billable);
+  TestValidator.equals(
+    "updated time advanced",
+    updated.updated_at !== created.updated_at,
+    true,
+  );
+  const cleared = await api.functional.erpHrmTime.member.timelogs.update(
+    memberConnection,
+    {
+      timelogId: updated.id,
+      body: {
+        description: null,
+        erp_hrm_time_task_id: null,
+      } satisfies IErpHrmTimeTimelog.IUpdate,
+    },
+  );
+  typia.assert(cleared);
+  TestValidator.equals("task remains cleared", cleared.task, null);
+  TestValidator.equals("description cleared", cleared.description, null);
+  await TestValidator.error("locked timelog cannot be updated", async () => {
+    const locked = await api.functional.erpHrmTime.member.timelogs.create(
       memberConnection,
       {
         body: {
-          project_id: projectId,
-          work_date: initialWorkDate,
-          duration_minutes: 30,
-          description: originalDescription,
+          workDate: new Date().toISOString(),
+          durationMinutes: 30,
+          projectId: typia.random<string & tags.Format<"uuid">>(),
+          taskId: null,
+          description: "locked entry",
           billable: true,
-        } satisfies IHrmTimeTrackingTimelog.ICreate,
+        } satisfies IErpHrmTimeTimelog.ICreate,
       },
     );
-  typia.assert(originalTimelog);
-  const updatedWorkDate = new Date(Date.now() + 60000).toISOString();
-  const updatedDescription = RandomGenerator.paragraph({ sentences: 3 });
-  const updatedDuration = originalTimelog.duration_minutes + 15;
-  const updatedBillable = !originalTimelog.billable;
-  const updatedTimelog =
-    await api.functional.hrmTimeTracking.member.timelogs.update(
-      memberConnection,
-      {
-        timelogId: originalTimelog.id,
+    typia.assert(locked);
+    await api.functional.erpHrmTime.member.timelogs.update(memberConnection, {
+      timelogId: locked.id,
+      body: {
+        description: "should fail",
+      } satisfies IErpHrmTimeTimelog.IUpdate,
+    });
+  });
+  const otherConnection: api.IConnection = { host: connection.host };
+  const otherMember = await authorize_member_join(otherConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "1234",
+      name: RandomGenerator.name(),
+      href: "https://example.com/join-2",
+      referrer: "https://example.com/landing-2",
+    } satisfies IErpHrmTimeMember.IJoin,
+  });
+  typia.assert(otherMember);
+  const otherTimelog = await api.functional.erpHrmTime.member.timelogs.create(
+    otherConnection,
+    {
+      body: {
+        workDate: new Date().toISOString(),
+        durationMinutes: 25,
+        projectId: typia.random<string & tags.Format<"uuid">>(),
+        taskId: null,
+        description: "other org entry",
+        billable: true,
+      } satisfies IErpHrmTimeTimelog.ICreate,
+    },
+  );
+  typia.assert(otherTimelog);
+  await TestValidator.error(
+    "other organization timelog is not editable",
+    async () => {
+      await api.functional.erpHrmTime.member.timelogs.update(memberConnection, {
+        timelogId: otherTimelog.id,
         body: {
-          project_id: projectId,
-          task_id: null,
-          work_date: updatedWorkDate,
-          duration_minutes: updatedDuration,
-          description: updatedDescription,
-          billable: updatedBillable,
-        } satisfies IHrmTimeTrackingTimelog.IUpdate,
-      },
-    );
-  typia.assert(updatedTimelog);
-  TestValidator.equals(
-    "timelog id should remain the same",
-    updatedTimelog.id,
-    originalTimelog.id,
-  );
-  TestValidator.equals(
-    "organization should remain the same",
-    updatedTimelog.organization.id,
-    originalTimelog.organization.id,
-  );
-  TestValidator.equals(
-    "employee should remain the same",
-    updatedTimelog.employee.id,
-    originalTimelog.employee.id,
-  );
-  TestValidator.equals(
-    "project should remain the same",
-    updatedTimelog.project.id,
-    originalTimelog.project.id,
-  );
-  TestValidator.equals(
-    "task association should be cleared",
-    updatedTimelog.task,
-    null,
-  );
-  TestValidator.equals(
-    "work date should update",
-    updatedTimelog.work_date,
-    updatedWorkDate,
-  );
-  TestValidator.equals(
-    "duration should update",
-    updatedTimelog.duration_minutes,
-    updatedDuration,
-  );
-  TestValidator.equals(
-    "description should update",
-    updatedTimelog.description,
-    updatedDescription,
-  );
-  TestValidator.equals(
-    "billable flag should update",
-    updatedTimelog.billable,
-    updatedBillable,
-  );
-  const secondUpdate =
-    await api.functional.hrmTimeTracking.member.timelogs.update(
-      memberConnection,
-      {
-        timelogId: updatedTimelog.id,
-        body: {
-          description: `${updatedDescription} revised`,
-        } satisfies IHrmTimeTrackingTimelog.IUpdate,
-      },
-    );
-  typia.assert(secondUpdate);
-  TestValidator.equals(
-    "ownership should still be preserved",
-    secondUpdate.employee.id,
-    originalTimelog.employee.id,
-  );
-  TestValidator.equals(
-    "organization should still be preserved",
-    secondUpdate.organization.id,
-    originalTimelog.organization.id,
-  );
-  TestValidator.equals("prior updates should persist", secondUpdate.task, null);
-  TestValidator.equals(
-    "prior updated duration should persist",
-    secondUpdate.duration_minutes,
-    updatedDuration,
-  );
-  TestValidator.equals(
-    "prior updated billable should persist",
-    secondUpdate.billable,
-    updatedBillable,
+          description: "cross-org attempt",
+        } satisfies IErpHrmTimeTimelog.IUpdate,
+      });
+    },
   );
 }

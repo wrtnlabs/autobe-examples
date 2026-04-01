@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityFileAccessLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityFileAccessLog";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace RedditCommunityFileAccessLogTransformer {
@@ -47,7 +49,7 @@ export namespace RedditCommunityFileAccessLogTransformer {
       ipAddress: input.ip ?? undefined,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? undefined,
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

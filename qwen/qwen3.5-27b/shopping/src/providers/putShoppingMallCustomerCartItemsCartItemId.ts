@@ -30,9 +30,8 @@ export async function putShoppingMallCustomerCartItemsCartItemId(props: {
         shopping_mall_customer_id: props.customer.id,
         deleted_at: null,
       },
-      select: { id: true },
     });
-  // Update cart item with new quantity
+  // Update the cart item
   const updated = await MyGlobal.prisma.shopping_mall_cart_items.update({
     where: { id: props.cartItemId },
     data: {
@@ -41,12 +40,7 @@ export async function putShoppingMallCustomerCartItemsCartItemId(props: {
       }),
       updated_at: new Date(),
     },
+    ...ShoppingMallCartItemTransformer.select(),
   });
-  // Fetch with full details for response
-  const result =
-    await MyGlobal.prisma.shopping_mall_cart_items.findUniqueOrThrow({
-      where: { id: props.cartItemId },
-      ...ShoppingMallCartItemTransformer.select(),
-    });
-  return await ShoppingMallCartItemTransformer.transform(result);
+  return await ShoppingMallCartItemTransformer.transform(updated);
 }

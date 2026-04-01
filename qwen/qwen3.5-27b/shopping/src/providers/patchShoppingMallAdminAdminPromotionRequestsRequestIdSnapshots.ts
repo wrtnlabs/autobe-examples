@@ -12,7 +12,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { ShoppingMallAdminAtSummaryTransformer } from "../transformers/ShoppingMallAdminAtSummaryTransformer";
 import { ShoppingMallAdminPromotionSnapshotAtSummaryTransformer } from "../transformers/ShoppingMallAdminPromotionSnapshotAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
@@ -22,16 +21,6 @@ export async function patchShoppingMallAdminAdminPromotionRequestsRequestIdSnaps
   requestId: string & tags.Format<"uuid">;
   body: IShoppingMallAdminPromotionSnapshot.IRequest;
 }): Promise<IPageIShoppingMallAdminPromotionSnapshot.ISummary> {
-  // Validate the promotion request exists
-  await MyGlobal.prisma.shopping_mall_admin_promotion_requests.findUniqueOrThrow(
-    {
-      where: {
-        id: props.requestId,
-        deleted_at: null,
-      },
-    },
-  );
-  // Authorization: super admin can view all, regular admin can only view their own
   const request =
     await MyGlobal.prisma.shopping_mall_admin_promotion_requests.findUniqueOrThrow(
       {
@@ -40,33 +29,35 @@ export async function patchShoppingMallAdminAdminPromotionRequestsRequestIdSnaps
           deleted_at: null,
         },
         select: {
+          id: true,
           shopping_mall_admin_id: true,
         },
       },
     );
-  if (props.admin.id !== request.shopping_mall_admin_id) {
-    const adminRecord = await MyGlobal.prisma.shopping_mall_admins.findFirst({
-      where: {
-        id: props.admin.id,
-        deleted_at: null,
-      },
-      select: {
-        grade: true,
-      },
-    });
-    if (adminRecord?.grade !== "super") {
-      throw new HttpException("Forbidden", 403);
-    }
+  const adminRecord = await MyGlobal.prisma.shopping_mall_admins.findUnique({
+    where: {
+      id: props.admin.id,
+      deleted_at: null,
+    },
+    select: {
+      grade: true,
+    },
+  });
+  if (adminRecord === null) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Build WHERE clause with filters
+  if (
+    adminRecord.grade !== "super" &&
+    request.shopping_mall_admin_id !== props.admin.id
+  ) {
+    throw new HttpException("Forbidden", 403);
+  }
   const whereInput: Prisma.shopping_mall_admin_promotion_snapshotsWhereInput = {
     shopping_mall_admin_promotion_request_id: props.requestId,
   };
-  // Apply status filter if provided
   if (props.body.status !== undefined) {
     whereInput.status = props.body.status;
   }
-  // Apply submitted_at date range filters
   if (props.body.submittedAtFrom !== undefined) {
     whereInput.submitted_at = {
       gte: new Date(props.body.submittedAtFrom),
@@ -76,11 +67,12 @@ export async function patchShoppingMallAdminAdminPromotionRequestsRequestIdSnaps
     if (whereInput.submitted_at === undefined) {
       whereInput.submitted_at = {};
     }
-    (whereInput.submitted_at as Prisma.DateTimeFilter).lte = new Date(
-      props.body.submittedAtTo,
-    );
+    if (whereInput.submitted_at instanceof Object) {
+      (whereInput.submitted_at as Prisma.DateTimeFilter).lte = new Date(
+        props.body.submittedAtTo,
+      );
+    }
   }
-  // Apply created_at date range filters
   if (props.body.createdAtFrom !== undefined) {
     whereInput.created_at = {
       gte: new Date(props.body.createdAtFrom),
@@ -90,66 +82,44 @@ export async function patchShoppingMallAdminAdminPromotionRequestsRequestIdSnaps
     if (whereInput.created_at === undefined) {
       whereInput.created_at = {};
     }
-    (whereInput.created_at as Prisma.DateTimeFilter).lte = new Date(
-      props.body.createdAtTo,
-    );
+    if (whereInput.created_at instanceof Object) {
+      (whereInput.created_at as Prisma.DateTimeFilter).lte = new Date(
+        props.body.createdAtTo,
+      );
+    }
   }
-  // Pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build ORDER BY
   const sortBy = props.body.sortBy ?? "created_at";
   const sortOrder = props.body.sortOrder ?? "desc";
   const orderByInput: Prisma.shopping_mall_admin_promotion_snapshotsOrderByWithRelationInput =
     {
       [sortBy]: sortOrder,
     };
-  // Query snapshots (without user relation since it doesn't exist in schema)
-  const snapshots =
+  const data =
     await MyGlobal.prisma.shopping_mall_admin_promotion_snapshots.findMany({
       where: whereInput,
       skip,
       take: limit,
       orderBy: orderByInput,
-      select: {
-        id: true,
-        user_id: true,
-        reason: true,
-        status: true,
-        submitted_at: true,
-        responded_at: true,
-        created_at: true,
-      },
+      ...ShoppingMallAdminPromotionSnapshotAtSummaryTransformer.select(),
     });
-  // Count total records
   const total =
     await MyGlobal.prisma.shopping_mall_admin_promotion_snapshots.count({
       where: whereInput,
     });
-  // Transform results - fetch user data separately for each snapshot
-  const data = await ArrayUtil.asyncMap(snapshots, async (snapshot) => {
-    const adminRecord =
-      await MyGlobal.prisma.shopping_mall_admins.findUniqueOrThrow({
-        where: {
-          id: snapshot.user_id,
-        },
-        ...ShoppingMallAdminAtSummaryTransformer.select(),
-      });
-    const user =
-      await ShoppingMallAdminAtSummaryTransformer.transform(adminRecord);
-    return await ShoppingMallAdminPromotionSnapshotAtSummaryTransformer.transform(
-      snapshot,
-      user,
-    );
-  });
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    ShoppingMallAdminPromotionSnapshotAtSummaryTransformer.transform,
+  );
   return {
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
-    data: data,
+    } satisfies IPage.IPagination,
+    data: transformedData,
   };
 }

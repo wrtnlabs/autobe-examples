@@ -17,23 +17,27 @@ export async function getShoppingMallMemberProductSnapshotsProductSnapshotId(pro
   member: MemberPayload;
   productSnapshotId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallProductSnapshot> {
+  const snapshot =
+    await MyGlobal.prisma.shopping_mall_product_snapshots.findUnique({
+      where: { id: props.productSnapshotId },
+      ...ShoppingMallProductSnapshotTransformer.select(),
+    });
+  if (snapshot === null) {
+    throw new HttpException("Not Found", 404);
+  }
   const visibility =
     await MyGlobal.prisma.shopping_mall_snapshot_parties.findFirst({
       where: {
         shopping_mall_snapshot_id: props.productSnapshotId,
+        party_type: props.member.type,
         party_id: props.member.id,
         can_view: true,
         deleted_at: null,
       },
       select: { id: true },
     });
-  if (!visibility) {
+  if (visibility === null) {
     throw new HttpException("Forbidden", 403);
   }
-  const snapshot =
-    await MyGlobal.prisma.shopping_mall_product_snapshots.findUniqueOrThrow({
-      where: { id: props.productSnapshotId },
-      ...ShoppingMallProductSnapshotTransformer.select(),
-    });
   return await ShoppingMallProductSnapshotTransformer.transform(snapshot);
 }

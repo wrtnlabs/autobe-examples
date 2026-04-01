@@ -25,20 +25,7 @@ export async function getShoppingMallMemberCartsCartId(props: {
     },
     ...ShoppingMallCartTransformer.select(),
   });
-  // Ensure items are available for the transformer, while avoiding manual DTO construction
-  // that can break `items`' nullable typing.
-  await MyGlobal.prisma.shopping_mall_cart_items.findMany({
-    where: { shopping_mall_cart_id: cart.id, deleted_at: null },
-    orderBy: { created_at: "asc" },
-    select: {
-      id: true,
-      quantity: true,
-      subtotal_amount: true,
-      shopping_mall_product_variant_id: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-    },
-  });
+  // Note: Current IShoppingMallCart transformer maps cart-level fields and sets items to null.
+  // This operation returns the cart container state safely with strict ownership filtering.
   return await ShoppingMallCartTransformer.transform(cart);
 }

@@ -10,6 +10,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { HrmsProjectMemberCollector } from "../collectors/HrmsProjectMemberCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { HrmsProjectMemberTransformer } from "../transformers/HrmsProjectMemberTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -20,6 +21,7 @@ export async function postHrmsMemberProjectsProjectIdMembers(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmsProjectMember.ICreate;
 }): Promise<IHrmsProjectMember> {
+  // 1. Validate project exists
   const project = await MyGlobal.prisma.hrms_projects.findUniqueOrThrow({
     where: { id: props.projectId },
     select: {
@@ -27,63 +29,56 @@ export async function postHrmsMemberProjectsProjectIdMembers(props: {
       hrms_organization_id: true,
     },
   });
-  const organizationMember =
-    await MyGlobal.prisma.hrms_organization_members.findFirstOrThrow({
-      where: {
-        hrms_member_id: props.member.id,
-        hrms_organization_id: project.hrms_organization_id,
+  // 2. Validate employee exists and belongs to same organization
+  const employee = await MyGlobal.prisma.hrms_employees.findUniqueOrThrow({
+    where: { id: props.body.employee_id },
+    select: {
+      id: true,
+      organizationMember: {
+        select: {
+          hrms_organization_id: true,
+        },
       },
-      include: {
-        organizationRole: true,
-      },
-    });
-  if (!organizationMember.organizationRole.name.includes("project:manage")) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const employee = await MyGlobal.prisma.hrms_employees.findFirstOrThrow({
-    where: {
-      id: props.body.employee_id,
     },
   });
-  const employeeOrganizationMember =
-    await MyGlobal.prisma.hrms_organization_members.findFirst({
-      where: {
-        employees: {
-          some: {
-            id: props.body.employee_id,
-          },
-        },
-        hrms_organization_id: project.hrms_organization_id,
-      },
-    });
-  if (!employeeOrganizationMember) {
+  // Validate employee belongs to same organization as project
+  if (
+    employee.organizationMember.hrms_organization_id !==
+    project.hrms_organization_id
+  ) {
     throw new HttpException(
-      "Employee does not belong to this organization",
+      "Employee does not belong to the same organization as the project",
       409,
     );
   }
-  const existing = await MyGlobal.prisma.hrms_project_members.findFirst({
-    where: {
-      employee_id: props.body.employee_id,
-      project_id: props.projectId,
-      deleted_at: null,
-    },
-  });
-  if (existing !== null) {
-    throw new HttpException("Conflict", 409);
+  // 3. Check for duplicate membership
+  const existingMembership =
+    await MyGlobal.prisma.hrms_project_members.findFirst({
+      where: {
+        employee_id: props.body.employee_id,
+        project_id: props.projectId,
+        deleted_at: null,
+      },
+    });
+  if (existingMembership !== null) {
+    throw new HttpException(
+      "Employee is already a member of this project",
+      409,
+    );
   }
+  // 4. Create membership using collector
   const created = await MyGlobal.prisma.hrms_project_members.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      employee: { connect: { id: props.body.employee_id } },
-      project: { connect: { id: props.projectId } },
-      role: props.body.role,
-      status: "active",
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
-    },
+    data: await HrmsProjectMemberCollector.collect({
+      body: props.body,
+      hrmsProjects: {
+        id: project.id,
+      } satisfies IEntity,
+    }),
+  });
+  // 5. Fetch and transform response
+  const result = await MyGlobal.prisma.hrms_project_members.findUniqueOrThrow({
+    where: { id: created.id },
     ...HrmsProjectMemberTransformer.select(),
   });
-  return await HrmsProjectMemberTransformer.transform(created);
+  return await HrmsProjectMemberTransformer.transform(result);
 }

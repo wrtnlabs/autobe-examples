@@ -1,8 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -17,88 +16,57 @@ export async function test_api_customer_login_success(
   connection: api.IConnection,
 ): Promise<void> {
   const signupConnection: api.IConnection = { host: connection.host };
+  const password = RandomGenerator.alphaNumeric(16);
   const email = typia.random<string & tags.Format<"email">>();
-  const password = typia.random<string & tags.Format<"password">>();
   const joined = await authorize_customer_join(signupConnection, {
     body: {
       email,
       password,
-      href: "https://example.com/register",
-      referrer: "https://example.com/",
-    } satisfies IShoppingMallCustomer.IJoin,
+    } satisfies IMallPlatformCustomer.IJoin,
   });
   typia.assert(joined);
   const loginConnection: api.IConnection = { host: connection.host };
-  const loggedIn = await authorize_customer_login(loginConnection, {
+  const authorized = await authorize_customer_login(loginConnection, {
     body: {
       email,
       password,
-    } satisfies IShoppingMallCustomer.ILogin,
+    } satisfies IMallPlatformCustomer.ILogin,
   });
-  typia.assert(loggedIn);
+  typia.assert(authorized);
   TestValidator.equals(
-    "customer id should match after login",
-    loggedIn.id,
+    "customer id should match joined account",
+    authorized.id,
     joined.id,
   );
   TestValidator.equals(
-    "customer email should match after login",
-    loggedIn.email,
-    email,
-  );
-  TestValidator.predicate(
-    "access token should not be empty",
-    loggedIn.token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token should not be empty",
-    loggedIn.token.refresh.length > 0,
-  );
-  TestValidator.predicate(
-    "access token expiry should be present",
-    loggedIn.token.expired_at.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token expiry should be present",
-    loggedIn.token.refreshable_until.length > 0,
-  );
-  TestValidator.predicate(
-    "account should be active",
-    loggedIn.accountStatus.length > 0,
-  );
-  if (loggedIn.profile !== null) {
-    TestValidator.equals(
-      "profile customer id should match",
-      loggedIn.profile.customer.id,
-      loggedIn.id,
-    );
-    TestValidator.equals(
-      "profile customer email should match",
-      loggedIn.profile.customer.email,
-      email,
-    );
-  }
-  const reloginConnection: api.IConnection = { host: connection.host };
-  const reloggedIn = await authorize_customer_login(reloginConnection, {
-    body: {
-      email,
-      password,
-    } satisfies IShoppingMallCustomer.ILogin,
-  });
-  typia.assert(reloggedIn);
-  TestValidator.equals(
-    "re-login should return same customer id",
-    reloggedIn.id,
-    joined.id,
-  );
-  TestValidator.equals(
-    "re-login should return same customer email",
-    reloggedIn.email,
+    "customer email should match joined account",
+    authorized.email,
     email,
   );
   TestValidator.equals(
-    "re-login should remain authorized",
-    reloggedIn.accountStatus,
-    loggedIn.accountStatus,
+    "customer status should be active",
+    authorized.status,
+    joined.status,
+  );
+  TestValidator.equals(
+    "customer should not be deleted",
+    authorized.deletedAt,
+    null,
+  );
+  TestValidator.predicate(
+    "access token should be issued",
+    authorized.token.access.length > 0,
+  );
+  TestValidator.predicate(
+    "refresh token should be issued",
+    authorized.token.refresh.length > 0,
+  );
+  TestValidator.predicate(
+    "access expiration should be present",
+    authorized.token.expired_at.length > 0,
+  );
+  TestValidator.predicate(
+    "refresh expiration should be present",
+    authorized.token.refreshable_until.length > 0,
   );
 }

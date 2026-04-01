@@ -20,18 +20,18 @@ export async function getEcommerceMallCustomerShipmentsShipmentId(props: {
   customer: CustomerPayload;
   shipmentId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallShipment> {
-  // Query shipment with order and seller relations
   const shipment =
     await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
-      where: {
-        id: props.shipmentId,
-        deleted_at: null,
-      },
+      where: { id: props.shipmentId },
       ...EcommerceMallShipmentTransformer.select(),
     });
-  // Validate customer owns the order containing this shipment
-  if (shipment.order.shippingAddress.customer.id !== props.customer.id) {
+  const orderId = shipment.order.id;
+  const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
+    where: { id: orderId },
+    select: { customer_id: true },
+  });
+  if (order.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  return await EcommerceMallShipmentTransformer.transform(shipment);
+  return EcommerceMallShipmentTransformer.transform(shipment);
 }

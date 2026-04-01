@@ -18,36 +18,30 @@ export async function deleteShoppingMallAdminCategoriesCategoryId(props: {
   if (props.admin.type !== "admin") {
     throw new HttpException("Forbidden", 403);
   }
+  await MyGlobal.prisma.shopping_mall_categories.findUniqueOrThrow({
+    where: { id: props.categoryId },
+    select: { id: true },
+  });
   await MyGlobal.prisma.$transaction(async (tx) => {
-    const existingCategory = await tx.shopping_mall_categories.findUnique({
-      where: { id: props.categoryId },
-      select: { id: true, slug: true },
-    });
-    if (existingCategory === null) {
-      throw new HttpException("Category not found", 404);
-    }
-    const uncategorized = await tx.shopping_mall_categories.findFirst({
-      where: { slug: "uncategorized" },
+    const uncategorized = await tx.shopping_mall_categories.findFirstOrThrow({
+      where: {
+        slug: "uncategorized",
+        deleted_at: null,
+      },
       select: { id: true },
     });
-    if (uncategorized === null) {
-      throw new HttpException("Uncategorized category not configured", 500);
-    }
-    const nowIso = typia.assert<string & tags.Format<"date-time">>(
-      new Date().toISOString(),
-    );
+    const nowIso = toISOStringSafe(new Date());
     await tx.shopping_mall_categories.update({
-      where: { id: existingCategory.id },
+      where: { id: props.categoryId },
       data: {
         deleted_at: nowIso,
-        // keep existing visibility to preserve internal ordering; customer browsing is controlled by deleted_at
       },
+      select: { id: true },
     });
     await tx.shopping_mall_products.updateMany({
-      where: { shopping_mall_category_id: existingCategory.id },
+      where: { shopping_mall_category_id: props.categoryId },
       data: {
         shopping_mall_category_id: uncategorized.id,
-        updated_at: new Date(),
       },
     });
   });

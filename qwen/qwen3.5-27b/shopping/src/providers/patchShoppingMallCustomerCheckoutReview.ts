@@ -17,11 +17,6 @@ import { CustomerPayload } from "../decorators/payload/CustomerPayload";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-/**
- * Review order details before placement during the checkout process.
- *
- * Cannot implement: Schema missing shopping_mall_addresses, shopping_mall_products, shopping_mall_product_variants, shopping_mall_product_images required by API.
- */
 export async function patchShoppingMallCustomerCheckoutReview(props: {
   customer: CustomerPayload;
   body: IShoppingMallCheckoutReview.IRequest;

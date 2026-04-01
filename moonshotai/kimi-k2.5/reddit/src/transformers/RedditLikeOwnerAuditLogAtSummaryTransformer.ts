@@ -3,8 +3,10 @@ import { IRedditLikeOwner } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedd
 import { IRedditLikeOwnerAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeOwnerAuditLog";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeOwnerAtSummaryTransformer } from "./RedditLikeOwnerAtSummaryTransformer";
 
@@ -19,9 +21,6 @@ export namespace RedditLikeOwnerAuditLogAtSummaryTransformer {
         action: true,
         entity_type: true,
         entity_id: true,
-        details: true,
-        ip_address: true,
-        user_agent: true,
         created_at: true,
         owner: RedditLikeOwnerAtSummaryTransformer.select(),
       },
@@ -33,8 +32,8 @@ export namespace RedditLikeOwnerAuditLogAtSummaryTransformer {
     return {
       id: input.id,
       action: input.action,
-      entity_type: input.entity_type,
-      entity_id: input.entity_id,
+      entity_type: input.entity_type ?? null,
+      entity_id: input.entity_id ?? null,
       owner: await RedditLikeOwnerAtSummaryTransformer.transform(input.owner),
       created_at: input.created_at.toISOString(),
     };

@@ -17,16 +17,7 @@ export async function putErpHrmTimeTrackingReportDefinitionsReportDefinitionIdDi
   dimensionId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTrackingReportDefinitionDimension.IUpdate;
 }): Promise<IErpHrmTimeTrackingReportDefinitionDimension> {
-  const now = toISOStringSafe(new Date());
-  const reportDefinition =
-    await MyGlobal.prisma.erp_hrm_time_tracking_report_definitions.findUniqueOrThrow(
-      {
-        where: { id: props.reportDefinitionId },
-        select: { id: true, erp_hrm_time_tracking_organization_id: true },
-      },
-    );
-  void reportDefinition;
-  const dimension =
+  const existingDimension =
     await MyGlobal.prisma.erp_hrm_time_tracking_report_definition_dimensions.findUniqueOrThrow(
       {
         where: { id: props.dimensionId },
@@ -34,31 +25,32 @@ export async function putErpHrmTimeTrackingReportDefinitionsReportDefinitionIdDi
           id: true,
           erp_hrm_time_tracking_report_definition_id: true,
           dimension_key: true,
+          dimension_label: true,
+          sort_order: true,
           deleted_at: true,
+          updated_at: true,
         },
       },
     );
   if (
-    dimension.erp_hrm_time_tracking_report_definition_id !==
+    existingDimension.erp_hrm_time_tracking_report_definition_id !==
     props.reportDefinitionId
   ) {
-    throw new HttpException("Dimension not linked to report definition", 400);
+    throw new HttpException(
+      "Dimension does not belong to report definition",
+      400,
+    );
   }
-  const nextDimensionKey =
-    props.body.dimension_key !== undefined
-      ? props.body.dimension_key
-      : dimension.dimension_key;
   if (props.body.sort_order !== undefined && props.body.sort_order < 1) {
     throw new HttpException("sort_order must be >= 1", 400);
   }
-  const nextDeletedAt =
-    props.body.deleted_at !== undefined
-      ? props.body.deleted_at === null
-        ? null
-        : now
-      : dimension.deleted_at;
-  if (props.body.dimension_key !== undefined) {
-    const conflict =
+  const nextDimensionKey =
+    props.body.dimension_key ?? existingDimension.dimension_key;
+  const shouldCheckDimensionKeyUniqueness =
+    props.body.dimension_key !== undefined &&
+    nextDimensionKey !== existingDimension.dimension_key;
+  if (shouldCheckDimensionKeyUniqueness) {
+    const duplicate =
       await MyGlobal.prisma.erp_hrm_time_tracking_report_definition_dimensions.findFirst(
         {
           where: {
@@ -71,10 +63,15 @@ export async function putErpHrmTimeTrackingReportDefinitionsReportDefinitionIdDi
           select: { id: true },
         },
       );
-    if (conflict) throw new HttpException("dimension_key already exists", 400);
+    if (duplicate) {
+      throw new HttpException(
+        "dimension_key already exists in this report definition",
+        409,
+      );
+    }
   }
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.erp_hrm_time_tracking_report_definition_dimensions.update({
+  await MyGlobal.prisma.erp_hrm_time_tracking_report_definition_dimensions.update(
+    {
       where: { id: props.dimensionId },
       data: {
         ...(props.body.dimension_key !== undefined && {
@@ -84,15 +81,15 @@ export async function putErpHrmTimeTrackingReportDefinitionsReportDefinitionIdDi
           dimension_label: props.body.dimension_label,
         }),
         ...(props.body.sort_order !== undefined && {
-          sort_order: props.body.sort_order,
+          sort_order: props.body.sort_order as number,
         }),
         ...(props.body.deleted_at !== undefined && {
-          deleted_at: nextDeletedAt === null ? null : new Date(nextDeletedAt),
+          deleted_at: props.body.deleted_at,
         }),
-        updated_at: new Date(),
+        updated_at: existingDimension.updated_at,
       },
-    });
-  });
+    },
+  );
   const updated =
     await MyGlobal.prisma.erp_hrm_time_tracking_report_definition_dimensions.findUniqueOrThrow(
       {
@@ -100,7 +97,7 @@ export async function putErpHrmTimeTrackingReportDefinitionsReportDefinitionIdDi
         ...ErpHrmTimeTrackingReportDefinitionDimensionTransformer.select(),
       },
     );
-  return await ErpHrmTimeTrackingReportDefinitionDimensionTransformer.transform(
+  return ErpHrmTimeTrackingReportDefinitionDimensionTransformer.transform(
     updated,
   );
 }

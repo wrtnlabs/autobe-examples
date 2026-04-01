@@ -11,7 +11,6 @@ export namespace RedditLikeCommunityCollector {
   export async function collect(props: {
     body: IRedditLikeCommunity.ICreate;
     redditLikeMembers: IEntity;
-    redditLikeMemberSessions: IEntity;
   }) {
     return {
       id: v4(),

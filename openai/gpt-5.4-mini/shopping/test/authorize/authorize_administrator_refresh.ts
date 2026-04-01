@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import type { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -11,10 +11,10 @@ import typia, { tags } from "typia";
 export async function authorize_administrator_refresh(
   connection: api.IConnection,
   props: {
-    body: IShoppingMallAdministrator.IRefresh;
+    body: IMallPlatformAdministrator.IRefresh;
   },
-): Promise<IShoppingMallAdministrator.IAuthorized> {
-  return await api.functional.shoppingMall.auth.administrator.refresh(
+): Promise<IMallPlatformAdministrator.IAuthorized> {
+  return await api.functional.mallPlatform.auth.administrator.refresh(
     connection,
     {
       body: props.body,

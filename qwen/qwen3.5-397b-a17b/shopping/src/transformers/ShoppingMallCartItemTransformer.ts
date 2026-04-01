@@ -1,20 +1,19 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
+import { IShoppingMallCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCart";
 import { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
-import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
-import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
-import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
+import { ShoppingMallCartAtSummaryTransformer } from "./ShoppingMallCartAtSummaryTransformer";
 import { ShoppingMallProductVariantAtSummaryTransformer } from "./ShoppingMallProductVariantAtSummaryTransformer";
-import { ShoppingMallProductVariantOptionTransformer } from "./ShoppingMallProductVariantOptionTransformer";
 
 export namespace ShoppingMallCartItemTransformer {
   export type Payload = Prisma.shopping_mall_cart_itemsGetPayload<
@@ -25,25 +24,12 @@ export namespace ShoppingMallCartItemTransformer {
       select: {
         id: true,
         quantity: true,
-        available: true,
+        price: true,
         created_at: true,
         updated_at: true,
-        cart: true,
-        variant: {
-          select: {
-            id: true,
-            deleted: true,
-            created_at: true,
-            deleted_at: true,
-            updated_at: true,
-            shopping_mall_product_id: true,
-            sku_code: true,
-            price: true,
-            stock_quantity: true,
-            product: ShoppingMallProductAtSummaryTransformer.select(),
-            options: ShoppingMallProductVariantOptionTransformer.select(),
-          },
-        },
+        deleted_at: true,
+        cart: ShoppingMallCartAtSummaryTransformer.select(),
+        productVariant: ShoppingMallProductVariantAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_cart_itemsFindManyArgs;
   }
@@ -53,19 +39,15 @@ export namespace ShoppingMallCartItemTransformer {
     return {
       id: input.id,
       quantity: input.quantity,
-      available: input.available,
-      subtotal:
-        (input.variant.price ?? input.variant.product.base_price) *
-        input.quantity,
-      stockWarning: input.variant.stock_quantity < input.quantity,
-      product: await ShoppingMallProductAtSummaryTransformer.transform(
-        input.variant.product,
-      ),
-      variant: await ShoppingMallProductVariantAtSummaryTransformer.transform(
-        input.variant,
-      ),
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
+      price: input.price,
+      cart: await ShoppingMallCartAtSummaryTransformer.transform(input.cart),
+      productVariant:
+        await ShoppingMallProductVariantAtSummaryTransformer.transform(
+          input.productVariant,
+        ),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

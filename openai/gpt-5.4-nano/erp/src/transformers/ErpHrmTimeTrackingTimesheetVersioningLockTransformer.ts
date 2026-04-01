@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeTrackingTimesheetVersioningLock } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTrackingTimesheetVersioningLock";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeTrackingTimesheetVersioningLockTransformer {
@@ -15,6 +17,7 @@ export namespace ErpHrmTimeTrackingTimesheetVersioningLockTransformer {
     return {
       select: {
         id: true,
+        // Use scalar timesheet_id; relation isn't required by DTO.
         timesheet_id: true,
         locked_by_user_id: true,
         lock_reason: true,
@@ -34,7 +37,7 @@ export namespace ErpHrmTimeTrackingTimesheetVersioningLockTransformer {
       lock_reason: input.lock_reason,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
     };
   }
 }

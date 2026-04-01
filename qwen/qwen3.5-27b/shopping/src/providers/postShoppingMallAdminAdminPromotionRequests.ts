@@ -38,12 +38,14 @@ export async function postShoppingMallAdminAdminPromotionRequests(props: {
       409,
     );
   }
-  // Create the promotion request using collector and transformer
+  // Create the promotion request using Collector and Transformer
   const created =
     await MyGlobal.prisma.shopping_mall_admin_promotion_requests.create({
       data: await ShoppingMallAdminPromotionRequestCollector.collect({
         body: props.body,
-        shoppingMallAdmins: { id: props.admin.id },
+        shoppingMallAdmins: {
+          id: props.admin.id,
+        } satisfies IEntity,
       }),
       ...ShoppingMallAdminPromotionRequestTransformer.select(),
     });

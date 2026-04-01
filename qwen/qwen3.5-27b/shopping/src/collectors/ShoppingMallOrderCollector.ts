@@ -11,41 +11,46 @@ export namespace ShoppingMallOrderCollector {
   export async function collect(props: {
     body: IShoppingMallOrder.ICreate;
     shoppingMallCustomers: IEntity;
-    shoppingMallCustomerSessions: IEntity;
   }) {
-    // Query the actual customer record to get display_name and phone_number
-    const customer =
-      await MyGlobal.prisma.shopping_mall_customers.findFirstOrThrow({
-        where: { id: props.shoppingMallCustomers.id },
-        select: {
-          display_name: true,
-          phone_number: true,
-        },
-      });
-    // Construct shipping address snapshot using customer data
-    // Since shopping_mall_addresses table doesn't exist, we use customer info
-    const shippingAddressSnapshot = JSON.stringify({
-      recipientName: customer.display_name,
-      phoneNumber: customer.phone_number ?? "",
-      streetAddress: "",
-      city: "",
-      stateProvince: "",
-      postalCode: "",
-      country: "",
+    const id: string = v4();
+    // Use empty JSON object for shipping address snapshot since shopping_mall_addresses table doesn't exist
+    const shippingAddressSnapshot = JSON.stringify({});
+    // Query cart items for this customer
+    const cartItems = await MyGlobal.prisma.shopping_mall_cart_items.findMany({
+      where: {
+        shopping_mall_customer_id: props.shoppingMallCustomers.id,
+        deleted_at: null,
+      },
     });
-    // Total price should be calculated from cart items at higher level.
-    // Using placeholder value here.
+    // Calculate total price (placeholder - actual price logic depends on product/variant tables)
     const totalPrice = 0;
+    // Create order items inline with all required fields
+    const orderItems = await ArrayUtil.asyncMap(
+      cartItems,
+      async (cartItem, index) => ({
+        id: v4(),
+        quantity: cartItem.quantity,
+        price: 0, // Placeholder - need product/variant price
+        status: "paid",
+        product_snapshot: JSON.stringify({}),
+        variant_snapshot: JSON.stringify({}),
+        seller_profile_snapshot: JSON.stringify({}),
+        seller: { connect: { id: "00000000-0000-0000-0000-000000000000" } }, // Placeholder seller
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
+      }),
+    );
     return {
-      id: v4(),
+      id,
+      customer: { connect: { id: props.shoppingMallCustomers.id } },
       shipping_address_snapshot: shippingAddressSnapshot,
       total_price: totalPrice,
       status: "paid",
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      customer: { connect: { id: props.shoppingMallCustomers.id } },
-      orderItems: undefined,
+      orderItems: cartItems.length > 0 ? { create: orderItems } : undefined,
     } satisfies Prisma.shopping_mall_ordersCreateInput;
   }
 }

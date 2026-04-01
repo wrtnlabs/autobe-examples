@@ -15,27 +15,26 @@ export async function deleteRedditLikeModeratorPostsPostId(props: {
   moderator: ModeratorPayload;
   postId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the post to verify existence and get community_id
+  // Fetch post to verify existence and get community/author info
   const post = await MyGlobal.prisma.reddit_like_posts.findUniqueOrThrow({
     where: { id: props.postId },
-    select: { id: true, community_id: true },
+    select: {
+      id: true,
+      community_id: true,
+    },
   });
   // Verify moderator has authority in this community
-  const moderatorRecord =
-    await MyGlobal.prisma.reddit_like_moderators.findFirst({
-      where: {
-        member_id: props.moderator.id,
-        community_id: post.community_id,
-        deleted_at: null,
-      },
-    });
-  if (moderatorRecord === null) {
-    throw new HttpException(
-      "Forbidden - not a moderator of this community",
-      403,
-    );
+  const moderatorRole = await MyGlobal.prisma.reddit_like_moderators.findFirst({
+    where: {
+      id: props.moderator.id,
+      community_id: post.community_id,
+      deleted_at: null,
+    },
+  });
+  if (moderatorRole === null) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Delete the post - cascade handles votes, snapshots, content records
+  // Execute hard delete of the post (cascade handles votes, snapshots, content)
   await MyGlobal.prisma.reddit_like_posts.delete({
     where: { id: props.postId },
   });

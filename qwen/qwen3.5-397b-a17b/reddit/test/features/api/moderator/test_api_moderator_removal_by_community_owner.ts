@@ -1,10 +1,11 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import type { IRedditCloneKarmaScore } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneKarmaScore";
-import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
-import type { IRedditCloneModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneModerator";
+import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
+import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
+import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
+import type { IRedditCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityModerator";
+import type { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -14,11 +15,20 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_reddit_clone_communities_create } from "../../../generate/generate_random_reddit_clone_communities_create";
-import { generate_random_reddit_clone_member_communities_moderators_create } from "../../../generate/generate_random_reddit_clone_member_communities_moderators_create";
-import { prepare_random_reddit_clone_community } from "../../../prepare/prepare_random_reddit_clone_community";
-import { prepare_random_reddit_clone_moderator } from "../../../prepare/prepare_random_reddit_clone_moderator";
+import { generate_random_reddit_community_member_communities_create } from "../../../generate/generate_random_reddit_community_member_communities_create";
+import { generate_random_reddit_community_member_communities_moderators_create } from "../../../generate/generate_random_reddit_community_member_communities_moderators_create";
+import { prepare_random_reddit_community_community } from "../../../prepare/prepare_random_reddit_community_community";
+import { prepare_random_reddit_community_moderator } from "../../../prepare/prepare_random_reddit_community_moderator";
 
+/**
+ * Test community owner removing a moderator from their community.
+ *
+ * This test validates the complete moderator removal workflow:
+ * 1. Owner account creation and community establishment
+ * 2. Moderator account creation and addition to community
+ * 3. Owner removes moderator using DELETE endpoint
+ * 4. Verify removed moderator loses all moderation privileges
+ */
 export async function test_api_moderator_removal_by_community_owner(
   connection: api.IConnection,
 ): Promise<void> {
@@ -29,97 +39,114 @@ export async function test_api_moderator_removal_by_community_owner(
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       username: RandomGenerator.name(1),
-      display_name: RandomGenerator.name(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IRedditCloneMember.IJoin,
+    } satisfies IRedditCommunityMember.IJoin,
   });
   typia.assert(ownerAuth);
-  // 2. Create community (owner automatically becomes initial moderator with is_owner=true)
-  const community = await generate_random_reddit_clone_communities_create(
-    ownerConnection,
-    {
-      body: {
-        name: RandomGenerator.alphabets(10),
-        description: RandomGenerator.paragraph({ sentences: 2 }),
-        icon: null,
-      } satisfies IRedditCloneCommunity.ICreate,
-    },
-  );
+  // 2. Create community with unique name
+  const communityName = `test_community_${RandomGenerator.alphaNumeric(8)}`;
+  const community =
+    await generate_random_reddit_community_member_communities_create(
+      ownerConnection,
+      {
+        body: {
+          name: communityName,
+          description: RandomGenerator.paragraph({ sentences: 2 }),
+        } satisfies IRedditCommunityCommunity.ICreate,
+      },
+    );
   typia.assert(community);
-  // 3. Create second member account (to be added as moderator)
+  TestValidator.equals("community name", community.name, communityName);
+  TestValidator.equals("community owner", community.owner.id, ownerAuth.id);
+  // 3. Create moderator account (second member)
   const moderatorConnection: api.IConnection = { host: connection.host };
   const moderatorAuth = await authorize_member_join(moderatorConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       username: RandomGenerator.name(1),
-      display_name: RandomGenerator.name(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IRedditCloneMember.IJoin,
+    } satisfies IRedditCommunityMember.IJoin,
   });
   typia.assert(moderatorAuth);
-  // 4. Add the second member as a moderator to the community
-  const moderatorAssignment =
-    await generate_random_reddit_clone_member_communities_moderators_create(
+  // 4. Add moderator to community (owner performs this action)
+  const moderatorRecord =
+    await generate_random_reddit_community_member_communities_moderators_create(
       ownerConnection,
       {
-        params: {
-          communityId: community.id,
-        },
         body: {
           member_id: moderatorAuth.id,
-        } satisfies IRedditCloneModerator.ICreate,
+        } satisfies IRedditCommunityModerator.ICreate,
+        params: {
+          communityName: communityName,
+        },
       },
     );
-  typia.assert(moderatorAssignment);
+  typia.assert(moderatorRecord);
   TestValidator.equals(
-    "moderator member matches",
-    moderatorAssignment.member.id,
+    "moderator member",
+    moderatorRecord.member.id,
     moderatorAuth.id,
   );
   TestValidator.predicate(
-    "moderator is not owner",
-    !moderatorAssignment.is_owner,
+    "moderator active",
+    moderatorRecord.deleted_at === null,
   );
-  TestValidator.equals(
-    "moderator added by owner",
-    moderatorAssignment.addedBy?.id,
-    ownerAuth.id,
-  );
-  // 5. Remove the moderator using the community owner's connection
-  await api.functional.redditClone.member.communities.moderators.erase(
+  // 5. Owner removes moderator from community
+  await api.functional.redditCommunity.member.communities.moderators.erase(
     ownerConnection,
     {
-      communityId: community.id,
-      moderatorId: moderatorAssignment.id,
+      communityName: communityName,
+      memberId: moderatorAuth.id,
     },
   );
-  // 6. Verify the moderator can be re-added later (proves soft delete worked)
-  const readdedModerator =
-    await generate_random_reddit_clone_member_communities_moderators_create(
+  // 6. Verify removed moderator cannot perform moderation actions
+  // Try to add another moderator (should fail as they're no longer a moderator)
+  const thirdMemberConnection: api.IConnection = { host: connection.host };
+  const thirdMemberAuth = await authorize_member_join(thirdMemberConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      username: RandomGenerator.name(1),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    } satisfies IRedditCommunityMember.IJoin,
+  });
+  typia.assert(thirdMemberAuth);
+  // Removed moderator should not be able to add new moderators
+  await TestValidator.error(
+    "removed moderator cannot add moderators",
+    async () => {
+      await api.functional.redditCommunity.member.communities.moderators.create(
+        moderatorConnection,
+        {
+          communityName: communityName,
+          body: {
+            member_id: thirdMemberAuth.id,
+          } satisfies IRedditCommunityModerator.ICreate,
+        },
+      );
+    },
+  );
+  // 7. Verify owner can still add new moderators (privileges intact)
+  const newModeratorRecord =
+    await generate_random_reddit_community_member_communities_moderators_create(
       ownerConnection,
       {
-        params: {
-          communityId: community.id,
-        },
         body: {
-          member_id: moderatorAuth.id,
-        } satisfies IRedditCloneModerator.ICreate,
+          member_id: thirdMemberAuth.id,
+        } satisfies IRedditCommunityModerator.ICreate,
+        params: {
+          communityName: communityName,
+        },
       },
     );
-  typia.assert(readdedModerator);
+  typia.assert(newModeratorRecord);
   TestValidator.equals(
-    "readded moderator member matches",
-    readdedModerator.member.id,
-    moderatorAuth.id,
-  );
-  TestValidator.notEquals(
-    "new moderator assignment ID",
-    moderatorAssignment.id,
-    readdedModerator.id,
+    "new moderator member",
+    newModeratorRecord.member.id,
+    thirdMemberAuth.id,
   );
 }

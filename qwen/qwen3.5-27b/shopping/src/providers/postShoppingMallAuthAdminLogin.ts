@@ -17,7 +17,7 @@ export async function postShoppingMallAuthAdminLogin(props: {
   ip: string;
   body: IShoppingMallAdmin.ILogin;
 }): Promise<IShoppingMallAdmin.IAuthorized> {
-  // 1. Find admin by email with password_hash explicitly selected
+  // 1. Find admin with password_hash explicitly selected
   const admin = await MyGlobal.prisma.shopping_mall_admins.findFirst({
     where: { email: props.body.email },
     select: {
@@ -25,47 +25,58 @@ export async function postShoppingMallAuthAdminLogin(props: {
       password_hash: true,
     },
   });
-  if (!admin) throw new HttpException("Invalid credentials", 401);
-  // 2. Check account status is 'active' and not soft-deleted
-  if (admin.status !== "active")
+  if (!admin) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  // 2. Verify account status and not deleted
+  if (admin.status !== "active") {
     throw new HttpException("Account is not active", 403);
-  if (admin.deleted_at !== null)
-    throw new HttpException("Account is deleted", 403);
-  // 3. Verify password using PasswordUtil
+  }
+  if (admin.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
+  }
+  // 3. Verify password using BCrypt
   const isValid = await PasswordUtil.verify(
     props.body.password,
     admin.password_hash,
   );
-  if (!isValid) throw new HttpException("Invalid credentials", 401);
-  // 4. Invalidate existing sessions (single-session policy)
+  if (!isValid) {
+    throw new HttpException("Invalid credentials", 401);
+  }
+  // 4. Invalidate existing active session (single-session policy)
   await MyGlobal.prisma.shopping_mall_admin_sessions.deleteMany({
-    where: { shopping_mall_admin_id: admin.id },
+    where: {
+      shopping_mall_admin_id: admin.id,
+      expired_at: { gt: new Date() },
+    },
   });
   // 5. Create new session
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const sessionId = v4();
   const session = await MyGlobal.prisma.shopping_mall_admin_sessions.create({
     data: {
-      id: v4(),
+      id: sessionId,
       shopping_mall_admin_id: admin.id,
       access_token_hash: "",
       refresh_token_hash: "",
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: new Date(),
+      created_at: now,
       expired_at: refreshExpires,
-      last_activity_at: new Date(),
+      last_activity_at: now,
     },
   });
-  // 6. Generate JWT tokens with issuer 'autobe'
-  const token: IAuthorizationToken = {
+  // 6. Generate JWT tokens
+  const token = {
     access: jwt.sign(
       {
         type: "admin",
         id: admin.id,
         session_id: session.id,
-        created_at: new Date().toISOString(),
+        created_at: now.toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -76,15 +87,15 @@ export async function postShoppingMallAuthAdminLogin(props: {
         id: admin.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: new Date().toISOString(),
+        created_at: now.toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
     expired_at: accessExpires.toISOString(),
     refreshable_until: refreshExpires.toISOString(),
-  };
-  // 7. Return IAuthorized (admin data + token)
+  } satisfies IAuthorizationToken;
+  // 7. Return IAuthorized
   return {
     ...(await ShoppingMallAdminTransformer.transform(admin)),
     token,

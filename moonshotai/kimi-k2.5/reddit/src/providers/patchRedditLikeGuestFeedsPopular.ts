@@ -25,103 +25,66 @@ export async function patchRedditLikeGuestFeedsPopular(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause based on filters
-  const whereInput = {
+  const sort = props.body.sort ?? "hot";
+  // Build where clause with proper typing
+  const where = {
     is_deleted: false,
+    ...(props.body.communityId && { community_id: props.body.communityId }),
+    ...(props.body.authorId && { author_id: props.body.authorId }),
+    ...(props.body.postType && { post_type: props.body.postType }),
     ...(props.body.search && {
       title: {
         contains: props.body.search,
+        mode: "insensitive" as const,
       },
     }),
-    ...(props.body.communityId && {
-      community_id: props.body.communityId,
-    }),
-    ...(props.body.authorId && {
-      author_id: props.body.authorId,
-    }),
-    ...(props.body.postType && {
-      post_type: props.body.postType,
-    }),
-    ...(props.body.createdAfter && {
-      created_at: {
-        gte: new Date(props.body.createdAfter),
-      },
-    }),
-    ...(props.body.createdBefore && {
-      created_at: {
-        lte: new Date(props.body.createdBefore),
-      },
-    }),
-    // Time filter for top/controversial sorting
     ...(props.body.timeFilter &&
       props.body.timeFilter !== "all_time" && {
         created_at: {
-          gte: (() => {
-            const now = new Date();
-            switch (props.body.timeFilter) {
-              case "today":
-                return new Date(now.getTime() - 24 * 60 * 60 * 1000);
-              case "week":
-                return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-              case "month":
-                return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-              case "year":
-                return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-              default:
-                return undefined;
-            }
+          gte: ((): Date => {
+            const periods: Record<string, number> = {
+              today: 24 * 60 * 60 * 1000,
+              week: 7 * 24 * 60 * 60 * 1000,
+              month: 30 * 24 * 60 * 60 * 1000,
+              year: 365 * 24 * 60 * 60 * 1000,
+            };
+            const ms = periods[props.body.timeFilter!] ?? 0;
+            return new Date(Date.now() - ms);
           })(),
         },
       }),
+    ...((props.body.createdAfter || props.body.createdBefore) && {
+      created_at: {
+        ...(props.body.createdAfter && {
+          gte: new Date(props.body.createdAfter),
+        }),
+        ...(props.body.createdBefore && {
+          lte: new Date(props.body.createdBefore),
+        }),
+      },
+    }),
   } satisfies Prisma.reddit_like_postsWhereInput;
   // Build orderBy based on sort strategy
-  const orderByInput = (() => {
-    const sort = props.body.sort ?? "hot";
-    const sortBy = props.body.sortBy;
-    const sortOrder = props.body.sortOrder ?? "desc";
-    if (sortBy) {
-      // Custom sort by field
-      return {
-        [sortBy]: sortOrder,
-      } satisfies Prisma.reddit_like_postsOrderByWithRelationInput;
-    }
-    switch (sort) {
-      case "new":
-        return {
-          created_at: "desc",
-        } satisfies Prisma.reddit_like_postsOrderByWithRelationInput;
-      case "top":
-        return {
-          vote_score: "desc",
-        } satisfies Prisma.reddit_like_postsOrderByWithRelationInput;
-      case "controversial":
-        // High engagement with near-zero score
-        return {
-          vote_score: "asc",
-        } satisfies Prisma.reddit_like_postsOrderByWithRelationInput;
-      case "hot":
-      default:
-        // Hot: combination of vote_score and recency
-        // Use vote_score as primary, created_at as secondary
-        return {
-          vote_score: "desc",
-          created_at: "desc",
-        } satisfies Prisma.reddit_like_postsOrderByWithRelationInput;
-    }
-  })();
-  // Fetch posts with pagination
+  const orderBy = (
+    props.body.sortBy && props.body.sortOrder
+      ? { [props.body.sortBy]: props.body.sortOrder }
+      : sort === "new"
+        ? { created_at: "desc" as const }
+        : sort === "top"
+          ? { vote_score: "desc" as const }
+          : { vote_score: "desc" as const }
+  ) satisfies Prisma.reddit_like_postsOrderByWithRelationInput;
+  // Execute query with pagination
   const posts = await MyGlobal.prisma.reddit_like_posts.findMany({
-    where: whereInput,
+    where,
+    orderBy,
     skip,
     take: limit,
-    orderBy: orderByInput,
     ...RedditLikePostAtSummaryTransformer.select(),
   });
   // Get total count for pagination
-  const total = await MyGlobal.prisma.reddit_like_posts.count({
-    where: whereInput,
-  });
-  // Transform posts to DTOs
+  const total = await MyGlobal.prisma.reddit_like_posts.count({ where });
+  // Transform posts to summary format
   const data = await ArrayUtil.asyncMap(
     posts,
     RedditLikePostAtSummaryTransformer.transform,

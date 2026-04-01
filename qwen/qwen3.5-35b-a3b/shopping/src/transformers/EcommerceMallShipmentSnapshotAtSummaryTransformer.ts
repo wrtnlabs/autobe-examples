@@ -2,8 +2,10 @@ import { IEcommerceMallShipmentSnapshot } from "@ORGANIZATION/PROJECT-api/lib/st
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallShipmentSnapshotAtSummaryTransformer {
@@ -33,27 +35,27 @@ export namespace EcommerceMallShipmentSnapshotAtSummaryTransformer {
         delivery_notes: true,
         exception_description: true,
         created_at: true,
-        shipment: true,
+        shipment: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_shipment_snapshotsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallShipmentSnapshot.ISummary> {
-    const FUTURE_DATE = new Date("9999-12-31T23:59:59.999Z");
     return {
       id: input.id,
       tracking_number: input.tracking_number,
       carrier_name: input.carrier_name,
       status: input.status,
-      estimated_delivery_date: toISOStringSafe(
-        input.estimated_delivery_date ?? FUTURE_DATE,
-      ),
-      actual_delivery_date: toISOStringSafe(
-        input.actual_delivery_date ?? FUTURE_DATE,
-      ),
+      estimated_delivery_date:
+        input.estimated_delivery_date?.toISOString() ?? null,
+      actual_delivery_date: input.actual_delivery_date?.toISOString() ?? null,
       ecommerce_mall_shipment_id: input.shipment.id,
-      created_at: toISOStringSafe(input.created_at),
+      created_at: input.created_at.toISOString(),
     };
   }
 }

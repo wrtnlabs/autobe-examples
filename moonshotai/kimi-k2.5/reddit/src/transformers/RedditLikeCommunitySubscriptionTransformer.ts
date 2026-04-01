@@ -5,8 +5,10 @@ import { IRedditLikeCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/
 import { IRedditLikeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditLikeMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditLikeCommunityAtSummaryTransformer } from "./RedditLikeCommunityAtSummaryTransformer";
 import { RedditLikeMemberAtSummaryTransformer } from "./RedditLikeMemberAtSummaryTransformer";
@@ -19,11 +21,11 @@ export namespace RedditLikeCommunitySubscriptionTransformer {
     return {
       select: {
         id: true,
-        member: RedditLikeMemberAtSummaryTransformer.select(),
-        community: RedditLikeCommunityAtSummaryTransformer.select(),
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        member: RedditLikeMemberAtSummaryTransformer.select(),
+        community: RedditLikeCommunityAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_like_community_subscriptionsFindManyArgs;
   }

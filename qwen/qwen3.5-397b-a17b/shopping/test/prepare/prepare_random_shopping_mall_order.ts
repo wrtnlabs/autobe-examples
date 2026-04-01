@@ -9,6 +9,18 @@ export function prepare_random_shopping_mall_order(
   input?: DeepPartial<IShoppingMallOrder.ICreate>,
 ): IShoppingMallOrder.ICreate {
   return {
-    addressId: input?.addressId ?? typia.random<string & tags.Format<"uuid">>(),
+    shopping_mall_address_id:
+      input?.shopping_mall_address_id ??
+      typia.random<string & tags.Format<"uuid">>(),
+    cart_item_ids: input?.cart_item_ids
+      ? input.cart_item_ids.map(
+          (id) => id ?? typia.random<string & tags.Format<"uuid">>(),
+        )
+      : ArrayUtil.repeat(
+          typia.random<
+            number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<5>
+          >(),
+          () => typia.random<string & tags.Format<"uuid">>(),
+        ),
   };
 }

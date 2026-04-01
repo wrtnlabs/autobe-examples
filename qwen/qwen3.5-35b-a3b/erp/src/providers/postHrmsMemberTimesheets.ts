@@ -23,58 +23,47 @@ export async function postHrmsMemberTimesheets(props: {
   member: MemberPayload;
   body: IHrmsTimesheet.ICreate;
 }): Promise<IHrmsTimesheet> {
-  // Step 1: Validate session
-  const session = await MyGlobal.prisma.hrms_member_sessions.findFirstOrThrow({
-    where: {
-      id: props.member.session_id,
-      hrms_member_id: props.member.id,
-      expired_at: { gt: new Date() },
-    },
-    select: {
-      hrms_member_id: true,
-    },
-  });
-  // Step 2: Find the organization member record and get employee_id
   const organizationMember =
-    await MyGlobal.prisma.hrms_organization_members.findFirstOrThrow({
+    await MyGlobal.prisma.hrms_organization_members.findFirst({
       where: {
-        hrms_member_id: session.hrms_member_id,
+        hrms_member_id: props.member.id,
         deleted_at: null,
       },
-      select: {
-        hrms_employee_id: true,
-      },
     });
-  // Step 3: Validate no existing submitted/approved timesheet for same week
+  if (organizationMember === null) {
+    throw new HttpException("Organization membership not found", 404);
+  }
+  const employee = await MyGlobal.prisma.hrms_employees.findFirst({
+    where: {
+      organization_member_id: organizationMember.id,
+      deleted_at: null,
+    },
+  });
+  if (employee === null) {
+    throw new HttpException("Employee not found", 404);
+  }
   const existingTimesheet = await MyGlobal.prisma.hrms_timesheets.findFirst({
     where: {
-      hrms_employee_id: organizationMember.hrms_employee_id,
+      hrms_employee_id: employee.id,
       week_start_date: props.body.week_start_date,
       status: {
         in: ["submitted", "approved"],
       },
       deleted_at: null,
     },
-    select: { id: true },
   });
   if (existingTimesheet !== null) {
-    throw new HttpException(
-      "Timesheet for this week already exists with submitted or approved status",
-      409,
-    );
+    throw new HttpException("Timesheet already exists for this week", 409);
   }
-  // Step 4: Use collector to transform body into database input
-  const createData = await HrmsTimesheetCollector.collect({
-    body: props.body,
-    hrmsMemberSessions: { id: session.hrms_member_id },
-    hrmsOrganizationMembers: { id: organizationMember.id },
-    hrmsMembers: { id: organizationMember.hrms_employee_id },
-  });
-  // Step 5: Create timesheet record
   const created = await MyGlobal.prisma.hrms_timesheets.create({
-    data: createData,
+    data: await HrmsTimesheetCollector.collect({
+      body: props.body,
+      hrmsEmployees: employee,
+    }),
+  });
+  const result = await MyGlobal.prisma.hrms_timesheets.findUniqueOrThrow({
+    where: { id: created.id },
     ...HrmsTimesheetTransformer.select(),
   });
-  // Step 6: Transform and return
-  return await HrmsTimesheetTransformer.transform(created);
+  return await HrmsTimesheetTransformer.transform(result);
 }
