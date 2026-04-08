@@ -22,115 +22,92 @@ export async function patchHrmPlatformMemberProjects(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Fetch member to get context
-  const member = await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
-    where: { id: props.member.id },
-    select: { deleted_at: true },
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+    },
   });
-  // Validate member is not deleted
-  if (member.deleted_at !== null) {
-    throw new HttpException("You are not enrolled", 403);
+  if (session === null) {
+    throw new HttpException("Unauthorized", 401);
   }
-  // Build where clause
-  const whereInput: Prisma.hrm_platform_projectsWhereInput = {
+  const organizationId = session.organization_id;
+  if (organizationId === null) {
+    throw new HttpException("Organization context not set", 404);
+  }
+  const where: Prisma.hrm_platform_projectsWhereInput = {
+    organization_id: organizationId,
     deleted_at: null,
   };
-  // Add status filter
-  if (props.body.status !== undefined) {
-    whereInput.status = props.body.status;
-  }
-  // Add name search (substring match)
   if (
     props.body.search !== undefined &&
     props.body.search !== null &&
     props.body.search !== ""
   ) {
-    whereInput.name = {
-      contains: props.body.search,
-      mode: "insensitive",
-    };
+    where.name = { contains: props.body.search };
   }
-  // Add start date range filter
+  if (props.body.status !== undefined && props.body.status !== null) {
+    where.status = props.body.status;
+  }
+  if (props.body.has_budget !== undefined && props.body.has_budget !== null) {
+    if (props.body.has_budget) {
+      where.budget_hours = { not: null };
+    } else {
+      where.budget_hours = null;
+    }
+  }
   if (
     props.body.start_date_range !== undefined &&
     props.body.start_date_range !== null
   ) {
-    whereInput.start_date = {
-      gte: props.body.start_date_range.gte,
-      lte: props.body.start_date_range.lte,
+    const startDateRange = props.body.start_date_range;
+    where.start_date = {
+      gte: startDateRange.gte ?? undefined,
+      lte: startDateRange.lte ?? undefined,
     };
   }
-  // Add end date range filter
   if (
     props.body.end_date_range !== undefined &&
     props.body.end_date_range !== null
   ) {
-    whereInput.end_date = {
-      gte: props.body.end_date_range.gte,
-      lte: props.body.end_date_range.lte,
+    const endDateRange = props.body.end_date_range;
+    where.end_date = {
+      gte: endDateRange.gte ?? undefined,
+      lte: endDateRange.lte ?? undefined,
     };
   }
-  // Add has_budget filter
-  if (props.body.has_budget !== undefined && props.body.has_budget !== null) {
-    if (props.body.has_budget === true) {
-      whereInput.budget_hours = {
-        not: null,
-      };
-    } else {
-      whereInput.budget_hours = null;
-    }
-  }
-  // Build orderBy
-  const orderByInput: Prisma.hrm_platform_projectsOrderByWithRelationInput[] =
+  const sort_by = props.body.sort_by ?? "created_at";
+  const sort_order = props.body.sort_order ?? "desc";
+  const orderBy: Array<Prisma.hrm_platform_projectsOrderByWithRelationInput> =
     [];
-  switch (props.body.sort_by) {
-    case "created_at":
-      orderByInput.push({
-        created_at: props.body.sort_order ?? "desc",
-      });
-      break;
-    case "name":
-      orderByInput.push({
-        name: props.body.sort_order ?? "asc",
-      });
-      break;
-    case "status":
-      orderByInput.push({
-        status: props.body.sort_order ?? "asc",
-      });
-      break;
-    case "start_date":
-      orderByInput.push({
-        start_date: props.body.sort_order ?? "asc",
-      });
-      break;
-    default:
-      orderByInput.push({
-        created_at: "desc",
-      });
-      break;
+  if (sort_by === "created_at") {
+    orderBy.push({ created_at: sort_order });
+  } else if (sort_by === "name") {
+    orderBy.push({ name: sort_order });
+  } else if (sort_by === "status") {
+    orderBy.push({ status: sort_order });
+  } else if (sort_by === "start_date") {
+    orderBy.push({ start_date: sort_order });
   }
-  // Query projects
+  const total = await MyGlobal.prisma.hrm_platform_projects.count({
+    where,
+  });
   const records = await MyGlobal.prisma.hrm_platform_projects.findMany({
-    where: whereInput,
-    orderBy: orderByInput,
+    where,
+    orderBy,
     skip,
     take: limit,
     ...HrmPlatformProjectAtSummaryTransformer.select(),
   });
-  // Count total records
-  const total = await MyGlobal.prisma.hrm_platform_projects.count({
-    where: whereInput,
-  });
-  // Calculate pagination metadata
   const pages = total === 0 ? 0 : Math.ceil(total / limit);
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: pages,
-    },
+      pages,
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,
       HrmPlatformProjectAtSummaryTransformer.transform,

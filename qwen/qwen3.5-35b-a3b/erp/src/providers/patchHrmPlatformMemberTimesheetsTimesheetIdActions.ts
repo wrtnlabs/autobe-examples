@@ -26,43 +26,76 @@ export async function patchHrmPlatformMemberTimesheetsTimesheetIdActions(props: 
   timesheetId: string & tags.Format<"uuid">;
   body: IHrmPlatformTimesheetAction.IRequest;
 }): Promise<IPageIHrmPlatformTimesheetAction.ISummary> {
+  // Validate timesheet exists and is in current member's organization
+  const timesheet =
+    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+      where: {
+        id: props.timesheetId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        hrm_platform_employee_id: true,
+        employee: {
+          select: {
+            id: true,
+            hrm_platform_organization_id: true,
+            organization: {
+              select: { id: true },
+            },
+          },
+        },
+      },
+    });
+  // Get member's organization from database (MemberPayload doesn't include organization)
+  const memberRecord = await MyGlobal.prisma.hrm_platform_members.findUnique({
+    where: { id: props.member.id },
+    select: {
+      employees: {
+        select: { hrm_platform_organization_id: true },
+      },
+    },
+  });
+  if (!memberRecord?.employees?.[0]) {
+    throw new HttpException("Unauthorized", 401);
+  }
+  const memberOrgId = memberRecord.employees[0].hrm_platform_organization_id;
+  if (timesheet.employee.hrm_platform_organization_id !== memberOrgId) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Build where filter from body
+  const whereFilter: Prisma.hrm_platform_timesheet_actionsWhereInput = {
+    hrm_platform_timesheet_id: props.timesheetId,
+    ...(props.body.action && { action: props.body.action }),
+    ...(props.body.actor_id && { actor_id: props.body.actor_id }),
+    ...(props.body.start_date && {
+      created_at: { gte: new Date(props.body.start_date) },
+    }),
+    ...(props.body.end_date && {
+      created_at: { lte: new Date(props.body.end_date) },
+    }),
+  };
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 10;
   const skip = (page - 1) * limit;
-  await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-    where: { id: props.timesheetId, deleted_at: null },
-  });
-  const whereInput: Prisma.hrm_platform_timesheet_actionsWhereInput = {
-    hrm_platform_timesheet_id: props.timesheetId,
-    ...(props.body.action !== undefined && { action: props.body.action }),
-    ...(props.body.actor_id !== undefined && {
-      actor_id: props.body.actor_id,
-    }),
-    ...(props.body.start_date !== undefined && {
-      created_at: { gte: new Date(props.body.start_date) },
-    }),
-    ...(props.body.end_date !== undefined && {
-      created_at: {
-        lte: new Date(props.body.end_date),
-      },
-    }),
-  } satisfies Prisma.hrm_platform_timesheet_actionsWhereInput;
-  const [records, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_timesheet_actions.findMany({
-      where: whereInput,
+  // Query actions with transformer select
+  const records = await MyGlobal.prisma.hrm_platform_timesheet_actions.findMany(
+    {
+      where: whereFilter,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
       ...HrmPlatformTimesheetActionAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_timesheet_actions.count({
-      where: whereInput,
-    }),
-  ]);
+    },
+  );
+  // Count total records
+  const total = await MyGlobal.prisma.hrm_platform_timesheet_actions.count({
+    where: whereFilter,
+  });
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,

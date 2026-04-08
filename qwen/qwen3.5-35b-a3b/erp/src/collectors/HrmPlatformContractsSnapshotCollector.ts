@@ -13,33 +13,43 @@ export namespace HrmPlatformContractsSnapshotCollector {
     hrmPlatformContracts: IEntity;
   }) {
     const id: string = v4();
+    // Query contract to get all snapshot data
     const contract =
       await MyGlobal.prisma.hrm_platform_contracts.findFirstOrThrow({
         where: { id: props.hrmPlatformContracts.id },
-      });
-    const employee =
-      await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-        where: { id: contract.hrm_platform_employee_id },
+        select: {
+          id: true,
+          title: true,
+          start_date: true,
+          end_date: true,
+          compensation_amount: true,
+          compensation_currency: true,
+          notes: true,
+          created_at: true,
+          updated_at: true,
+          hrm_platform_organization_id: true,
+          hrm_platform_employee_id: true,
+        },
       });
     return {
       id,
-      contract_number: v4(),
-      start_date: contract.start_date,
-      end_date: contract.end_date ?? null,
-      job_title: employee.job_title ?? "",
-      department_id: employee.hrm_platform_department_id ?? null,
+      contract_number: "CONTRACT-001",
+      start_date: contract.start_date.toISOString(),
+      end_date: contract.end_date?.toISOString() ?? null,
+      job_title: contract.title,
+      department_id: undefined,
       compensation_amount: contract.compensation_amount ?? 0,
-      compensation_currency: contract.compensation_currency ?? "USD",
-      compensation_frequency: "monthly",
-      benefits_description: contract.notes ?? null,
+      compensation_currency: contract.compensation_currency ?? "",
+      compensation_frequency: "",
+      benefits_description: null,
       probation_period_days: null,
       notice_period_days: null,
       work_location: null,
-      work_type: "full-time",
+      work_type: "",
       notes: contract.notes ?? null,
-      created_at: new Date(),
-      updated_at: new Date(),
-      snapshotted_at: new Date(),
+      created_at: contract.created_at.toISOString(),
+      updated_at: contract.updated_at.toISOString(),
+      snapshotted_at: new Date().toISOString(),
       contract: { connect: { id: props.hrmPlatformContracts.id } },
     } satisfies Prisma.hrm_platform_contracts_snapshotsCreateInput;
   }

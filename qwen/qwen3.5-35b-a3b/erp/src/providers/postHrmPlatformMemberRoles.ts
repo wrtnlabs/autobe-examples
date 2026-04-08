@@ -11,89 +11,135 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { HrmPlatformRoleCollector } from "../collectors/HrmPlatformRoleCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { HrmPlatformRoleTransformer } from "../transformers/HrmPlatformRoleTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postHrmPlatformMemberRoles(props: {
-  member: MemberPayload;
+  member: {
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "member";
+  };
   body: IHrmPlatformRole.ICreate;
 }): Promise<IHrmPlatformRole> {
-  // Validate role_kind is 'custom'
-  if (props.body.role_kind !== "custom") {
-    throw new HttpException(
-      "Invalid role_kind value. Only 'custom' roles can be created.",
-      400,
-    );
-  }
-  // Get user's session with organization_id
-  const sessionWithOrg =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findUniqueOrThrow({
-      where: { id: props.member.session_id },
-      select: {
-        organization_id: true,
-      },
-    });
-  // Throw error if organization_id is null
-  if (sessionWithOrg.organization_id === null) {
-    throw new HttpException(
-      "Forbidden: User is not associated with any organization.",
-      403,
-    );
-  }
-  // Query organization roles with permissions to check for organization:manage permission
-  const organizationRoles = await MyGlobal.prisma.hrm_platform_roles.findMany({
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
     where: {
-      organization_id: sessionWithOrg.organization_id,
-    },
-    select: {
-      permissions: {
-        where: {
-          code: "organization:manage",
-        },
-        select: { id: true },
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
+        deleted_at: null,
       },
     },
   });
-  // Verify user has organization:manage permission through organization role
-  const hasPermission = organizationRoles.some(
-    (role) => role.permissions.length > 0,
-  );
-  if (!hasPermission) {
-    throw new HttpException(
-      "Forbidden: You lack organization management permissions.",
-      403,
-    );
+  if (session === null) {
+    throw new HttpException("You are not enrolled", 403);
   }
-  // Check if role name already exists in organization (case-insensitive)
+  const organizationId = session.organization_id;
+  if (!organizationId) {
+    throw new HttpException("Organization context required", 403);
+  }
+  if (props.body.role_kind !== "custom") {
+    throw new HttpException("Only custom roles can be created", 400);
+  }
+  const nameTrimmed = props.body.name.trim();
+  if (nameTrimmed.length < 1) {
+    throw new HttpException("Name cannot be empty", 400);
+  }
+  if (nameTrimmed.length > 100) {
+    throw new HttpException("Name cannot exceed 100 characters", 400);
+  }
   const existingRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
     where: {
-      organization_id: sessionWithOrg.organization_id,
-      name: props.body.name,
+      organization_id: organizationId,
+      name: {
+        equals: nameTrimmed,
+        mode: "insensitive",
+      },
       deleted_at: null,
     },
-    select: { id: true },
   });
-  if (existingRole) {
-    throw new HttpException(
-      "Role name already exists in this organization.",
-      409,
-    );
+  if (existingRole !== null) {
+    throw new HttpException("Role name already exists", 409);
   }
-  // Create the custom role using collector for data transformation
-  const createdRole = await MyGlobal.prisma.hrm_platform_roles.create({
-    data: await HrmPlatformRoleCollector.collect({
-      body: props.body,
-      hrmPlatformOrganizations: {
-        id: sessionWithOrg.organization_id,
-      } satisfies IEntity,
-    }),
-    ...HrmPlatformRoleTransformer.select(),
+  const organization =
+    await MyGlobal.prisma.hrm_platform_organizations.findFirst({
+      where: {
+        id: organizationId,
+        deleted_at: null,
+      },
+      include: {
+        owner: true,
+      },
+    });
+  if (organization === null) {
+    throw new HttpException("Organization not found", 404);
+  }
+  const timestamp = new Date();
+  const created = await MyGlobal.prisma.hrm_platform_roles.create({
+    data: {
+      id: v4(),
+      name: nameTrimmed,
+      description: props.body.description ?? null,
+      role_kind: props.body.role_kind,
+      created_at: timestamp,
+      updated_at: timestamp,
+      deleted_at: null,
+      organization: {
+        connect: {
+          id: organizationId,
+        },
+      },
+    },
+    include: {
+      organization: true,
+      permissions: true,
+    },
   });
-  // Transform and return the created role
-  return await HrmPlatformRoleTransformer.transform(createdRole);
+  const response: IHrmPlatformRole = {
+    id: created.id,
+    name: created.name,
+    description: created.description ?? "",
+    role_kind: created.role_kind,
+    created_at: toISOStringSafe(created.created_at),
+    updated_at: toISOStringSafe(created.updated_at),
+    deleted_at:
+      created.deleted_at !== null ? toISOStringSafe(created.deleted_at) : null,
+    organization: {
+      id: organization.id,
+      name: organization.name,
+      description: organization.description,
+      currency: organization.currency,
+      timezone: organization.timezone,
+      fiscal_start_month: organization.fiscal_start_month,
+      created_at: toISOStringSafe(organization.created_at),
+      updated_at: toISOStringSafe(organization.updated_at),
+      deleted_at:
+        organization.deleted_at !== null
+          ? toISOStringSafe(organization.deleted_at)
+          : null,
+      owner: {
+        id: organization.owner.id,
+        email: organization.owner.email ?? undefined,
+        is_active: organization.owner.is_active,
+        created_at: toISOStringSafe(organization.owner.created_at),
+        updated_at: toISOStringSafe(organization.owner.updated_at),
+        display_name: organization.owner.display_name ?? undefined,
+      },
+    },
+    permissions: await ArrayUtil.asyncMap(
+      created.permissions,
+      async (permission) => ({
+        id: permission.id,
+        code: permission.code,
+        description: permission.description ?? null,
+      }),
+    ),
+  };
+  return response;
 }
 
 

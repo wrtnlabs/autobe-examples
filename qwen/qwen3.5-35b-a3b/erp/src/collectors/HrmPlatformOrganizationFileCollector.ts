@@ -15,7 +15,6 @@ export namespace HrmPlatformOrganizationFileCollector {
   }) {
     const id: string = v4();
     return {
-      // Scalar fields
       id,
       file_key: props.body.file_key,
       file_name: props.body.file_name,
@@ -27,7 +26,6 @@ export namespace HrmPlatformOrganizationFileCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // Belongs to relations
       organization: { connect: { id: props.hrmPlatformOrganizations.id } },
       member: { connect: { id: props.hrmPlatformMembers.id } },
     } satisfies Prisma.hrm_platform_organization_filesCreateInput;

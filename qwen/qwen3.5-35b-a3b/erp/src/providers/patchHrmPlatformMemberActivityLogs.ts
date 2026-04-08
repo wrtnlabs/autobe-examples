@@ -19,108 +19,74 @@ export async function patchHrmPlatformMemberActivityLogs(props: {
   member: MemberPayload;
   body: IHrmPlatformActivityLog.IRequest;
 }): Promise<IPageIHrmPlatformActivityLog.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const validatedLimit = limit > 100 ? 100 : limit;
-  const skip = (page - 1) * validatedLimit;
-  const session =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
-      where: {
-        id: props.member.session_id,
-      },
-      select: {
-        organization_id: true,
-        expired_at: true,
-      },
-    });
-  if (
-    toISOStringSafe(new Date(session.expired_at)) <= toISOStringSafe(new Date())
-  ) {
-    throw new HttpException("Session expired", 401);
-  }
-  const member = await MyGlobal.prisma.hrm_platform_members.findFirstOrThrow({
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
     where: {
-      id: props.member.id,
+      id: props.member.session_id,
+      hrm_platform_member_id: props.member.id,
     },
     select: {
       id: true,
+      organization_id: true,
     },
   });
-  if (!member.id) {
+  if (!session) {
     throw new HttpException("Forbidden", 403);
   }
-  const where: Prisma.hrm_platform_activity_logsWhereInput = {
+  const organizationId = session.organization_id!;
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 20, 100);
+  const skip = (page - 1) * limit;
+  const whereInput: Prisma.hrm_platform_activity_logsWhereInput = {
+    organization_id: organizationId,
     deleted_at: null,
-    organization_id: session.organization_id!,
+    ...(props.body.entity_type && { entity_type: props.body.entity_type }),
+    ...(props.body.action_type && { action_type: props.body.action_type }),
+    ...(props.body.action_name && { action_name: props.body.action_name }),
+    ...(props.body.member_id !== undefined && {
+      member_id: props.body.member_id,
+    }),
+    ...(props.body.from && {
+      created_at: { gte: toISOStringSafe(props.body.from) },
+    }),
+    ...(props.body.to && {
+      created_at: { lte: toISOStringSafe(props.body.to) },
+    }),
+    ...(props.body.extra_data !== undefined &&
+      props.body.extra_data !== null && {
+        extra_data: { contains: props.body.extra_data },
+      }),
   } satisfies Prisma.hrm_platform_activity_logsWhereInput;
-  if (props.body.entity_type !== undefined) {
-    where.entity_type = props.body.entity_type;
-  }
-  if (props.body.action_type !== undefined) {
-    where.action_type = props.body.action_type;
-  }
-  if (props.body.action_name !== undefined) {
-    where.action_name = props.body.action_name;
-  }
-  if (props.body.member_id !== undefined) {
-    where.member_id = props.body.member_id ?? null;
-  }
-  if (props.body.from !== undefined) {
-    const fromFilter: Prisma.DateTimeFilter = {
-      gte: new Date(props.body.from),
-    };
-    where.created_at = {
-      ...(where.created_at as Prisma.DateTimeFilter | undefined),
-      ...fromFilter,
-    } as Prisma.DateTimeFilter;
-  }
-  if (props.body.to !== undefined) {
-    const toFilter: Prisma.DateTimeFilter = {
-      lte: new Date(props.body.to),
-    };
-    where.created_at = {
-      ...(where.created_at as Prisma.DateTimeFilter | undefined),
-      ...toFilter,
-    } as Prisma.DateTimeFilter;
-  }
-  if (props.body.extra_data !== undefined) {
-    where.extra_data = props.body.extra_data ?? null;
-  }
   const sort = props.body.sort ?? "-created_at";
-  const sortField = sort.startsWith("-") ? sort.substring(1) : sort;
-  const sortOrder: "asc" | "desc" = sort.startsWith("-") ? "desc" : "asc";
-  const validSortFields: Array<
-    keyof Prisma.hrm_platform_activity_logsOrderByWithRelationInput
-  > = ["created_at", "updated_at"];
-  if (
-    !validSortFields.includes(
-      sortField as keyof Prisma.hrm_platform_activity_logsOrderByWithRelationInput,
-    )
-  ) {
-    throw new HttpException("Invalid sort field", 400);
-  }
-  const orderBy: Prisma.hrm_platform_activity_logsOrderByWithRelationInput[] = [
-    { [sortField]: sortOrder },
-  ];
-  const records = await MyGlobal.prisma.hrm_platform_activity_logs.findMany({
-    where,
+  const hasAscendingPrefix = sort.startsWith("-");
+  const sortField = hasAscendingPrefix ? sort.slice(1) : sort;
+  const sortOrder = hasAscendingPrefix ? ("asc" as const) : ("desc" as const);
+  const allowedSortFields = ["created_at", "updated_at"] as const;
+  const isValidSortField = allowedSortFields.includes(
+    sortField as (typeof allowedSortFields)[number],
+  );
+  const orderByInput: Prisma.hrm_platform_activity_logsOrderByWithRelationInput =
+    isValidSortField && sortField === "updated_at"
+      ? { updated_at: sortOrder }
+      : { created_at: sortOrder };
+  const data = await MyGlobal.prisma.hrm_platform_activity_logs.findMany({
+    where: whereInput,
+    orderBy: orderByInput,
     skip,
-    take: validatedLimit,
-    orderBy,
+    take: limit,
     ...HrmPlatformActivityLogAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.hrm_platform_activity_logs.count({
-    where,
+    where: whereInput,
   });
   return {
     pagination: {
       current: page,
-      limit: validatedLimit,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / validatedLimit),
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      records,
+      data,
       HrmPlatformActivityLogAtSummaryTransformer.transform,
     ),
   };

@@ -23,98 +23,108 @@ export async function postHrmPlatformMemberContracts(props: {
   member: MemberPayload;
   body: IHrmPlatformContract.ICreate;
 }): Promise<IHrmPlatformContract> {
-  const { member, body } = props;
-  // Validate title length
-  if (body.title.length < 1 || body.title.length > 255) {
-    throw new HttpException("Title must be between 1 and 255 characters", 400);
-  }
-  // Validate status is 'active'
-  if (body.status !== "active") {
-    throw new HttpException("Status must be 'active' on creation", 400);
-  }
-  // Validate start_date is not in the past
-  if (new Date(body.start_date) < new Date()) {
-    throw new HttpException("Start date must be in the future", 400);
-  }
-  // Validate end_date if provided
-  if (body.end_date !== undefined) {
-    if (new Date(body.end_date) < new Date(body.start_date)) {
-      throw new HttpException("End date must be >= start date", 400);
-    }
-  }
-  // Validate compensation_amount if provided
-  if (body.compensation_amount !== undefined && body.compensation_amount < 0) {
-    throw new HttpException("Compensation amount must be >= 0", 400);
-  }
-  // Validate notes length if provided
-  if (body.notes !== undefined && body.notes.length > 5000) {
-    throw new HttpException("Notes must be <= 5000 characters", 400);
-  }
-  // Verify employee exists and belongs to the organization
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findUnique({
-    where: { id: body.employee_id },
-    select: {
-      id: true,
-      hrm_platform_organization_id: true,
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
+        deleted_at: null,
+      },
     },
   });
-  if (employee === null) {
-    throw new HttpException("Employee not found", 404);
+  if (session === null) {
+    throw new HttpException("You're not enrolled", 403);
   }
-  // Verify employee belongs to the organization specified in body
-  if (employee.hrm_platform_organization_id !== body.organization_id) {
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
+      where: {
+        id: props.body.employee_id,
+      },
+      select: {
+        id: true,
+        hrm_platform_organization_id: true,
+        status: true,
+      },
+    });
+  if (employee.hrm_platform_organization_id !== props.body.organization_id) {
     throw new HttpException(
-      "Employee does not belong to the specified organization",
+      "Employee does not belong to specified organization",
       400,
     );
   }
-  // Authorization check
-  const memberInOrganization =
-    await MyGlobal.prisma.hrm_platform_employees.findFirst({
-      where: {
-        hrm_platform_member_id: member.id,
-        hrm_platform_organization_id: body.organization_id,
+  if (employee.status !== "active") {
+    throw new HttpException("Employee is not active", 400);
+  }
+  const memberRoles = await MyGlobal.prisma.hrm_platform_roles.findMany({
+    where: {
+      organization_id: props.body.organization_id,
+      employees: {
+        some: {
+          hrm_platform_member_id: props.member.id,
+        },
       },
-      select: {
-        hrm_platform_role_id: true,
+    },
+    include: {
+      permissions: {
+        select: {
+          code: true,
+        },
       },
-    });
-  if (memberInOrganization !== null) {
-    const role = await MyGlobal.prisma.hrm_platform_roles.findUnique({
-      where: { id: memberInOrganization.hrm_platform_role_id },
-      include: { permissions: true },
-    });
-    if (role !== null) {
-      const hasEmployeeViewPermission = role.permissions.some(
-        (permission) => permission.code === "employee:view",
+    },
+  });
+  const hasPermission = memberRoles.some((role) =>
+    role.permissions.some(
+      (permission: { code: string }) => permission.code === "employee:view",
+    ),
+  );
+  const isSelf = employee.id === props.member.id;
+  if (!hasPermission && !isSelf) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const startDate = props.body.start_date;
+  if (startDate === undefined) {
+    throw new HttpException("Start date is required", 400);
+  }
+  if (props.body.end_date !== undefined) {
+    const endDate = props.body.end_date;
+    const startDateMs = new Date(startDate).getTime();
+    const endDateMs = new Date(endDate).getTime();
+    if (endDateMs < startDateMs) {
+      throw new HttpException(
+        "End date must be greater than or equal to start date",
+        400,
       );
-      if (!hasEmployeeViewPermission) {
-        throw new HttpException("Forbidden", 403);
-      }
     }
   }
-  // End previous active contract if exists
+  if (props.body.compensation_amount !== undefined) {
+    if (props.body.compensation_amount < 0) {
+      throw new HttpException("Compensation amount must be non-negative", 400);
+    }
+  }
   const existingActiveContract =
     await MyGlobal.prisma.hrm_platform_contracts.findFirst({
       where: {
-        hrm_platform_employee_id: body.employee_id,
+        hrm_platform_employee_id: props.body.employee_id,
         status: "active",
-        end_date: null,
+        deleted_at: null,
       },
     });
   if (existingActiveContract !== null) {
-    const previousEndDate = new Date(new Date(body.start_date));
-    previousEndDate.setDate(previousEndDate.getDate() - 1);
+    const previousEndDate = new Date(
+      new Date(startDate).getTime() - 24 * 60 * 60 * 1000,
+    );
     await MyGlobal.prisma.hrm_platform_contracts.update({
       where: { id: existingActiveContract.id },
       data: {
-        end_date: toISOStringSafe(previousEndDate),
+        end_date: previousEndDate,
         status: "ended",
-        updated_at: toISOStringSafe(new Date()),
+        updated_at: new Date(),
       },
     });
   }
-  // Create the new contract
   const created = await MyGlobal.prisma.hrm_platform_contracts.create({
     data: await HrmPlatformContractCollector.collect({
       body: props.body,

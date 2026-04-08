@@ -27,819 +27,550 @@ export async function patchHrmPlatformMemberDashboard(props: {
   member: MemberPayload;
   body: IHrmPlatformDashboard.IRequest;
 }): Promise<IHrmPlatformDashboard.IResponse> {
-  const employeeRecord = await MyGlobal.prisma.hrm_platform_employees.findFirst(
-    {
-      where: {
-        hrm_platform_member_id: props.member.id,
-        deleted_at: null,
-        status: "active",
-      },
-      select: { id: true, hrm_platform_organization_id: true },
+  const {
+    dashboard_type,
+    start_date,
+    end_date,
+    task_status_filter,
+    page,
+    limit,
+  } = props.body;
+  if (dashboard_type !== "personal" && dashboard_type !== "organization") {
+    throw new HttpException("Invalid dashboard_type", 400);
+  }
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      hrm_platform_member_id: props.member.id,
     },
-  );
-  if (!employeeRecord) {
+    select: {
+      organization_id: true,
+    },
+  });
+  if (session === null || session.organization_id === null) {
+    throw new HttpException("Organization context required", 400);
+  }
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findUnique({
+    where: {
+      id: props.member.id,
+    },
+    select: {
+      id: true,
+      hrm_platform_organization_id: true,
+    },
+  });
+  if (!employee) {
     throw new HttpException("Employee not found", 404);
   }
-  const nowDate = new Date();
-  const todayStart = new Date(
-    Date.UTC(
-      nowDate.getUTCFullYear(),
-      nowDate.getUTCMonth(),
-      nowDate.getUTCDate(),
-    ),
+  const response: IHrmPlatformDashboard.IResponse = {
+    dashboard_type,
+    personal_metrics: null,
+    org_metrics: null,
+  };
+  if (dashboard_type === "personal") {
+    const personalMetrics = await calculatePersonalMetrics({
+      employeeId: employee.id,
+      start_date,
+      end_date,
+      task_status_filter,
+      page,
+      limit,
+    });
+    response.personal_metrics = personalMetrics;
+  } else if (dashboard_type === "organization") {
+    const hasReportView =
+      await MyGlobal.prisma.hrm_platform_permissions.findFirst({
+        where: {
+          organization_id: session.organization_id,
+          code: "report_view",
+        },
+        select: {
+          id: true,
+        },
+      });
+    if (hasReportView === null) {
+      throw new HttpException("Forbidden", 403);
+    }
+    const orgMetrics = await calculateOrganizationMetrics({
+      organizationId: session.organization_id,
+    });
+    response.org_metrics = orgMetrics;
+  }
+  return response;
+}
+async function calculatePersonalMetrics(props: {
+  employeeId: string & tags.Format<"uuid">;
+  start_date?: string | undefined;
+  end_date?: string | undefined;
+  task_status_filter?: string | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
+}): Promise<IHrmPlatformDashboardIPersonalMetric> {
+  const todayStr = new Date().toISOString().split("T")[0];
+  const startOfDay = todayStr + "T00:00:00.000Z";
+  const endOfDay = todayStr + "T23:59:59.999Z";
+  const hoursResult = await MyGlobal.prisma.hrm_platform_timelogs.aggregate({
+    where: {
+      employee_id: props.employeeId,
+      start_datetime: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+      deleted_at: null,
+    },
+    _sum: {
+      duration_minutes: true,
+    },
+  });
+  const hours_logged_today: number & tags.Type<"int32"> =
+    hoursResult._sum.duration_minutes ?? 0;
+  const activeTimerRecord = await MyGlobal.prisma.hrm_platform_timers.findFirst(
+    {
+      where: {
+        hrm_platform_employee_id: props.employeeId,
+        status: {
+          in: ["started", "paused"],
+        },
+        deleted_at: null,
+      },
+      orderBy: { last_tick_at: "desc" },
+      select: {
+        id: true,
+        status: true,
+        last_tick_at: true,
+        duration_seconds: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        project: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            color_code: true,
+            budget_hours: true,
+            start_date: true,
+            end_date: true,
+            description: true,
+            created_at: true,
+            updated_at: true,
+          },
+        },
+      },
+    },
   );
-  const todayEnd = new Date(todayStart);
-  todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
-  if (props.body.dashboard_type === "personal") {
-    const hoursResult = await MyGlobal.prisma.hrm_platform_timelogs.aggregate({
-      where: {
-        employee_id: employeeRecord.id,
-        deleted_at: null,
-        start_datetime: { gte: todayStart, lt: todayEnd },
-      },
-      _sum: { duration_minutes: true },
-    });
-    const hours_logged_today: number & tags.Type<"int32"> =
-      hoursResult._sum.duration_minutes || 0;
-    let activeTimer: IHrmPlatformTimer.ISummary | null = null;
-    const timerQuery = await MyGlobal.prisma.hrm_platform_timers.findFirst({
-      where: {
-        hrm_platform_employee_id: employeeRecord.id,
-        status: { in: ["started", "paused"] },
-        deleted_at: null,
-      },
-      orderBy: { created_at: "desc" },
-      include: {
-        project: true,
-        task: { include: { project: true } },
-      },
-    });
-    if (timerQuery) {
-      const timerId: string & tags.Format<"uuid"> = timerQuery.id;
-      activeTimer = {
-        id: timerId,
-        status: timerQuery.status,
-        lastTickAt: toISOStringSafe(timerQuery.last_tick_at),
-        durationSeconds: timerQuery.duration_seconds,
-        createdAt: toISOStringSafe(timerQuery.created_at),
-        updatedAt: toISOStringSafe(timerQuery.updated_at),
-        deletedAt: timerQuery.deleted_at
-          ? toISOStringSafe(timerQuery.deleted_at)
-          : null,
-        project: timerQuery.project
-          ? ({
-              id: timerQuery.project.id,
-              name: timerQuery.project.name,
-              status: timerQuery.project.status,
-              color_code: timerQuery.project.color_code,
-              budget_hours: timerQuery.project.budget_hours,
-              start_date: timerQuery.project.start_date
-                ? toISOStringSafe(timerQuery.project.start_date)
-                : undefined,
-              end_date: timerQuery.project.end_date
-                ? toISOStringSafe(timerQuery.project.end_date)
-                : undefined,
-              description: timerQuery.project.description ?? undefined,
-              created_at: toISOStringSafe(timerQuery.project.created_at),
-              updated_at: toISOStringSafe(timerQuery.project.updated_at),
+  const active_timer: IHrmPlatformTimer.ISummary | null = activeTimerRecord
+    ? {
+        id: activeTimerRecord.id,
+        status: activeTimerRecord.status,
+        lastTickAt: toISOStringSafe(activeTimerRecord.last_tick_at),
+        durationSeconds: activeTimerRecord.duration_seconds,
+        createdAt: toISOStringSafe(activeTimerRecord.created_at),
+        updatedAt: toISOStringSafe(activeTimerRecord.updated_at),
+        deletedAt:
+          activeTimerRecord.deleted_at !== null
+            ? toISOStringSafe(activeTimerRecord.deleted_at)
+            : null,
+        task: null,
+        project: activeTimerRecord.project
+          ? toProjectSummary(activeTimerRecord.project)
+          : {
+              id: "",
+              name: "Unknown",
+              status: "archived",
+              color_code: "#999999",
+              budget_hours: null,
+              start_date: null,
+              end_date: null,
+              description: null,
               total_hours: 0,
               billable_hours: 0,
               non_billable_hours: 0,
               timelog_count: 0,
               employee_count: 0,
-            } satisfies IHrmPlatformProject.ISummary)
-          : null,
-        task: timerQuery.task
-          ? ({
-              id: timerQuery.task.id,
-              title: timerQuery.task.title,
-              status: timerQuery.task.status,
-              priority: timerQuery.task.priority,
-              created_at: toISOStringSafe(timerQuery.task.created_at),
-              due_date: timerQuery.task.due_date
-                ? toISOStringSafe(timerQuery.task.due_date)
-                : undefined,
-              project: timerQuery.task.project
-                ? ({
-                    id: timerQuery.task.project.id,
-                    name: timerQuery.task.project.name,
-                    status: timerQuery.task.project.status,
-                    color_code: timerQuery.task.project.color_code,
-                    budget_hours: timerQuery.task.project.budget_hours,
-                    start_date: timerQuery.task.project.start_date
-                      ? toISOStringSafe(timerQuery.task.project.start_date)
-                      : undefined,
-                    end_date: timerQuery.task.project.end_date
-                      ? toISOStringSafe(timerQuery.task.project.end_date)
-                      : undefined,
-                    description:
-                      timerQuery.task.project.description ?? undefined,
-                    created_at: toISOStringSafe(
-                      timerQuery.task.project.created_at,
-                    ),
-                    updated_at: toISOStringSafe(
-                      timerQuery.task.project.updated_at,
-                    ),
-                    total_hours: 0,
-                    billable_hours: 0,
-                    non_billable_hours: 0,
-                    timelog_count: 0,
-                    employee_count: 0,
-                  } satisfies IHrmPlatformProject.ISummary)
-                : null,
-            } satisfies IHrmPlatformTask.ISummary)
-          : null,
-      } satisfies IHrmPlatformTimer.ISummary;
-    }
-    const recentTimelogs = await MyGlobal.prisma.hrm_platform_timelogs.findMany(
-      {
-        where: { employee_id: employeeRecord.id, deleted_at: null },
-        orderBy: { created_at: "desc" },
-        take: 5,
-        include: {
-          project: true,
-          task: { include: { project: true } },
-          employee: {
-            include: {
-              member: true,
-              role: true,
-              department: true,
-              organization: true,
+              budget_utilization: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+      }
+    : null;
+  const recentTimelogs = await MyGlobal.prisma.hrm_platform_timelogs.findMany({
+    where: {
+      employee_id: props.employeeId,
+      deleted_at: null,
+    },
+    orderBy: { created_at: "desc" },
+    take: 5,
+    select: {
+      id: true,
+      start_datetime: true,
+      end_datetime: true,
+      duration_minutes: true,
+      billable: true,
+      description: true,
+      project: {
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          color_code: true,
+          budget_hours: true,
+          start_date: true,
+          end_date: true,
+          description: true,
+          created_at: true,
+          updated_at: true,
+        },
+      },
+    },
+  });
+  const recent_timelogs: IHrmPlatformTimelog.ISummary[] & tags.MaxItems<5> =
+    recentTimelogs.map((t) => ({
+      id: t.id,
+      start_datetime: toISOStringSafe(t.start_datetime),
+      end_datetime: toISOStringSafe(t.end_datetime),
+      duration_minutes: t.duration_minutes,
+      billable: t.billable,
+      description: t.description,
+      employee: {
+        id: props.employeeId,
+        employee_code: "",
+        display_name: "",
+        email: "",
+        phone_number: undefined,
+        job_title: undefined,
+        job_level: "",
+        employment_type: "",
+        status: "",
+        start_date: "",
+        end_date: undefined,
+        is_pending: false,
+        created_at: "",
+        updated_at: "",
+        deleted_at: null,
+        member: {
+          id: "",
+          email: "",
+          display_name: undefined,
+          avatar_uri: undefined,
+          phone_number: undefined,
+          is_active: false,
+          last_login_at: undefined,
+          created_at: "",
+          updated_at: "",
+          deleted_at: undefined,
+        },
+        role: {
+          id: "",
+          name: "",
+          role_kind: "",
+          organization: {
+            id: "",
+            name: "",
+            description: undefined,
+            currency: undefined,
+            timezone: undefined,
+            fiscal_start_month: undefined,
+            created_at: "",
+            updated_at: "",
+            deleted_at: null,
+            owner: {
+              id: "",
+              email: "",
+              display_name: undefined,
+              avatar_uri: undefined,
+              phone_number: undefined,
+              is_active: false,
+              last_login_at: undefined,
+              created_at: "",
+              updated_at: "",
+              deleted_at: undefined,
             },
           },
+          permissions_count: 0,
         },
-      },
-    );
-    const recent_timelogs: IHrmPlatformTimelog.ISummary[] = recentTimelogs.map(
-      (tl) => {
-        const tlId: string & tags.Format<"uuid"> = tl.id;
-        const employeeId: string & tags.Format<"uuid"> = tl.employee.id;
-        return {
-          id: tlId,
-          start_datetime: toISOStringSafe(tl.start_datetime),
-          end_datetime: toISOStringSafe(tl.end_datetime),
-          duration_minutes: tl.duration_minutes,
-          billable: tl.billable,
-          description: tl.description ?? undefined,
-          employee: {
-            id: employeeId,
-            employee_code: tl.employee.employee_code,
-            display_name: tl.employee.display_name,
-            email: tl.employee.email,
-            job_level: tl.employee.job_level,
-            employment_type: tl.employee.employment_type,
-            status: tl.employee.status,
-            start_date: toISOStringSafe(tl.employee.start_date),
-            end_date: tl.employee.end_date
-              ? toISOStringSafe(tl.employee.end_date)
-              : undefined,
-            is_pending: tl.employee.is_pending,
-            created_at: toISOStringSafe(tl.employee.created_at),
-            updated_at: toISOStringSafe(tl.employee.updated_at),
-            deleted_at: tl.employee.deleted_at
-              ? toISOStringSafe(tl.employee.deleted_at)
-              : null,
-            department: tl.employee.department
-              ? ({
-                  id: tl.employee.department.id,
-                  name: tl.employee.department.name,
-                  organization: tl.employee.department.organization
-                    ? ({
-                        id: tl.employee.department.organization.id,
-                        name: tl.employee.department.organization.name,
-                        description:
-                          tl.employee.department.organization.description ??
-                          undefined,
-                        currency:
-                          tl.employee.department.organization.currency ??
-                          undefined,
-                        timezone:
-                          tl.employee.department.organization.timezone ??
-                          undefined,
-                        fiscal_start_month:
-                          tl.employee.department.organization
-                            .fiscal_start_month ?? undefined,
-                        created_at: toISOStringSafe(
-                          tl.employee.department.organization.created_at,
-                        ),
-                        updated_at: toISOStringSafe(
-                          tl.employee.department.organization.updated_at,
-                        ),
-                        deleted_at: tl.employee.department.organization
-                          .deleted_at
-                          ? toISOStringSafe(
-                              tl.employee.department.organization.deleted_at,
-                            )
-                          : null,
-                        owner: tl.employee.department.organization.owner
-                          ? ({
-                              id: tl.employee.department.organization.owner.id,
-                              email:
-                                tl.employee.department.organization.owner.email,
-                              display_name:
-                                tl.employee.department.organization.owner
-                                  .display_name ?? undefined,
-                              avatar_uri:
-                                tl.employee.department.organization.owner
-                                  .avatar_uri ?? undefined,
-                              phone_number:
-                                tl.employee.department.organization.owner
-                                  .phone_number ?? undefined,
-                              is_active:
-                                tl.employee.department.organization.owner
-                                  .is_active,
-                              last_login_at: tl.employee.department.organization
-                                .owner.last_login_at
-                                ? toISOStringSafe(
-                                    tl.employee.department.organization.owner
-                                      .last_login_at,
-                                  )
-                                : undefined,
-                              created_at: toISOStringSafe(
-                                tl.employee.department.organization.owner
-                                  .created_at,
-                              ),
-                              updated_at: toISOStringSafe(
-                                tl.employee.department.organization.owner
-                                  .updated_at,
-                              ),
-                              deleted_at:
-                                tl.employee.department.organization.owner
-                                  .deleted_at ?? undefined,
-                            } satisfies IHrmPlatformMember.ISummary)
-                          : null,
-                      } satisfies IHrmPlatformOrganization.ISummary)
-                    : null,
-                  parentDepartment: tl.employee.department.parentDepartment
-                    ? ({
-                        id: tl.employee.department.parentDepartment.id,
-                        name: tl.employee.department.parentDepartment.name,
-                        organization: tl.employee.department.parentDepartment
-                          .organization
-                          ? ({
-                              id: tl.employee.department.parentDepartment
-                                .organization.id,
-                              name: tl.employee.department.parentDepartment
-                                .organization.name,
-                              description:
-                                tl.employee.department.parentDepartment
-                                  .organization.description ?? undefined,
-                              currency:
-                                tl.employee.department.parentDepartment
-                                  .organization.currency ?? undefined,
-                              timezone:
-                                tl.employee.department.parentDepartment
-                                  .organization.timezone ?? undefined,
-                              fiscal_start_month:
-                                tl.employee.department.parentDepartment
-                                  .organization.fiscal_start_month ?? undefined,
-                              created_at: toISOStringSafe(
-                                tl.employee.department.parentDepartment
-                                  .organization.created_at,
-                              ),
-                              updated_at: toISOStringSafe(
-                                tl.employee.department.parentDepartment
-                                  .organization.updated_at,
-                              ),
-                              deleted_at: tl.employee.department
-                                .parentDepartment.organization.deleted_at
-                                ? toISOStringSafe(
-                                    tl.employee.department.parentDepartment
-                                      .organization.deleted_at,
-                                  )
-                                : null,
-                              owner:
-                                tl.employee.department.parentDepartment
-                                  .organization.owner ?? null,
-                            } satisfies IHrmPlatformOrganization.ISummary)
-                          : null,
-                        created_at: toISOStringSafe(
-                          tl.employee.department.parentDepartment.created_at,
-                        ),
-                        updated_at: toISOStringSafe(
-                          tl.employee.department.parentDepartment.updated_at,
-                        ),
-                      } satisfies IHrmPlatformDepartment.ISummary)
-                    : null,
-                  created_at: toISOStringSafe(
-                    tl.employee.department.created_at,
-                  ),
-                  updated_at: toISOStringSafe(
-                    tl.employee.department.updated_at,
-                  ),
-                } satisfies IHrmPlatformDepartment.ISummary)
-              : null,
-            organization: tl.employee.organization
-              ? ({
-                  id: tl.employee.organization.id,
-                  name: tl.employee.organization.name,
-                  description:
-                    tl.employee.organization.description ?? undefined,
-                  currency: tl.employee.organization.currency ?? undefined,
-                  timezone: tl.employee.organization.timezone ?? undefined,
-                  fiscal_start_month:
-                    tl.employee.organization.fiscal_start_month ?? undefined,
-                  created_at: toISOStringSafe(
-                    tl.employee.organization.created_at,
-                  ),
-                  updated_at: toISOStringSafe(
-                    tl.employee.organization.updated_at,
-                  ),
-                  deleted_at: tl.employee.organization.deleted_at
-                    ? toISOStringSafe(tl.employee.organization.deleted_at)
-                    : null,
-                  owner: tl.employee.organization.owner ?? null,
-                } satisfies IHrmPlatformOrganization.ISummary)
-              : null,
-            member: {
-              id: tl.employee.member.id,
-              email: tl.employee.member.email,
-              display_name: tl.employee.member.display_name ?? undefined,
-              avatar_uri: tl.employee.member.avatar_uri ?? undefined,
-              phone_number: tl.employee.member.phone_number ?? undefined,
-              is_active: tl.employee.member.is_active,
-              last_login_at: tl.employee.member.last_login_at
-                ? toISOStringSafe(tl.employee.member.last_login_at)
-                : undefined,
-              created_at: toISOStringSafe(tl.employee.member.created_at),
-              updated_at: toISOStringSafe(tl.employee.member.updated_at),
-              deleted_at: tl.employee.member.deleted_at
-                ? toISOStringSafe(tl.employee.member.deleted_at)
-                : undefined,
-            } satisfies IHrmPlatformMember.ISummary,
-            role: {
-              id: tl.employee.role.id,
-              name: tl.employee.role.name,
-              role_kind: tl.employee.role.role_kind,
-              organization: tl.employee.role.organization
-                ? ({
-                    id: tl.employee.role.organization.id,
-                    name: tl.employee.role.organization.name,
-                    description:
-                      tl.employee.role.organization.description ?? undefined,
-                    currency:
-                      tl.employee.role.organization.currency ?? undefined,
-                    timezone:
-                      tl.employee.role.organization.timezone ?? undefined,
-                    fiscal_start_month:
-                      tl.employee.role.organization.fiscal_start_month ??
-                      undefined,
-                    created_at: toISOStringSafe(
-                      tl.employee.role.organization.created_at,
-                    ),
-                    updated_at: toISOStringSafe(
-                      tl.employee.role.organization.updated_at,
-                    ),
-                    deleted_at: tl.employee.role.organization.deleted_at
-                      ? toISOStringSafe(
-                          tl.employee.role.organization.deleted_at,
-                        )
-                      : null,
-                    owner: tl.employee.role.organization.owner ?? null,
-                  } satisfies IHrmPlatformOrganization.ISummary)
-                : null,
-              permissions_count: 0,
-            } satisfies IHrmPlatformRole.ISummary,
-          } satisfies IHrmPlatformEmployee.ISummary,
-          project: {
-            id: tl.project.id,
-            name: tl.project.name,
-            status: tl.project.status,
-            color_code: tl.project.color_code,
-            budget_hours: tl.project.budget_hours,
-            start_date: tl.project.start_date
-              ? toISOStringSafe(tl.project.start_date)
-              : undefined,
-            end_date: tl.project.end_date
-              ? toISOStringSafe(tl.project.end_date)
-              : undefined,
-            description: tl.project.description ?? undefined,
-            created_at: toISOStringSafe(tl.project.created_at),
-            updated_at: toISOStringSafe(tl.project.updated_at),
-            total_hours: 0,
-            billable_hours: 0,
-            non_billable_hours: 0,
-            timelog_count: 0,
-            employee_count: 0,
-          } satisfies IHrmPlatformProject.ISummary,
-          task: tl.task
-            ? ({
-                id: tl.task.id,
-                title: tl.task.title,
-                status: tl.task.status,
-                priority: tl.task.priority,
-                created_at: toISOStringSafe(tl.task.created_at),
-                due_date: tl.task.due_date
-                  ? toISOStringSafe(tl.task.due_date)
-                  : undefined,
-                project: tl.task.project
-                  ? ({
-                      id: tl.task.project.id,
-                      name: tl.task.project.name,
-                      status: tl.task.project.status,
-                      color_code: tl.task.project.color_code,
-                      budget_hours: tl.task.project.budget_hours,
-                      start_date: tl.task.project.start_date
-                        ? toISOStringSafe(tl.task.project.start_date)
-                        : undefined,
-                      end_date: tl.task.project.end_date
-                        ? toISOStringSafe(tl.task.project.end_date)
-                        : undefined,
-                      description: tl.task.project.description ?? undefined,
-                      created_at: toISOStringSafe(tl.task.project.created_at),
-                      updated_at: toISOStringSafe(tl.task.project.updated_at),
-                      total_hours: 0,
-                      billable_hours: 0,
-                      non_billable_hours: 0,
-                      timelog_count: 0,
-                      employee_count: 0,
-                    } satisfies IHrmPlatformProject.ISummary)
-                  : null,
-              } satisfies IHrmPlatformTask.ISummary)
-            : null,
-        } satisfies IHrmPlatformTimelog.ISummary;
-      },
-    );
-    const dayOfWeek = nowDate.getUTCDay();
-    const mondayOffset =
-      nowDate.getUTCDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const weekStart = new Date(
-      Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), mondayOffset),
-    );
-    const weekEnd = new Date(weekStart);
-    weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
-    const timesheet = await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
-      where: {
-        hrm_platform_employee_id: employeeRecord.id,
-        start_date: { lte: nowDate },
-        end_date: { gte: nowDate },
-        deleted_at: null,
-      },
-      orderBy: { start_date: "desc" },
-    });
-    const pending_timesheet_status = timesheet
-      ? {
-          status: timesheet.status as
-            | "pending"
-            | "submitted"
-            | "approved"
-            | "rejected"
-            | "cancelled",
-          rejection_reason: timesheet.status === "rejected" ? null : null,
-        }
-      : {
-          status: "pending" as const,
-          rejection_reason: null,
-        };
-    const assignedTasks = await MyGlobal.prisma.hrm_platform_tasks.findMany({
-      where: {
-        assigned_employee_id: employeeRecord.id,
-        status: { in: ["IN_PROGRESS", "TODO"] },
-        deleted_at: null,
-      },
-      orderBy: [{ due_date: "asc" }, { priority: "desc" }],
-      include: {
-        project: true,
-        assignedEmployee: {
-          include: {
-            member: true,
-            role: true,
-            department: true,
-            organization: true,
+        department: null,
+        organization: {
+          id: "",
+          name: "",
+          description: undefined,
+          currency: undefined,
+          timezone: undefined,
+          fiscal_start_month: undefined,
+          created_at: "",
+          updated_at: "",
+          deleted_at: null,
+          owner: {
+            id: "",
+            email: "",
+            display_name: undefined,
+            avatar_uri: undefined,
+            phone_number: undefined,
+            is_active: false,
+            last_login_at: undefined,
+            created_at: "",
+            updated_at: "",
+            deleted_at: undefined,
           },
         },
       },
-    });
-    const assigned_tasks: IHrmPlatformTask.ISummary[] = assignedTasks.map(
-      (task) => {
-        const taskId: string & tags.Format<"uuid"> = task.id;
-        return {
-          id: taskId,
-          title: task.title,
-          status: task.status,
-          priority: task.priority,
-          created_at: toISOStringSafe(task.created_at),
-          due_date: task.due_date ? toISOStringSafe(task.due_date) : undefined,
-          project: {
-            id: task.project.id,
-            name: task.project.name,
-            status: task.project.status,
-            color_code: task.project.color_code,
-            budget_hours: task.project.budget_hours,
-            start_date: task.project.start_date
-              ? toISOStringSafe(task.project.start_date)
-              : undefined,
-            end_date: task.project.end_date
-              ? toISOStringSafe(task.project.end_date)
-              : undefined,
-            description: task.project.description ?? undefined,
-            created_at: toISOStringSafe(task.project.created_at),
-            updated_at: toISOStringSafe(task.project.updated_at),
+      project: t.project
+        ? toProjectSummary(t.project)
+        : {
+            id: "",
+            name: "Unknown",
+            status: "archived",
+            color_code: "#999999",
+            budget_hours: null,
+            start_date: null,
+            end_date: null,
+            description: null,
             total_hours: 0,
             billable_hours: 0,
             non_billable_hours: 0,
             timelog_count: 0,
             employee_count: 0,
-          } satisfies IHrmPlatformProject.ISummary,
-          assignedEmployee: task.assignedEmployee
-            ? ({
-                id: task.assignedEmployee.id,
-                employee_code: task.assignedEmployee.employee_code,
-                display_name: task.assignedEmployee.display_name,
-                email: task.assignedEmployee.email,
-                job_level: task.assignedEmployee.job_level,
-                employment_type: task.assignedEmployee.employment_type,
-                status: task.assignedEmployee.status,
-                start_date: toISOStringSafe(task.assignedEmployee.start_date),
-                end_date: task.assignedEmployee.end_date
-                  ? toISOStringSafe(task.assignedEmployee.end_date)
-                  : undefined,
-                is_pending: task.assignedEmployee.is_pending,
-                created_at: toISOStringSafe(task.assignedEmployee.created_at),
-                updated_at: toISOStringSafe(task.assignedEmployee.updated_at),
-                deleted_at: task.assignedEmployee.deleted_at
-                  ? toISOStringSafe(task.assignedEmployee.deleted_at)
-                  : null,
-                department: task.assignedEmployee.department
-                  ? ({
-                      id: task.assignedEmployee.department.id,
-                      name: task.assignedEmployee.department.name,
-                      organization: task.assignedEmployee.department
-                        .organization
-                        ? ({
-                            id: task.assignedEmployee.department.organization
-                              .id,
-                            name: task.assignedEmployee.department.organization
-                              .name,
-                            description:
-                              task.assignedEmployee.department.organization
-                                .description ?? undefined,
-                            currency:
-                              task.assignedEmployee.department.organization
-                                .currency ?? undefined,
-                            timezone:
-                              task.assignedEmployee.department.organization
-                                .timezone ?? undefined,
-                            fiscal_start_month:
-                              task.assignedEmployee.department.organization
-                                .fiscal_start_month ?? undefined,
-                            created_at: toISOStringSafe(
-                              task.assignedEmployee.department.organization
-                                .created_at,
-                            ),
-                            updated_at: toISOStringSafe(
-                              task.assignedEmployee.department.organization
-                                .updated_at,
-                            ),
-                            deleted_at: task.assignedEmployee.department
-                              .organization.deleted_at
-                              ? toISOStringSafe(
-                                  task.assignedEmployee.department.organization
-                                    .deleted_at,
-                                )
-                              : null,
-                            owner:
-                              task.assignedEmployee.department.organization
-                                .owner ?? null,
-                          } satisfies IHrmPlatformOrganization.ISummary)
-                        : null,
-                      parentDepartment: task.assignedEmployee.department
-                        .parentDepartment
-                        ? ({
-                            id: task.assignedEmployee.department
-                              .parentDepartment.id,
-                            name: task.assignedEmployee.department
-                              .parentDepartment.name,
-                            organization: task.assignedEmployee.department
-                              .parentDepartment.organization
-                              ? ({
-                                  id: task.assignedEmployee.department
-                                    .parentDepartment.organization.id,
-                                  name: task.assignedEmployee.department
-                                    .parentDepartment.organization.name,
-                                  description:
-                                    task.assignedEmployee.department
-                                      .parentDepartment.organization
-                                      .description ?? undefined,
-                                  currency:
-                                    task.assignedEmployee.department
-                                      .parentDepartment.organization.currency ??
-                                    undefined,
-                                  timezone:
-                                    task.assignedEmployee.department
-                                      .parentDepartment.organization.timezone ??
-                                    undefined,
-                                  fiscal_start_month:
-                                    task.assignedEmployee.department
-                                      .parentDepartment.organization
-                                      .fiscal_start_month ?? undefined,
-                                  created_at: toISOStringSafe(
-                                    task.assignedEmployee.department
-                                      .parentDepartment.organization.created_at,
-                                  ),
-                                  updated_at: toISOStringSafe(
-                                    task.assignedEmployee.department
-                                      .parentDepartment.organization.updated_at,
-                                  ),
-                                  deleted_at: task.assignedEmployee.department
-                                    .parentDepartment.organization.deleted_at
-                                    ? toISOStringSafe(
-                                        task.assignedEmployee.department
-                                          .parentDepartment.organization
-                                          .deleted_at,
-                                      )
-                                    : null,
-                                  owner:
-                                    task.assignedEmployee.department
-                                      .parentDepartment.organization.owner ??
-                                    null,
-                                } satisfies IHrmPlatformOrganization.ISummary)
-                              : null,
-                            created_at: toISOStringSafe(
-                              task.assignedEmployee.department.parentDepartment
-                                .created_at,
-                            ),
-                            updated_at: toISOStringSafe(
-                              task.assignedEmployee.department.parentDepartment
-                                .updated_at,
-                            ),
-                          } satisfies IHrmPlatformDepartment.ISummary)
-                        : null,
-                      created_at: toISOStringSafe(
-                        task.assignedEmployee.department.created_at,
-                      ),
-                      updated_at: toISOStringSafe(
-                        task.assignedEmployee.department.updated_at,
-                      ),
-                    } satisfies IHrmPlatformDepartment.ISummary)
-                  : null,
-                organization: task.assignedEmployee.organization
-                  ? ({
-                      id: task.assignedEmployee.organization.id,
-                      name: task.assignedEmployee.organization.name,
-                      description:
-                        task.assignedEmployee.organization.description ??
-                        undefined,
-                      currency:
-                        task.assignedEmployee.organization.currency ??
-                        undefined,
-                      timezone:
-                        task.assignedEmployee.organization.timezone ??
-                        undefined,
-                      fiscal_start_month:
-                        task.assignedEmployee.organization.fiscal_start_month ??
-                        undefined,
-                      created_at: toISOStringSafe(
-                        task.assignedEmployee.organization.created_at,
-                      ),
-                      updated_at: toISOStringSafe(
-                        task.assignedEmployee.organization.updated_at,
-                      ),
-                      deleted_at: task.assignedEmployee.organization.deleted_at
-                        ? toISOStringSafe(
-                            task.assignedEmployee.organization.deleted_at,
-                          )
-                        : null,
-                      owner: task.assignedEmployee.organization.owner ?? null,
-                    } satisfies IHrmPlatformOrganization.ISummary)
-                  : null,
-                member: {
-                  id: task.assignedEmployee.member.id,
-                  email: task.assignedEmployee.member.email,
-                  display_name:
-                    task.assignedEmployee.member.display_name ?? undefined,
-                  avatar_uri:
-                    task.assignedEmployee.member.avatar_uri ?? undefined,
-                  phone_number:
-                    task.assignedEmployee.member.phone_number ?? undefined,
-                  is_active: task.assignedEmployee.member.is_active,
-                  last_login_at: task.assignedEmployee.member.last_login_at
-                    ? toISOStringSafe(
-                        task.assignedEmployee.member.last_login_at,
-                      )
-                    : undefined,
-                  created_at: toISOStringSafe(
-                    task.assignedEmployee.member.created_at,
-                  ),
-                  updated_at: toISOStringSafe(
-                    task.assignedEmployee.member.updated_at,
-                  ),
-                  deleted_at: task.assignedEmployee.member.deleted_at
-                    ? toISOStringSafe(task.assignedEmployee.member.deleted_at)
-                    : undefined,
-                } satisfies IHrmPlatformMember.ISummary,
-                role: {
-                  id: task.assignedEmployee.role.id,
-                  name: task.assignedEmployee.role.name,
-                  role_kind: task.assignedEmployee.role.role_kind,
-                  organization: task.assignedEmployee.role.organization
-                    ? ({
-                        id: task.assignedEmployee.role.organization.id,
-                        name: task.assignedEmployee.role.organization.name,
-                        description:
-                          task.assignedEmployee.role.organization.description ??
-                          undefined,
-                        currency:
-                          task.assignedEmployee.role.organization.currency ??
-                          undefined,
-                        timezone:
-                          task.assignedEmployee.role.organization.timezone ??
-                          undefined,
-                        fiscal_start_month:
-                          task.assignedEmployee.role.organization
-                            .fiscal_start_month ?? undefined,
-                        created_at: toISOStringSafe(
-                          task.assignedEmployee.role.organization.created_at,
-                        ),
-                        updated_at: toISOStringSafe(
-                          task.assignedEmployee.role.organization.updated_at,
-                        ),
-                        deleted_at: task.assignedEmployee.role.organization
-                          .deleted_at
-                          ? toISOStringSafe(
-                              task.assignedEmployee.role.organization
-                                .deleted_at,
-                            )
-                          : null,
-                        owner:
-                          task.assignedEmployee.role.organization.owner ?? null,
-                      } satisfies IHrmPlatformOrganization.ISummary)
-                    : null,
-                  permissions_count: 0,
-                } satisfies IHrmPlatformRole.ISummary,
-              } satisfies IHrmPlatformEmployee.ISummary)
-            : null,
-        } satisfies IHrmPlatformTask.ISummary;
+            budget_utilization: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+      task: null,
+    }));
+  const now = new Date();
+  const currentWeekStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1),
+  );
+  const currentWeekEnd = new Date(currentWeekStart);
+  currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+  const timesheet = await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
+    where: {
+      hrm_platform_employee_id: props.employeeId,
+      start_date: {
+        lte: toISOStringSafe(currentWeekEnd),
       },
-    );
-    return {
-      dashboard_type: "personal",
-      personal_metrics: {
-        hours_logged_today,
-        active_timer: activeTimer,
-        recent_timelogs,
-        pending_timesheet_status,
-        assigned_tasks,
-      } satisfies IHrmPlatformDashboardIPersonalMetric,
-      org_metrics: null,
-    } satisfies IHrmPlatformDashboard.IResponse;
-  }
-  if (props.body.dashboard_type === "organization") {
-    const hasReportViewPermission =
-      await MyGlobal.prisma.hrm_platform_permissions.findFirst({
-        where: {
-          organization_id: employeeRecord.hrm_platform_organization_id,
-          code: "report_view",
-          deleted_at: null,
+      end_date: {
+        gte: toISOStringSafe(currentWeekStart),
+      },
+      deleted_at: null,
+    },
+    select: {
+      status: true,
+      rejected_at: true,
+    },
+  });
+  const pending_timesheet_status: {
+    status: "pending" | "submitted" | "approved" | "rejected" | "cancelled";
+    rejection_reason: string | null;
+  } = timesheet
+    ? {
+        status: timesheet.status as
+          | "pending"
+          | "submitted"
+          | "approved"
+          | "rejected"
+          | "cancelled",
+        rejection_reason:
+          timesheet.rejected_at !== null ? "Timesheet rejected" : null,
+      }
+    : {
+        status: "pending",
+        rejection_reason: null,
+      };
+  const taskStatuses: string[] = props.task_status_filter
+    ? [props.task_status_filter]
+    : ["IN_PROGRESS", "TODO"];
+  const pageNum: number & tags.Type<"int32"> & tags.Minimum<1> =
+    props.page ?? 1;
+  const limitNum: number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> &
+    tags.Maximum<100> = props.limit ?? 10;
+  const skip = (pageNum - 1) * limitNum;
+  const assignedTasks = await MyGlobal.prisma.hrm_platform_tasks.findMany({
+    where: {
+      assigned_employee_id: props.employeeId,
+      status: {
+        in: taskStatuses,
+      },
+      deleted_at: null,
+    },
+    orderBy: { due_date: "asc" },
+    skip,
+    take: limitNum,
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      priority: true,
+      created_at: true,
+      due_date: true,
+      project: {
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          color_code: true,
+          budget_hours: true,
+          start_date: true,
+          end_date: true,
+          description: true,
+          created_at: true,
+          updated_at: true,
         },
-      });
-    if (!hasReportViewPermission) {
-      throw new HttpException("Forbidden", 403);
-    }
-    const totalActiveEmployeesResult =
-      await MyGlobal.prisma.hrm_platform_employees.aggregate({
-        where: {
-          hrm_platform_organization_id:
-            employeeRecord.hrm_platform_organization_id,
-          deleted_at: null,
-          status: "active",
+      },
+      parentTask: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          priority: true,
+          created_at: true,
+          due_date: true,
         },
-        _count: { id: true },
-      });
-    const total_active_employees: number & tags.Type<"int32"> =
-      totalActiveEmployeesResult._count.id;
-    const activeEmployees =
-      await MyGlobal.prisma.hrm_platform_employees.findMany({
-        where: {
-          hrm_platform_organization_id:
-            employeeRecord.hrm_platform_organization_id,
-          deleted_at: null,
-          status: "active",
+      },
+    },
+  });
+  const assigned_tasks: IHrmPlatformTask.ISummary[] = assignedTasks.map(
+    (t) => ({
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      created_at: toISOStringSafe(t.created_at),
+      due_date: t.due_date !== null ? toISOStringSafe(t.due_date) : null,
+      project: t.project
+        ? toProjectSummary(t.project)
+        : {
+            id: "",
+            name: "Unknown",
+            status: "archived",
+            color_code: "#999999",
+            budget_hours: null,
+            start_date: null,
+            end_date: null,
+            description: null,
+            total_hours: 0,
+            billable_hours: 0,
+            non_billable_hours: 0,
+            timelog_count: 0,
+            employee_count: 0,
+            budget_utilization: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+      parentTask: t.parentTask
+        ? {
+            id: t.parentTask.id,
+            title: t.parentTask.title,
+            status: t.parentTask.status,
+            priority: t.parentTask.priority,
+            created_at: toISOStringSafe(t.parentTask.created_at),
+            due_date:
+              t.parentTask.due_date !== null
+                ? toISOStringSafe(t.parentTask.due_date)
+                : null,
+            project: {
+              id: "",
+              name: "Unknown",
+              status: "archived",
+              color_code: "#999999",
+              budget_hours: null,
+              start_date: null,
+              end_date: null,
+              description: null,
+              total_hours: 0,
+              billable_hours: 0,
+              non_billable_hours: 0,
+              timelog_count: 0,
+              employee_count: 0,
+              budget_utilization: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            assignedEmployee: null,
+            parentTask: null,
+          }
+        : null,
+    }),
+  );
+  return {
+    hours_logged_today,
+    active_timer,
+    recent_timelogs,
+    pending_timesheet_status,
+    assigned_tasks,
+  };
+}
+async function calculateOrganizationMetrics(props: {
+  organizationId: string & tags.Format<"uuid">;
+}): Promise<IHrmPlatformDashboardIOrgMetric> {
+  const total_active_employees: number & tags.Type<"int32"> =
+    await MyGlobal.prisma.hrm_platform_employees.count({
+      where: {
+        hrm_platform_organization_id: props.organizationId,
+        status: "active",
+        deleted_at: null,
+      },
+    });
+  const employeeIds = await MyGlobal.prisma.hrm_platform_employees
+    .findMany({
+      where: {
+        hrm_platform_organization_id: props.organizationId,
+        status: "active",
+        deleted_at: null,
+      },
+      select: { id: true },
+    })
+    .then((employees) => employees.map((e) => e.id));
+  const pending_timesheets_count: number & tags.Type<"int32"> =
+    await MyGlobal.prisma.hrm_platform_timesheets.count({
+      where: {
+        hrm_platform_employee_id: {
+          in: employeeIds,
         },
-        select: { id: true },
-      });
-    const activeEmployeeIds: string[] = activeEmployees.map((e) => e.id);
-    const pendingTimesheetsResult =
-      await MyGlobal.prisma.hrm_platform_timesheets.aggregate({
-        where: {
-          hrm_platform_employee_id: { in: activeEmployeeIds },
-          status: "submitted",
-          deleted_at: null,
-        },
-        _count: { id: true },
-      });
-    const pending_timesheets_count: number & tags.Type<"int32"> =
-      pendingTimesheetsResult._count.id;
-    return {
-      dashboard_type: "organization",
-      personal_metrics: null,
-      org_metrics: {
-        total_active_employees,
-        pending_timesheets_count,
-      } satisfies IHrmPlatformDashboardIOrgMetric,
-    } satisfies IHrmPlatformDashboard.IResponse;
-  }
-  throw new HttpException("Invalid dashboard type", 400);
+        status: "submitted",
+        deleted_at: null,
+      },
+    });
+  return {
+    total_active_employees,
+    pending_timesheets_count,
+  };
+}
+function toProjectSummary(project: {
+  id: string;
+  name: string;
+  status: string;
+  color_code: string;
+  budget_hours: number | null;
+  start_date: Date | null;
+  end_date: Date | null;
+  description: string | null;
+  created_at: Date;
+  updated_at: Date;
+}): IHrmPlatformProject.ISummary {
+  return {
+    id: project.id,
+    name: project.name,
+    status: project.status,
+    color_code: project.color_code,
+    budget_hours: project.budget_hours,
+    start_date:
+      project.start_date !== null ? toISOStringSafe(project.start_date) : null,
+    end_date:
+      project.end_date !== null ? toISOStringSafe(project.end_date) : null,
+    description: project.description,
+    total_hours: 0,
+    billable_hours: 0,
+    non_billable_hours: 0,
+    timelog_count: 0,
+    employee_count: 0,
+    budget_utilization: null,
+    created_at: toISOStringSafe(project.created_at),
+    updated_at: toISOStringSafe(project.updated_at),
+  } satisfies IHrmPlatformProject.ISummary;
 }
 
 

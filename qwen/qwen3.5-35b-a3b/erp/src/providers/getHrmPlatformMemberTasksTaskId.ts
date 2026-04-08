@@ -16,35 +16,15 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getHrmPlatformMemberTasksTaskId(props: {
   member: MemberPayload;
   taskId: string & tags.Format<"uuid">;
-}): Promise<IHrmPlatformTask> {
-  const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
+}): Promise<IHrmPlatformTask.ISummary> {
+  const record = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
     where: {
       id: props.taskId,
       deleted_at: null,
     },
     ...HrmPlatformTaskAtSummaryTransformer.select(),
   });
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      hrm_platform_member_id: props.member.id,
-      is_pending: false,
-      deleted_at: null,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Employee record not found", 404);
-  }
-  const projectMembership =
-    await MyGlobal.prisma.hrm_platform_project_memberships.findFirst({
-      where: {
-        hrm_platform_project_id: task.project_id,
-        hrm_platform_employee_id: employee.id,
-      },
-    });
-  if (!projectMembership) {
-    throw new HttpException("Access denied: not a project member", 403);
-  }
-  return await HrmPlatformTaskAtSummaryTransformer.transform(task);
+  return await HrmPlatformTaskAtSummaryTransformer.transform(record);
 }
 
 
@@ -73,10 +53,11 @@ export async function getHrmPlatformMemberTasksTaskId(props: {
 //   member: MemberPayload;
 //   taskId: string & tags.Format<"uuid">;
 // }): Promise<IHrmPlatformTask> {
-//   // No matching Collector/Transformer found for this operation.
-//     // You MUST call getDatabaseSchemas first to get exact relation property names.
-//     // NEVER guess relation names from table names — always verify against the schema.
-//     ...
+//   const record = await MyGlobal.prisma.hrm_platform_tasks.findFirstOrThrow({
+//     ...HrmPlatformTaskTransformer.select(),
+//     where: { ... },
+//   });
+//   return await HrmPlatformTaskTransformer.transform(record);
 // }
 // ```
 //--------------------------------------------------------------

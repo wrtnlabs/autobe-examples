@@ -47,7 +47,7 @@ export namespace HrmPlatformProjectTransformer {
         timers: HrmPlatformTimerAtSummaryTransformer.select(),
         timelogs: HrmPlatformTimelogAtSummaryTransformer.select(),
       },
-    };
+    } satisfies Prisma.hrm_platform_projectsFindManyArgs;
   }
   export async function transform(
     input: Payload,
@@ -60,30 +60,36 @@ export namespace HrmPlatformProjectTransformer {
       name: input.name,
       color_code: input.color_code,
       description: input.description ?? undefined,
-      budget_hours:
-        input.budget_hours !== null ? Number(input.budget_hours) : null,
-      start_date:
-        input.start_date !== null ? toISOStringSafe(input.start_date) : null,
-      end_date:
-        input.end_date !== null ? toISOStringSafe(input.end_date) : null,
+      budget_hours: input.budget_hours ?? undefined,
+      start_date: input.start_date ? toISOStringSafe(input.start_date) : null,
+      end_date: input.end_date ? toISOStringSafe(input.end_date) : null,
       status: input.status,
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
-      deleted_at:
-        input.deleted_at !== null ? toISOStringSafe(input.deleted_at) : null,
-      tasks: await ArrayUtil.asyncMap(input.tasks, (task) =>
-        HrmPlatformTaskAtSummaryTransformer.transform(task),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      tasks: await ArrayUtil.asyncMap(
+        input.tasks,
+        async (elem) =>
+          await HrmPlatformTaskAtSummaryTransformer.transform(elem),
       ),
-      timelogs: await ArrayUtil.asyncMap(input.timelogs, (timelog) =>
-        HrmPlatformTimelogAtSummaryTransformer.transform(timelog),
+      timelogs: await ArrayUtil.asyncMap(
+        input.timelogs,
+        async (elem) =>
+          await HrmPlatformTimelogAtSummaryTransformer.transform(elem),
       ),
-      timers: await ArrayUtil.asyncMap(input.timers, (timer) =>
-        HrmPlatformTimerAtSummaryTransformer.transform(timer),
+      timers: await ArrayUtil.asyncMap(
+        input.timers,
+        async (elem) =>
+          await HrmPlatformTimerAtSummaryTransformer.transform(elem),
       ),
-      memberships: await ArrayUtil.asyncMap(input.memberships, (membership) =>
-        HrmPlatformProjectMembershipAtSummaryTransformer.transform(membership),
+      memberships: await ArrayUtil.asyncMap(
+        input.memberships,
+        async (elem) =>
+          await HrmPlatformProjectMembershipAtSummaryTransformer.transform(
+            elem,
+          ),
       ),
-    };
+    } satisfies IHrmPlatformProject;
   }
 }
 

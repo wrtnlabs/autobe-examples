@@ -24,65 +24,67 @@ export async function patchHrmPlatformMemberContractsSummary(props: {
   member: MemberPayload;
   body: IHrmPlatformContract.IRequest;
 }): Promise<IPageIHrmPlatformContract.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  const where: Prisma.hrm_platform_contractsWhereInput = {
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 100;
+  const skip: number = (page - 1) * limit;
+  const whereInput: Prisma.hrm_platform_contractsWhereInput = {
     deleted_at: null,
-    ...(props.body.status !== undefined && {
-      status: props.body.status,
-    }),
+    ...(props.body.status !== undefined && { status: props.body.status }),
     ...(props.body.employeeId !== undefined && {
       hrm_platform_employee_id: props.body.employeeId,
     }),
     ...(props.body.startDate !== undefined && {
-      start_date: {
-        gte: new Date(props.body.startDate),
-      },
+      start_date: { gte: props.body.startDate },
     }),
     ...(props.body.endDate !== undefined && {
-      end_date: {
-        lte: new Date(props.body.endDate),
-      },
+      end_date: { lte: props.body.endDate },
     }),
     ...(props.body.compensationMin !== undefined && {
-      compensation_amount: {
-        gte: props.body.compensationMin,
-      },
+      compensation_amount: { gte: props.body.compensationMin },
     }),
     ...(props.body.compensationMax !== undefined && {
-      compensation_amount: {
-        lte: props.body.compensationMax,
-      },
+      compensation_amount: { lte: props.body.compensationMax },
     }),
-  } satisfies Prisma.hrm_platform_contractsWhereInput;
-  const sortBy = props.body.sortBy ?? "start_date";
-  const sortOrder = props.body.sortOrder ?? "desc";
-  const orderBy: Prisma.hrm_platform_contractsOrderByWithRelationInput = {
-    [sortBy]: sortOrder,
-  } satisfies Prisma.hrm_platform_contractsOrderByWithRelationInput;
+  };
+  const sortOrder: "asc" | "desc" =
+    props.body.sortOrder !== undefined ? props.body.sortOrder : "desc";
+  const sortBy:
+    | "start_date"
+    | "end_date"
+    | "created_at"
+    | "updated_at"
+    | "status"
+    | "title" =
+    props.body.sortBy !== undefined ? props.body.sortBy : "start_date";
+  const orderBy: Array<Prisma.hrm_platform_contractsOrderByWithRelationInput> =
+    [
+      {
+        [sortBy]: sortOrder,
+      },
+    ];
   const records = await MyGlobal.prisma.hrm_platform_contracts.findMany({
-    where,
+    where: whereInput,
     skip,
     take: limit,
     orderBy,
     ...HrmPlatformContractAtSummaryTransformer.select(),
   });
-  const total = await MyGlobal.prisma.hrm_platform_contracts.count({
-    where,
+  const total: number = await MyGlobal.prisma.hrm_platform_contracts.count({
+    where: whereInput,
   });
+  const pages: number = Math.ceil(total / limit);
   return {
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: pages,
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,
       HrmPlatformContractAtSummaryTransformer.transform,
     ),
-  };
+  } satisfies IPageIHrmPlatformContract.ISummary;
 }
 
 

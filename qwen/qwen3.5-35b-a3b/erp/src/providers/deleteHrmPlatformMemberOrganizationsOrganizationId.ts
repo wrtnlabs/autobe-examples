@@ -15,24 +15,32 @@ export async function deleteHrmPlatformMemberOrganizationsOrganizationId(props: 
   member: MemberPayload;
   organizationId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Verify ownership
+  // 1. Verify current user is the owner of the organization
   const organization =
     await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-      where: {
-        id: props.organizationId,
-        deleted_at: null,
-      },
+      where: { id: props.organizationId },
       select: {
         id: true,
         owner_id: true,
+        name: true,
+        description: true,
+        currency: true,
+        timezone: true,
+        fiscal_start_month: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
       },
     });
   if (organization.owner_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException(
+      "Forbidden: Only organization owner can delete",
+      403,
+    );
   }
-  // Step 2: Check blocking conditions
+  // 2. Validate no pending timesheets exist for employees in this organization
   const pendingTimesheets =
-    await MyGlobal.prisma.hrm_platform_timesheets.findMany({
+    await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
       where: {
         employee: {
           hrm_platform_organization_id: props.organizationId,
@@ -41,62 +49,30 @@ export async function deleteHrmPlatformMemberOrganizationsOrganizationId(props: 
           notIn: ["approved", "rejected"],
         },
       },
-      select: {
-        id: true,
-        status: true,
-        employee: {
-          select: {
-            display_name: true,
-          },
-        },
-      },
     });
-  const activeContracts = await MyGlobal.prisma.hrm_platform_contracts.findMany(
-    {
+  if (pendingTimesheets) {
+    throw new HttpException(
+      "Cannot delete organization: pending timesheets must be resolved first",
+      409,
+    );
+  }
+  // 3. Validate no active contracts exist for employees in this organization
+  const activeContracts =
+    await MyGlobal.prisma.hrm_platform_contracts.findFirst({
       where: {
         employee: {
           hrm_platform_organization_id: props.organizationId,
         },
-        end_date: null,
+        OR: [{ end_date: null }, { end_date: { gt: new Date() } }],
       },
-      select: {
-        id: true,
-        title: true,
-        employee: {
-          select: {
-            display_name: true,
-          },
-        },
-      },
-    },
-  );
-  // Build blocking details for error response
-  const blockingDetails: string[] = [];
-  if (pendingTimesheets.length > 0) {
-    pendingTimesheets.forEach((ts) => {
-      blockingDetails.push(
-        `Pending timesheet ${ts.id} for ${ts.employee.display_name} (status: ${ts.status})`,
-      );
     });
-  }
-  if (activeContracts.length > 0) {
-    activeContracts.forEach((contract) => {
-      blockingDetails.push(
-        `Active contract ${contract.id} for ${contract.employee.display_name}`,
-      );
-    });
-  }
-  if (blockingDetails.length > 0) {
+  if (activeContracts) {
     throw new HttpException(
-      `Cannot delete organization. Blocking conditions:\
-${blockingDetails.join(
-  "\
-",
-)}`,
+      "Cannot delete organization: active employee contracts must be ended first",
       409,
     );
   }
-  // Step 3: Perform cascade deletion in transaction
+  // 4. Begin transaction to delete all related data
   await MyGlobal.prisma.$transaction(async (tx) => {
     // Delete timelogs for employees in this organization
     await tx.hrm_platform_timelogs.deleteMany({
@@ -114,7 +90,7 @@ ${blockingDetails.join(
         },
       },
     });
-    // Delete task histories for tasks in this organization
+    // Delete task_histories for tasks in this organization
     await tx.hrm_platform_task_histories.deleteMany({
       where: {
         task: {
@@ -124,7 +100,7 @@ ${blockingDetails.join(
         },
       },
     });
-    // Delete tasks in this organization
+    // Delete tasks for this organization
     await tx.hrm_platform_tasks.deleteMany({
       where: {
         project: {
@@ -132,22 +108,13 @@ ${blockingDetails.join(
         },
       },
     });
-    // Delete project memberships in this organization
+    // Delete project_memberships for this organization
     await tx.hrm_platform_project_memberships.deleteMany({
       where: {
-        hrm_platform_project_id: {
-          in: (
-            await tx.hrm_platform_projects.findMany({
-              where: {
-                organization_id: props.organizationId,
-              },
-              select: { id: true },
-            })
-          ).map((p) => p.id),
-        },
+        organization_id: props.organizationId,
       },
     });
-    // Delete projects in this organization
+    // Delete projects for this organization
     await tx.hrm_platform_projects.deleteMany({
       where: {
         organization_id: props.organizationId,
@@ -161,29 +128,27 @@ ${blockingDetails.join(
         },
       },
     });
-    // Delete employees in this organization
+    // Delete employees for this organization
     await tx.hrm_platform_employees.deleteMany({
       where: {
         hrm_platform_organization_id: props.organizationId,
       },
     });
-    // Delete departments in this organization
+    // Delete departments for this organization
     await tx.hrm_platform_departments.deleteMany({
       where: {
         organization_id: props.organizationId,
       },
     });
-    // Delete organization files in this organization
+    // Delete organization_files for this organization
     await tx.hrm_platform_organization_files.deleteMany({
       where: {
         hrm_platform_organization_id: props.organizationId,
       },
     });
-    // Delete the organization itself
+    // Delete the organization record itself
     await tx.hrm_platform_organizations.delete({
-      where: {
-        id: props.organizationId,
-      },
+      where: { id: props.organizationId },
     });
   });
 }

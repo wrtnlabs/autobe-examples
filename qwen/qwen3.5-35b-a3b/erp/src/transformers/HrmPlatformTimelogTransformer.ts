@@ -46,13 +46,13 @@ export namespace HrmPlatformTimelogTransformer {
   ): Promise<IHrmPlatformTimelog> {
     return {
       id: input.id,
-      start_datetime: toISOStringSafe(input.start_datetime),
-      end_datetime: toISOStringSafe(input.end_datetime),
+      start_datetime: input.start_datetime.toISOString(),
+      end_datetime: input.end_datetime.toISOString(),
       duration_minutes: input.duration_minutes,
       description: input.description ?? undefined,
       billable: input.billable,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,

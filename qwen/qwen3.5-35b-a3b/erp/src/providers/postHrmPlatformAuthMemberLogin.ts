@@ -13,10 +13,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { HrmPlatformMemberAtSummaryTransformer } from "../transformers/HrmPlatformMemberAtSummaryTransformer";
-import { HrmPlatformMemberEmailVerificationAtSummaryTransformer } from "../transformers/HrmPlatformMemberEmailVerificationAtSummaryTransformer";
-import { HrmPlatformMemberPasswordResetAtSummaryTransformer } from "../transformers/HrmPlatformMemberPasswordResetAtSummaryTransformer";
-import { HrmPlatformMemberSessionAtSummaryTransformer } from "../transformers/HrmPlatformMemberSessionAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -25,8 +21,23 @@ export async function postHrmPlatformAuthMemberLogin(props: {
   body: IHrmPlatformMember.ILogin;
 }): Promise<IHrmPlatformMember.IAuthorized> {
   const member = await MyGlobal.prisma.hrm_platform_members.findFirst({
-    where: { email: props.body.email, deleted_at: null },
-    ...HrmPlatformMemberAtSummaryTransformer.select(),
+    where: {
+      email: props.body.email,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      email: true,
+      password_hash: true,
+      display_name: true,
+      avatar_uri: true,
+      phone_number: true,
+      is_active: true,
+      last_login_at: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
   });
   if (!member) {
     throw new HttpException("Invalid credentials", 401);
@@ -38,73 +49,62 @@ export async function postHrmPlatformAuthMemberLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  if (!member.is_active) {
-    throw new HttpException("Account is disabled", 403);
-  }
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const now = new Date();
+  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await MyGlobal.prisma.hrm_platform_members.update({
+    where: { id: member.id },
+    data: {
+      last_login_at: now,
+    },
+  });
   const session = await MyGlobal.prisma.hrm_platform_member_sessions.create({
     data: {
       id: v4(),
       hrm_platform_member_id: member.id,
+      ip_address: props.ip,
+      user_agent: "",
       access_token: "",
       refresh_token: "",
       access_token_expires_at: accessExpires,
       refresh_token_expires_at: refreshExpires,
-      ip_address: props.ip,
-      user_agent: "",
-      created_at: new Date(),
-      updated_at: new Date(),
       expired_at: accessExpires,
+      created_at: now,
+      updated_at: now,
     },
   });
-  const nowIso = new Date().toISOString();
-  const accessToken = jwt.sign(
-    {
-      type: "member",
-      id: member.id,
-      session_id: session.id,
-      created_at: nowIso,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "member",
-      id: member.id,
-      session_id: session.id,
-      tokenType: "refresh",
-      created_at: nowIso,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  await MyGlobal.prisma.hrm_platform_members.update({
-    where: { id: member.id },
-    data: { last_login_at: new Date() },
-  });
-  const token: IAuthorizationToken = {
-    access: accessToken,
-    refresh: refreshToken,
+  const tokenPayload = {
+    type: "member" as const,
+    id: member.id,
+    session_id: session.id,
+    created_at: now.toISOString(),
+  };
+  const token = {
+    access: jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+      expiresIn: "15m",
+      issuer: "autobe",
+    }),
+    refresh: jwt.sign(
+      {
+        ...tokenPayload,
+        tokenType: "refresh" as const,
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
     expired_at: accessExpires.toISOString(),
     refreshable_until: refreshExpires.toISOString(),
   };
-  const sessionSummaries =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findMany({
-      where: { hrm_platform_member_id: member.id },
-      ...HrmPlatformMemberSessionAtSummaryTransformer.select(),
-    });
-  const passwordResetTokens =
-    await MyGlobal.prisma.hrm_platform_member_password_resets.findMany({
-      where: { member_id: member.id },
-      ...HrmPlatformMemberPasswordResetAtSummaryTransformer.select(),
-    });
-  const emailVerifications =
-    await MyGlobal.prisma.hrm_platform_member_email_verifications.findMany({
-      where: { hrm_platform_member_id: member.id },
-      ...HrmPlatformMemberEmailVerificationAtSummaryTransformer.select(),
-    });
+  await MyGlobal.prisma.hrm_platform_member_sessions.update({
+    where: { id: session.id },
+    data: {
+      access_token: token.access,
+      refresh_token: token.refresh,
+    },
+  });
   return {
     id: member.id,
     email: member.email,
@@ -116,15 +116,9 @@ export async function postHrmPlatformAuthMemberLogin(props: {
     created_at: member.created_at.toISOString(),
     updated_at: member.updated_at.toISOString(),
     deleted_at: member.deleted_at?.toISOString() ?? null,
-    sessions: await ArrayUtil.asyncMap(sessionSummaries, (r) =>
-      HrmPlatformMemberSessionAtSummaryTransformer.transform(r),
-    ),
-    passwordResetTokens: await ArrayUtil.asyncMap(passwordResetTokens, (r) =>
-      HrmPlatformMemberPasswordResetAtSummaryTransformer.transform(r),
-    ),
-    emailVerifications: await ArrayUtil.asyncMap(emailVerifications, (r) =>
-      HrmPlatformMemberEmailVerificationAtSummaryTransformer.transform(r),
-    ),
+    sessions: [],
+    passwordResetTokens: [],
+    emailVerifications: [],
     member: {
       id: member.id,
       email: member.email,
@@ -132,7 +126,7 @@ export async function postHrmPlatformAuthMemberLogin(props: {
       avatar_uri: member.avatar_uri ?? undefined,
       phone_number: member.phone_number ?? undefined,
       is_active: member.is_active,
-      last_login_at: member.last_login_at?.toISOString() ?? null,
+      last_login_at: member.last_login_at?.toISOString() ?? undefined,
       created_at: member.created_at.toISOString(),
       updated_at: member.updated_at.toISOString(),
       deleted_at: member.deleted_at?.toISOString() ?? null,

@@ -26,22 +26,12 @@ export namespace HrmPlatformTimesheetAtSummaryTransformer {
         start_date: true,
         end_date: true,
         status: true,
-        submitted_at: true,
-        approved_at: true,
-        rejected_at: true,
-        cancelled_at: true,
         notes: true,
         total_hours: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
-        timelogs: {
-          select: {},
-        } satisfies Prisma.hrm_platform_timesheet_timelogsFindManyArgs,
-        actions: {
-          select: {},
-        } satisfies Prisma.hrm_platform_timesheet_actionsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_timesheetsFindManyArgs;
   }
@@ -55,9 +45,8 @@ export namespace HrmPlatformTimesheetAtSummaryTransformer {
       status: typia.assert<
         "pending" | "submitted" | "approved" | "rejected" | "cancelled"
       >(input.status),
-      notes: input.notes ?? null,
-      total_hours:
-        input.total_hours !== null ? Number(input.total_hours) : null,
+      notes: input.notes,
+      total_hours: input.total_hours != null ? Number(input.total_hours) : null,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,
       ),

@@ -47,9 +47,7 @@ export namespace HrmPlatformContractAtSummaryTransformer {
       title: input.title,
       start_date: input.start_date.toISOString(),
       end_date: input.end_date?.toISOString() ?? null,
-      compensation_amount: input.compensation_amount
-        ? Number(input.compensation_amount)
-        : null,
+      compensation_amount: input.compensation_amount ?? null,
       compensation_currency: input.compensation_currency ?? null,
       status: input.status,
       created_at: input.created_at.toISOString(),

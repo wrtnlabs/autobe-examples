@@ -26,131 +26,150 @@ export async function patchHrmPlatformMemberTimesheetsTimesheetIdTimelogs(props:
   timesheetId: string & tags.Format<"uuid">;
   body: IHrmPlatformTimesheet.ITimelogManageRequest;
 }): Promise<IHrmPlatformTimesheet> {
-  // 1. Fetch timesheet with employee relation for ownership check
-  const timesheet =
-    await MyGlobal.prisma.hrm_platform_timesheets.findFirstOrThrow({
-      ...HrmPlatformTimesheetTransformer.select(),
-      where: {
-        id: props.timesheetId,
-        deleted_at: null,
-      },
-    });
-  // 2. Validate timesheet status is draft
-  if (timesheet.status !== "draft") {
-    throw new HttpException("Timesheet is not in draft status", 400);
+  const { member, timesheetId, body } = props;
+  const { adds = [], removes = [] } = body;
+  if (adds.length === 0 && removes.length === 0) {
+    const record =
+      await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+        where: { id: timesheetId },
+        ...HrmPlatformTimesheetTransformer.select(),
+      });
+    return await HrmPlatformTimesheetTransformer.transform(record);
   }
-  // 3. Check authorization - owner can modify draft timesheets
-  const isOwner: boolean = timesheet.employee.id === props.member.id;
-  if (!isOwner) {
+  const timesheet =
+    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+      where: { id: timesheetId, deleted_at: null },
+      ...HrmPlatformTimesheetTransformer.select(),
+    });
+  if (timesheet.status !== "pending") {
+    throw new HttpException("Cannot modify non-draft timesheet", 400);
+  }
+  if (timesheet.employee.id !== member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const adds: (string & tags.Format<"uuid">)[] = props.body.adds ?? [];
-  const removes: (string & tags.Format<"uuid">)[] = props.body.removes ?? [];
-  // 4. Execute add operations
   if (adds.length > 0) {
-    for (const timelogId of adds) {
-      // Check timelog exists and is not soft-deleted
-      await MyGlobal.prisma.hrm_platform_timelogs.findUniqueOrThrow({
-        where: { id: timelogId, deleted_at: null },
+    const existingTimelogs =
+      await MyGlobal.prisma.hrm_platform_timesheet_timelogs.findMany({
+        where: {
+          hrm_platform_timesheet_id: timesheetId,
+          deleted_at: null,
+        },
+        select: { hrm_platform_timelog_id: true },
       });
-      // Check timelog is not already in this timesheet (idempotent)
-      const existingInTimesheet =
-        await MyGlobal.prisma.hrm_platform_timesheet_timelogs.findFirst({
+    const existingTimelogIds = new Set(
+      existingTimelogs.map((t) => t.hrm_platform_timelog_id),
+    );
+    const timelogRecords = await MyGlobal.prisma.hrm_platform_timelogs.findMany(
+      {
+        where: {
+          id: { in: adds },
+        },
+        select: { id: true },
+      },
+    );
+    const validTimelogIds = new Set(timelogRecords.map((t) => t.id));
+    const toAdd = adds.filter(
+      (id) => !existingTimelogIds.has(id) && validTimelogIds.has(id),
+    );
+    for (const timelogId of toAdd) {
+      const existingInApproved =
+        await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
           where: {
-            hrm_platform_timesheet_id: props.timesheetId,
-            hrm_platform_timelog_id: timelogId,
-            deleted_at: null,
-          },
-        });
-      if (existingInTimesheet !== null) {
-        // Already added, skip (idempotent)
-        continue;
-      }
-      // Check timelog is not in an approved timesheet
-      const inApprovedTimesheet =
-        await MyGlobal.prisma.hrm_platform_timesheet_timelogs.findFirst({
-          where: {
-            hrm_platform_timelog_id: timelogId,
-            deleted_at: null,
-            timesheet: {
-              status: "approved",
+            timelogs: {
+              some: {
+                hrm_platform_timelog_id: timelogId,
+                deleted_at: null,
+              },
             },
+            status: "approved",
           },
         });
-      if (inApprovedTimesheet !== null) {
+      if (existingInApproved !== null) {
         throw new HttpException(
-          "Timelog is already in an approved timesheet",
+          "Timelog is part of an approved timesheet",
           400,
         );
       }
-      // Add to timesheet junction table
       await MyGlobal.prisma.hrm_platform_timesheet_timelogs.create({
         data: {
-          id: v4() as string & tags.Format<"uuid">,
-          hrm_platform_timesheet_id: props.timesheetId,
+          id: v4(),
+          hrm_platform_timesheet_id: timesheetId,
           hrm_platform_timelog_id: timelogId,
           created_at: new Date(),
           updated_at: new Date(),
+          deleted_at: null,
         },
       });
     }
   }
-  // 5. Execute remove operations
   if (removes.length > 0) {
-    for (const timelogId of removes) {
-      // Check timelog is currently in this timesheet
-      const existing =
-        await MyGlobal.prisma.hrm_platform_timesheet_timelogs.findFirst({
+    const existingRelations =
+      await MyGlobal.prisma.hrm_platform_timesheet_timelogs.findMany({
+        where: {
+          hrm_platform_timesheet_id: timesheetId,
+          hrm_platform_timelog_id: { in: removes },
+          deleted_at: null,
+        },
+        select: { hrm_platform_timelog_id: true },
+      });
+    const existingRelationIds = new Set(
+      existingRelations.map((r) => r.hrm_platform_timelog_id),
+    );
+    const toRemove = removes.filter((id) => existingRelationIds.has(id));
+    for (const timelogId of toRemove) {
+      const existingInApproved =
+        await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
           where: {
-            hrm_platform_timesheet_id: props.timesheetId,
-            hrm_platform_timelog_id: timelogId,
-            deleted_at: null,
+            timelogs: {
+              some: {
+                hrm_platform_timelog_id: timelogId,
+                deleted_at: null,
+              },
+            },
+            status: "approved",
           },
         });
-      if (existing === null) {
-        // Not in timesheet, no-op
-        continue;
+      if (existingInApproved !== null) {
+        throw new HttpException(
+          "Cannot remove timelog from approved timesheet",
+          400,
+        );
       }
-      // Soft delete the association
-      await MyGlobal.prisma.hrm_platform_timesheet_timelogs.update({
-        where: { id: existing.id },
+      await MyGlobal.prisma.hrm_platform_timesheet_timelogs.updateMany({
+        where: {
+          hrm_platform_timesheet_id: timesheetId,
+          hrm_platform_timelog_id: timelogId,
+        },
         data: { deleted_at: new Date() },
       });
     }
   }
-  // 6. Recalculate total_hours from all non-deleted timelogs in this timesheet
-  const timelogs =
-    await MyGlobal.prisma.hrm_platform_timesheet_timelogs.findMany({
-      where: {
-        hrm_platform_timesheet_id: props.timesheetId,
-        deleted_at: null,
+  const timelogs = await MyGlobal.prisma.hrm_platform_timelogs.findMany({
+    where: {
+      id: {
+        in: [...timesheet.timelogs.map((t) => t.timelog.id)],
       },
-      select: {
-        timelog: {
-          select: { duration_minutes: true },
-        },
-      },
-    });
-  const totalMinutes: number = timelogs.reduce(
-    (sum: number, t) => sum + t.timelog.duration_minutes,
-    0,
-  );
-  const totalHours: number = totalMinutes / 60;
-  // 7. Update timesheet
+    },
+    select: {
+      id: true,
+      duration_minutes: true,
+    },
+  });
+  const totalMinutes = timelogs.reduce((sum, t) => sum + t.duration_minutes, 0);
+  const totalHours = totalMinutes / 60;
   await MyGlobal.prisma.hrm_platform_timesheets.update({
-    where: { id: props.timesheetId },
+    where: { id: timesheetId },
     data: {
       total_hours: totalHours,
       updated_at: new Date(),
     },
   });
-  // 8. Return transformed timesheet
-  return await HrmPlatformTimesheetTransformer.transform(
-    await MyGlobal.prisma.hrm_platform_timesheets.findFirstOrThrow({
+  const updatedTimesheet =
+    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+      where: { id: timesheetId },
       ...HrmPlatformTimesheetTransformer.select(),
-      where: { id: props.timesheetId, deleted_at: null },
-    }),
-  );
+    });
+  return await HrmPlatformTimesheetTransformer.transform(updatedTimesheet);
 }
 
 

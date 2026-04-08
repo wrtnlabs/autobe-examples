@@ -19,26 +19,36 @@ export async function postHrmPlatformMemberOrganizationsOrganizationIdSnapshots(
   organizationId: string & tags.Format<"uuid">;
   body: IHrmPlatformOrganizationsSnapshot.ICreate;
 }): Promise<IHrmPlatformOrganizationsSnapshot> {
-  // Step 1: Verify organization exists and is owned by the member
-  const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-      where: { id: props.organizationId },
-      select: { id: true, owner_id: true },
-    });
-  // Step 2: Verify member is the organization owner
-  if (organization.owner_id !== props.member.id) {
+  // Verify organization exists
+  await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
+    where: { id: props.organizationId },
+  });
+  // Check if member has Owner role for this organization
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      hrm_platform_organization_id: props.organizationId,
+      hrm_platform_member_id: props.member.id,
+      is_pending: false,
+    },
+    include: {
+      role: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+  if (!employee || employee.role.name !== "Owner") {
     throw new HttpException("Forbidden", 403);
   }
-  // Step 3: Create snapshot using Collector
   const record =
     await MyGlobal.prisma.hrm_platform_organizations_snapshots.create({
       data: await HrmPlatformOrganizationsSnapshotCollector.collect({
         body: props.body,
-        hrmPlatformOrganizations: { id: organization.id },
+        hrmPlatformOrganizations: { id: props.organizationId } as IEntity,
       }),
       ...HrmPlatformOrganizationsSnapshotTransformer.select(),
     });
-  // Step 4: Transform and return
   return await HrmPlatformOrganizationsSnapshotTransformer.transform(record);
 }
 

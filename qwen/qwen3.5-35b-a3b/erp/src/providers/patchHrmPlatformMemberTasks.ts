@@ -25,101 +25,123 @@ export async function patchHrmPlatformMemberTasks(props: {
   member: MemberPayload;
   body: IHrmPlatformTask.IRequest;
 }): Promise<IPageIHrmPlatformTask.ISummary> {
-  const member = await MyGlobal.prisma.hrm_platform_members.findFirstOrThrow({
-    where: { id: props.member.id, deleted_at: null },
-  });
-  const projectMemberships =
-    await MyGlobal.prisma.hrm_platform_project_memberships.findMany({
+  // Resolve session for organization context
+  const session =
+    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
       where: {
-        hrm_platform_employee_id: props.member.id,
-        deleted_at: null,
+        id: props.member.session_id,
+        hrm_platform_member_id: props.member.id,
+        expired_at: { gt: new Date() },
+        member: {
+          id: props.member.id,
+          is_active: true,
+          deleted_at: null,
+        },
       },
-      select: { hrm_platform_project_id: true },
+      select: { organization_id: true },
     });
-  const projectIds = projectMemberships.map((pm) => pm.hrm_platform_project_id);
-  const whereClause: Prisma.hrm_platform_tasksWhereInput = {
+  // Calculate pagination parameters
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 100, 100);
+  const cursor = props.body.cursor ?? null;
+  const skip = (page - 1) * limit;
+  // Build base where clause with org isolation
+  const where: Prisma.hrm_platform_tasksWhereInput = {
     deleted_at: null,
-    ...(projectIds.length > 0
-      ? { project_id: { in: projectIds } }
-      : { project_id: { in: [] } }),
-    ...(props.body.status ? { status: props.body.status } : {}),
-    ...(props.body.priority ? { priority: props.body.priority } : {}),
-    ...(props.body.project_id ? { project_id: props.body.project_id } : {}),
-    ...(props.body.assigned_employee_id !== undefined &&
-    props.body.assigned_employee_id !== null
-      ? { assigned_employee_id: props.body.assigned_employee_id }
-      : {}),
-    ...(props.body.parent_task_id !== undefined &&
-    props.body.parent_task_id !== null
-      ? { parent_task_id: props.body.parent_task_id }
-      : {}),
-    ...(props.body.due_date_after
-      ? { due_date: { gte: props.body.due_date_after } }
-      : {}),
-    ...(props.body.due_date_before
-      ? { due_date: { lte: props.body.due_date_before } }
-      : {}),
-    ...(props.body.created_after
-      ? { created_at: { gte: props.body.created_after } }
-      : {}),
-    ...(props.body.created_before
-      ? { created_at: { lte: props.body.created_before } }
-      : {}),
-    ...(props.body.searchTitle
-      ? { title: { contains: props.body.searchTitle, mode: "insensitive" } }
-      : {}),
+    project: {
+      organization_id: session.organization_id!,
+    },
   };
-  const sortOrder =
-    props.body.sortOrder === "DESC" ? ("desc" as const) : ("asc" as const);
-  const orderByField: Prisma.hrm_platform_tasksOrderByWithRelationInput =
-    (() => {
-      switch (props.body.sortBy) {
-        case "created_at":
-          return { created_at: sortOrder };
-        case "updated_at":
-          return { updated_at: sortOrder };
-        case "due_date":
-          return { due_date: sortOrder };
-        case "priority":
-          return { priority: sortOrder };
-        case "title":
-          return { title: sortOrder };
-        default:
-          return { created_at: sortOrder };
-      }
-    })();
-  const limit = Math.min(props.body.limit ?? 100, 100) as number;
-  const cursor = props.body.cursor;
-  const whereWithCursor: Prisma.hrm_platform_tasksWhereInput = {
-    ...whereClause,
-    ...(cursor ? { id: { gt: cursor } } : {}),
+  // Apply filters
+  if (props.body.status != null) {
+    where.status = props.body.status;
+  }
+  if (props.body.priority != null) {
+    where.priority = props.body.priority;
+  }
+  if (props.body.project_id != null) {
+    where.project_id = props.body.project_id;
+  }
+  if (props.body.assigned_employee_id != null) {
+    where.assigned_employee_id = props.body.assigned_employee_id;
+  }
+  if (props.body.parent_task_id != null) {
+    where.parent_task_id = props.body.parent_task_id;
+  }
+  // Apply due date filters
+  if (props.body.due_date_after != null) {
+    where.due_date = {
+      gte: new Date(props.body.due_date_after),
+    };
+  }
+  if (props.body.due_date_before != null) {
+    where.due_date = {
+      lte: new Date(props.body.due_date_before),
+    };
+  }
+  // Apply created date filters
+  if (props.body.created_after != null) {
+    where.created_at = {
+      gte: new Date(props.body.created_after),
+    };
+  }
+  if (props.body.created_before != null) {
+    where.created_at = {
+      lte: new Date(props.body.created_before),
+    };
+  }
+  // Apply title search
+  if (props.body.searchTitle != null) {
+    where.title = {
+      contains: props.body.searchTitle,
+      mode: "insensitive",
+    };
+  }
+  // Apply cursor pagination
+  if (cursor != null) {
+    where.id = { gt: cursor };
+  }
+  // Configure sorting
+  const sortBy = props.body.sortBy ?? "created_at";
+  const validSortFields = [
+    "created_at",
+    "updated_at",
+    "due_date",
+    "priority",
+    "title",
+  ];
+  const sortedBy = validSortFields.includes(sortBy) ? sortBy : "created_at";
+  const sortOrder = props.body.sortOrder === "DESC" ? "desc" : "asc";
+  const orderBy: Prisma.hrm_platform_tasksOrderByWithRelationInput = {
+    [sortedBy]: sortOrder,
   };
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_tasks.findMany({
-      where: whereWithCursor,
-      orderBy: orderByField,
-      take: limit + 1,
-      ...HrmPlatformTaskAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_tasks.count({ where: whereClause }),
-  ]);
-  const hasNextPage = data.length > limit;
-  const nextCursor: (string & tags.Format<"uuid">) | null = hasNextPage
-    ? data[limit].id
-    : null;
-  const items = hasNextPage ? data.slice(0, limit) : data;
+  // Execute query with limit + 1 to check for next page
+  const records = await MyGlobal.prisma.hrm_platform_tasks.findMany({
+    where,
+    orderBy,
+    skip,
+    take: limit + 1,
+    ...HrmPlatformTaskAtSummaryTransformer.select(),
+  });
+  // Determine if there's a next page
+  const hasNextPage = records.length > limit;
+  const data = hasNextPage ? records.slice(0, limit) : records;
+  // Get total count for pagination metadata
+  const totalCount = await MyGlobal.prisma.hrm_platform_tasks.count({ where });
+  // Transform records to DTO
   const transformedData =
-    await HrmPlatformTaskAtSummaryTransformer.transformAll(items);
-  const currentPage = props.body.page ?? 1;
+    await HrmPlatformTaskAtSummaryTransformer.transformAll(data);
+  // Calculate pagination metadata
+  const totalPages = Math.max(Math.ceil(totalCount / limit), 0);
   return {
     pagination: {
-      current: currentPage,
+      current: page,
       limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+      records: totalCount,
+      pages: totalPages,
+    },
     data: transformedData,
-  };
+  } satisfies IPageIHrmPlatformTask.ISummary;
 }
 
 

@@ -32,41 +32,6 @@ export async function getHrmPlatformMemberTimesheetsTimesheetIdActionsActionId(p
         hrm_platform_timesheet_id: props.timesheetId,
       },
     });
-  const timesheet =
-    await MyGlobal.prisma.hrm_platform_timesheets.findFirstOrThrow({
-      where: {
-        id: props.timesheetId,
-      },
-      select: {
-        hrm_platform_employee_id: true,
-      },
-    });
-  const timesheetEmployee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        id: timesheet.hrm_platform_employee_id,
-      },
-      select: {
-        hrm_platform_organization_id: true,
-      },
-    });
-  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
-    {
-      where: {
-        hrm_platform_member_id: props.member.id,
-      },
-      select: {
-        hrm_platform_organization_id: true,
-      },
-    },
-  );
-  if (
-    memberEmployee === null ||
-    memberEmployee.hrm_platform_organization_id !==
-      timesheetEmployee.hrm_platform_organization_id
-  ) {
-    throw new HttpException("Forbidden", 403);
-  }
   return await HrmPlatformTimesheetActionTransformer.transform(record);
 }
 

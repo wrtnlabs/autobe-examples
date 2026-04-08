@@ -21,35 +21,30 @@ export async function putHrmPlatformMemberOrganizationsOrganizationIdFilesFileId
   fileId: string & tags.Format<"uuid">;
   body: IHrmPlatformOrganizationFile.IUpdate;
 }): Promise<IHrmPlatformOrganizationFile> {
-  const data: Prisma.hrm_platform_organization_filesUpdateInput = {};
-  if (props.body.file_name !== undefined) {
-    data.file_name = props.body.file_name;
-  }
-  if (props.body.file_type !== undefined) {
-    data.file_type = props.body.file_type;
-  }
-  if (props.body.file_size !== undefined) {
-    data.file_size = props.body.file_size;
-  }
-  if (props.body.storage_type !== undefined) {
-    data.storage_type = props.body.storage_type;
-  }
-  if (props.body.url !== undefined) {
-    data.url = props.body.url ?? null;
-  }
-  if (props.body.status !== undefined) {
-    data.status = props.body.status;
-    if (props.body.status === "deleted") {
-      data.deleted_at = new Date();
-    }
-  }
-  data.updated_at = new Date();
+  const now = new Date().toISOString();
   await MyGlobal.prisma.hrm_platform_organization_files.update({
     where: {
       id: props.fileId,
       hrm_platform_organization_id: props.organizationId,
     },
-    data,
+    data: {
+      ...(props.body.file_name !== undefined && {
+        file_name: props.body.file_name,
+      }),
+      ...(props.body.file_type !== undefined && {
+        file_type: props.body.file_type,
+      }),
+      ...(props.body.file_size !== undefined && {
+        file_size: props.body.file_size,
+      }),
+      ...(props.body.storage_type !== undefined && {
+        storage_type: props.body.storage_type,
+      }),
+      ...(props.body.url !== undefined && { url: props.body.url }),
+      ...(props.body.status !== undefined && { status: props.body.status }),
+      ...(props.body.status === "deleted" && { deleted_at: now }),
+      updated_at: now,
+    },
   });
   const updated =
     await MyGlobal.prisma.hrm_platform_organization_files.findUniqueOrThrow({

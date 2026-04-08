@@ -26,61 +26,64 @@ export async function patchHrmPlatformMemberProjectsProjectIdMemberships(props: 
   projectId: string & tags.Format<"uuid">;
   body: IHrmPlatformProjectMembership.IRequest;
 }): Promise<IPageIHrmPlatformProjectMembership.ISummary> {
-  const page: number =
-    Math.max(props.body.page ?? 1, 1) &
-    ({} as number & tags.Type<"int32"> & tags.Minimum<1>);
-  const limit: number =
-    Math.min(props.body.limit ?? 100, 100) &
-    ({} as number & tags.Type<"int32"> & tags.Maximum<100>) &
-    ({} as number & tags.Type<"int32"> & tags.Minimum<1>);
+  const page: number & tags.Type<"int32"> & tags.Minimum<1> =
+    props.body.page ?? 1;
+  const limit: number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> &
+    tags.Maximum<100> = props.body.limit ?? 100;
   const skip: number = (page - 1) * limit;
-  const whereInput: Prisma.hrm_platform_project_membershipsWhereInput = {
-    hrm_platform_project_id: props.projectId,
-    deleted_at: null,
-  };
-  if (props.body.role !== undefined) {
-    whereInput.role = props.body.role;
-  }
-  if (props.body.employeeId !== undefined) {
-    whereInput.hrm_platform_employee_id = props.body.employeeId;
-  }
-  if (props.body.startDate !== undefined || props.body.endDate !== undefined) {
-    const dateFilter: {
-      gte?: string & tags.Format<"date-time">;
-      lte?: string & tags.Format<"date-time">;
-    } = {};
-    if (props.body.startDate !== undefined) {
-      dateFilter.gte = props.body.startDate;
-    }
-    if (props.body.endDate !== undefined) {
-      dateFilter.lte = props.body.endDate;
-    }
-    whereInput.created_at = dateFilter;
-  }
-  const [data, total] = await Promise.all([
+  const createWhereCondition =
+    (): Prisma.hrm_platform_project_membershipsWhereInput => {
+      const condition: Prisma.hrm_platform_project_membershipsWhereInput = {
+        hrm_platform_project_id: props.projectId,
+        deleted_at: null,
+      };
+      if (props.body.employeeId !== undefined) {
+        condition.employee = { id: props.body.employeeId };
+      }
+      if (props.body.role !== undefined) {
+        condition.role = props.body.role;
+      }
+      if (
+        props.body.startDate !== undefined ||
+        props.body.endDate !== undefined
+      ) {
+        const dateFilter: Prisma.DateTimeFilter = {};
+        if (props.body.startDate !== undefined) {
+          dateFilter.gte = props.body.startDate;
+        }
+        if (props.body.endDate !== undefined) {
+          dateFilter.lte = props.body.endDate;
+        }
+        condition.created_at = dateFilter;
+      }
+      return condition;
+    };
+  const where = createWhereCondition();
+  const [records, total] = await Promise.all([
     MyGlobal.prisma.hrm_platform_project_memberships.findMany({
-      where: whereInput,
+      where,
+      ...HrmPlatformProjectMembershipAtSummaryTransformer.select(),
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
-      ...HrmPlatformProjectMembershipAtSummaryTransformer.select(),
     }),
-    MyGlobal.prisma.hrm_platform_project_memberships.count({
-      where: whereInput,
-    }),
+    MyGlobal.prisma.hrm_platform_project_memberships.count({ where }),
   ]);
-  const totalPages: number = total === 0 ? 0 : Math.ceil(total / limit);
+  const pagination: IPage.IPagination = {
+    current: page,
+    limit,
+    records: total,
+    pages: total === 0 ? 0 : Math.ceil(total / limit),
+  };
+  const data = await ArrayUtil.asyncMap(
+    records,
+    HrmPlatformProjectMembershipAtSummaryTransformer.transform,
+  );
   return {
-    pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: totalPages,
-    } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmPlatformProjectMembershipAtSummaryTransformer.transform,
-    ),
+    pagination,
+    data,
   };
 }
 

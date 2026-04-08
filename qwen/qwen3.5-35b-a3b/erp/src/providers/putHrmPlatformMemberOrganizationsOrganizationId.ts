@@ -19,8 +19,7 @@ export async function putHrmPlatformMemberOrganizationsOrganizationId(props: {
   organizationId: string & tags.Format<"uuid">;
   body: IHrmPlatformOrganization.IUpdate;
 }): Promise<IHrmPlatformOrganization> {
-  // Step 1: Verify organization exists and is not soft-deleted
-  const organization =
+  const existingOrganization =
     await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
       where: {
         id: props.organizationId,
@@ -29,16 +28,15 @@ export async function putHrmPlatformMemberOrganizationsOrganizationId(props: {
       select: {
         id: true,
         owner_id: true,
+        name: true,
       },
     });
-  // Step 2: Verify the member owns this organization
-  if (organization.owner_id !== props.member.id) {
+  if (existingOrganization.owner_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Step 3: Validate name uniqueness if provided
   if (props.body.name !== undefined) {
-    const existing = await MyGlobal.prisma.hrm_platform_organizations.findFirst(
-      {
+    const existingName =
+      await MyGlobal.prisma.hrm_platform_organizations.findFirst({
         where: {
           owner_id: props.member.id,
           name: props.body.name,
@@ -47,41 +45,44 @@ export async function putHrmPlatformMemberOrganizationsOrganizationId(props: {
           },
           deleted_at: null,
         },
-      },
-    );
-    if (existing !== null) {
-      throw new HttpException("Organization name already exists", 400);
-    }
-  }
-  // Step 4: Validate fiscal_start_month range if provided
-  if (props.body.fiscal_start_month !== undefined) {
-    const fiscalMonth = props.body.fiscal_start_month;
-    if (fiscalMonth < 1 || fiscalMonth > 12) {
+      });
+    if (existingName !== null) {
       throw new HttpException(
-        "fiscal_start_month must be between 1 and 12",
+        "Organization name must be unique within the owner's context",
         400,
       );
     }
   }
-  // Step 5-6: Build update data with provided fields and current timestamp
-  const updateData: Prisma.hrm_platform_organizationsUpdateInput = {
-    updated_at: new Date(),
-    ...(props.body.name !== undefined && { name: props.body.name }),
-    ...(props.body.description !== undefined && {
-      description: props.body.description,
-    }),
-    ...(props.body.currency !== undefined && { currency: props.body.currency }),
-    ...(props.body.timezone !== undefined && { timezone: props.body.timezone }),
-    ...(props.body.fiscal_start_month !== undefined && {
-      fiscal_start_month: props.body.fiscal_start_month,
-    }),
-  };
-  // Step 6: Update organization
+  if (props.body.fiscal_start_month !== undefined) {
+    if (
+      props.body.fiscal_start_month < 1 ||
+      props.body.fiscal_start_month > 12
+    ) {
+      throw new HttpException(
+        "Fiscal start month must be between 1 and 12",
+        400,
+      );
+    }
+  }
   await MyGlobal.prisma.hrm_platform_organizations.update({
     where: { id: props.organizationId },
-    data: updateData,
+    data: {
+      ...(props.body.name !== undefined && { name: props.body.name }),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
+      ...(props.body.currency !== undefined && {
+        currency: props.body.currency,
+      }),
+      ...(props.body.timezone !== undefined && {
+        timezone: props.body.timezone,
+      }),
+      ...(props.body.fiscal_start_month !== undefined && {
+        fiscal_start_month: props.body.fiscal_start_month,
+      }),
+      updated_at: new Date(),
+    },
   });
-  // Step 7: Return complete updated organization
   const updated =
     await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
       where: { id: props.organizationId },

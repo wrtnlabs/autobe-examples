@@ -21,25 +21,27 @@ export async function postHrmPlatformMemberOrganizationsOrganizationIdDepartment
   organizationId: string & tags.Format<"uuid">;
   body: IHrmPlatformDepartment.ICreate;
 }): Promise<IHrmPlatformDepartment> {
-  const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-      where: { id: props.organizationId },
-      select: { id: true },
+  await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
+    where: { id: props.organizationId },
+  });
+  if (
+    props.body.parent_department_id !== null &&
+    props.body.parent_department_id !== undefined
+  ) {
+    await MyGlobal.prisma.hrm_platform_departments.findFirstOrThrow({
+      where: {
+        id: props.body.parent_department_id,
+        organization_id: props.organizationId,
+        deleted_at: null,
+      },
     });
-  const parentDepartment = props.body.parent_department_id
-    ? await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
-        where: {
-          id: props.body.parent_department_id,
-          organization_id: props.organizationId,
-          deleted_at: null,
-        },
-        select: { id: true },
-      })
-    : undefined;
+  }
   const record = await MyGlobal.prisma.hrm_platform_departments.create({
     data: await HrmPlatformDepartmentCollector.collect({
       body: props.body,
-      hrmPlatformOrganizations: { id: organization.id },
+      hrmPlatformOrganizations: {
+        id: props.organizationId,
+      },
     }),
     ...HrmPlatformDepartmentTransformer.select(),
   });

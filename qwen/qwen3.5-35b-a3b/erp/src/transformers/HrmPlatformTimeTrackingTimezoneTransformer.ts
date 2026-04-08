@@ -20,6 +20,7 @@ export namespace HrmPlatformTimeTrackingTimezoneTransformer {
     return {
       select: {
         id: true,
+        organization_id: true,
         timezone: true,
         created_at: true,
         updated_at: true,
@@ -33,11 +34,11 @@ export namespace HrmPlatformTimeTrackingTimezoneTransformer {
   ): Promise<IHrmPlatformTimeTrackingTimezone> {
     return {
       id: input.id,
-      organization_id: input.organization.id,
+      organization_id: input.organization_id,
       timezone: input.timezone,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(
         input.organization,
       ),
@@ -57,11 +58,12 @@ export namespace HrmPlatformTimeTrackingTimezoneTransformer {
 //         return {
 //           select: {
 //             id: true,
+//             organization_id: true,
 //             timezone: true,
 //             created_at: true,
 //             updated_at: true,
 //             deleted_at: true,
-//             organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
+//             ...
 //           },
 //         } satisfies Prisma.hrm_platform_time_tracking_timezonesFindManyArgs;
 //       }
@@ -74,7 +76,7 @@ export namespace HrmPlatformTimeTrackingTimezoneTransformer {
 //   created_at: {string},
 //   updated_at: {string},
 //   deleted_at: {string | null},
-//   organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(input.organization),
+//   organization: {IHrmPlatformOrganization.ISummary},
 //         };
 //       }
 //     }

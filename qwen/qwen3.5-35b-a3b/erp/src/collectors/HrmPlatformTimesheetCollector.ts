@@ -13,6 +13,7 @@ export namespace HrmPlatformTimesheetCollector {
   }) {
     const id: string = v4();
     return {
+      // Scalar fields
       id,
       start_date: new Date(props.body.start_date),
       end_date: new Date(props.body.end_date),
@@ -26,9 +27,10 @@ export namespace HrmPlatformTimesheetCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      employee: {
-        connect: { id: props.body.hrm_platform_employee_id },
-      },
+      // BelongsTo relations
+      employee: { connect: { id: props.body.hrm_platform_employee_id } },
+      // HasMany relations (omit for new timesheet with no timelogs yet)
+      // timelogs and actions will be added when timelogs are created
     } satisfies Prisma.hrm_platform_timesheetsCreateInput;
   }
 }

@@ -27,72 +27,92 @@ export async function putHrmPlatformMemberProjectsProjectId(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmPlatformProject.IUpdate;
 }): Promise<IHrmPlatformProject> {
-  // Find the existing project to validate it exists and isn't soft-deleted
-  const existingProject =
-    await MyGlobal.prisma.hrm_platform_projects.findUnique({
-      where: { id: props.projectId },
+  const existingProject = await MyGlobal.prisma.hrm_platform_projects.findFirst(
+    {
+      where: {
+        id: props.projectId,
+        deleted_at: null,
+      },
       select: {
         id: true,
         organization_id: true,
-        deleted_at: true,
       },
-    });
-  if (existingProject === null || existingProject.deleted_at !== null) {
+    },
+  );
+  if (existingProject === null) {
     throw new HttpException("Project not found", 404);
   }
-  // Check for name uniqueness if name is being updated
-  if (props.body.name !== undefined) {
-    const nameConflict = await MyGlobal.prisma.hrm_platform_projects.findFirst({
-      where: {
-        organization_id: existingProject.organization_id,
-        name: props.body.name,
-        id: { not: props.projectId },
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: toISOStringSafe(new Date()) },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
         deleted_at: null,
       },
-    });
-    if (nameConflict !== null) {
-      throw new HttpException("Project name already exists", 409);
-    }
-  }
-  // Validate color code format if provided
-  if (props.body.color_code !== undefined) {
-    const colorCode = props.body.color_code;
-    if (!/^#[0-9A-F]{6}$/i.test(colorCode)) {
-      throw new HttpException("Invalid color code format", 422);
-    }
-  }
-  // Update the project with all relations
-  const updatedProject = await MyGlobal.prisma.hrm_platform_projects.update({
-    where: { id: props.projectId },
-    data: {
-      updated_at: new Date(),
-      ...(props.body.name !== undefined && { name: props.body.name }),
-      ...(props.body.description !== undefined && {
-        description: props.body.description,
-      }),
-      ...(props.body.color_code !== undefined && {
-        color_code: props.body.color_code,
-      }),
-      ...(props.body.budget_hours !== undefined && {
-        budget_hours: props.body.budget_hours,
-      }),
-      ...(props.body.start_date !== undefined && {
-        start_date:
-          props.body.start_date !== null
-            ? new Date(props.body.start_date)
-            : null,
-      }),
-      ...(props.body.end_date !== undefined && {
-        end_date:
-          props.body.end_date !== null ? new Date(props.body.end_date) : null,
-      }),
-    },
-    select: {
-      ...HrmPlatformProjectTransformer.select().select,
     },
   });
-  // Transform and return
-  return await HrmPlatformProjectTransformer.transform(updatedProject);
+  if (session === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const nameConflict = await MyGlobal.prisma.hrm_platform_projects.findFirst({
+    where: {
+      AND: [
+        { id: { not: props.projectId } },
+        { organization_id: existingProject.organization_id },
+        { deleted_at: null },
+      ],
+      name: props.body.name,
+    },
+  });
+  if (nameConflict !== null && props.body.name !== undefined) {
+    throw new HttpException(
+      "Project name must be unique within organization",
+      409,
+    );
+  }
+  const updateData: {
+    name?: string;
+    description?: string | null | undefined;
+    color_code?: string;
+    budget_hours?: number | null | undefined;
+    start_date?: (string & tags.Format<"date-time">) | null | undefined;
+    end_date?: (string & tags.Format<"date-time">) | null | undefined;
+    updated_at: string & tags.Format<"date-time">;
+  } = {
+    updated_at: toISOStringSafe(new Date()),
+  };
+  if (props.body.name !== undefined) {
+    updateData.name = props.body.name;
+  }
+  if (props.body.description !== undefined) {
+    updateData.description = props.body.description;
+  }
+  if (props.body.color_code !== undefined) {
+    updateData.color_code = props.body.color_code;
+  }
+  if (props.body.budget_hours !== undefined) {
+    updateData.budget_hours = props.body.budget_hours;
+  }
+  if (props.body.start_date !== undefined) {
+    updateData.start_date = props.body.start_date;
+  }
+  if (props.body.end_date !== undefined) {
+    updateData.end_date = props.body.end_date;
+  }
+  await MyGlobal.prisma.hrm_platform_projects.update({
+    where: { id: props.projectId },
+    data: updateData,
+  });
+  const updated = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
+    {
+      where: { id: props.projectId },
+      ...HrmPlatformProjectTransformer.select(),
+    },
+  );
+  return await HrmPlatformProjectTransformer.transform(updated);
 }
 
 

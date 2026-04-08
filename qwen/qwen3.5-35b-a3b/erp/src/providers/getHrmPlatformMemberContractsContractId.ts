@@ -22,54 +22,30 @@ export async function getHrmPlatformMemberContractsContractId(props: {
   member: MemberPayload;
   contractId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformContract> {
+  // Validate session is active
+  const session =
+    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
+      where: {
+        id: props.member.session_id,
+        expired_at: { gt: new Date() },
+        hrm_platform_member_id: props.member.id,
+      },
+    });
   const contract =
     await MyGlobal.prisma.hrm_platform_contracts.findUniqueOrThrow({
-      ...HrmPlatformContractTransformer.select(),
       where: {
         id: props.contractId,
         deleted_at: null,
       },
+      ...HrmPlatformContractTransformer.select(),
     });
-  const employee = contract.employee;
-  const isOwnContract = employee.member.id === props.member.id;
-  if (isOwnContract) {
-    return await HrmPlatformContractTransformer.transform(contract);
-  }
-  // User is accessing another employee's contract
-  // Need to verify they have employee:view permission for this organization
-  // Find the user's employee record in this organization
-  const userEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      member: {
-        id: props.member.id,
-      },
-      hrm_platform_organization_id: contract.organization.id,
-    },
-    include: {
-      role: {
-        include: {
-          permissions: {
-            where: {
-              deleted_at: null,
-              organization_id: contract.organization.id,
-            },
-            select: {
-              id: true,
-              code: true,
-            },
-          },
-        },
-      },
-    },
-  });
-  if (!userEmployee) {
+  // Data isolation: verify contract belongs to same organization as the employee
+  if (contract.organization.id !== contract.employee.organization.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Check if any of the user's roles has employee:view permission
-  const hasPermission = userEmployee.role.permissions.some(
-    (permission) => permission.code === "employee:view",
-  );
-  if (!hasPermission) {
+  // Access control: employee can view their own contracts
+  const hasOwnAccess = contract.employee.id === props.member.id;
+  if (!hasOwnAccess) {
     throw new HttpException("Forbidden", 403);
   }
   return await HrmPlatformContractTransformer.transform(contract);

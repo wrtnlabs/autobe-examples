@@ -28,9 +28,6 @@ export namespace HrmPlatformDepartmentTransformer {
         organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
         parentDepartment: HrmPlatformDepartmentAtSummaryTransformer.select(),
         childDepartments: HrmPlatformDepartmentAtSummaryTransformer.select(),
-        snapshots: true,
-        employees: true,
-        employeeSnapshots: true,
       },
     } satisfies Prisma.hrm_platform_departmentsFindManyArgs;
   }
@@ -51,8 +48,9 @@ export namespace HrmPlatformDepartmentTransformer {
             input.parentDepartment,
           )
         : undefined,
-      childDepartments: await ArrayUtil.asyncMap(input.childDepartments, (cd) =>
-        HrmPlatformDepartmentAtSummaryTransformer.transform(cd),
+      childDepartments: await ArrayUtil.asyncMap(
+        input.childDepartments,
+        (child) => HrmPlatformDepartmentAtSummaryTransformer.transform(child),
       ),
     } satisfies IHrmPlatformDepartment;
   }

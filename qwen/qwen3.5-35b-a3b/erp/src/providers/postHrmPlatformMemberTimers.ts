@@ -19,88 +19,82 @@ export async function postHrmPlatformMemberTimers(props: {
   body: IHrmPlatformTimer.ICreate;
 }): Promise<IHrmPlatformTimer> {
   const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        id: props.member.id,
+        hrm_platform_member_id: props.member.id,
         deleted_at: null,
-        status: "active",
+      },
+      select: {
+        id: true,
+        status: true,
+        hrm_platform_organization_id: true,
       },
     });
-  const existingTimer = await MyGlobal.prisma.hrm_platform_timers.findFirst({
-    where: {
-      hrm_platform_employee_id: props.member.id,
-      status: { in: ["started", "paused"] },
-      deleted_at: null,
-    },
-  });
-  if (existingTimer !== null) {
+  if (employee.status !== "active") {
+    throw new HttpException("Employee must be active to create timers", 400);
+  }
+  const existingActiveTimer =
+    await MyGlobal.prisma.hrm_platform_timers.findFirst({
+      where: {
+        hrm_platform_employee_id: employee.id,
+        status: { in: ["started", "paused"] },
+        deleted_at: null,
+      },
+    });
+  if (existingActiveTimer !== null) {
     throw new HttpException("Employee already has an active timer", 400);
   }
   if (
-    props.body.hrm_platform_project_id !== undefined &&
-    props.body.hrm_platform_project_id !== null
+    props.body.hrm_platform_project_id !== null &&
+    props.body.hrm_platform_project_id !== undefined
   ) {
-    const project = await MyGlobal.prisma.hrm_platform_projects.findUnique({
-      where: {
-        id: props.body.hrm_platform_project_id,
-      },
-      select: {
-        organization_id: true,
-      },
-    });
-    if (project === null) {
-      throw new HttpException("Project not found", 404);
-    }
+    const project =
+      await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow({
+        where: { id: props.body.hrm_platform_project_id },
+        select: {
+          id: true,
+          organization_id: true,
+        },
+      });
     if (project.organization_id !== employee.hrm_platform_organization_id) {
       throw new HttpException(
-        "Project does not belong to the same organization",
+        "Project must belong to the same organization",
         400,
       );
     }
   }
   if (
-    props.body.hrm_platform_task_id !== undefined &&
-    props.body.hrm_platform_task_id !== null
+    props.body.hrm_platform_task_id !== null &&
+    props.body.hrm_platform_task_id !== undefined
   ) {
-    const task = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
-      where: {
-        id: props.body.hrm_platform_task_id,
-      },
+    const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
+      where: { id: props.body.hrm_platform_task_id },
       select: {
+        id: true,
         project_id: true,
-        project: {
-          select: {
-            organization_id: true,
-          },
-        },
+        project: { select: { organization_id: true } },
       },
     });
-    if (task === null) {
-      throw new HttpException("Task not found", 404);
-    }
-    if (
-      task.project.organization_id !== employee.hrm_platform_organization_id
-    ) {
-      throw new HttpException(
-        "Task does not belong to the same organization",
-        400,
-      );
-    }
-    if (
-      props.body.hrm_platform_project_id !== undefined &&
-      props.body.hrm_platform_project_id !== null &&
-      task.project_id !== props.body.hrm_platform_project_id
-    ) {
-      throw new HttpException(
-        "Task does not belong to the specified project",
-        400,
-      );
+    if (task.project_id !== null) {
+      const project =
+        await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow({
+          where: { id: task.project_id },
+          select: { organization_id: true },
+        });
+      if (project.organization_id !== employee.hrm_platform_organization_id) {
+        throw new HttpException(
+          "Task must belong to the same organization",
+          400,
+        );
+      }
     }
   }
   const record = await MyGlobal.prisma.hrm_platform_timers.create({
     data: await HrmPlatformTimerCollector.collect({
       body: props.body,
-      hrmPlatformEmployees: employee,
+      hrmPlatformEmployees: {
+        id: employee.id,
+      } satisfies IEntity,
     }),
     ...HrmPlatformTimerTransformer.select(),
   });

@@ -21,98 +21,64 @@ export async function patchHrmPlatformMemberTimeTrackingTimezones(props: {
   member: MemberPayload;
   body: IHrmPlatformTimeTrackingTimezone.IRequest;
 }): Promise<IPageIHrmPlatformTimeTrackingTimezone.ISummary> {
-  // Extract pagination parameters with defaults
-  const page: number = props.body.page ?? 1;
-  const pageSize: number = props.body.pageSize ?? 20;
-  const limit: number = props.body.limit ?? 100;
-  // Validate pagination parameters
-  if (page < 1) {
-    throw new HttpException("Page must be at least 1", 400);
+  const page = props.body.page ?? 1;
+  const pageSize = props.body.pageSize ?? 20;
+  const limit = props.body.limit ?? 100;
+  const sortBy = props.body.sortBy ?? "createdAt";
+  const sortOrder = props.body.sortOrder ?? "asc";
+  const where: Prisma.hrm_platform_time_tracking_timezonesWhereInput = {};
+  if (props.body.status === "deleted") {
+    where.deleted_at = { not: null };
+  } else {
+    where.deleted_at = null;
   }
-  if (pageSize < 1 || pageSize > 100) {
-    throw new HttpException("Page size must be between 1 and 100", 400);
-  }
-  if (limit < 0 || limit > 100) {
-    throw new HttpException("Limit must be between 0 and 100", 400);
-  }
-  // Calculate skip
-  const skip: number = (page - 1) * pageSize;
-  // Build where filter
-  const whereFilter: Prisma.hrm_platform_time_tracking_timezonesWhereInput = {
-    deleted_at: null, // Default to active records only
-  };
-  // Add organization filter if provided
   if (props.body.organization_id !== undefined) {
-    const organizationId: string & tags.Format<"uuid"> =
-      props.body.organization_id;
-    // Validate organization exists
+    where.organization_id = props.body.organization_id;
+  }
+  if (props.body.timezone !== undefined) {
+    where.timezone = props.body.timezone;
+  }
+  if (props.body.organization_id !== undefined) {
     const organization =
-      await MyGlobal.prisma.hrm_platform_organizations.findUnique({
-        where: { id: organizationId },
+      await MyGlobal.prisma.hrm_platform_organizations.findFirst({
+        where: {
+          id: props.body.organization_id,
+          deleted_at: null,
+        },
       });
     if (organization === null) {
       throw new HttpException("Organization not found", 404);
     }
-    whereFilter.organization_id = organizationId;
   }
-  // Add timezone filter if provided
-  if (props.body.timezone !== undefined) {
-    whereFilter.timezone = props.body.timezone;
-  }
-  // Add status filter
-  if (props.body.status === "deleted") {
-    whereFilter.deleted_at = { not: null };
-  } else {
-    whereFilter.deleted_at = null;
-  }
-  // Build order by
-  const orderBy: Array<Prisma.hrm_platform_time_tracking_timezonesOrderByWithRelationInput> =
-    props.body.sortBy === "createdAt"
-      ? [{ created_at: props.body.sortOrder ?? "desc" }]
-      : props.body.sortBy === "updatedAt"
-        ? [{ updated_at: props.body.sortOrder ?? "desc" }]
-        : [{ created_at: "desc" }];
-  // Get selector from transformer
-  const selectArgs =
-    HrmPlatformTimeTrackingTimezoneAtSummaryTransformer.select();
-  // Execute findMany
-  const records: Array<
-    Prisma.hrm_platform_time_tracking_timezonesGetPayload<
-      ReturnType<
-        typeof HrmPlatformTimeTrackingTimezoneAtSummaryTransformer.select
-      >
-    >
-  > = await MyGlobal.prisma.hrm_platform_time_tracking_timezones.findMany({
-    where: whereFilter,
-    skip,
-    take: limit,
-    orderBy,
-    ...selectArgs,
-  });
-  // Count total records
-  const total: number =
-    await MyGlobal.prisma.hrm_platform_time_tracking_timezones.count({
-      where: whereFilter,
+  const orderBy: Prisma.hrm_platform_time_tracking_timezonesOrderByWithRelationInput =
+    sortBy === "updatedAt"
+      ? { updated_at: sortOrder === "asc" ? "asc" : "desc" }
+      : { created_at: sortOrder === "asc" ? "asc" : "desc" };
+  const take = Math.min(Math.min(limit, pageSize), 100);
+  const records =
+    await MyGlobal.prisma.hrm_platform_time_tracking_timezones.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take,
+      ...HrmPlatformTimeTrackingTimezoneAtSummaryTransformer.select(),
     });
-  // Transform records
-  const data: Array<IHrmPlatformTimeTrackingTimezone.ISummary> =
-    await ArrayUtil.asyncMap(
-      records,
-      HrmPlatformTimeTrackingTimezoneAtSummaryTransformer.transform,
-    );
-  // Calculate effective limit for pagination
-  const effectiveLimit: number = Math.min(pageSize, limit);
-  const pages: number = total === 0 ? 0 : Math.ceil(total / effectiveLimit);
-  // Return paginated response
+  const total =
+    await MyGlobal.prisma.hrm_platform_time_tracking_timezones.count({
+      where,
+    });
   return {
     pagination: {
       current: page,
-      limit: effectiveLimit,
+      limit: take,
       records: total,
-      pages,
+      pages: Math.ceil(total / take),
     } satisfies IPage.IPagination,
-    data,
-  } satisfies IPageIHrmPlatformTimeTrackingTimezone.ISummary;
+    data: await ArrayUtil.asyncMap(
+      records,
+      HrmPlatformTimeTrackingTimezoneAtSummaryTransformer.transform,
+    ),
+  };
 }
 
 

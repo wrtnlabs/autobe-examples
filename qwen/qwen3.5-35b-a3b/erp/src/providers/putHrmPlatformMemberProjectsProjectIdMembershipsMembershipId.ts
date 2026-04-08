@@ -15,9 +15,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { HrmPlatformEmployeeTransformer } from "../transformers/HrmPlatformEmployeeTransformer";
 import { HrmPlatformProjectMembershipTransformer } from "../transformers/HrmPlatformProjectMembershipTransformer";
-import { HrmPlatformProjectTransformer } from "../transformers/HrmPlatformProjectTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -27,11 +25,21 @@ export async function putHrmPlatformMemberProjectsProjectIdMembershipsMembership
   membershipId: string & tags.Format<"uuid">;
   body: IHrmPlatformProjectMembership.IUpdate;
 }): Promise<IHrmPlatformProjectMembership> {
-  const session =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findUniqueOrThrow({
-      where: { id: props.member.session_id },
-      select: { organization_id: true },
-    });
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
+        deleted_at: null,
+      },
+    },
+  });
+  if (session === null) {
+    throw new HttpException("Session expired", 403);
+  }
   const membership =
     await MyGlobal.prisma.hrm_platform_project_memberships.findUniqueOrThrow({
       where: {
@@ -40,34 +48,45 @@ export async function putHrmPlatformMemberProjectsProjectIdMembershipsMembership
       },
       select: {
         id: true,
-        organization_id: true,
         hrm_platform_project_id: true,
         hrm_platform_employee_id: true,
+        organization_id: true,
         role: true,
+        created_at: true,
+        updated_at: true,
         deleted_at: true,
-        employee: HrmPlatformEmployeeTransformer.select(),
-        project: HrmPlatformProjectTransformer.select(),
+        project: {
+          select: { id: true, organization_id: true },
+        },
       },
     });
   if (membership.hrm_platform_project_id !== props.projectId) {
-    throw new HttpException("Membership not found", 404);
-  }
-  if (membership.organization_id !== session.organization_id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (
-    membership.employee.organization.id !== membership.project.organization.id
-  ) {
     throw new HttpException(
-      "Employee and project must belong to the same organization",
+      "Membership does not belong to the specified project",
       400,
     );
+  }
+  if (membership.organization_id !== session.organization_id) {
+    throw new HttpException(
+      "Membership belongs to a different organization",
+      403,
+    );
+  }
+  if (membership.project.organization_id !== session.organization_id) {
+    throw new HttpException("Project belongs to a different organization", 403);
+  }
+  if (
+    props.body.role !== undefined &&
+    props.body.role !== "member" &&
+    props.body.role !== "project-lead"
+  ) {
+    throw new HttpException("Invalid role value", 400);
   }
   await MyGlobal.prisma.hrm_platform_project_memberships.update({
     where: { id: props.membershipId },
     data: {
       ...(props.body.role !== undefined && { role: props.body.role }),
-      updated_at: toISOStringSafe(new Date()),
+      updated_at: new Date(),
     },
   });
   const updated =

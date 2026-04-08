@@ -20,52 +20,49 @@ export async function putHrmPlatformMemberTimeTrackingTimezonesTimezoneId(props:
   timezoneId: string & tags.Format<"uuid">;
   body: IHrmPlatformTimeTrackingTimezone.IUpdate;
 }): Promise<IHrmPlatformTimeTrackingTimezone> {
-  // Step 1: Get member session to extract organization context
-  const session =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findUniqueOrThrow({
-      where: {
-        id: props.member.session_id,
+  if (props.body.timezone === undefined) {
+    throw new HttpException("timezone is required", 400);
+  }
+  const ianaTimezonePattern = /^[A-Za-z]+\/[A-Za-z_]+$/;
+  if (!ianaTimezonePattern.test(props.body.timezone)) {
+    throw new HttpException("Invalid timezone identifier format", 400);
+  }
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
+        deleted_at: null,
       },
-      select: {
-        organization_id: true,
-      },
-    });
-  // Step 2: Verify timezone configuration exists and belongs to user's organization
-  // Also check not soft-deleted
-  const existing =
+    },
+  });
+  if (session === null) {
+    throw new HttpException("You're not enrolled", 403);
+  }
+  if (session.organization_id === null) {
+    throw new HttpException("Organization not found", 403);
+  }
+  const timezoneConfig =
     await MyGlobal.prisma.hrm_platform_time_tracking_timezones.findFirst({
       where: {
         id: props.timezoneId,
         deleted_at: null,
-        organization_id: session.organization_id!,
+        organization_id: session.organization_id,
       },
     });
-  if (existing === null) {
+  if (timezoneConfig === null) {
     throw new HttpException("Timezone configuration not found", 404);
   }
-  // Step 3: Validate timezone format (IANA identifier)
-  if (props.body.timezone !== undefined) {
-    // IANA timezone format: 'Area/Location'
-    // Examples: 'Asia/Seoul', 'America/New_York', 'Europe/London'
-    const ianaTimezonePattern = /^[A-Za-z]+\/[A-Za-z_]+$/;
-    if (!ianaTimezonePattern.test(props.body.timezone)) {
-      throw new HttpException(
-        "Invalid timezone identifier. Must be in 'Area/Location' format (e.g., 'Asia/Seoul')",
-        400,
-      );
-    }
-  }
-  // Step 4: Update timezone configuration
   await MyGlobal.prisma.hrm_platform_time_tracking_timezones.update({
     where: { id: props.timezoneId },
     data: {
-      ...(props.body.timezone !== undefined && {
-        timezone: props.body.timezone,
-      }),
-      updated_at: new Date(),
+      timezone: props.body.timezone,
+      updated_at: toISOStringSafe(new Date()),
     },
   });
-  // Step 5: Fetch and return updated record with organization
   const updated =
     await MyGlobal.prisma.hrm_platform_time_tracking_timezones.findUniqueOrThrow(
       {

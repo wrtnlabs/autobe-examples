@@ -21,90 +21,103 @@ export async function patchHrmPlatformMemberRolesRoleIdPermissions(props: {
   roleId: string & tags.Format<"uuid">;
   body: IHrmPlatformRole.IUpdate;
 }): Promise<IHrmPlatformRole> {
-  const session =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findUniqueOrThrow({
-      where: { id: props.member.session_id },
-    });
-  const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-      where: { id: session.organization_id ?? "" },
-    });
-  const memberRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
+  await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
     where: {
-      organization_id: organization.id,
-      employees: {
-        some: {
-          employee_code: session.hrm_platform_member_id,
-          deleted_at: null,
-        },
-      },
-      deleted_at: null,
-    },
-  });
-  if (memberRole === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const hasManagePermission =
-    await MyGlobal.prisma.hrm_platform_permissions.findFirst({
-      where: {
-        role_id: memberRole.id,
-        code: "employee:manage",
-        organization_id: organization.id,
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
         deleted_at: null,
       },
-    });
-  if (hasManagePermission === null) {
-    throw new HttpException("Forbidden", 403);
-  }
+    },
+  });
   const role = await MyGlobal.prisma.hrm_platform_roles.findFirstOrThrow({
-    where: {
-      id: props.roleId,
-      organization_id: organization.id,
-      deleted_at: null,
-      role_kind: "custom",
-    },
+    where: { id: props.roleId, deleted_at: null },
+    ...HrmPlatformRoleTransformer.select(),
   });
-  const permissionCodes: string[] = props.body.permissions ?? [];
-  if (permissionCodes.length === 0) {
-    throw new HttpException("Permissions array cannot be empty", 400);
+  if (role.role_kind !== "custom") {
+    throw new HttpException("Cannot modify built-in role permissions", 400);
   }
-  const validPermissions =
-    await MyGlobal.prisma.hrm_platform_permissions.findMany({
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        code: {
-          in: permissionCodes,
-        },
-        organization_id: organization.id,
-        deleted_at: null,
+        hrm_platform_member_id: props.member.id,
+        hrm_platform_organization_id: role.organization.id,
+      },
+      select: {
+        hrm_platform_role_id: true,
       },
     });
-  if (validPermissions.length !== permissionCodes.length) {
-    throw new HttpException("Some permission codes are invalid", 400);
+  const employeeRole =
+    await MyGlobal.prisma.hrm_platform_roles.findFirstOrThrow({
+      where: { id: employee.hrm_platform_role_id, deleted_at: null },
+      select: { permissions: true },
+    });
+  const hasManagePermission = employeeRole.permissions.some(
+    (perm: { code: string }) => perm.code === "employee:manage",
+  );
+  if (!hasManagePermission) {
+    throw new HttpException("You do not have permission to modify roles", 403);
+  }
+  const permissionCodes = props.body.permissions;
+  if (permissionCodes === undefined || permissionCodes.length === 0) {
+    throw new HttpException("Permission codes array is required", 400);
+  }
+  if (permissionCodes.length !== new Set(permissionCodes).size) {
+    throw new HttpException("Permission codes must be unique", 400);
+  }
+  const permissions = await MyGlobal.prisma.hrm_platform_permissions.findMany({
+    where: {
+      code: { in: permissionCodes },
+      organization_id: role.organization.id,
+      deleted_at: null,
+    },
+  });
+  if (permissions.length !== permissionCodes.length) {
+    throw new HttpException("Some permission codes do not exist", 400);
   }
   await MyGlobal.prisma.hrm_platform_permissions.deleteMany({
     where: {
       role_id: props.roleId,
+      deleted_at: null,
     },
   });
   const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
-  for (const code of permissionCodes) {
-    const permissionId: string & tags.Format<"uuid"> = v4();
-    await MyGlobal.prisma.hrm_platform_permissions.create({
-      data: {
-        id: permissionId,
-        role_id: props.roleId,
-        organization_id: organization.id,
-        code: code,
-        created_at: now,
-        updated_at: now,
-      },
-    });
-  }
-  const updatedRole =
-    await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
-      where: { id: props.roleId },
+  await MyGlobal.prisma.hrm_platform_permissions.createMany({
+    data: permissions.map((p) => ({
+      id: v4(),
+      role_id: props.roleId,
+      organization_id: role.organization.id,
+      code: p.code,
+      description: p.description ?? undefined,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    })),
+  });
+  await MyGlobal.prisma.hrm_platform_activity_logs.create({
+    data: {
+      id: v4(),
+      member_id: props.member.id,
+      organization_id: role.organization.id,
+      entity_type: "role",
+      entity_id: props.roleId,
+      action_type: "update",
+      action_name: "update_role_permissions",
+      extra_data: JSON.stringify({ permission_count: permissionCodes.length }),
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    },
+  });
+  const updatedRole = await MyGlobal.prisma.hrm_platform_roles.findFirstOrThrow(
+    {
+      where: { id: props.roleId, deleted_at: null },
       ...HrmPlatformRoleTransformer.select(),
-    });
+    },
+  );
   return await HrmPlatformRoleTransformer.transform(updatedRole);
 }
 

@@ -26,6 +26,24 @@ export async function getHrmPlatformMemberOrganizationsOrganizationId(props: {
         deleted_at: null,
       },
     });
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
+        deleted_at: null,
+      },
+    },
+  });
+  if (session === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (session.organization_id !== props.organizationId) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await HrmPlatformOrganizationTransformer.transform(record);
 }
 

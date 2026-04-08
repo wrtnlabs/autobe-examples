@@ -26,7 +26,7 @@ export namespace HrmPlatformOrganizationsSnapshotTransformer {
         status: true,
         metadata: true,
         created_at: true,
-        organization: { select: { id: true } },
+        organization: true,
       },
     } satisfies Prisma.hrm_platform_organizations_snapshotsFindManyArgs;
   }

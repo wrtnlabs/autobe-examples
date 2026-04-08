@@ -22,21 +22,19 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getHrmPlatformMemberTimetrackingRecentTimelogs(props: {
   member: MemberPayload;
-}): Promise<IHrmPlatformTimelog[]> {
-  const records = await MyGlobal.prisma.hrm_platform_timelogs.findMany({
-    where: {
-      employee_id: props.member.id,
-      deleted_at: null,
-    },
-    orderBy: { created_at: "desc" as const },
-    take: 5,
+}): Promise<IHrmPlatformTimelog> {
+  const record = await MyGlobal.prisma.hrm_platform_timelogs.findFirstOrThrow({
     ...HrmPlatformTimelogTransformer.select(),
+    where: {
+      deleted_at: null,
+      employee: {
+        hrm_platform_member_id: props.member.id,
+        deleted_at: null,
+      },
+    },
+    orderBy: { created_at: "desc" },
   });
-  const data = await ArrayUtil.asyncMap(
-    records,
-    HrmPlatformTimelogTransformer.transform,
-  );
-  return data;
+  return await HrmPlatformTimelogTransformer.transform(record);
 }
 
 

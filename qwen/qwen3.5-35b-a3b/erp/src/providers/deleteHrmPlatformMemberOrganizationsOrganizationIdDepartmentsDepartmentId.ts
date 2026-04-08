@@ -16,51 +16,63 @@ export async function deleteHrmPlatformMemberOrganizationsOrganizationIdDepartme
   organizationId: string & tags.Format<"uuid">;
   departmentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Get employee record to find the member's role_id
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+  // Verify the member's session is valid and active
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
     where: {
+      id: props.member.session_id,
+      expired_at: { gt: toISOStringSafe(new Date()) },
       hrm_platform_member_id: props.member.id,
-      hrm_platform_organization_id: props.organizationId,
-      deleted_at: null,
+      member: {
+        id: props.member.id,
+        is_active: true,
+        deleted_at: null,
+      },
     },
   });
-  if (employee === null) {
-    throw new HttpException("Not Found", 404);
+  if (session === null) {
+    throw new HttpException("You're not enrolled", 403);
   }
-  // Verify member has org:manage permission for the organization
-  const permissions = await MyGlobal.prisma.hrm_platform_permissions.findMany({
+  // Verify user has org:manage permission for the organization
+  const userRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
     where: {
-      role_id: employee.hrm_platform_role_id,
       organization_id: props.organizationId,
-      deleted_at: null,
+      employees: {
+        some: {
+          hrm_platform_member_id: props.member.id,
+        },
+      },
+    },
+    include: {
+      permissions: {
+        where: {
+          code: "org:manage",
+        },
+      },
     },
   });
-  const hasManagePermission = permissions.some((p) => p.code === "org:manage");
-  if (!hasManagePermission) {
+  if (userRole === null || userRole.permissions.length === 0) {
     throw new HttpException("Forbidden", 403);
   }
-  // 2. Query department to ensure it exists and belongs to the organization
+  // Verify department exists and belongs to the organization
   const department = await MyGlobal.prisma.hrm_platform_departments.findFirst({
     where: {
       id: props.departmentId,
       organization_id: props.organizationId,
-      deleted_at: null,
     },
-  } satisfies Prisma.hrm_platform_departmentsFindFirstArgs);
+  });
   if (department === null) {
-    throw new HttpException("Not Found", 404);
+    throw new HttpException("Department not found", 404);
   }
-  // 3. Set all employees' department_id to null
+  // Set all employees currently assigned to this department to have null department_id
   await MyGlobal.prisma.hrm_platform_employees.updateMany({
     where: {
-      hrm_platform_organization_id: props.organizationId,
       hrm_platform_department_id: props.departmentId,
     },
     data: {
       hrm_platform_department_id: null,
     },
   });
-  // 4. Hard delete the department record
+  // Perform hard delete of the department record
   await MyGlobal.prisma.hrm_platform_departments.delete({
     where: {
       id: props.departmentId,

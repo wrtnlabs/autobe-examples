@@ -25,10 +25,12 @@ export async function getHrmPlatformMemberEmailVerificationsVerificationId(props
         where: {
           id: props.verificationId,
           deleted_at: null,
-          hrm_platform_member_id: props.member.id,
         },
       },
     );
+  if (record.member.id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await HrmPlatformMemberEmailVerificationTransformer.transform(record);
 }
 

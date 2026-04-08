@@ -23,11 +23,6 @@ export namespace HrmPlatformGuestTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.hrm_platform_guest_sessionsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_guestsFindManyArgs;
   }

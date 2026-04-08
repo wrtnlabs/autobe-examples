@@ -15,15 +15,21 @@ export async function deleteHrmPlatformMemberTimeTrackingTimezonesTimezoneId(pro
   member: MemberPayload;
   timezoneId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  const now = toISOStringSafe(new Date());
   const timezone =
     await MyGlobal.prisma.hrm_platform_time_tracking_timezones.findFirst({
       where: {
         id: props.timezoneId,
-        deleted_at: null,
+      },
+      include: {
+        organization: true,
       },
     });
   if (timezone === null) {
-    throw new HttpException("Not found", 404);
+    throw new HttpException("Timezone not found", 404);
+  }
+  if (timezone.deleted_at !== null) {
+    throw new HttpException("Timezone already deleted", 404);
   }
   const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
     where: {
@@ -32,31 +38,16 @@ export async function deleteHrmPlatformMemberTimeTrackingTimezonesTimezoneId(pro
     },
   });
   if (session === null) {
-    throw new HttpException("Unauthorized", 403);
+    throw new HttpException("Session not found", 404);
   }
-  if (session.organization_id === null) {
-    throw new HttpException("Organization context required", 403);
-  }
-  if (timezone.organization_id !== session.organization_id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findFirst({
-      where: {
-        id: session.organization_id,
-        owner_id: props.member.id,
-        deleted_at: null,
-      },
-    });
-  if (organization === null) {
+  if (session.organization_id !== timezone.organization_id) {
     throw new HttpException("Forbidden", 403);
   }
   await MyGlobal.prisma.hrm_platform_time_tracking_timezones.update({
-    where: {
-      id: props.timezoneId,
-    },
+    where: { id: props.timezoneId },
     data: {
-      deleted_at: new Date(),
+      deleted_at: now,
+      updated_at: now,
     },
   });
 }

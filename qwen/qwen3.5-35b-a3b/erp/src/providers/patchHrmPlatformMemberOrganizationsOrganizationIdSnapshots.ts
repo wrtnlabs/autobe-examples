@@ -20,55 +20,66 @@ export async function patchHrmPlatformMemberOrganizationsOrganizationIdSnapshots
   organizationId: string & tags.Format<"uuid">;
   body: IHrmPlatformOrganizationsSnapshot.IRequest;
 }): Promise<IPageIHrmPlatformOrganizationsSnapshot.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 10;
-  const skip = (page - 1) * limit;
-  const whereInput: Prisma.hrm_platform_organizations_snapshotsWhereInput = {
-    hrm_platform_organization_id: props.organizationId,
-  };
-  if (props.body.search !== undefined) {
-    whereInput.name = { contains: props.body.search };
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 10;
+  const skip: number = (page - 1) * limit;
+  const whereConditions: Array<Prisma.hrm_platform_organizations_snapshotsWhereInput> =
+    [{ hrm_platform_organization_id: props.organizationId }];
+  if (props.body.search !== undefined && props.body.search !== null) {
+    whereConditions.push({
+      name: { contains: props.body.search },
+    });
   }
-  let gte: Date | undefined;
-  let lte: Date | undefined;
-  if (props.body.created_at_min !== undefined) {
-    gte = new Date(toISOStringSafe(props.body.created_at_min));
+  if (
+    props.body.created_at_min !== undefined &&
+    props.body.created_at_min !== null
+  ) {
+    whereConditions.push({
+      created_at: { gte: new Date(props.body.created_at_min) },
+    });
   }
-  if (props.body.created_at_max !== undefined) {
-    lte = new Date(toISOStringSafe(props.body.created_at_max));
+  if (
+    props.body.created_at_max !== undefined &&
+    props.body.created_at_max !== null
+  ) {
+    whereConditions.push({
+      created_at: { lte: new Date(props.body.created_at_max) },
+    });
   }
-  if (gte !== undefined || lte !== undefined) {
-    whereInput.created_at = {
-      ...(gte !== undefined && { gte }),
-      ...(lte !== undefined && { lte }),
-    };
+  if (props.body.status !== undefined && props.body.status !== null) {
+    whereConditions.push({
+      status: props.body.status,
+    });
   }
-  if (props.body.status !== undefined) {
-    whereInput.status = props.body.status;
-  }
-  const [records, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_organizations_snapshots.findMany({
+  const whereInput: Prisma.hrm_platform_organizations_snapshotsWhereInput =
+    whereConditions.length === 1
+      ? whereConditions[0]
+      : { AND: whereConditions };
+  const data =
+    await MyGlobal.prisma.hrm_platform_organizations_snapshots.findMany({
       where: whereInput,
       skip,
       take: limit,
       orderBy: { created_at: "desc" },
       ...HrmPlatformOrganizationsSnapshotAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_organizations_snapshots.count({
+    });
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    HrmPlatformOrganizationsSnapshotAtSummaryTransformer.transform,
+  );
+  const total =
+    await MyGlobal.prisma.hrm_platform_organizations_snapshots.count({
       where: whereInput,
-    }),
-  ]);
+    });
+  const pages: number = total === 0 ? 0 : Math.ceil(total / limit);
   return {
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      records,
-      HrmPlatformOrganizationsSnapshotAtSummaryTransformer.transform,
-    ),
+      pages: pages,
+    },
+    data: transformedData,
   };
 }
 

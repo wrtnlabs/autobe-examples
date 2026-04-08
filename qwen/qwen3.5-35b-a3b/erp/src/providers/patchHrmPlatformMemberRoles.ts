@@ -21,69 +21,68 @@ export async function patchHrmPlatformMemberRoles(props: {
   member: MemberPayload;
   body: IHrmPlatformRole.IRequest;
 }): Promise<IPageIHrmPlatformRole.ISummary> {
-  // Resolve organization context from session
-  const session =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findUniqueOrThrow({
-      where: { id: props.member.session_id },
-      select: { organization_id: true },
-    });
-  // Parse and validate pagination with defaults
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  if (page < 1) {
-    throw new HttpException("Page must be greater than or equal to 1", 400);
+  const offset = (page - 1) * limit;
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+    },
+  });
+  if (session === null) {
+    throw new HttpException("Session not found", 404);
   }
-  if (limit < 1 || limit > 100) {
-    throw new HttpException("Limit must be between 1 and 100", 400);
-  }
-  const skip = (page - 1) * limit;
-  // Build where clause with filters
-  const whereInput: Prisma.hrm_platform_rolesWhereInput = {
-    organization_id: session.organization_id!,
+  const organization_id = session.hrm_platform_member_id;
+  const where: Prisma.hrm_platform_rolesWhereInput = {
     deleted_at: null,
-    ...(props.body.name && { name: { startsWith: props.body.name } }),
-    ...(props.body.role_kind && { role_kind: props.body.role_kind }),
-    ...(props.body.search && {
-      OR: [
-        { name: { contains: props.body.search, mode: "insensitive" } },
-        { description: { contains: props.body.search, mode: "insensitive" } },
-      ],
-    }),
-  };
-  // Build order by clause
-  const orderDirection: "asc" | "desc" = props.body.order ?? "desc";
-  const orderByInput: Prisma.hrm_platform_rolesOrderByWithRelationInput =
-    props.body.sort === "name"
-      ? { name: orderDirection }
-      : props.body.sort === "created_at"
-        ? { created_at: orderDirection }
-        : props.body.sort === "updated_at"
-          ? { updated_at: orderDirection }
-          : { created_at: "desc" };
-  // Query roles with transformer
+    organization_id,
+    ...(props.body.name !== undefined
+      ? { name: { startsWith: props.body.name } }
+      : {}),
+    ...(props.body.role_kind !== undefined
+      ? { role_kind: props.body.role_kind }
+      : {}),
+    ...(props.body.search !== undefined
+      ? {
+          OR: [
+            { name: { contains: props.body.search, mode: "insensitive" } },
+            {
+              description: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+          ],
+        }
+      : {}),
+  } satisfies Prisma.hrm_platform_rolesWhereInput;
+  const orderBy: Prisma.hrm_platform_rolesOrderByWithRelationInput = {
+    [props.body.sort ?? "created_at"]: props.body.order ?? "desc",
+  } satisfies Prisma.hrm_platform_rolesOrderByWithRelationInput;
+  const total = await MyGlobal.prisma.hrm_platform_roles.count({
+    where,
+  });
   const records = await MyGlobal.prisma.hrm_platform_roles.findMany({
-    where: whereInput,
-    orderBy: orderByInput,
-    skip,
+    where,
+    orderBy,
+    skip: offset,
     take: limit,
     ...HrmPlatformRoleAtSummaryTransformer.select(),
-  });
-  // Query total count
-  const total = await MyGlobal.prisma.hrm_platform_roles.count({
-    where: whereInput,
   });
   return {
     pagination: {
       current: page,
       limit,
       records: total,
-      pages: Math.max(0, Math.ceil(total / limit)),
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,
       HrmPlatformRoleAtSummaryTransformer.transform,
     ),
-  };
+  } satisfies IPageIHrmPlatformRole.ISummary;
 }
 
 

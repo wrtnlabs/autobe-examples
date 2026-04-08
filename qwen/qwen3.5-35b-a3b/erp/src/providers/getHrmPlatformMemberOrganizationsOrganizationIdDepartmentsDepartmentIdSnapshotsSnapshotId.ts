@@ -16,25 +16,43 @@ import { HrmPlatformDepartmentsSnapshotTransformer } from "../transformers/HrmPl
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
+// Implementation for GET /hrmPlatform/member/organizations/{organizationId}/departments/{departmentId}/snapshots/{snapshotId}
+// Retrieves a specific department snapshot with organization and department context validation
 export async function getHrmPlatformMemberOrganizationsOrganizationIdDepartmentsDepartmentIdSnapshotsSnapshotId(props: {
   member: MemberPayload;
   organizationId: string & tags.Format<"uuid">;
   departmentId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformDepartmentsSnapshot> {
-  const record =
+  // Retrieve the snapshot record with department relation
+  const snapshot =
     await MyGlobal.prisma.hrm_platform_departments_snapshots.findUniqueOrThrow({
       where: {
         id: props.snapshotId,
-        hrm_platform_department_id: props.departmentId,
       },
       ...HrmPlatformDepartmentsSnapshotTransformer.select(),
     });
-  const organization = record.department.organization;
-  if (organization.id !== props.organizationId) {
-    throw new HttpException("Forbidden", 403);
+  // Retrieve the department to validate organization context and active status
+  const department =
+    await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
+      where: {
+        id: props.departmentId,
+      },
+      select: {
+        organization_id: true,
+        deleted_at: true,
+      },
+    });
+  // Validate that the department belongs to the specified organization
+  if (department.organization_id !== props.organizationId) {
+    throw new HttpException("Not found", 404);
   }
-  return await HrmPlatformDepartmentsSnapshotTransformer.transform(record);
+  // Validate that the department is not soft-deleted
+  if (department.deleted_at !== null) {
+    throw new HttpException("Not found", 404);
+  }
+  // Transform and return the snapshot record
+  return await HrmPlatformDepartmentsSnapshotTransformer.transform(snapshot);
 }
 
 

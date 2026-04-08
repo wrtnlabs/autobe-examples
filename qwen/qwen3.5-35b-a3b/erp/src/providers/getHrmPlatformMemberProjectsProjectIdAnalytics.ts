@@ -16,7 +16,6 @@ export async function getHrmPlatformMemberProjectsProjectIdAnalytics(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
 }): Promise<IProjectAnalytic> {
-  // 1. Fetch and validate project exists and is not soft-deleted
   const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
     {
       where: {
@@ -24,26 +23,21 @@ export async function getHrmPlatformMemberProjectsProjectIdAnalytics(props: {
         deleted_at: null,
       },
       select: {
-        id: true,
-        organization_id: true,
         budget_hours: true,
       },
     },
   );
-  // 2. Aggregate total duration from timelogs
-  const totalAggregation =
-    await MyGlobal.prisma.hrm_platform_timelogs.aggregate({
-      where: {
-        project_id: props.projectId,
-        deleted_at: null,
-      },
-      _sum: {
-        duration_minutes: true,
-      },
-    });
-  const totalDurationMinutes = totalAggregation._sum.duration_minutes ?? 0;
-  // 3. Aggregate billable duration
-  const billableAggregation =
+  const totalTimelogs = await MyGlobal.prisma.hrm_platform_timelogs.aggregate({
+    where: {
+      project_id: props.projectId,
+      deleted_at: null,
+    },
+    _sum: {
+      duration_minutes: true,
+    },
+  });
+  const totalDurationMinutes = totalTimelogs._sum.duration_minutes ?? 0;
+  const billableTimelogs =
     await MyGlobal.prisma.hrm_platform_timelogs.aggregate({
       where: {
         project_id: props.projectId,
@@ -54,24 +48,10 @@ export async function getHrmPlatformMemberProjectsProjectIdAnalytics(props: {
         duration_minutes: true,
       },
     });
-  const billableDurationMinutes =
-    billableAggregation._sum.duration_minutes ?? 0;
-  // 4. Aggregate non-billable duration
-  const nonBillableAggregation =
-    await MyGlobal.prisma.hrm_platform_timelogs.aggregate({
-      where: {
-        project_id: props.projectId,
-        billable: false,
-        deleted_at: null,
-      },
-      _sum: {
-        duration_minutes: true,
-      },
-    });
+  const billableDurationMinutes = billableTimelogs._sum.duration_minutes ?? 0;
   const nonBillableDurationMinutes =
-    nonBillableAggregation._sum.duration_minutes ?? 0;
-  // 5. Aggregate task counts by status
-  const taskStatusCounts = await MyGlobal.prisma.hrm_platform_tasks.groupBy({
+    totalDurationMinutes - billableDurationMinutes;
+  const taskStats = await MyGlobal.prisma.hrm_platform_tasks.groupBy({
     by: ["status"],
     where: {
       project_id: props.projectId,
@@ -81,81 +61,72 @@ export async function getHrmPlatformMemberProjectsProjectIdAnalytics(props: {
       id: true,
     },
   });
-  // Build task counts object with all statuses (default 0)
-  const taskCountsMap: {
-    TODO: number & tags.Type<"int32">;
-    IN_PROGRESS: number & tags.Type<"int32">;
-    IN_REVIEW: number & tags.Type<"int32">;
-    DONE: number & tags.Type<"int32">;
-  } = {
+  const taskCounts = {
     TODO: 0,
     IN_PROGRESS: 0,
     IN_REVIEW: 0,
     DONE: 0,
   };
-  for (const task of taskStatusCounts) {
-    switch (task.status) {
+  for (const stat of taskStats) {
+    switch (stat.status) {
       case "TODO":
-        taskCountsMap.TODO = task._count.id;
+        taskCounts.TODO = stat._count.id;
         break;
       case "IN_PROGRESS":
-        taskCountsMap.IN_PROGRESS = task._count.id;
+        taskCounts.IN_PROGRESS = stat._count.id;
         break;
       case "IN_REVIEW":
-        taskCountsMap.IN_REVIEW = task._count.id;
+        taskCounts.IN_REVIEW = stat._count.id;
         break;
       case "DONE":
-        taskCountsMap.DONE = task._count.id;
+        taskCounts.DONE = stat._count.id;
         break;
     }
   }
-  // 6. Calculate budget utilization
-  let budgetUtilization: number | null = null;
-  if (project.budget_hours !== null) {
-    const totalHours = totalDurationMinutes / 60;
-    budgetUtilization = (totalHours / project.budget_hours) * 100;
-  }
-  // 7. Count distinct employees with activity (timelogs OR task assignments)
-  const timelogEmployees = await MyGlobal.prisma.hrm_platform_timelogs.groupBy({
-    by: ["employee_id"],
-    where: {
-      project_id: props.projectId,
-      deleted_at: null,
+  const timelogEmployees = await MyGlobal.prisma.hrm_platform_timelogs.findMany(
+    {
+      where: {
+        project_id: props.projectId,
+        deleted_at: null,
+      },
+      select: {
+        employee_id: true,
+      },
     },
-    _count: {
-      employee_id: true,
-    },
-  });
-  const taskEmployees = await MyGlobal.prisma.hrm_platform_tasks.groupBy({
-    by: ["assigned_employee_id"],
-    where: {
-      project_id: props.projectId,
-      deleted_at: null,
-      assigned_employee_id: { not: null },
-    },
-    _count: {
-      assigned_employee_id: true,
-    },
-  });
-  // Combine distinct employee IDs from both sources
+  );
+  const taskHistories =
+    await MyGlobal.prisma.hrm_platform_task_histories.findMany({
+      where: {
+        task: {
+          project_id: props.projectId,
+          deleted_at: null,
+        },
+      },
+      select: {
+        actor_id: true,
+      },
+    });
   const employeeIds = new Set<string>();
-  for (const entry of timelogEmployees) {
-    employeeIds.add(entry.employee_id);
+  for (const log of timelogEmployees) {
+    employeeIds.add(log.employee_id);
   }
-  for (const entry of taskEmployees) {
-    employeeIds.add(entry.assigned_employee_id!);
+  for (const history of taskHistories) {
+    employeeIds.add(history.actor_id);
   }
   const memberActivityCount = employeeIds.size;
-  // 8. Return analytics object
-  const analytics: IProjectAnalytic = {
+  let budgetUtilization: number | null = null;
+  if (project.budget_hours !== null && project.budget_hours !== undefined) {
+    const totalHoursLogged = totalDurationMinutes / 60;
+    budgetUtilization = (totalHoursLogged / project.budget_hours) * 100;
+  }
+  return {
     total_duration_minutes: totalDurationMinutes,
     billable_duration_minutes: billableDurationMinutes,
     non_billable_duration_minutes: nonBillableDurationMinutes,
-    task_counts: taskCountsMap,
+    task_counts: taskCounts,
     budget_utilization: budgetUtilization,
     member_activity_count: memberActivityCount,
   };
-  return analytics satisfies IProjectAnalytic;
 }
 
 

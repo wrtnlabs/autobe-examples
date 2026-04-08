@@ -26,49 +26,44 @@ export async function postHrmPlatformMemberTimesheets(props: {
   member: MemberPayload;
   body: IHrmPlatformTimesheet.ICreate;
 }): Promise<IHrmPlatformTimesheet> {
-  const { start_date, end_date, hrm_platform_employee_id, notes } = props.body;
-  const startDate = new Date(start_date);
-  const endDate = new Date(end_date);
-  const dayOfWeekStart = startDate.getDay();
-  if (dayOfWeekStart !== 1) {
-    throw new HttpException("start_date must be a Monday", 400);
-  }
-  const expectedEndDate = new Date(startDate);
-  expectedEndDate.setDate(expectedEndDate.getDate() + 6);
-  if (endDate.getTime() !== expectedEndDate.getTime()) {
-    throw new HttpException("end_date must be 6 days after start_date", 400);
-  }
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: { id: hrm_platform_employee_id },
-      select: { id: true, hrm_platform_member_id: true },
-    });
-  if (employee.hrm_platform_member_id !== props.member.id) {
-    throw new HttpException("You can only create timesheets for yourself", 403);
-  }
-  let record: Awaited<
-    ReturnType<(typeof HrmPlatformTimesheetTransformer)["transform"]>
-  >;
-  try {
-    record = await HrmPlatformTimesheetTransformer.transform(
-      await MyGlobal.prisma.hrm_platform_timesheets.create({
-        data: await HrmPlatformTimesheetCollector.collect({ body: props.body }),
-        ...HrmPlatformTimesheetTransformer.select(),
-      }),
+  // Validate week period: end_date must be exactly 6 days after start_date
+  const startDate = props.body.start_date;
+  const endDate = props.body.end_date;
+  const startDateTime = new Date(startDate);
+  const endDateTime = new Date(endDate);
+  const diffMs = endDateTime.getTime() - startDateTime.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays !== 6) {
+    throw new HttpException(
+      "end_date must be exactly 6 days after start_date",
+      400,
     );
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
-      throw new HttpException(
-        "A timesheet already exists for this employee during this week period",
-        409,
-      );
-    }
-    throw error;
   }
-  return record;
+  // Validate employee exists
+  await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
+    where: { id: props.body.hrm_platform_employee_id },
+  });
+  // Check for existing timesheet with same employee and start_date
+  const existing = await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
+    where: {
+      hrm_platform_employee_id: props.body.hrm_platform_employee_id,
+      start_date: startDateTime,
+      deleted_at: null,
+    },
+  });
+  if (existing !== null) {
+    throw new HttpException(
+      "A timesheet already exists for this employee covering this week period",
+      409,
+    );
+  }
+  const record = await MyGlobal.prisma.hrm_platform_timesheets.create({
+    data: await HrmPlatformTimesheetCollector.collect({
+      body: props.body,
+    }),
+    ...HrmPlatformTimesheetTransformer.select(),
+  });
+  return await HrmPlatformTimesheetTransformer.transform(record);
 }
 
 

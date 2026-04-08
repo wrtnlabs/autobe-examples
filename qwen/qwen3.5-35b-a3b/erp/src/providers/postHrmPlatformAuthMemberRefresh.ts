@@ -23,42 +23,53 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postHrmPlatformAuthMemberRefresh(props: {
   body: IHrmPlatformMember.IRefresh;
 }): Promise<IHrmPlatformMember.IAuthorized> {
-  const decoded: {
-    type: "member";
+  const decoded = jwt.verify(
+    props.body.refresh_token,
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      issuer: "autobe",
+    },
+  ) as {
     id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
-    created_at: string & tags.Format<"date-time">;
-  } = jwt.verify(props.body.refresh_token, MyGlobal.env.JWT_SECRET_KEY, {
-    issuer: "autobe",
-  }) as any;
-  const session: {
-    id: string & tags.Format<"uuid">;
-  } | null = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    type: "member";
+  };
+  if (decoded.type !== "member") {
+    throw new HttpException("Invalid token type", 403);
+  }
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
     where: {
       id: decoded.session_id,
       hrm_platform_member_id: decoded.id,
-      refresh_token: props.body.refresh_token,
+      refresh_token_expires_at: {
+        gt: new Date(),
+      },
     },
   });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  const memberWithRelations: HrmPlatformMemberTransformer.Payload =
-    await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
-      where: { id: decoded.id },
-      ...HrmPlatformMemberTransformer.select(),
-    });
-  if (!memberWithRelations.is_active) {
-    throw new HttpException("Account has been disabled", 403);
+  const member = await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
+    where: { id: decoded.id },
+    select: {
+      id: true,
+      is_active: true,
+      deleted_at: true,
+    },
+  });
+  if (member.is_active === false || member.deleted_at !== null) {
+    throw new HttpException("Account has been deleted or deactivated", 403);
   }
-  const accessExpiresTimestamp: string & tags.Format<"date-time"> =
-    toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpiresTimestamp: string & tags.Format<"date-time"> =
-    toISOStringSafe(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 15 * 60 * 1000),
+  );
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
   const currentTimestamp: string & tags.Format<"date-time"> = toISOStringSafe(
     new Date(),
   );
-  const newAccessToken: string = jwt.sign(
+  const newAccessToken = jwt.sign(
     {
       type: "member" as const,
       id: decoded.id,
@@ -66,9 +77,9 @@ export async function postHrmPlatformAuthMemberRefresh(props: {
       created_at: currentTimestamp,
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
+    { expiresIn: "15m", issuer: "autobe" },
   );
-  const newRefreshToken: string = jwt.sign(
+  const newRefreshToken = jwt.sign(
     {
       type: "member" as const,
       id: decoded.id,
@@ -84,51 +95,56 @@ export async function postHrmPlatformAuthMemberRefresh(props: {
     data: {
       access_token: newAccessToken,
       refresh_token: newRefreshToken,
-      access_token_expires_at: accessExpiresTimestamp,
-      refresh_token_expires_at: refreshExpiresTimestamp,
-      updated_at: currentTimestamp,
+      access_token_expires_at: new Date(accessExpires),
+      refresh_token_expires_at: new Date(refreshExpires),
+      expired_at: new Date(refreshExpires),
     },
   });
-  const transformedMember: IHrmPlatformMember =
-    await HrmPlatformMemberTransformer.transform(memberWithRelations);
-  const sessionsResult: IHrmPlatformMemberSession.ISummary[] =
-    await ArrayUtil.asyncMap(
-      memberWithRelations.sessions,
-      HrmPlatformMemberSessionAtSummaryTransformer.transform,
-    );
-  const passwordResetTokensResult: IHrmPlatformMemberPasswordReset.ISummary[] =
-    await ArrayUtil.asyncMap(
-      memberWithRelations.passwordResetTokens,
-      HrmPlatformMemberPasswordResetAtSummaryTransformer.transform,
-    );
-  const emailVerificationsResult: IHrmPlatformMemberEmailVerification.ISummary[] =
-    await ArrayUtil.asyncMap(
-      memberWithRelations.emailVerifications,
-      HrmPlatformMemberEmailVerificationAtSummaryTransformer.transform,
-    );
-  const result: IHrmPlatformMember.IAuthorized = {
-    id: decoded.id,
+  const memberData =
+    await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
+      where: { id: decoded.id },
+      ...HrmPlatformMemberTransformer.select(),
+    });
+  const transformedMember =
+    await HrmPlatformMemberTransformer.transform(memberData);
+  return {
+    id: transformedMember.id,
     email: transformedMember.email,
-    display_name: transformedMember.display_name ?? undefined,
-    avatar_uri: transformedMember.avatar_uri ?? undefined,
-    phone_number: transformedMember.phone_number ?? undefined,
+    display_name: transformedMember.display_name,
+    avatar_uri: transformedMember.avatar_uri,
+    phone_number: transformedMember.phone_number,
     is_active: transformedMember.is_active,
-    last_login_at: transformedMember.last_login_at ?? undefined,
+    last_login_at: transformedMember.last_login_at,
     created_at: transformedMember.created_at,
     updated_at: transformedMember.updated_at,
     deleted_at: transformedMember.deleted_at,
-    sessions: sessionsResult,
-    passwordResetTokens: passwordResetTokensResult,
-    emailVerifications: emailVerificationsResult,
+    sessions: await ArrayUtil.asyncMap(
+      transformedMember.sessions ?? [],
+      (session) =>
+        HrmPlatformMemberSessionAtSummaryTransformer.transform(session as any),
+    ),
+    passwordResetTokens: await ArrayUtil.asyncMap(
+      transformedMember.passwordResetTokens ?? [],
+      (token) =>
+        HrmPlatformMemberPasswordResetAtSummaryTransformer.transform(
+          token as any,
+        ),
+    ),
+    emailVerifications: await ArrayUtil.asyncMap(
+      transformedMember.emailVerifications ?? [],
+      (verification) =>
+        HrmPlatformMemberEmailVerificationAtSummaryTransformer.transform(
+          verification as any,
+        ),
+    ),
     member: transformedMember,
     token: {
       access: newAccessToken,
       refresh: newRefreshToken,
-      expired_at: accessExpiresTimestamp,
-      refreshable_until: refreshExpiresTimestamp,
-    } satisfies IAuthorizationToken,
-  } satisfies IHrmPlatformMember.IAuthorized;
-  return result;
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
+  };
 }
 
 

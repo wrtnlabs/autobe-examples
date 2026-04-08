@@ -24,51 +24,50 @@ export async function getHrmPlatformMemberTimelogsTimelogId(props: {
   member: MemberPayload;
   timelogId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTimelog> {
-  // Fetch the timelog with all related entities
-  const timelog = await MyGlobal.prisma.hrm_platform_timelogs.findUniqueOrThrow(
-    {
-      where: {
-        id: props.timelogId,
-        deleted_at: null,
-      },
-      ...HrmPlatformTimelogTransformer.select(),
+  const record = await MyGlobal.prisma.hrm_platform_timelogs.findFirstOrThrow({
+    ...HrmPlatformTimelogTransformer.select(),
+    where: {
+      id: props.timelogId,
+      deleted_at: null,
     },
-  );
-  // Fetch employee details to verify ownership and get organization context
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+  });
+  if (record.employee.member.id !== props.member.id) {
+    const project = await MyGlobal.prisma.hrm_platform_projects.findFirst({
       where: {
-        id: timelog.employee.id,
-        deleted_at: null,
+        id: record.project.id,
       },
-      include: {
-        role: {
-          include: {
-            permissions: true,
+      select: {
+        organization: {
+          select: {
+            id: true,
           },
         },
-        organization: true,
       },
     });
-  // Verify the member is an employee in the same organization
-  const memberEmployee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        hrm_platform_member_id: props.member.id,
-        deleted_at: null,
-      },
-    });
-  // Check authorization: employee can view their own timelogs
-  const isOwner = memberEmployee.id === employee.id;
-  // Check if employee has time:view_all permission
-  const hasViewAllPermission = employee.role.permissions.some(
-    (permission) => permission.code === "time:view_all",
-  );
-  // Authorization check - return 404 to avoid information leakage
-  if (!isOwner && !hasViewAllPermission) {
-    throw new HttpException("Not found", 404);
+    if (project === null) {
+      throw new HttpException("Not found", 404);
+    }
+    const hasPermission =
+      await MyGlobal.prisma.hrm_platform_permissions.findFirst({
+        where: {
+          code: "time:view_all",
+          role: {
+            employees: {
+              some: {
+                member: {
+                  id: props.member.id,
+                },
+              },
+            },
+            organization_id: project.organization.id,
+          },
+        },
+      });
+    if (hasPermission === null) {
+      throw new HttpException("Not found", 404);
+    }
   }
-  return await HrmPlatformTimelogTransformer.transform(timelog);
+  return await HrmPlatformTimelogTransformer.transform(record);
 }
 
 

@@ -29,8 +29,8 @@ export namespace HrmPlatformTimesheetActionAtSummaryTransformer {
         notes: true,
         created_at: true,
         updated_at: true,
-        actor: HrmPlatformMemberAtSummaryTransformer.select(),
         timesheet: HrmPlatformTimesheetAtSummaryTransformer.select(),
+        actor: HrmPlatformMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_timesheet_actionsFindManyArgs;
   }
@@ -40,13 +40,13 @@ export namespace HrmPlatformTimesheetActionAtSummaryTransformer {
     return {
       id: input.id,
       action: input.action,
-      notes: input.notes,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
       actor: await HrmPlatformMemberAtSummaryTransformer.transform(input.actor),
       timesheet: await HrmPlatformTimesheetAtSummaryTransformer.transform(
         input.timesheet,
       ),
+      notes: input.notes,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
     } satisfies IHrmPlatformTimesheetAction.ISummary;
   }
 }

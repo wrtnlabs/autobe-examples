@@ -27,78 +27,78 @@ export async function patchHrmPlatformMemberTimers(props: {
   body: IHrmPlatformTimer.IRequest;
 }): Promise<IPageIHrmPlatformTimer.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  const whereInput = {
-    hrm_platform_employee_id: props.member.id,
+  const limit = props.body.limit ?? props.body.pageSize ?? 20;
+  const pageSize = limit < 20 ? 20 : limit > 100 ? 100 : limit;
+  const skip = (page - 1) * pageSize;
+  const where: Prisma.hrm_platform_timersWhereInput = {
     deleted_at: null,
-    ...(props.body.status !== undefined && {
-      status: props.body.status,
-    }),
-    ...(props.body.projectId !== undefined && {
-      hrm_platform_project_id: props.body.projectId,
-    }),
-    ...(props.body.taskId !== undefined && {
-      hrm_platform_task_id: props.body.taskId,
-    }),
-    ...(props.body.createdAt !== undefined && {
-      created_at: {
-        ...(props.body.createdAt.gte !== undefined && {
-          gte: new Date(props.body.createdAt.gte),
-        }),
-        ...(props.body.createdAt.lte !== undefined && {
-          lte: new Date(props.body.createdAt.lte),
-        }),
-      },
-    }),
-    ...(props.body.lastTickAt !== undefined && {
-      last_tick_at: {
-        ...(props.body.lastTickAt.gte !== undefined && {
-          gte: new Date(props.body.lastTickAt.gte),
-        }),
-        ...(props.body.lastTickAt.lte !== undefined && {
-          lte: new Date(props.body.lastTickAt.lte),
-        }),
-      },
-    }),
-  } satisfies Prisma.hrm_platform_timersWhereInput;
-  const orderByInput = (
-    props.body.sortField !== undefined && props.body.sortOrder !== undefined
-      ? {
-          [props.body.sortField === "createdAt"
-            ? "created_at"
-            : props.body.sortField === "updatedAt"
-              ? "updated_at"
-              : props.body.sortField === "durationSeconds"
-                ? "duration_seconds"
-                : props.body.sortField === "status"
-                  ? "status"
-                  : "last_tick_at"]: props.body.sortOrder,
-        }
-      : { created_at: "desc" as const }
-  ) satisfies Prisma.hrm_platform_timersOrderByWithRelationInput;
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_timers.findMany({
-      where: whereInput,
-      orderBy: orderByInput,
-      skip,
-      take: limit,
-      ...HrmPlatformTimerAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_timers.count({ where: whereInput }),
-  ]);
+    hrm_platform_employee_id: props.member.id,
+  };
+  if (props.body.status !== undefined) {
+    where.status = props.body.status;
+  }
+  if (props.body.projectId !== undefined) {
+    where.hrm_platform_project_id = props.body.projectId;
+  }
+  if (props.body.taskId !== undefined) {
+    where.hrm_platform_task_id = props.body.taskId;
+  }
+  if (props.body.createdAt !== undefined) {
+    const dateFilter: Prisma.DateTimeFilter = {};
+    if (props.body.createdAt.gte !== undefined) {
+      dateFilter.gte = new Date(props.body.createdAt.gte);
+    }
+    if (props.body.createdAt.lte !== undefined) {
+      dateFilter.lte = new Date(props.body.createdAt.lte);
+    }
+    where.created_at = dateFilter;
+  }
+  if (props.body.lastTickAt !== undefined) {
+    const dateFilter: Prisma.DateTimeFilter = {};
+    if (props.body.lastTickAt.gte !== undefined) {
+      dateFilter.gte = new Date(props.body.lastTickAt.gte);
+    }
+    if (props.body.lastTickAt.lte !== undefined) {
+      dateFilter.lte = new Date(props.body.lastTickAt.lte);
+    }
+    where.last_tick_at = dateFilter;
+  }
+  const sortFieldMap: Record<string, string> = {
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+    durationSeconds: "duration_seconds",
+    status: "status",
+    lastTickAt: "last_tick_at",
+  };
+  const orderByField = props.body.sortField
+    ? sortFieldMap[props.body.sortField]
+    : "created_at";
+  const sortOrder = props.body.sortOrder === "desc" ? "desc" : "asc";
+  const orderBy = {
+    [orderByField]: sortOrder,
+  } satisfies Prisma.hrm_platform_timersOrderByWithRelationInput;
+  const data = await MyGlobal.prisma.hrm_platform_timers.findMany({
+    where,
+    skip,
+    take: pageSize,
+    orderBy,
+    ...HrmPlatformTimerAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.hrm_platform_timers.count({
+    where,
+  });
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit: pageSize,
       records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+      pages: total === 0 ? 0 : Math.ceil(total / pageSize),
+    },
     data: await ArrayUtil.asyncMap(
       data,
       HrmPlatformTimerAtSummaryTransformer.transform,
     ),
-  } satisfies IPageIHrmPlatformTimer.ISummary;
+  };
 }
 
 

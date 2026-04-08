@@ -20,14 +20,52 @@ export async function getHrmPlatformMemberRolesRoleId(props: {
   member: MemberPayload;
   roleId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformRole> {
-  const record = await MyGlobal.prisma.hrm_platform_roles.findFirstOrThrow({
+  const session =
+    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
+      where: {
+        id: props.member.session_id,
+        expired_at: { gt: new Date() },
+        hrm_platform_member_id: props.member.id,
+        member: {
+          id: props.member.id,
+          is_active: true,
+          deleted_at: null,
+        },
+      },
+    });
+  const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
     ...HrmPlatformRoleTransformer.select(),
     where: {
       id: props.roleId,
       deleted_at: null,
     },
   });
-  return await HrmPlatformRoleTransformer.transform(record);
+  const memberRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
+    where: {
+      organization: {
+        id: role.organization.id,
+      },
+      employees: {
+        some: {
+          hrm_platform_member_id: props.member.id,
+        },
+      },
+      deleted_at: null,
+    },
+    include: {
+      permissions: true,
+    },
+  });
+  if (!memberRole) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const hasPermission = memberRole.permissions.some(
+    (permission) => permission.code === "role:view",
+  );
+  if (!hasPermission) {
+    throw new HttpException("Forbidden", 403);
+  }
+  return await HrmPlatformRoleTransformer.transform(role);
 }
 
 

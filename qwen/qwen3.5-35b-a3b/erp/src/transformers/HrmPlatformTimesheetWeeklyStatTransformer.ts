@@ -17,6 +17,8 @@ export namespace HrmPlatformTimesheetWeeklyStatTransformer {
     return {
       select: {
         id: true,
+        organization_id: true,
+        employee_id: true,
         week_start: true,
         week_end: true,
         timesheet_count: true,
@@ -27,12 +29,8 @@ export namespace HrmPlatformTimesheetWeeklyStatTransformer {
         approved_timesheet_count: true,
         rejected_timesheet_count: true,
         last_refreshed_at: true,
-        organization: {
-          select: { id: true },
-        } satisfies Prisma.hrm_platform_organizationsFindManyArgs,
-        employee: {
-          select: { id: true },
-        } satisfies Prisma.hrm_platform_employeesFindManyArgs,
+        organization: true,
+        employee: true,
       },
     } satisfies Prisma.hrm_platform_timesheet_weekly_statsFindManyArgs;
   }
@@ -41,8 +39,8 @@ export namespace HrmPlatformTimesheetWeeklyStatTransformer {
   ): Promise<IHrmPlatformTimesheetWeeklyStat> {
     return {
       id: input.id,
-      organization_id: input.organization.id,
-      employee_id: input.employee.id,
+      organization_id: input.organization_id,
+      employee_id: input.employee_id,
       week_start: input.week_start.toISOString(),
       week_end: input.week_end.toISOString(),
       timesheet_count: input.timesheet_count,

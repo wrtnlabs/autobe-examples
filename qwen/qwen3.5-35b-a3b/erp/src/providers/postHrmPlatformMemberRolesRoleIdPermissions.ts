@@ -21,24 +21,23 @@ export async function postHrmPlatformMemberRolesRoleIdPermissions(props: {
   roleId: string & tags.Format<"uuid">;
   body: IHrmPlatformRole.IPermissionCreate;
 }): Promise<IHrmPlatformPermission> {
-  const role = await MyGlobal.prisma.hrm_platform_roles.findFirstOrThrow({
+  const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
     where: {
       id: props.roleId,
       deleted_at: null,
     },
-    select: { id: true, organization_id: true },
   });
   const existingPermission =
     await MyGlobal.prisma.hrm_platform_permissions.findFirst({
       where: {
-        organization_id: role.organization_id,
         code: props.body.code,
+        organization_id: role.organization_id,
         deleted_at: null,
       },
     });
   if (existingPermission !== null) {
     throw new HttpException(
-      "Permission code already exists in this organization",
+      `Permission code '${props.body.code}' already exists in this organization`,
       409,
     );
   }

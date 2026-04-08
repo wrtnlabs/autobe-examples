@@ -21,11 +21,15 @@ export namespace HrmPlatformRoleAtSummaryTransformer {
       select: {
         id: true,
         name: true,
+        description: true,
         role_kind: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
         organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
-        permissions: {
-          select: { id: true },
-        } satisfies Prisma.hrm_platform_permissionsFindManyArgs,
+        employees: true,
+        employeeSnapshots: true,
+        permissions: { select: { id: true } },
       },
     } satisfies Prisma.hrm_platform_rolesFindManyArgs;
   }

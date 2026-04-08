@@ -44,7 +44,7 @@ export namespace HrmPlatformTimesheetActionTransformer {
         input.timesheet,
       ),
       action: input.action,
-      notes: input.notes ?? null,
+      notes: input.notes,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
     } satisfies IHrmPlatformTimesheetAction;

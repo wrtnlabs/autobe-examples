@@ -20,48 +20,31 @@ export async function postHrmPlatformMemberTimeTrackingTimezones(props: {
   member: MemberPayload;
   body: IHrmPlatformTimeTrackingTimezone.ICreate;
 }): Promise<IHrmPlatformTimeTrackingTimezone> {
-  // Verify organization exists and belongs to the member
+  const { organization_id, timezone } = props.body;
   const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findFirst({
-      where: {
-        id: props.body.organization_id,
-        deleted_at: null,
-      },
-      include: {
-        owner: {
-          select: {
-            id: true,
-          },
-        },
-      },
+    await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
+      where: { id: organization_id },
+      select: { id: true, owner_id: true },
     });
-  if (organization === null) {
-    throw new HttpException("Organization not found", 404);
-  }
-  // Verify member owns the organization
-  if (organization.owner.id !== props.member.id) {
+  if (organization.owner_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Check if timezone configuration already exists for this organization
+  const validTimezonePattern: RegExp = /^[A-Za-z0-9\/_\-]+\/[A-Za-z0-9\/_\-]+$/;
+  if (!validTimezonePattern.test(timezone)) {
+    throw new HttpException(
+      "Invalid timezone identifier. Expected format: Area/Location (e.g., Asia/Seoul)",
+      400,
+    );
+  }
   const existing =
-    await MyGlobal.prisma.hrm_platform_time_tracking_timezones.findFirst({
-      where: {
-        organization_id: props.body.organization_id,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.hrm_platform_time_tracking_timezones.findUnique({
+      where: { organization_id: organization_id },
     });
   if (existing !== null) {
     throw new HttpException(
-      "A timezone configuration already exists for this organization",
+      "Organization already has a timezone configuration",
       409,
     );
-  }
-  // Validate timezone is a valid IANA timezone identifier
-  // The collector will validate this, but we can also do a quick check here
-  try {
-    Intl.DateTimeFormat(undefined, { timeZone: props.body.timezone });
-  } catch {
-    throw new HttpException("Invalid timezone identifier", 400);
   }
   const record =
     await MyGlobal.prisma.hrm_platform_time_tracking_timezones.create({

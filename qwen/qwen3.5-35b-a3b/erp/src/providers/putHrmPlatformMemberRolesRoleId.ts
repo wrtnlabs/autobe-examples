@@ -21,7 +21,6 @@ export async function putHrmPlatformMemberRolesRoleId(props: {
   roleId: string & tags.Format<"uuid">;
   body: IHrmPlatformRole.IUpdate;
 }): Promise<IHrmPlatformRole> {
-  // Step 1: Fetch role with organization_id and role_kind for validation
   const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
     where: {
       id: props.roleId,
@@ -30,71 +29,42 @@ export async function putHrmPlatformMemberRolesRoleId(props: {
     select: {
       id: true,
       organization_id: true,
-      name: true,
-      description: true,
       role_kind: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      permissions: {
-        select: {
-          id: true,
-          code: true,
-        },
+    },
+  });
+  if (role.role_kind === "built_in") {
+    throw new HttpException("Built-in roles cannot be modified", 403);
+  }
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
+        deleted_at: null,
       },
     },
   });
-  // Step 2: Reject built-in roles with 403 Forbidden
-  if (role.role_kind === "built_in") {
-    throw new HttpException("Cannot modify built-in role", 403);
+  if (session === null) {
+    throw new HttpException("Permission denied", 403);
   }
-  // Step 3: Validate name uniqueness if provided (case-insensitive)
   if (props.body.name !== undefined) {
-    const existingRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
+    const existing = await MyGlobal.prisma.hrm_platform_roles.findFirst({
       where: {
         organization_id: role.organization_id,
-        name: {
-          equals: props.body.name,
-          mode: "insensitive",
-        },
-        id: {
-          not: props.roleId,
-        },
+        name: props.body.name,
         deleted_at: null,
+        NOT: {
+          id: props.roleId,
+        },
       },
-      select: { id: true },
     });
-    if (existingRole !== null) {
+    if (existing !== null) {
       throw new HttpException("Role name already exists", 409);
     }
   }
-  // Step 4: Validate permission codes if provided
-  if (props.body.permissions !== undefined) {
-    const permissionCodes: string[] = props.body.permissions;
-    const orgPermissions =
-      await MyGlobal.prisma.hrm_platform_permissions.findMany({
-        where: {
-          organization_id: role.organization_id,
-          code: {
-            in: permissionCodes,
-          },
-        },
-        select: { code: true },
-      });
-    const existingCodes: Set<string> = new Set(
-      orgPermissions.map((permission) => permission.code),
-    );
-    const invalidCodes: string[] = permissionCodes.filter(
-      (code) => !existingCodes.has(code),
-    );
-    if (invalidCodes.length > 0) {
-      throw new HttpException(
-        `Invalid permission codes: ${invalidCodes.join(", ")}`,
-        400,
-      );
-    }
-  }
-  // Step 5: Apply updates with ISO string timestamp
   await MyGlobal.prisma.hrm_platform_roles.update({
     where: { id: props.roleId },
     data: {
@@ -102,17 +72,14 @@ export async function putHrmPlatformMemberRolesRoleId(props: {
       ...(props.body.description !== undefined && {
         description: props.body.description,
       }),
-      updated_at: toISOStringSafe(new Date()),
+      updated_at: new Date(),
       ...(props.body.permissions !== undefined && {
         permissions: {
-          deleteMany: {
-            role_id: props.roleId,
-          },
-          create: props.body.permissions.map((permission_code: string) => ({
-            organization_id: role.organization_id,
-            code: permission_code,
-            description: null,
+          deleteMany: { role_id: props.roleId },
+          create: props.body.permissions.map((code) => ({
             id: v4(),
+            code,
+            organization_id: role.organization_id,
             created_at: new Date(),
             updated_at: new Date(),
           })),
@@ -120,9 +87,11 @@ export async function putHrmPlatformMemberRolesRoleId(props: {
       }),
     },
   });
-  // Step 6: Fetch updated role with full data using transformer
   const updated = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
-    where: { id: props.roleId },
+    where: {
+      id: props.roleId,
+      deleted_at: null,
+    },
     ...HrmPlatformRoleTransformer.select(),
   });
   return await HrmPlatformRoleTransformer.transform(updated);

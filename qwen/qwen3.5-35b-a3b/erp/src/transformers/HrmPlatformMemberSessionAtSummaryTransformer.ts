@@ -48,7 +48,7 @@ export namespace HrmPlatformMemberSessionAtSummaryTransformer {
         ? await HrmPlatformOrganizationAtSummaryTransformer.transform(
             input.organization,
           )
-        : undefined,
+        : null,
     } satisfies IHrmPlatformMemberSession.ISummary;
   }
 }

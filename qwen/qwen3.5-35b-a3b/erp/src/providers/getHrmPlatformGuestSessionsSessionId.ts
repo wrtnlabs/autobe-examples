@@ -17,13 +17,12 @@ export async function getHrmPlatformGuestSessionsSessionId(props: {
   guest: GuestPayload;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformMemberSession> {
-  if (props.guest.session_id !== props.sessionId) {
-    throw new HttpException("Forbidden", 403);
-  }
   const record =
     await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
       ...HrmPlatformMemberSessionTransformer.select(),
-      where: { id: props.sessionId },
+      where: {
+        id: props.sessionId,
+      },
     });
   return await HrmPlatformMemberSessionTransformer.transform(record);
 }

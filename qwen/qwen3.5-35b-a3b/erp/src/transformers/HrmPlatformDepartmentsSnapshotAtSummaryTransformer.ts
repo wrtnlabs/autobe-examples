@@ -36,52 +36,55 @@ export namespace HrmPlatformDepartmentsSnapshotAtSummaryTransformer {
   }
   export async function transform(
     input: Payload,
-    cache: VariadicSingleton<
+    parentCache: VariadicSingleton<
       Promise<IHrmPlatformDepartmentsSnapshot.ISummary>,
       [string]
-    > = createParentCache(),
+    >,
   ): Promise<IHrmPlatformDepartmentsSnapshot.ISummary> {
+    const parentDepartment:
+      | IHrmPlatformDepartmentsSnapshot.ISummary
+      | undefined = input.parent_department_id
+      ? await parentCache.get(input.parent_department_id)
+      : undefined;
     return {
-      id: input.id ?? undefined,
-      hrmPlatformDepartmentId: input.department.id ?? undefined,
-      name: input.name ?? undefined,
+      id: input.id,
+      hrmPlatformDepartmentId: input.department.id,
+      name: input.name,
       description: input.description ?? undefined,
       color: input.color ?? undefined,
-      parentDepartment:
-        input.parent_department_id != null
-          ? await cache.get(input.parent_department_id)
-          : undefined,
+      parentDepartment,
       fiscalStartMonth: input.fiscal_start_month ?? undefined,
       timezone: input.timezone ?? undefined,
-      status: input.status ?? undefined,
-      createdAt: input.created_at.toISOString() ?? undefined,
-      updatedAt: input.updated_at.toISOString() ?? undefined,
-      department:
-        (await HrmPlatformDepartmentAtSummaryTransformer.transform(
-          input.department,
-        )) ?? undefined,
+      status: input.status,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      department: await HrmPlatformDepartmentAtSummaryTransformer.transform(
+        input.department,
+      ),
     } satisfies IHrmPlatformDepartmentsSnapshot.ISummary;
   }
   export async function transformAll(
     inputs: Payload[],
   ): Promise<IHrmPlatformDepartmentsSnapshot.ISummary[]> {
-    const cache = createParentCache();
-    return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
+    const parentCache = createParentCache();
+    return await ArrayUtil.asyncMap(inputs, (x) => transform(x, parentCache));
   }
-  function createParentCache() {
-    const cache = new VariadicSingleton<
-      Promise<IHrmPlatformDepartmentsSnapshot.ISummary>,
-      [string]
-    >(async (id: string): Promise<IHrmPlatformDepartmentsSnapshot.ISummary> => {
-      const record =
-        await MyGlobal.prisma.hrm_platform_departments_snapshots.findFirstOrThrow(
-          {
-            ...select(),
-            where: { id },
-          },
-        );
-      return transform(record, cache);
-    });
+  function createParentCache(): VariadicSingleton<
+    Promise<IHrmPlatformDepartmentsSnapshot.ISummary>,
+    [string]
+  > {
+    const cache = new VariadicSingleton(
+      async (id: string): Promise<IHrmPlatformDepartmentsSnapshot.ISummary> => {
+        const record =
+          await MyGlobal.prisma.hrm_platform_departments_snapshots.findFirstOrThrow(
+            {
+              ...select(),
+              where: { id },
+            },
+          );
+        return transform(record, cache);
+      },
+    );
     return cache;
   }
 }
@@ -98,16 +101,15 @@ export namespace HrmPlatformDepartmentsSnapshotAtSummaryTransformer {
 //         return {
 //           select: {
 //             id: true,
+//             hrmPlatformDepartmentId: true,
 //             name: true,
 //             description: true,
 //             color: true,
-//             parent_department_id: true,
-//             fiscal_start_month: true,
+//             fiscalStartMonth: true,
 //             timezone: true,
 //             status: true,
-//             created_at: true,
-//             updated_at: true,
-//             hrm_platform_department_id: true,
+//             createdAt: true,
+//             updatedAt: true,
 //             parentDepartment_id: true,
 //             parentDepartment: undefined, // DO NOT select recursive relation
 //             ...

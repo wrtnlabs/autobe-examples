@@ -14,6 +14,7 @@ export namespace HrmPlatformProjectCollector {
   }) {
     const id: string = v4();
     return {
+      // Scalar fields
       id,
       name: props.body.name,
       color_code: props.body.color_code,
@@ -27,7 +28,9 @@ export namespace HrmPlatformProjectCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      // BelongsTo relations
       organization: { connect: { id: props.hrmPlatformOrganizations.id } },
+      // HasMany relations (not needed from DTO)
     } satisfies Prisma.hrm_platform_projectsCreateInput;
   }
 }

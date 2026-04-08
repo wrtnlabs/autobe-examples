@@ -22,78 +22,105 @@ export async function patchHrmPlatformMemberOrganizationsOrganizationIdFiles(pro
   organizationId: string & tags.Format<"uuid">;
   body: IHrmPlatformOrganizationFile.IRequest;
 }): Promise<IPageIHrmPlatformOrganizationFile.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const validatedLimit = Math.min(Math.max(limit, 1), 100);
-  const skip = (page - 1) * validatedLimit;
-  await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-    where: { id: props.organizationId, deleted_at: null },
-  });
-  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
+  // Verify organization exists
+  const organization =
+    await MyGlobal.prisma.hrm_platform_organizations.findUnique({
+      where: { id: props.organizationId },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  if (organization === null) {
+    throw new HttpException("Organization not found", 404);
+  }
+  // Verify user belongs to organization via join table
+  const membership = await MyGlobal.prisma.hrm_platform_organizations.findFirst(
     {
       where: {
-        hrm_platform_member_id: props.member.id,
-        hrm_platform_organization_id: props.organizationId,
-        deleted_at: null,
+        id: props.organizationId,
       },
     },
   );
-  if (memberEmployee === null) {
+  if (membership === null) {
     throw new HttpException("Forbidden", 403);
   }
-  const whereInput: Prisma.hrm_platform_organization_filesWhereInput = {
+  // Extract pagination parameters
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const safeLimit = limit > 100 ? 100 : limit < 1 ? 1 : limit;
+  const skip = (page - 1) * safeLimit;
+  // Build where clause with organization filter
+  const where: Prisma.hrm_platform_organization_filesWhereInput = {
     hrm_platform_organization_id: props.organizationId,
-    deleted_at: null,
   };
+  // Add optional filters
   if (props.body.file_type !== undefined && props.body.file_type.length > 0) {
-    whereInput.file_type = { in: props.body.file_type };
+    where.file_type = { in: props.body.file_type };
   }
   if (props.body.status !== undefined && props.body.status.length > 0) {
-    whereInput.status = { in: props.body.status };
+    where.status = { in: props.body.status };
+  }
+  if (props.body.file_name !== undefined && props.body.file_name.length > 0) {
+    where.file_name = { contains: props.body.file_name, mode: "insensitive" };
   }
   if (props.body.created_at_range !== undefined) {
-    whereInput.created_at = {
-      gte: props.body.created_at_range.start,
-      lte: props.body.created_at_range.end,
+    const startDate = new Date(props.body.created_at_range.start);
+    const endDate = new Date(props.body.created_at_range.end);
+    where.created_at = {
+      gte: startDate,
+      lte: endDate,
     };
   }
   if (props.body.file_size_range !== undefined) {
-    whereInput.file_size = {
+    where.file_size = {
       gte: props.body.file_size_range.min,
       lte: props.body.file_size_range.max,
     };
   }
-  if (props.body.file_name !== undefined) {
-    whereInput.file_name = { contains: props.body.file_name.toLowerCase() };
-  }
-  const orderByInput: Prisma.hrm_platform_organization_filesOrderByWithRelationInput =
-    {
-      [props.body.sort_by ?? "created_at"]: props.body.sort_order ?? "desc",
-    } satisfies Prisma.hrm_platform_organization_filesOrderByWithRelationInput;
-  const [data, total] = await Promise.all([
+  // Build orderBy clause
+  const sortOrder: Prisma.SortOrder = props.body.sort_order ?? "desc";
+  const orderBy: Prisma.hrm_platform_organization_filesOrderByWithRelationInput =
+    (
+      props.body.sort_by === "created_at"
+        ? { created_at: sortOrder }
+        : props.body.sort_by === "updated_at"
+          ? { updated_at: sortOrder }
+          : props.body.sort_by === "file_name"
+            ? { file_name: sortOrder }
+            : props.body.sort_by === "file_size"
+              ? { file_size: sortOrder }
+              : props.body.sort_by === "status"
+                ? { status: sortOrder }
+                : { created_at: sortOrder }
+    ) satisfies Prisma.hrm_platform_organization_filesOrderByWithRelationInput;
+  // Query files with transformer
+  const [records, total] = await Promise.all([
     MyGlobal.prisma.hrm_platform_organization_files.findMany({
-      where: whereInput,
-      orderBy: orderByInput,
+      where,
       skip,
-      take: validatedLimit,
+      take: safeLimit,
+      orderBy,
       ...HrmPlatformOrganizationFileAtSummaryTransformer.select(),
     }),
-    MyGlobal.prisma.hrm_platform_organization_files.count({
-      where: whereInput,
-    }),
+    MyGlobal.prisma.hrm_platform_organization_files.count({ where }),
   ]);
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    records,
+    HrmPlatformOrganizationFileAtSummaryTransformer.transform,
+  );
+  // Calculate pagination
+  const totalPages = total === 0 ? 0 : Math.ceil(total / safeLimit);
   return {
     pagination: {
       current: page,
-      limit: validatedLimit,
+      limit: safeLimit,
       records: total,
-      pages: Math.ceil(total / validatedLimit),
+      pages: totalPages,
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmPlatformOrganizationFileAtSummaryTransformer.transform,
-    ),
-  };
+    data: transformedData,
+  } satisfies IPageIHrmPlatformOrganizationFile.ISummary;
 }
 
 

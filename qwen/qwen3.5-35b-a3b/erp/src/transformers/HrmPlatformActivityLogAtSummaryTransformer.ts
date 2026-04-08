@@ -25,16 +25,8 @@ export namespace HrmPlatformActivityLogAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        member: {
-          select: {
-            id: true,
-          },
-        },
-        organization: {
-          select: {
-            id: true,
-          },
-        },
+        member: true,
+        organization: true,
       },
     } satisfies Prisma.hrm_platform_activity_logsFindManyArgs;
   }

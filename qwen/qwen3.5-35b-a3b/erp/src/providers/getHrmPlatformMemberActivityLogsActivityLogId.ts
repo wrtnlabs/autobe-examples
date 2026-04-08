@@ -21,29 +21,19 @@ export async function getHrmPlatformMemberActivityLogsActivityLogId(props: {
 }): Promise<IHrmPlatformActivityLog> {
   const record =
     await MyGlobal.prisma.hrm_platform_activity_logs.findUniqueOrThrow({
+      where: { id: props.activityLogId },
       ...HrmPlatformActivityLogTransformer.select(),
-      where: {
-        id: props.activityLogId,
-        deleted_at: null,
-      },
     });
   const session =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findUniqueOrThrow({
-      where: { id: props.member.session_id },
+    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
+      where: {
+        id: props.member.session_id,
+        expired_at: { gt: new Date() },
+        hrm_platform_member_id: props.member.id,
+      },
       select: { organization_id: true },
     });
-  if (session.organization_id !== record.organization.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const hasManagePermission =
-    await MyGlobal.prisma.hrm_platform_organization_files.findFirst({
-      where: {
-        hrm_platform_member_id: props.member.id,
-        hrm_platform_organization_id: session.organization_id,
-      },
-      select: { id: true },
-    });
-  if (hasManagePermission === null) {
+  if (record.organization.id !== session.organization_id) {
     throw new HttpException("Forbidden", 403);
   }
   return await HrmPlatformActivityLogTransformer.transform(record);

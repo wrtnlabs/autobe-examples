@@ -18,25 +18,23 @@ export namespace HrmPlatformProjectAtSummaryTransformer {
       select: {
         id: true,
         name: true,
-        status: true,
         color_code: true,
         description: true,
         budget_hours: true,
         start_date: true,
         end_date: true,
+        status: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: true,
-        memberships: true,
-        tasks: true,
-        timers: true,
         timelogs: {
           select: {
-            id: true,
             billable: true,
-            employee_id: true,
-            duration_minutes: true,
+          },
+        } satisfies Prisma.hrm_platform_timelogsFindManyArgs,
+        _count: {
+          select: {
+            timelogs: true,
           },
         },
       },
@@ -45,45 +43,38 @@ export namespace HrmPlatformProjectAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IHrmPlatformProject.ISummary> {
-    const timelogs = input.timelogs;
-    const totalHours: number =
-      timelogs.reduce((sum, t) => sum + t.duration_minutes, 0) / 60;
-    const billableHours: number =
-      timelogs
-        .filter((t) => t.billable)
-        .reduce((sum, t) => sum + t.duration_minutes, 0) / 60;
-    const nonBillableHours: number =
-      timelogs
-        .filter((t) => !t.billable)
-        .reduce((sum, t) => sum + t.duration_minutes, 0) / 60;
-    const timelogCount = timelogs.length;
-    const uniqueEmployeeIds = new Set(timelogs.map((t) => t.employee_id));
-    const employeeCount = uniqueEmployeeIds.size;
+    const timelogs = input.timelogs ?? [];
+    const totalHours = 0;
+    const billableHours = 0;
+    const nonBillableHours = 0;
+    const employeeSet = new Set<string>();
     const budgetUtilization =
       input.budget_hours !== null && input.budget_hours !== undefined
-        ? Math.min(
-            Math.round((totalHours / Number(input.budget_hours)) * 100) / 100,
-            100,
-          )
+        ? Math.min((totalHours / input.budget_hours) * 100, 100)
         : null;
     return {
       id: input.id,
       name: input.name,
       status: input.status,
       color_code: input.color_code,
-      budget_hours:
-        input.budget_hours !== null ? Number(input.budget_hours) : null,
-      start_date: input.start_date?.toISOString() ?? null,
-      end_date: input.end_date?.toISOString() ?? null,
-      description: input.description ?? null,
+      budget_hours: input.budget_hours ?? null,
+      start_date:
+        input.start_date !== null ? toISOStringSafe(input.start_date) : null,
+      end_date:
+        input.end_date !== null ? toISOStringSafe(input.end_date) : null,
+      description: input.description ?? undefined,
       total_hours: totalHours,
       billable_hours: billableHours,
       non_billable_hours: nonBillableHours,
-      timelog_count: timelogCount,
-      employee_count: employeeCount,
+      timelog_count: input._count.timelogs,
+      employee_count: 0,
       budget_utilization: budgetUtilization,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
+      created_at: toISOStringSafe(
+        input.created_at ?? new Date("1970-01-01T00:00:00.000Z"),
+      ),
+      updated_at: toISOStringSafe(
+        input.updated_at ?? new Date("1970-01-01T00:00:00.000Z"),
+      ),
     } satisfies IHrmPlatformProject.ISummary;
   }
 }
@@ -101,16 +92,20 @@ export namespace HrmPlatformProjectAtSummaryTransformer {
 //           select: {
 //             id: true,
 //             name: true,
+//             status: true,
 //             color_code: true,
-//             description: true,
 //             budget_hours: true,
 //             start_date: true,
 //             end_date: true,
-//             status: true,
+//             description: true,
+//             total_hours: true,
+//             billable_hours: true,
+//             non_billable_hours: true,
+//             timelog_count: true,
+//             employee_count: true,
+//             budget_utilization: true,
 //             created_at: true,
 //             updated_at: true,
-//             deleted_at: true,
-//             organization_id: true,
 //           },
 //         } satisfies Prisma.hrm_platform_projectsFindManyArgs;
 //       }

@@ -24,100 +24,77 @@ export async function patchHrmPlatformMemberTimesheets(props: {
   member: MemberPayload;
   body: IHrmPlatformTimesheet.IRequest;
 }): Promise<IPageIHrmPlatformTimesheet.ISummary> {
-  // Parse pagination parameters with defaults
-  const page: number = props.body.page ?? 1;
-  const limit: number = props.body.limit ?? 100;
-  const skip: number = (page - 1) * limit;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  // Determine access level: employee can only view their own timesheets
+  // Manager/owner can view all timesheets
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      hrm_platform_member_id: props.member.id,
+      deleted_at: null,
+    },
+    select: { id: true },
+  });
   // Build where clause for filtering
   const whereInput: Prisma.hrm_platform_timesheetsWhereInput = {
     deleted_at: null,
+    ...(props.body.status && {
+      status: { in: props.body.status },
+    }),
+    ...(props.body.startDate && {
+      start_date: { gte: new Date(props.body.startDate) },
+    }),
+    ...(props.body.endDate && {
+      start_date: { lte: new Date(props.body.endDate) },
+    }),
   };
-  // Apply status filter if provided
-  if (props.body.status !== undefined && props.body.status.length > 0) {
-    whereInput.status = {
-      in: props.body.status,
-    };
-  }
-  // Apply date range filter if provided
-  if (props.body.startDate !== undefined) {
-    whereInput.start_date = {
-      gte: props.body.startDate,
-    };
-  }
-  if (props.body.endDate !== undefined) {
-    whereInput.end_date = {
-      lte: props.body.endDate,
-    };
-  }
-  // Get member's employee for ownership validation
-  const memberRecord =
-    await MyGlobal.prisma.hrm_platform_members.findFirstOrThrow({
-      where: {
-        id: props.member.id,
-      },
-      include: {
-        employees: true,
-      },
-    });
-  if (memberRecord.employees.length === 0) {
-    throw new HttpException("Member is not an employee", 403);
-  }
-  // Apply employee filter: member users can only access their own timesheets
-  const employee = memberRecord.employees[0];
-  whereInput.hrm_platform_employee_id = employee.id;
-  // If employee_id is provided in request, validate it matches member's employee
-  if (props.body.employee_id !== undefined) {
-    if (props.body.employee_id !== employee.id) {
-      throw new HttpException(
-        "Cannot filter by other employee's timesheets",
-        403,
-      );
-    }
+  // Apply ownership filter
+  if (employee) {
+    // Employee can only view their own timesheets
+    whereInput.hrm_platform_employee_id = employee.id;
+  } else if (props.body.employee_id) {
+    // Manager/owner can filter by any employee_id
+    whereInput.hrm_platform_employee_id = props.body.employee_id;
   }
   // Build orderBy clause
-  const sortOrder: "asc" | "desc" = props.body.order ?? "desc";
-  const orderByInput: Prisma.hrm_platform_timesheetsOrderByWithRelationInput = {
-    start_date: sortOrder,
-  };
-  // Override sort field if specified
-  if (props.body.sort === "end_date") {
-    orderByInput.end_date = sortOrder;
-  } else if (props.body.sort === "status") {
-    orderByInput.status = sortOrder;
-  } else if (props.body.sort === "total_hours") {
-    orderByInput.total_hours = sortOrder;
-  } else if (props.body.sort === "created_at") {
-    orderByInput.created_at = sortOrder;
-  }
-  // Execute findMany and count in parallel
-  const [records, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_timesheets.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      ...HrmPlatformTimesheetAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_timesheets.count({
-      where: whereInput,
-    }),
-  ]);
-  // Transform records using transformer
-  const data = await ArrayUtil.asyncMap(
-    records,
-    HrmPlatformTimesheetAtSummaryTransformer.transform,
-  );
-  // Calculate pagination metadata
-  const pages: number = total > 0 ? Math.ceil(total / limit) : 0;
+  const orderByInput = (
+    props.body.sort === "start_date"
+      ? { start_date: props.body.order ?? "desc" }
+      : props.body.sort === "end_date"
+        ? { end_date: props.body.order ?? "desc" }
+        : props.body.sort === "status"
+          ? { status: props.body.order ?? "desc" }
+          : props.body.sort === "total_hours"
+            ? { total_hours: props.body.order ?? "desc" }
+            : props.body.sort === "created_at"
+              ? { created_at: props.body.order ?? "desc" }
+              : { start_date: "desc" }
+  ) satisfies Prisma.hrm_platform_timesheetsOrderByWithRelationInput;
+  // Get total count
+  const total = await MyGlobal.prisma.hrm_platform_timesheets.count({
+    where: whereInput,
+  });
+  // Get data
+  const records = await MyGlobal.prisma.hrm_platform_timesheets.findMany({
+    where: whereInput,
+    orderBy: orderByInput,
+    skip,
+    take: limit,
+    ...HrmPlatformTimesheetAtSummaryTransformer.select(),
+  });
   return {
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data,
-  } satisfies IPageIHrmPlatformTimesheet.ISummary;
+    data: await ArrayUtil.asyncMap(
+      records,
+      HrmPlatformTimesheetAtSummaryTransformer.transform,
+    ),
+  };
 }
 
 

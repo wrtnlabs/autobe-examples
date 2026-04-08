@@ -44,7 +44,7 @@ export namespace HrmPlatformTimesheetTransformer {
           select: {
             timelog: HrmPlatformTimelogAtSummaryTransformer.select(),
           },
-        },
+        } satisfies Prisma.hrm_platform_timesheet_timelogsFindManyArgs,
         actions: true,
       },
     } satisfies Prisma.hrm_platform_timesheetsFindManyArgs;
@@ -55,31 +55,23 @@ export namespace HrmPlatformTimesheetTransformer {
     return {
       id: input.id,
       hrm_platform_employee_id: input.employee.id,
-      start_date: toISOStringSafe(input.start_date),
-      end_date: toISOStringSafe(input.end_date),
+      start_date: input.start_date.toISOString(),
+      end_date: input.end_date.toISOString(),
       status: input.status,
-      submitted_at: input.submitted_at
-        ? toISOStringSafe(input.submitted_at)
-        : null,
-      approved_at: input.approved_at
-        ? toISOStringSafe(input.approved_at)
-        : null,
-      rejected_at: input.rejected_at
-        ? toISOStringSafe(input.rejected_at)
-        : null,
-      cancelled_at: input.cancelled_at
-        ? toISOStringSafe(input.cancelled_at)
-        : null,
+      submitted_at: input.submitted_at?.toISOString() ?? null,
+      approved_at: input.approved_at?.toISOString() ?? null,
+      rejected_at: input.rejected_at?.toISOString() ?? null,
+      cancelled_at: input.cancelled_at?.toISOString() ?? null,
       notes: input.notes ?? null,
       total_hours: input.total_hours ?? null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,
       ),
-      timelogs: await ArrayUtil.asyncMap(input.timelogs, (tl) =>
-        HrmPlatformTimelogAtSummaryTransformer.transform(tl.timelog),
+      timelogs: await ArrayUtil.asyncMap(input.timelogs, (t) =>
+        HrmPlatformTimelogAtSummaryTransformer.transform(t.timelog),
       ),
     } satisfies IHrmPlatformTimesheet;
   }
@@ -97,7 +89,6 @@ export namespace HrmPlatformTimesheetTransformer {
 //         return {
 //           select: {
 //             id: true,
-//             hrm_platform_employee_id: true,
 //             start_date: true,
 //             end_date: true,
 //             status: true,
@@ -110,6 +101,7 @@ export namespace HrmPlatformTimesheetTransformer {
 //             created_at: true,
 //             updated_at: true,
 //             deleted_at: true,
+//             employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
 //             ...
 //           },
 //         } satisfies Prisma.hrm_platform_timesheetsFindManyArgs;
@@ -131,7 +123,7 @@ export namespace HrmPlatformTimesheetTransformer {
 //   created_at: {string},
 //   updated_at: {string},
 //   deleted_at: {string | null},
-//   employee: {IHrmPlatformEmployee.ISummary},
+//   employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(input.employee),
 //   timelogs: {Array<IHrmPlatformTimelog.ISummary>},
 //         };
 //       }

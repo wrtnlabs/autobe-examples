@@ -17,16 +17,23 @@ export async function getHrmPlatformMemberTimersTimerId(props: {
   member: MemberPayload;
   timerId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTimer> {
-  const record = await MyGlobal.prisma.hrm_platform_timers.findFirstOrThrow({
-    ...HrmPlatformTimerTransformer.select(),
+  const session =
+    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
+      where: {
+        id: props.member.session_id,
+        expired_at: { gt: new Date() },
+        hrm_platform_member_id: props.member.id,
+        member: { id: props.member.id, is_active: true, deleted_at: null },
+      },
+    });
+  const record = await MyGlobal.prisma.hrm_platform_timers.findUniqueOrThrow({
     where: {
       id: props.timerId,
+      hrm_platform_employee_id: session.hrm_platform_member_id,
       deleted_at: null,
     },
+    include: { employee: true, project: true, task: true },
   });
-  if (record.employee.id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
-  }
   return await HrmPlatformTimerTransformer.transform(record);
 }
 

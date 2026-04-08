@@ -10,18 +10,18 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace HrmPlatformRoleCollector {
   export async function collect(props: {
     body: IHrmPlatformRole.ICreate;
-    hrmPlatformOrganizations: IEntity;
+    organization: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
       name: props.body.name,
       description: props.body.description ?? null,
-      role_kind: "custom",
+      role_kind: props.body.role_kind,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      organization: { connect: { id: props.hrmPlatformOrganizations.id } },
+      organization: { connect: { id: props.organization.id } },
     } satisfies Prisma.hrm_platform_rolesCreateInput;
   }
 }

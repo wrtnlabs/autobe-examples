@@ -36,9 +36,7 @@ export namespace HrmPlatformContractTransformer {
         deleted_at: true,
         employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
         organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
-        snapshot: {
-          select: {},
-        } satisfies Prisma.hrm_platform_contracts_snapshotsFindManyArgs,
+        snapshot: true,
       },
     } satisfies Prisma.hrm_platform_contractsFindManyArgs;
   }
@@ -50,7 +48,9 @@ export namespace HrmPlatformContractTransformer {
       title: input.title,
       start_date: input.start_date.toISOString(),
       end_date: input.end_date?.toISOString() ?? null,
-      compensation_amount: Number(input.compensation_amount) ?? null,
+      compensation_amount: input.compensation_amount
+        ? Number(input.compensation_amount)
+        : null,
       compensation_currency: input.compensation_currency ?? null,
       status: input.status,
       notes: input.notes ?? null,

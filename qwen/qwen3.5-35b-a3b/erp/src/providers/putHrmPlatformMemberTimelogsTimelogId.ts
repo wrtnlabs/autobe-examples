@@ -25,82 +25,105 @@ export async function putHrmPlatformMemberTimelogsTimelogId(props: {
   timelogId: string & tags.Format<"uuid">;
   body: IHrmPlatformTimelog.IUpdate;
 }): Promise<IHrmPlatformTimelog> {
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      member: { id: props.member.id },
-      deleted_at: null,
-    },
-  });
-  if (employee === null) {
-    throw new HttpException("Employee record not found", 404);
-  }
   const timelog = await MyGlobal.prisma.hrm_platform_timelogs.findUniqueOrThrow(
     {
       where: { id: props.timelogId },
-      include: {
-        project: true,
+      select: {
+        id: true,
+        employee_id: true,
+        project_id: true,
+        task_id: true,
+        start_datetime: true,
+        end_datetime: true,
+        duration_minutes: true,
+        billable: true,
+        deleted_at: true,
       },
     },
   );
-  if (timelog.employee_id !== employee.id) {
-    throw new HttpException("Forbidden", 403);
-  }
   if (timelog.deleted_at !== null) {
     throw new HttpException("Timelog is soft-deleted", 400);
   }
-  if (timelog.project.status === "completed") {
-    throw new HttpException("Cannot update timelog for completed project", 409);
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+      where: { id: props.member.id, deleted_at: null },
+      select: { id: true, organization: true },
+    });
+  if (timelog.employee_id !== employee.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  const timesheetCheck =
-    await MyGlobal.prisma.hrm_platform_timesheet_timelogs.findFirst({
+  const projectLookupId = props.body.project_id ?? timelog.project_id;
+  const project = await MyGlobal.prisma.hrm_platform_projects.findFirstOrThrow({
+    where: {
+      id: projectLookupId,
+      organization_id: employee.organization.id,
+    },
+    select: { id: true, status: true },
+  });
+  if (project.status === "completed") {
+    throw new HttpException("Project is completed", 409);
+  }
+  if (props.body.task_id !== undefined && props.body.task_id !== null) {
+    await MyGlobal.prisma.hrm_platform_tasks.findFirstOrThrow({
       where: {
-        hrm_platform_timelog_id: props.timelogId,
-      },
-      select: {
-        id: true,
-        hrm_platform_timesheet_id: true,
+        id: props.body.task_id,
+        project_id: project.id,
       },
     });
-  if (timesheetCheck !== null) {
+  }
+  const timesheetTimelogs =
+    await MyGlobal.prisma.hrm_platform_timesheet_timelogs.findMany({
+      where: { hrm_platform_timelog_id: props.timelogId },
+    });
+  for (const tt of timesheetTimelogs) {
     const timesheet = await MyGlobal.prisma.hrm_platform_timesheets.findUnique({
-      where: { id: timesheetCheck.hrm_platform_timesheet_id },
+      where: { id: tt.hrm_platform_timesheet_id },
       select: { status: true },
     });
-    if (timesheet !== null && timesheet.status !== "draft") {
+    if (timesheet?.status !== "draft") {
       throw new HttpException(
-        "Cannot update timelog in submitted or approved timesheet",
+        "Timelog is part of a submitted or approved timesheet",
         409,
       );
     }
   }
-  const updateData: Prisma.hrm_platform_timelogsUpdateInput = {};
-  if (
-    props.body.start_datetime !== undefined ||
-    props.body.end_datetime !== undefined
-  ) {
-    const start = props.body.start_datetime ?? timelog.start_datetime;
-    const end = props.body.end_datetime ?? timelog.end_datetime;
-    const startMillis =
-      typeof start === "string" ? Date.parse(start) : start.getTime();
-    const endMillis = typeof end === "string" ? Date.parse(end) : end.getTime();
-    if (endMillis < startMillis) {
-      throw new HttpException("end_datetime must be >= start_datetime", 400);
-    }
-    const durationMinutes = Math.floor((endMillis - startMillis) / 60000);
-    updateData.duration_minutes = durationMinutes;
-    updateData.start_datetime = start;
-    updateData.end_datetime = end;
+  const startDatetimeValue: string & tags.Format<"date-time"> =
+    props.body.start_datetime ?? toISOStringSafe(timelog.start_datetime);
+  const endDatetimeValue: string & tags.Format<"date-time"> =
+    props.body.end_datetime ?? toISOStringSafe(timelog.end_datetime);
+  const newStartDatetime = new Date(startDatetimeValue);
+  const newEndDatetime = new Date(endDatetimeValue);
+  if (newEndDatetime < newStartDatetime) {
+    throw new HttpException("End datetime must be after start datetime", 400);
   }
-  if (props.body.description !== undefined) {
-    updateData.description = props.body.description;
-  }
-  if (props.body.billable !== undefined) {
-    updateData.billable = props.body.billable;
-  }
-  updateData.updated_at = new Date();
+  const newDurationMinutes = Math.round(
+    (newEndDatetime.getTime() - newStartDatetime.getTime()) / 60000,
+  );
+  const now = new Date();
   await MyGlobal.prisma.hrm_platform_timelogs.update({
     where: { id: props.timelogId },
-    data: updateData,
+    data: {
+      ...(props.body.billable !== undefined && {
+        billable: props.body.billable,
+      }),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
+      ...(props.body.end_datetime !== undefined && {
+        end_datetime: new Date(props.body.end_datetime),
+      }),
+      ...(props.body.project_id !== undefined && {
+        project_id: props.body.project_id,
+      }),
+      ...(props.body.start_datetime !== undefined && {
+        start_datetime: new Date(props.body.start_datetime),
+      }),
+      ...(props.body.task_id !== undefined && {
+        task_id: props.body.task_id,
+      }),
+      duration_minutes: newDurationMinutes,
+      updated_at: now,
+    },
   });
   const updated = await MyGlobal.prisma.hrm_platform_timelogs.findUniqueOrThrow(
     {

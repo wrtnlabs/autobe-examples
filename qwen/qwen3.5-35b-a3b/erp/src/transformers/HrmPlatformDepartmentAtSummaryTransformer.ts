@@ -26,6 +26,7 @@ export namespace HrmPlatformDepartmentAtSummaryTransformer {
         deleted_at: true,
         organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
         parent_department_id: true,
+        parentDepartment: undefined,
         childDepartments: undefined,
         snapshots: undefined,
         employees: undefined,
@@ -35,7 +36,7 @@ export namespace HrmPlatformDepartmentAtSummaryTransformer {
   }
   export async function transform(
     input: Payload,
-    cache: VariadicSingleton<
+    parentCache: VariadicSingleton<
       Promise<IHrmPlatformDepartment.ISummary>,
       [string]
     > = createParentCache(),
@@ -47,7 +48,7 @@ export namespace HrmPlatformDepartmentAtSummaryTransformer {
         input.organization,
       ),
       parentDepartment: input.parent_department_id
-        ? await cache.get(input.parent_department_id)
+        ? await parentCache.get(input.parent_department_id)
         : null,
       created_at: toISOStringSafe(input.created_at),
       updated_at: toISOStringSafe(input.updated_at),
@@ -56,20 +57,21 @@ export namespace HrmPlatformDepartmentAtSummaryTransformer {
   export async function transformAll(
     inputs: Payload[],
   ): Promise<IHrmPlatformDepartment.ISummary[]> {
-    const cache = createParentCache();
-    return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
+    const parentCache = createParentCache();
+    return await ArrayUtil.asyncMap(inputs, (x) => transform(x, parentCache));
   }
   function createParentCache() {
-    const cache = new VariadicSingleton(
-      async (id: string): Promise<IHrmPlatformDepartment.ISummary> => {
-        const record =
-          await MyGlobal.prisma.hrm_platform_departments.findFirstOrThrow({
-            ...select(),
-            where: { id },
-          });
-        return transform(record, cache);
-      },
-    );
+    const cache = new VariadicSingleton<
+      Promise<IHrmPlatformDepartment.ISummary>,
+      [string]
+    >(async (id: string): Promise<IHrmPlatformDepartment.ISummary> => {
+      const record =
+        await MyGlobal.prisma.hrm_platform_departments.findFirstOrThrow({
+          ...select(),
+          where: { id },
+        });
+      return transform(record, cache);
+    });
     return cache;
   }
 }

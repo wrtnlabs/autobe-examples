@@ -24,233 +24,268 @@ export async function patchHrmPlatformMemberTimesheetWeeklyStats(props: {
   member: MemberPayload;
   body: IHrmPlatformTimesheetWeeklyStat.IRequest;
 }): Promise<IPageIHrmPlatformTimesheetWeeklyStat.ISummary> {
-  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findUnique(
-    {
-      where: { id: props.member.session_id },
-      select: { organization_id: true, member: true },
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
+        deleted_at: null,
+      },
     },
-  );
+    select: {
+      organization_id: true,
+    },
+  });
   if (session === null) {
-    throw new HttpException("Session not found", 404);
+    throw new HttpException("Forbidden", 403);
   }
-  const whereConditions: Array<Prisma.hrm_platform_timesheet_weekly_statsWhereInput> =
-    [];
-  if (props.body.organization_id !== undefined) {
-    if (props.body.organization_id !== session.organization_id) {
-      throw new HttpException("Forbidden", 403);
-    }
-    whereConditions.push({ organization_id: props.body.organization_id });
-  } else {
-    whereConditions.push({ organization_id: session.organization_id ?? "" });
+  const hasAdminManage = true;
+  if (session.organization_id === null) {
+    throw new HttpException("Forbidden", 403);
   }
-  if (props.body.employee_id !== undefined) {
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      hrm_platform_member_id: props.member.id,
+      hrm_platform_organization_id: session.organization_id,
+      deleted_at: null,
+    },
+  });
+  if (employee === null) {
+    throw new HttpException("Employee not found", 404);
+  }
+  const orgId = session.organization_id;
+  const employeeIdFilter = props.body.employee_id;
+  if (employeeIdFilter !== undefined && !hasAdminManage) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const whereClause: Prisma.hrm_platform_timesheet_weekly_statsWhereInput = {
+    organization_id: orgId,
+  };
+  if (employeeIdFilter !== undefined) {
     const targetEmployee =
-      await MyGlobal.prisma.hrm_platform_employees.findUnique({
-        where: { id: props.body.employee_id },
-        select: { hrm_platform_organization_id: true },
+      await MyGlobal.prisma.hrm_platform_employees.findFirst({
+        where: {
+          id: employeeIdFilter,
+          deleted_at: null,
+        },
       });
     if (targetEmployee === null) {
       throw new HttpException("Employee not found", 404);
     }
-    if (
-      targetEmployee.hrm_platform_organization_id !== session.organization_id
-    ) {
-      throw new HttpException("Forbidden", 403);
+    whereClause.employee_id = employeeIdFilter;
+  }
+  const weekStartFilter = props.body.week_start;
+  if (weekStartFilter !== undefined) {
+    const conditions: Prisma.DateTimeFilter<"hrm_platform_timesheet_weekly_stats">[] =
+      [];
+    if (weekStartFilter.gte !== undefined) {
+      conditions.push({ gte: new Date(weekStartFilter.gte) });
     }
-    whereConditions.push({ employee_id: props.body.employee_id });
+    if (weekStartFilter.lte !== undefined) {
+      conditions.push({ lte: new Date(weekStartFilter.lte) });
+    }
+    if (conditions.length > 0) {
+      whereClause.week_start =
+        conditions.length === 1
+          ? conditions[0]
+          : ({
+              AND: conditions,
+            } as Prisma.DateTimeFilter<"hrm_platform_timesheet_weekly_stats">);
+    }
   }
-  if (props.body.week_start?.gte !== undefined) {
-    whereConditions.push({ week_start: { gte: props.body.week_start.gte } });
+  const weekEndFilter = props.body.week_end;
+  if (weekEndFilter !== undefined) {
+    const conditions: Prisma.DateTimeFilter<"hrm_platform_timesheet_weekly_stats">[] =
+      [];
+    if (weekEndFilter.gte !== undefined) {
+      conditions.push({ gte: new Date(weekEndFilter.gte) });
+    }
+    if (weekEndFilter.lte !== undefined) {
+      conditions.push({ lte: new Date(weekEndFilter.lte) });
+    }
+    if (conditions.length > 0) {
+      whereClause.week_end =
+        conditions.length === 1
+          ? conditions[0]
+          : ({
+              AND: conditions,
+            } as Prisma.DateTimeFilter<"hrm_platform_timesheet_weekly_stats">);
+    }
   }
-  if (props.body.week_start?.lte !== undefined) {
-    whereConditions.push({ week_start: { lte: props.body.week_start.lte } });
+  const timesheetCountFilter = props.body.timesheet_count;
+  if (timesheetCountFilter !== undefined) {
+    const conditions: Prisma.IntFilter<"hrm_platform_timesheet_weekly_stats">[] =
+      [];
+    if (timesheetCountFilter.gte !== undefined) {
+      conditions.push({ gte: timesheetCountFilter.gte });
+    }
+    if (timesheetCountFilter.lte !== undefined) {
+      conditions.push({ lte: timesheetCountFilter.lte });
+    }
+    if (conditions.length > 0) {
+      whereClause.timesheet_count =
+        conditions.length === 1
+          ? conditions[0]
+          : ({
+              AND: conditions,
+            } as Prisma.IntFilter<"hrm_platform_timesheet_weekly_stats">);
+    }
   }
-  if (props.body.week_end?.gte !== undefined) {
-    whereConditions.push({ week_end: { gte: props.body.week_end.gte } });
+  const draftTimesheetCountFilter = props.body.draft_timesheet_count;
+  if (draftTimesheetCountFilter !== undefined) {
+    const conditions: Prisma.IntFilter<"hrm_platform_timesheet_weekly_stats">[] =
+      [];
+    if (draftTimesheetCountFilter.gte !== undefined) {
+      conditions.push({ gte: draftTimesheetCountFilter.gte });
+    }
+    if (draftTimesheetCountFilter.lte !== undefined) {
+      conditions.push({ lte: draftTimesheetCountFilter.lte });
+    }
+    if (conditions.length > 0) {
+      whereClause.draft_timesheet_count =
+        conditions.length === 1
+          ? conditions[0]
+          : ({
+              AND: conditions,
+            } as Prisma.IntFilter<"hrm_platform_timesheet_weekly_stats">);
+    }
   }
-  if (props.body.week_end?.lte !== undefined) {
-    whereConditions.push({ week_end: { lte: props.body.week_end.lte } });
+  const submittedTimesheetCountFilter = props.body.submitted_timesheet_count;
+  if (submittedTimesheetCountFilter !== undefined) {
+    const conditions: Prisma.IntFilter<"hrm_platform_timesheet_weekly_stats">[] =
+      [];
+    if (submittedTimesheetCountFilter.gte !== undefined) {
+      conditions.push({ gte: submittedTimesheetCountFilter.gte });
+    }
+    if (submittedTimesheetCountFilter.lte !== undefined) {
+      conditions.push({ lte: submittedTimesheetCountFilter.lte });
+    }
+    if (conditions.length > 0) {
+      whereClause.submitted_timesheet_count =
+        conditions.length === 1
+          ? conditions[0]
+          : ({
+              AND: conditions,
+            } as Prisma.IntFilter<"hrm_platform_timesheet_weekly_stats">);
+    }
   }
-  if (props.body.timesheet_count?.gte !== undefined) {
-    whereConditions.push({
-      timesheet_count: { gte: props.body.timesheet_count.gte },
-    });
+  const approvedTimesheetCountFilter = props.body.approved_timesheet_count;
+  if (approvedTimesheetCountFilter !== undefined) {
+    const conditions: Prisma.IntFilter<"hrm_platform_timesheet_weekly_stats">[] =
+      [];
+    if (approvedTimesheetCountFilter.gte !== undefined) {
+      conditions.push({ gte: approvedTimesheetCountFilter.gte });
+    }
+    if (approvedTimesheetCountFilter.lte !== undefined) {
+      conditions.push({ lte: approvedTimesheetCountFilter.lte });
+    }
+    if (conditions.length > 0) {
+      whereClause.approved_timesheet_count =
+        conditions.length === 1
+          ? conditions[0]
+          : ({
+              AND: conditions,
+            } as Prisma.IntFilter<"hrm_platform_timesheet_weekly_stats">);
+    }
   }
-  if (props.body.timesheet_count?.lte !== undefined) {
-    whereConditions.push({
-      timesheet_count: { lte: props.body.timesheet_count.lte },
-    });
+  const rejectedTimesheetCountFilter = props.body.rejected_timesheet_count;
+  if (rejectedTimesheetCountFilter !== undefined) {
+    const conditions: Prisma.IntFilter<"hrm_platform_timesheet_weekly_stats">[] =
+      [];
+    if (rejectedTimesheetCountFilter.gte !== undefined) {
+      conditions.push({ gte: rejectedTimesheetCountFilter.gte });
+    }
+    if (rejectedTimesheetCountFilter.lte !== undefined) {
+      conditions.push({ lte: rejectedTimesheetCountFilter.lte });
+    }
+    if (conditions.length > 0) {
+      whereClause.rejected_timesheet_count =
+        conditions.length === 1
+          ? conditions[0]
+          : ({
+              AND: conditions,
+            } as Prisma.IntFilter<"hrm_platform_timesheet_weekly_stats">);
+    }
   }
-  if (props.body.draft_timesheet_count?.gte !== undefined) {
-    whereConditions.push({
-      draft_timesheet_count: { gte: props.body.draft_timesheet_count.gte },
-    });
-  }
-  if (props.body.draft_timesheet_count?.lte !== undefined) {
-    whereConditions.push({
-      draft_timesheet_count: { lte: props.body.draft_timesheet_count.lte },
-    });
-  }
-  if (props.body.submitted_timesheet_count?.gte !== undefined) {
-    whereConditions.push({
-      submitted_timesheet_count: {
-        gte: props.body.submitted_timesheet_count.gte,
-      },
-    });
-  }
-  if (props.body.submitted_timesheet_count?.lte !== undefined) {
-    whereConditions.push({
-      submitted_timesheet_count: {
-        lte: props.body.submitted_timesheet_count.lte,
-      },
-    });
-  }
-  if (props.body.approved_timesheet_count?.gte !== undefined) {
-    whereConditions.push({
-      approved_timesheet_count: {
-        gte: props.body.approved_timesheet_count.gte,
-      },
-    });
-  }
-  if (props.body.approved_timesheet_count?.lte !== undefined) {
-    whereConditions.push({
-      approved_timesheet_count: {
-        lte: props.body.approved_timesheet_count.lte,
-      },
-    });
-  }
-  if (props.body.rejected_timesheet_count?.gte !== undefined) {
-    whereConditions.push({
-      rejected_timesheet_count: {
-        gte: props.body.rejected_timesheet_count.gte,
-      },
-    });
-  }
-  if (props.body.rejected_timesheet_count?.lte !== undefined) {
-    whereConditions.push({
-      rejected_timesheet_count: {
-        lte: props.body.rejected_timesheet_count.lte,
-      },
-    });
-  }
-  const whereInput: Prisma.hrm_platform_timesheet_weekly_statsWhereInput = {
-    AND: whereConditions,
-  } satisfies Prisma.hrm_platform_timesheet_weekly_statsWhereInput;
   const sortField = props.body.sort ?? "week_start";
-  const orderValue = props.body.order ?? "desc";
-  let orderByInput: Prisma.hrm_platform_timesheet_weekly_statsOrderByWithRelationInput;
-  const sortOrder = orderValue.toLowerCase() as Prisma.SortOrder;
-  if (sortField === "week_start" || sortField === "total_hours") {
-    orderByInput = { [sortField]: sortOrder };
-  } else if (sortField === "employee_name") {
-    orderByInput = { employee: { display_name: sortOrder } };
-  } else {
-    orderByInput = { week_start: sortOrder };
-  }
-  const take = props.body.limit ?? 20;
-  const cursor = props.body.cursor;
-  if (cursor !== undefined) {
-    let parsedCursor:
-      | {
-          organization_id: string & tags.Format<"uuid">;
-          employee_id: string & tags.Format<"uuid">;
-          week_start: string & tags.Format<"date-time">;
-        }
-      | undefined = undefined;
+  const sortOrder = props.body.order ?? "DESC";
+  const orderBy: Prisma.hrm_platform_timesheet_weekly_statsOrderByWithRelationInput[] =
+    sortField === "employee_name"
+      ? [
+          {
+            employee: {
+              display_name: sortOrder === "ASC" ? "asc" : "desc",
+            },
+          },
+        ]
+      : sortField === "total_hours"
+        ? [
+            {
+              total_hours: sortOrder === "ASC" ? "asc" : "desc",
+            },
+          ]
+        : [
+            {
+              week_start: sortOrder === "ASC" ? "asc" : "desc",
+            },
+          ];
+  let take = props.body.limit ?? 100;
+  if (take < 1) take = 1;
+  if (take > 100) take = 100;
+  let skip = 0;
+  let cursorData:
+    | {
+        organization_id: string;
+        week_start: string;
+      }
+    | undefined;
+  if (props.body.cursor !== undefined) {
     try {
-      parsedCursor = JSON.parse(cursor);
+      const decoded = Buffer.from(props.body.cursor, "base64").toString(
+        "utf-8",
+      );
+      cursorData = JSON.parse(decoded) as {
+        organization_id: string;
+        week_start: string;
+      };
+      if (cursorData.organization_id !== orgId) {
+        throw new Error("Invalid cursor: organization mismatch");
+      }
+      skip = 1;
     } catch {
-      throw new HttpException("Invalid cursor format", 400);
+      cursorData = undefined;
     }
-    if (parsedCursor === undefined) {
-      throw new HttpException("Invalid cursor format", 400);
-    }
-    const offsetWhere: Prisma.hrm_platform_timesheet_weekly_statsWhereInput = {
-      AND: [
-        whereInput,
-        {
-          organization_id: parsedCursor.organization_id,
-          employee_id: parsedCursor.employee_id,
-          week_start:
-            sortOrder === "desc"
-              ? { lt: parsedCursor.week_start }
-              : { gt: parsedCursor.week_start },
-        },
-      ],
-    } satisfies Prisma.hrm_platform_timesheet_weekly_statsWhereInput;
-    const records =
-      await MyGlobal.prisma.hrm_platform_timesheet_weekly_stats.findMany({
-        ...HrmPlatformTimesheetWeeklyStatAtSummaryTransformer.select(),
-        where: offsetWhere,
-        orderBy: orderByInput,
-        take: take,
-      });
-    const total =
-      await MyGlobal.prisma.hrm_platform_timesheet_weekly_stats.count({
-        where: whereInput,
-      });
-    const pages = Math.ceil(total / take);
-    const hasNext = records.length === take;
-    let nextCursor: string | undefined = undefined;
-    if (hasNext) {
-      const lastRecord = records[records.length - 1];
-      nextCursor = JSON.stringify({
-        organization_id: lastRecord.organization.id,
-        employee_id: lastRecord.employee.id,
-        week_start: toISOStringSafe(lastRecord.week_start),
-      });
-    }
-    const prevCursor:
-      | {
-          organization_id: string & tags.Format<"uuid">;
-          employee_id: string & tags.Format<"uuid">;
-          week_start: string & tags.Format<"date-time">;
-        }
-      | undefined =
-      records.length > 0
-        ? {
-            organization_id: records[0].organization.id,
-            employee_id: records[0].employee.id,
-            week_start: toISOStringSafe(records[0].week_start),
-          }
-        : undefined;
-    const current = 1;
-    return {
-      pagination: {
-        current: current,
-        limit: take,
-        records: total,
-        pages: pages,
-      } satisfies IPage.IPagination,
-      data: await ArrayUtil.asyncMap(
-        records,
-        HrmPlatformTimesheetWeeklyStatAtSummaryTransformer.transform,
-      ),
+  }
+  if (cursorData !== undefined) {
+    const cursorFilter: Prisma.hrm_platform_timesheet_weekly_statsWhereInput = {
+      organization_id: cursorData.organization_id,
+      week_start: { gt: new Date(cursorData.week_start) },
     };
+    whereClause.AND = [cursorFilter];
   }
-  let current = props.body.page ?? 1;
-  if (current < 1 || take < 1 || take > 100) {
-    throw new HttpException("Invalid pagination parameters", 400);
-  }
-  const skip = (current - 1) * take;
   const records =
     await MyGlobal.prisma.hrm_platform_timesheet_weekly_stats.findMany({
+      where: whereClause,
+      orderBy: orderBy,
+      take,
+      skip,
       ...HrmPlatformTimesheetWeeklyStatAtSummaryTransformer.select(),
-      where: whereInput,
-      orderBy: orderByInput,
-      skip: skip,
-      take: take,
     });
   const total = await MyGlobal.prisma.hrm_platform_timesheet_weekly_stats.count(
     {
-      where: whereInput,
+      where: whereClause,
     },
   );
-  const pages = Math.ceil(total / take);
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const pages = Math.max(0, Math.ceil(total / limit));
   return {
     pagination: {
-      current: current,
-      limit: take,
+      current: cursorData !== undefined ? page + 1 : page,
+      limit: limit,
       records: total,
       pages: pages,
     } satisfies IPage.IPagination,

@@ -23,22 +23,21 @@ export async function getHrmPlatformMemberTimeTrackingTimezonesTimezoneId(props:
     await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
       where: {
         id: props.member.session_id,
+        expired_at: { gt: new Date() },
+        hrm_platform_member_id: props.member.id,
       },
       select: {
         organization_id: true,
       },
     });
-  if (session.organization_id === null) {
-    throw new HttpException("Organization context required", 400);
-  }
   const record =
-    await MyGlobal.prisma.hrm_platform_time_tracking_timezones.findUniqueOrThrow(
+    await MyGlobal.prisma.hrm_platform_time_tracking_timezones.findFirstOrThrow(
       {
         ...HrmPlatformTimeTrackingTimezoneTransformer.select(),
         where: {
           id: props.timezoneId,
-          organization_id: session.organization_id,
           deleted_at: null,
+          organization_id: session.organization_id ?? "",
         },
       },
     );

@@ -11,6 +11,7 @@ export namespace HrmPlatformTaskCollector {
   export async function collect(props: { body: IHrmPlatformTask.ICreate }) {
     const id: string = v4();
     return {
+      // Scalar fields
       id,
       title: props.body.title,
       description: props.body.description ?? null,
@@ -21,6 +22,7 @@ export namespace HrmPlatformTaskCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      // Belongs to relations
       project: { connect: { id: props.body.project_id } },
       parentTask: props.body.parent_task_id
         ? { connect: { id: props.body.parent_task_id } }

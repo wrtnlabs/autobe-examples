@@ -23,7 +23,7 @@ export namespace HrmPlatformGuestAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: true,
+        sessions: { select: {} },
       },
     } satisfies Prisma.hrm_platform_guestsFindManyArgs;
   }

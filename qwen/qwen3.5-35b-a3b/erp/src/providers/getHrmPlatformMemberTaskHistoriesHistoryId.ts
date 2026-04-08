@@ -25,13 +25,45 @@ export async function getHrmPlatformMemberTaskHistoriesHistoryId(props: {
   historyId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTaskHistory> {
   const record =
-    await MyGlobal.prisma.hrm_platform_task_histories.findFirstOrThrow({
+    await MyGlobal.prisma.hrm_platform_task_histories.findUniqueOrThrow({
       ...HrmPlatformTaskHistoryTransformer.select(),
       where: {
         id: props.historyId,
         deleted_at: null,
       },
     });
+  const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
+    where: { id: record.task.id },
+    select: {
+      id: true,
+      project_id: true,
+      assigned_employee_id: true,
+    },
+  });
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      hrm_platform_member_id: props.member.id,
+      deleted_at: null,
+    },
+    select: { id: true },
+  });
+  if (employee === null) {
+    throw new HttpException("Not Found", 404);
+  }
+  const hasTaskAccess = task.assigned_employee_id === employee.id;
+  if (!hasTaskAccess) {
+    const projectMembership =
+      await MyGlobal.prisma.hrm_platform_project_memberships.findFirst({
+        where: {
+          hrm_platform_project_id: task.project_id,
+          hrm_platform_employee_id: employee.id,
+        },
+        select: { id: true },
+      });
+    if (projectMembership === null) {
+      throw new HttpException("Not Found", 404);
+    }
+  }
   return await HrmPlatformTaskHistoryTransformer.transform(record);
 }
 

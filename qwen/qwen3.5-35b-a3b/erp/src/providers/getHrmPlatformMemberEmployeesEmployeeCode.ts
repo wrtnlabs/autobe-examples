@@ -28,36 +28,39 @@ export async function getHrmPlatformMemberEmployeesEmployeeCode(props: {
   member: MemberPayload;
   employeeCode: string;
 }): Promise<IHrmPlatformEmployee> {
-  // Get organization IDs through hrm_platform_organizations relation
-  const organizationIds = await MyGlobal.prisma.hrm_platform_organizations
-    .findMany({
-      where: {
-        deleted_at: null,
-      },
+  // Get session to retrieve organization context for data isolation
+  const session =
+    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
       select: {
         id: true,
+        organization_id: true,
       },
-    })
-    .then(
-      (
-        m: {
-          id: string;
-        }[],
-      ) => m.map((o: { id: string }) => o.id),
-    );
-  // Query employee using only select (from transformer), not mixing with include
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      ...HrmPlatformEmployeeTransformer.select(),
       where: {
-        employee_code: props.employeeCode,
-        deleted_at: null,
-        hrm_platform_organization_id: {
-          in: organizationIds.length > 0 ? organizationIds : [],
+        id: props.member.session_id,
+        expired_at: { gt: new Date() },
+        hrm_platform_member_id: props.member.id,
+        member: {
+          id: props.member.id,
+          is_active: true,
+          deleted_at: null,
         },
       },
     });
-  return await HrmPlatformEmployeeTransformer.transform(employee);
+  // Ensure organization context exists for data isolation
+  if (!session.organization_id) {
+    throw new HttpException("Organization context missing", 400);
+  }
+  // Query employee by code within organization context, excluding soft-deleted
+  const select = HrmPlatformEmployeeTransformer.select();
+  const record = await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+    ...select,
+    where: {
+      employee_code: props.employeeCode,
+      hrm_platform_organization_id: session.organization_id,
+      deleted_at: null,
+    },
+  });
+  return await HrmPlatformEmployeeTransformer.transform(record);
 }
 
 

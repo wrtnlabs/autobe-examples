@@ -21,61 +21,79 @@ export async function putHrmPlatformMemberOrganizationsOrganizationIdDepartments
   departmentId: string & tags.Format<"uuid">;
   body: IHrmPlatformDepartment.IUpdate;
 }): Promise<IHrmPlatformDepartment> {
-  // Verify department exists, belongs to organization, and is not soft-deleted
+  // Step 1: Verify member has organization management permission
+  const organization =
+    await MyGlobal.prisma.hrm_platform_organizations.findFirst({
+      where: {
+        id: props.organizationId,
+        owner_id: props.member.id,
+      },
+      select: { id: true },
+    });
+  if (organization === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Step 2: Verify department exists and belongs to the organization
   const department =
     await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
       where: {
         id: props.departmentId,
         organization_id: props.organizationId,
-        deleted_at: null,
       },
       select: {
         id: true,
         name: true,
         parent_department_id: true,
+        deleted_at: true,
       },
     });
-  // Validate name uniqueness if provided and differs from current name
-  if (props.body.name !== undefined && props.body.name !== department.name) {
-    const existing = await MyGlobal.prisma.hrm_platform_departments.findFirst({
-      where: {
-        organization_id: props.organizationId,
-        name: props.body.name,
-        id: { not: props.departmentId },
-        deleted_at: null,
-      },
-    });
-    if (existing !== null) {
-      throw new HttpException(
-        "Department name must be unique within the organization",
-        400,
-      );
-    }
+  // Step 3: Check if department is soft-deleted
+  if (department.deleted_at !== null) {
+    throw new HttpException("Department is deleted", 400);
   }
-  // Validate parent_department_id if provided
+  // Step 4: Validate parent_department_id if provided
+  let parentId: string | null | undefined = props.body.parent_department_id;
   if (props.body.parent_department_id !== undefined) {
-    if (props.body.parent_department_id !== null) {
+    if (props.body.parent_department_id === null) {
+      parentId = null;
+    } else {
+      // Validate parent department exists and belongs to same organization
       const parentDepartment =
-        await MyGlobal.prisma.hrm_platform_departments.findUnique({
+        await MyGlobal.prisma.hrm_platform_departments.findFirst({
           where: {
             id: props.body.parent_department_id,
             organization_id: props.organizationId,
             deleted_at: null,
           },
+          select: { id: true },
         });
       if (parentDepartment === null) {
-        throw new HttpException(
-          "Parent department not found in the organization",
-          400,
-        );
+        throw new HttpException("Parent department not found", 400);
       }
     }
   }
-  // Build update data with timestamp
+  // Step 5: Validate name uniqueness if provided
+  if (props.body.name !== undefined && props.body.name !== null) {
+    const existingDepartment =
+      await MyGlobal.prisma.hrm_platform_departments.findFirst({
+        where: {
+          organization_id: props.organizationId,
+          name: props.body.name,
+          id: { not: props.departmentId },
+          deleted_at: null,
+        },
+        select: { id: true },
+      });
+    if (existingDepartment !== null) {
+      throw new HttpException("Department name already exists", 400);
+    }
+  }
+  // Step 6: Update department record
   const updateData: Prisma.hrm_platform_departmentsUpdateInput = {
-    ...(props.body.name !== undefined && { name: props.body.name }),
+    ...(props.body.name !== undefined &&
+      props.body.name !== null && { name: props.body.name }),
     ...(props.body.parent_department_id !== undefined && {
-      parent_department_id: props.body.parent_department_id,
+      parent_department_id: parentId,
     }),
     updated_at: new Date(),
   };
@@ -83,6 +101,7 @@ export async function putHrmPlatformMemberOrganizationsOrganizationIdDepartments
     where: { id: props.departmentId },
     data: updateData,
   });
+  // Step 7: Fetch and transform updated department
   const updated =
     await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
       where: { id: props.departmentId },

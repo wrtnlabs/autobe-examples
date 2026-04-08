@@ -18,112 +18,150 @@ export async function patchHrmPlatformMemberRolesAnalytics(props: {
   member: MemberPayload;
   body: IRolesAnalyticsRequest;
 }): Promise<IPlatformRoleAnalytic> {
-  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findUnique(
-    {
-      where: { id: props.member.session_id },
-      select: { organization_id: true },
-    },
-  );
-  if (!session?.organization_id) {
-    throw new HttpException("No organization context found", 400);
-  }
-  const organizationId = session.organization_id;
-  const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
-  const skip = (page - 1) * limit;
-  const whereRoles: Prisma.hrm_platform_rolesWhereInput = {
-    organization_id: organizationId,
-    deleted_at: null,
-  };
-  if (props.body.role_kind !== undefined) {
-    whereRoles.role_kind = props.body.role_kind;
-  }
-  if (props.body.name !== undefined) {
-    whereRoles.name = {
-      contains: props.body.name,
-      mode: Prisma.QueryMode.insensitive,
-    };
-  }
-  if (props.body.has_employees === true) {
-    whereRoles.employees = { some: {} };
-  } else if (props.body.has_employees === false) {
-    whereRoles.employees = { none: {} };
-  }
-  const totalCount = await MyGlobal.prisma.hrm_platform_roles.count({
-    where: whereRoles,
-  });
-  const orderByInput: Prisma.hrm_platform_rolesOrderByWithRelationInput =
-    props.body.sort_by === "employees"
-      ? { employees: { _count: "desc" } }
-      : { name: "asc" };
-  const roles = await MyGlobal.prisma.hrm_platform_roles.findMany({
-    where: whereRoles,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    include: {
-      _count: {
-        select: { employees: true },
+  const page: number & tags.Type<"int32"> & tags.Minimum<1> =
+    props.body.page ?? 1;
+  const limit: number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> &
+    tags.Maximum<100> = props.body.limit ?? 20;
+  const skip: number = (page - 1) * limit;
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
+        deleted_at: null,
       },
     },
   });
-  const roleEntries = await ArrayUtil.asyncMap(roles, async (role) => {
-    const permissionCount =
-      await MyGlobal.prisma.hrm_platform_permissions.count({
+  if (session === null) {
+    throw new HttpException("Session not found", 404);
+  }
+  const organization_id: string = session.organization_id!;
+  const roleWhere: Prisma.hrm_platform_rolesWhereInput = {
+    organization_id,
+    deleted_at: null,
+  };
+  if (props.body.role_kind !== undefined) {
+    roleWhere.role_kind = props.body.role_kind;
+  }
+  if (props.body.name !== undefined) {
+    roleWhere.name = {
+      contains: props.body.name,
+      mode: "insensitive" as const,
+    };
+  }
+  const allRoles = await MyGlobal.prisma.hrm_platform_roles.findMany({
+    where: roleWhere,
+    orderBy: { name: "asc" },
+    skip,
+    take: limit,
+  });
+  const roleEntries: IRoleAnalyticsEntry[] = [];
+  let total_permission_count: number = 0;
+  let roles_with_employees: number = 0;
+  let roles_without_employees: number = 0;
+  for (const role of allRoles) {
+    const permission_count_result =
+      await MyGlobal.prisma.hrm_platform_permissions.aggregate({
         where: {
           role_id: role.id,
           deleted_at: null,
         },
+        _count: {
+          id: true,
+        },
       });
-    const isCustom = role.role_kind === "custom";
-    return {
+    const permission_count = permission_count_result._count.id ?? 0;
+    const employee_count_result =
+      await MyGlobal.prisma.hrm_platform_employees.aggregate({
+        where: {
+          hrm_platform_role_id: role.id,
+          deleted_at: null,
+        },
+        _count: {
+          id: true,
+        },
+      });
+    const employee_count = employee_count_result._count.id ?? 0;
+    if (
+      props.body.min_permission_count !== undefined &&
+      permission_count < props.body.min_permission_count
+    ) {
+      continue;
+    }
+    if (
+      props.body.max_permission_count !== undefined &&
+      permission_count > props.body.max_permission_count
+    ) {
+      continue;
+    }
+    if (props.body.has_employees === true && employee_count === 0) {
+      continue;
+    }
+    if (props.body.has_employees === false && employee_count > 0) {
+      continue;
+    }
+    roleEntries.push({
       id: role.id,
       name: role.name,
       description: role.description ?? "",
-      role_kind: role.role_kind as "custom" | "built_in",
-      is_custom: isCustom,
-      permission_count: permissionCount,
-      employee_count: role._count.employees,
-    } satisfies IRoleAnalyticsEntry;
-  });
-  const filteredRoleEntries = roleEntries.filter((entry) => {
-    if (props.body.min_permission_count !== undefined) {
-      if (entry.permission_count < props.body.min_permission_count) {
-        return false;
-      }
+      role_kind: typia.assert<"custom" | "built_in">(role.role_kind),
+      is_custom: role.role_kind === "custom",
+      permission_count,
+      employee_count,
+    });
+    total_permission_count += permission_count;
+    if (employee_count > 0) {
+      roles_with_employees++;
+    } else {
+      roles_without_employees++;
     }
-    if (props.body.max_permission_count !== undefined) {
-      if (entry.permission_count > props.body.max_permission_count) {
-        return false;
-      }
-    }
-    return true;
-  });
-  const finalTotalCount = filteredRoleEntries.length;
-  const finalBuiltInCount = filteredRoleEntries.filter(
-    (e) => e.role_kind === "built_in",
-  ).length;
-  const finalCustomCount = filteredRoleEntries.filter(
-    (e) => e.role_kind === "custom",
-  ).length;
-  const finalTotalPermissionCount = filteredRoleEntries.reduce(
-    (sum, entry) => sum + entry.permission_count,
-    0,
+  }
+  if (props.body.sort_by === "employees") {
+    roleEntries.sort((a, b) => b.employee_count - a.employee_count);
+  }
+  const total_count_result = await MyGlobal.prisma.hrm_platform_roles.aggregate(
+    {
+      where: roleWhere,
+      _count: {
+        id: true,
+      },
+    },
   );
-  const finalRolesWithEmployees = filteredRoleEntries.filter(
-    (e) => e.employee_count > 0,
-  ).length;
-  const finalRolesWithoutEmployees = filteredRoleEntries.filter(
-    (e) => e.employee_count === 0,
-  ).length;
+  const builtInRoleWhere: Prisma.hrm_platform_rolesWhereInput = {
+    ...roleWhere,
+    role_kind: "built_in",
+  };
+  const customRoleWhere: Prisma.hrm_platform_rolesWhereInput = {
+    ...roleWhere,
+    role_kind: "custom",
+  };
+  const built_in_count_result =
+    await MyGlobal.prisma.hrm_platform_roles.aggregate({
+      where: builtInRoleWhere,
+      _count: {
+        id: true,
+      },
+    });
+  const custom_count_result =
+    await MyGlobal.prisma.hrm_platform_roles.aggregate({
+      where: customRoleWhere,
+      _count: {
+        id: true,
+      },
+    });
   return {
-    total_count: finalTotalCount,
-    built_in_count: finalBuiltInCount,
-    custom_count: finalCustomCount,
-    total_permission_count: finalTotalPermissionCount,
-    roles_with_employees: finalRolesWithEmployees,
-    roles_without_employees: finalRolesWithoutEmployees,
-    roles: filteredRoleEntries,
+    total_count: total_count_result._count.id,
+    built_in_count: built_in_count_result._count.id,
+    custom_count: custom_count_result._count.id,
+    total_permission_count,
+    roles_with_employees,
+    roles_without_employees,
+    roles: roleEntries,
   } satisfies IPlatformRoleAnalytic;
 }
 

@@ -20,125 +20,81 @@ export async function patchHrmPlatformMemberContractsContractIdSnapshots(props: 
   contractId: string & tags.Format<"uuid">;
   body: IHrmPlatformContractsSnapshot.IRequest;
 }): Promise<IPageIHrmPlatformContractsSnapshot.ISummary> {
+  // Verify contract exists
   const contract =
     await MyGlobal.prisma.hrm_platform_contracts.findUniqueOrThrow({
       where: { id: props.contractId },
-      select: {
-        id: true,
-        hrm_platform_employee_id: true,
-        hrm_platform_organization_id: true,
-      },
+      select: { hrm_platform_employee_id: true },
     });
-  const employeeId = contract.hrm_platform_employee_id;
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: { id: employeeId, deleted_at: null },
-    select: { id: true, hrm_platform_member_id: true },
-  });
-  if (employee === null) {
-    throw new HttpException("Contract employee not found", 404);
-  }
-  const isOwnContract = employee.hrm_platform_member_id === props.member.id;
-  if (!isOwnContract) {
+  // Verify authorization - member must own the contract
+  if (contract.hrm_platform_employee_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
+  // Pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const allowedSortFields = [
-    "snapshotted_at",
-    "-snapshotted_at",
-    "contract_number",
-    "-contract_number",
-    "start_date",
-    "-start_date",
-    "created_at",
-    "-created_at",
-  ] as const;
-  const sort = props.body.sort ?? "-snapshotted_at";
-  const sortOrder = sort.startsWith("-") ? "desc" : "asc";
-  const sortField = sort.startsWith("-") ? sort.substring(1) : sort;
-  if (!allowedSortFields.includes(sort as (typeof allowedSortFields)[number])) {
-    throw new HttpException("Invalid sort field", 400);
-  }
-  const orderByInput: Prisma.hrm_platform_contracts_snapshotsOrderByWithRelationInput =
-    {
-      [sortField]: sortOrder,
-    } satisfies Prisma.hrm_platform_contracts_snapshotsOrderByWithRelationInput;
-  const dateFilterConditions: Prisma.hrm_platform_contracts_snapshotsWhereInput[] =
-    [];
-  if (props.body.contract_number !== undefined) {
-    dateFilterConditions.push({
+  // Build filters from request body
+  const where: Prisma.hrm_platform_contracts_snapshotsWhereInput = {
+    hrm_platform_contract_id: props.contractId,
+    ...(props.body.contract_number !== undefined && {
       contract_number: { contains: props.body.contract_number },
-    });
-  }
-  if (
-    props.body.start_date_from !== undefined ||
-    props.body.start_date_to !== undefined
-  ) {
-    const startDateFilter: Prisma.DateTimeFilter<"hrm_platform_contracts_snapshots"> =
-      {};
-    if (props.body.start_date_from !== undefined) {
-      startDateFilter.gte = new Date(props.body.start_date_from);
-    }
-    if (props.body.start_date_to !== undefined) {
-      startDateFilter.lte = new Date(props.body.start_date_to);
-    }
-    dateFilterConditions.push({ start_date: startDateFilter });
-  }
-  if (
-    props.body.end_date_from !== undefined ||
-    props.body.end_date_to !== undefined
-  ) {
-    const endDateFilter: Prisma.DateTimeNullableFilter<"hrm_platform_contracts_snapshots"> =
-      {};
-    if (
-      props.body.end_date_from !== undefined &&
-      props.body.end_date_from !== null
-    ) {
-      endDateFilter.gte = new Date(props.body.end_date_from);
-    }
-    if (
-      props.body.end_date_to !== undefined &&
-      props.body.end_date_to !== null
-    ) {
-      endDateFilter.lte = new Date(props.body.end_date_to);
-    }
-    dateFilterConditions.push({ end_date: endDateFilter });
-  }
-  if (
-    props.body.snapshotted_at_from !== undefined ||
-    props.body.snapshotted_at_to !== undefined
-  ) {
-    const snapshottedAtFilter: Prisma.DateTimeFilter<"hrm_platform_contracts_snapshots"> =
-      {};
-    if (props.body.snapshotted_at_from !== undefined) {
-      snapshottedAtFilter.gte = new Date(props.body.snapshotted_at_from);
-    }
-    if (props.body.snapshotted_at_to !== undefined) {
-      snapshottedAtFilter.lte = new Date(props.body.snapshotted_at_to);
-    }
-    dateFilterConditions.push({ snapshotted_at: snapshottedAtFilter });
-  }
-  const whereInput: Prisma.hrm_platform_contracts_snapshotsWhereInput = {
-    hrm_platform_contract_id: contract.id,
-    ...(dateFilterConditions.length > 0 && { AND: dateFilterConditions }),
+    }),
+    ...(props.body.start_date_from !== undefined && {
+      start_date: { gte: props.body.start_date_from },
+    }),
+    ...(props.body.start_date_to !== undefined && {
+      start_date: { lte: props.body.start_date_to },
+    }),
+    ...(props.body.end_date_from !== undefined &&
+      props.body.end_date_from !== null && {
+        end_date: { gte: props.body.end_date_from },
+      }),
+    ...(props.body.end_date_to !== undefined &&
+      props.body.end_date_to !== null && {
+        end_date: { lte: props.body.end_date_to },
+      }),
+    ...(props.body.snapshotted_at_from !== undefined && {
+      snapshotted_at: { gte: props.body.snapshotted_at_from },
+    }),
+    ...(props.body.snapshotted_at_to !== undefined && {
+      snapshotted_at: { lte: props.body.snapshotted_at_to },
+    }),
   };
-  const data = await MyGlobal.prisma.hrm_platform_contracts_snapshots.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...HrmPlatformContractsSnapshotAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.hrm_platform_contracts_snapshots.count({
-    where: whereInput,
-  });
+  // Build sort order
+  const orderBy: Prisma.hrm_platform_contracts_snapshotsOrderByWithRelationInput =
+    props.body.sort === "contract_number"
+      ? ({ contract_number: "asc" } as const)
+      : props.body.sort === "-contract_number"
+        ? ({ contract_number: "desc" } as const)
+        : props.body.sort === "start_date"
+          ? ({ start_date: "asc" } as const)
+          : props.body.sort === "-start_date"
+            ? ({ start_date: "desc" } as const)
+            : props.body.sort === "created_at"
+              ? ({ created_at: "asc" } as const)
+              : props.body.sort === "-created_at"
+                ? ({ created_at: "desc" } as const)
+                : ({ snapshotted_at: "desc" } as const);
+  // Query snapshots
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.hrm_platform_contracts_snapshots.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
+      ...HrmPlatformContractsSnapshotAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.hrm_platform_contracts_snapshots.count({ where }),
+  ]);
+  const pages = total === 0 ? 0 : Math.ceil(total / limit);
+  // Transform and return
   return {
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: pages,
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       data,

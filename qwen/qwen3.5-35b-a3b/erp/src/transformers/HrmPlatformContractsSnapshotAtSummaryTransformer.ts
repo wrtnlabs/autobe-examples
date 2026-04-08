@@ -31,10 +31,14 @@ export namespace HrmPlatformContractsSnapshotAtSummaryTransformer {
         work_location: true,
         work_type: true,
         notes: true,
-        snapshotted_at: true,
         created_at: true,
         updated_at: true,
-        contract: true,
+        snapshotted_at: true,
+        contract: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.hrm_platform_contracts_snapshotsFindManyArgs;
   }

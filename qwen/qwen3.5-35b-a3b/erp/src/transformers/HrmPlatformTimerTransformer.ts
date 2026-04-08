@@ -23,21 +23,16 @@ export namespace HrmPlatformTimerTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        employee: {
-          select: {
-            id: true,
-          },
-        },
+        hrm_platform_employee_id: true,
+        hrm_platform_project_id: true,
+        hrm_platform_task_id: true,
+        employee: { select: { id: true } },
         project: {
-          select: {
-            id: true,
-          },
-        },
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_projectsFindManyArgs,
         task: {
-          select: {
-            id: true,
-          },
-        },
+          select: { id: true },
+        } satisfies Prisma.hrm_platform_tasksFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_timersFindManyArgs;
   }
@@ -45,14 +40,17 @@ export namespace HrmPlatformTimerTransformer {
     return {
       id: input.id,
       duration_seconds: input.duration_seconds,
-      last_tick_at: input.last_tick_at.toISOString(),
+      last_tick_at: toISOStringSafe(input.last_tick_at),
       status: input.status,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-      hrm_platform_employee_id: input.employee.id,
-      hrm_platform_project_id: input.project?.id ?? "",
-      hrm_platform_task_id: input.task?.id ?? "",
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      hrm_platform_employee_id:
+        input.hrm_platform_employee_id ?? ("" as string & tags.Format<"uuid">),
+      hrm_platform_project_id:
+        input.hrm_platform_project_id ?? ("" as string & tags.Format<"uuid">),
+      hrm_platform_task_id:
+        input.hrm_platform_task_id ?? ("" as string & tags.Format<"uuid">),
     } satisfies IHrmPlatformTimer;
   }
 }
@@ -69,9 +67,9 @@ export namespace HrmPlatformTimerTransformer {
 //         return {
 //           select: {
 //             id: true,
-//             status: true,
-//             last_tick_at: true,
 //             duration_seconds: true,
+//             last_tick_at: true,
+//             status: true,
 //             created_at: true,
 //             updated_at: true,
 //             deleted_at: true,

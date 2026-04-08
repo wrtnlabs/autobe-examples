@@ -30,8 +30,14 @@ export async function getHrmPlatformMemberProjectsProjectId(props: {
     await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
       where: {
         id: props.member.session_id,
+        expired_at: { gt: new Date() },
+        hrm_platform_member_id: props.member.id,
+        member: {
+          id: props.member.id,
+          is_active: true,
+          deleted_at: null,
+        },
       },
-      select: { organization_id: true },
     });
   const record = await MyGlobal.prisma.hrm_platform_projects.findFirstOrThrow({
     ...HrmPlatformProjectTransformer.select(),

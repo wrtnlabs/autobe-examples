@@ -26,71 +26,98 @@ export async function patchHrmPlatformMemberTimelogs(props: {
   member: MemberPayload;
   body: IHrmPlatformTimelog.IRequest;
 }): Promise<IPageIHrmPlatformTimelog.ISummary> {
-  // Pagination with defaults
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = props.body.limit ?? 20;
+  if (limit < 1 || limit > 100) {
+    throw new HttpException("Limit must be between 1 and 100", 400);
+  }
   const skip = (page - 1) * limit;
-  // Build where filters
-  const whereInput: Prisma.hrm_platform_timelogsWhereInput = {
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+    },
+  });
+  if (session === null) {
+    throw new HttpException("Session invalid", 403);
+  }
+  const member = await MyGlobal.prisma.hrm_platform_members.findFirst({
+    where: { id: session.hrm_platform_member_id },
+  });
+  if (member === null) {
+    throw new HttpException("Member not found", 404);
+  }
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: { hrm_platform_member_id: member.id },
+    include: { role: true },
+  });
+  if (employee === null) {
+    throw new HttpException("Employee not found", 404);
+  }
+  const isTimeManager = employee.role?.name === "Manager";
+  const isOwner = employee.role?.name === "Owner";
+  const where: Prisma.hrm_platform_timelogsWhereInput = {
     deleted_at: null,
-    // Apply organization scope - filter by employee_id if user doesn't have time:view_all
-    // For now, assume member can only see their own timelogs unless they have permission
-    employee_id: props.member.id,
-    // Apply request filters
-    ...(props.body.employee_id !== undefined && {
-      employee_id: props.body.employee_id,
-    }),
-    ...(props.body.project_id !== undefined && {
-      project_id: props.body.project_id,
-    }),
-    ...(props.body.task_id !== undefined && {
-      task_id: props.body.task_id,
-    }),
-    ...(props.body.start_date !== undefined && {
-      start_datetime: {
-        gte: props.body.start_date,
-      },
-    }),
-    ...(props.body.end_date !== undefined && {
-      end_datetime: {
-        lte: props.body.end_date,
-      },
-    }),
-    ...(props.body.billable !== undefined && {
-      billable: props.body.billable,
-    }),
   };
-  // Build orderBy with proper type inference
-  const sortField = props.body.sort_by ?? "created_at";
-  const sortOrder: "asc" | "desc" = props.body.sort_order ?? "desc";
-  const orderByInput = {
-    [sortField]: sortOrder,
-  };
-  // Query data
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_timelogs.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      ...HrmPlatformTimelogAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_timelogs.count({ where: whereInput }),
-  ]);
-  // Transform data
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    HrmPlatformTimelogAtSummaryTransformer.transform,
-  );
+  if (props.body.employee_id !== undefined) {
+    if (!isTimeManager && !isOwner) {
+      throw new HttpException("Unauthorized", 403);
+    }
+    where.employee_id = props.body.employee_id;
+  }
+  if (props.body.project_id !== undefined) {
+    where.project_id = props.body.project_id;
+  }
+  if (props.body.task_id !== undefined) {
+    where.task_id = props.body.task_id;
+  }
+  if (props.body.start_date !== undefined) {
+    where.start_datetime = { gte: new Date(props.body.start_date) };
+  }
+  if (props.body.end_date !== undefined) {
+    where.end_datetime = { lte: new Date(props.body.end_date) };
+  }
+  if (props.body.billable !== undefined) {
+    where.billable = props.body.billable;
+  }
+  if (!isTimeManager && !isOwner) {
+    where.employee_id = employee.id;
+  }
+  const sort = props.body.sort_by ?? "created_at";
+  const sortOrder = props.body.sort_order ?? "desc";
+  const orderBy: Prisma.hrm_platform_timelogsOrderByWithRelationInput =
+    sort === "created_at"
+      ? { created_at: sortOrder }
+      : sort === "start_datetime"
+        ? { start_datetime: sortOrder }
+        : sort === "end_datetime"
+          ? { end_datetime: sortOrder }
+          : sort === "duration_minutes"
+            ? { duration_minutes: sortOrder }
+            : { created_at: sortOrder };
+  const records = await MyGlobal.prisma.hrm_platform_timelogs.findMany({
+    ...HrmPlatformTimelogAtSummaryTransformer.select(),
+    where,
+    orderBy,
+    skip,
+    take: limit,
+  });
+  const total = await MyGlobal.prisma.hrm_platform_timelogs.count({
+    where,
+  });
   return {
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data: transformedData,
-  } satisfies IPageIHrmPlatformTimelog.ISummary;
+      pages: total > 0 ? Math.ceil(total / limit) : 0,
+    },
+    data: await ArrayUtil.asyncMap(
+      records,
+      HrmPlatformTimelogAtSummaryTransformer.transform,
+    ),
+  };
 }
 
 

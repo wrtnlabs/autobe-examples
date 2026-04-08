@@ -10,66 +10,60 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { RoleStatItemTransformer } from "../transformers/RoleStatItemTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getHrmPlatformMemberRolesStats(props: {
   member: MemberPayload;
 }): Promise<IPlatformRoleStat> {
+  // Get organization context from session
   const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
     where: {
       id: props.member.session_id,
-      expired_at: { gte: new Date() },
+      hrm_platform_member_id: props.member.id,
+    },
+    select: { organization: { select: { id: true } } },
+  });
+  if (!session || !session.organization) {
+    throw new HttpException("Organization context not found", 404);
+  }
+  const organizationId = session.organization.id;
+  // Get all roles with employee counts
+  const allRoles = await MyGlobal.prisma.hrm_platform_roles.findMany({
+    where: {
+      organization_id: organizationId,
+      deleted_at: null,
+    },
+    ...RoleStatItemTransformer.select(),
+  });
+  // Transform roles to IRoleStatItem
+  const employeeDistribution = await ArrayUtil.asyncMap(
+    allRoles,
+    async (role) => await RoleStatItemTransformer.transform(role),
+  );
+  // Count role statistics
+  const totalRoles = await MyGlobal.prisma.hrm_platform_roles.count({
+    where: {
+      organization_id: organizationId,
+      deleted_at: null,
     },
   });
-  if (!session?.organization_id) {
-    throw new HttpException("No active organization context", 400);
-  }
-  const organizationId = session.organization_id;
-  const roleStatsAggregate = await MyGlobal.prisma.hrm_platform_roles.aggregate(
-    {
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-      },
-      _count: {
-        id: true,
-      },
-    },
-  );
-  const builtInCount = await MyGlobal.prisma.hrm_platform_roles.count({
+  const builtInRoles = await MyGlobal.prisma.hrm_platform_roles.count({
     where: {
       organization_id: organizationId,
       deleted_at: null,
       role_kind: "built_in",
     },
   });
-  const customCount = await MyGlobal.prisma.hrm_platform_roles.count({
+  const customRoles = await MyGlobal.prisma.hrm_platform_roles.count({
     where: {
       organization_id: organizationId,
       deleted_at: null,
       role_kind: "custom",
     },
   });
-  const employeeDistribution =
-    await MyGlobal.prisma.hrm_platform_roles.findMany({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        name: true,
-        employees: {
-          where: {
-            deleted_at: null,
-          },
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
+  // Get permission statistics
   const totalPermissions = await MyGlobal.prisma.hrm_platform_permissions.count(
     {
       where: {
@@ -78,41 +72,30 @@ export async function getHrmPlatformMemberRolesStats(props: {
       },
     },
   );
-  const uniquePermissionCodesGroupBy =
-    await MyGlobal.prisma.hrm_platform_permissions.groupBy({
+  const uniquePermissionCodes = await MyGlobal.prisma.hrm_platform_permissions
+    .groupBy({
+      by: ["code"],
       where: {
         organization_id: organizationId,
         deleted_at: null,
       },
-      by: ["code"],
-      _count: true,
-    });
-  const uniquePermissionCodes = uniquePermissionCodesGroupBy.length;
-  const totalEmployees = employeeDistribution.reduce(
-    (sum, role) => sum + role.employees.length,
-    0,
-  );
+      _count: {
+        code: true,
+      },
+    })
+    .then((result) => result.length);
   return {
     roleStats: {
-      total: roleStatsAggregate._count.id satisfies number as number &
-        tags.Type<"int32">,
-      builtIn: builtInCount satisfies number as number & tags.Type<"int32">,
-      custom: customCount satisfies number as number & tags.Type<"int32">,
+      total: totalRoles,
+      builtIn: builtInRoles,
+      custom: customRoles,
     },
-    employeeDistribution: {
-      role_id:
-        employeeDistribution[0]?.id ?? (v4() as string & tags.Format<"uuid">),
-      name: employeeDistribution[0]?.name ?? "No Roles Assigned",
-      employee_count: totalEmployees satisfies number as number &
-        tags.Type<"int32">,
-    },
+    employeeDistribution: employeeDistribution as any,
     permissionStats: {
-      total_permissions: totalPermissions satisfies number as number &
-        tags.Type<"int32">,
-      unique_permission_codes:
-        uniquePermissionCodes satisfies number as number & tags.Type<"int32">,
+      total_permissions: totalPermissions,
+      unique_permission_codes: uniquePermissionCodes,
     },
-  };
+  } satisfies IPlatformRoleStat;
 }
 
 

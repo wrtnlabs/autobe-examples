@@ -32,15 +32,12 @@ export namespace HrmPlatformMemberPasswordResetAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IHrmPlatformMemberPasswordReset.ISummary> {
-    // Compute status based on used_at and expired_at
-    let status: "active" | "used" | "expired";
-    if (input.used_at !== null) {
-      status = "used";
-    } else if (Date.now() > input.expired_at.getTime()) {
-      status = "expired";
-    } else {
-      status = "active";
-    }
+    const now = new Date();
+    const status: "active" | "used" | "expired" = input.used_at
+      ? "used"
+      : input.expired_at < now
+        ? "expired"
+        : "active";
     return {
       id: input.id,
       member: await HrmPlatformMemberAtSummaryTransformer.transform(

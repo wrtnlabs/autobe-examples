@@ -32,7 +32,6 @@ export namespace HrmPlatformTimerAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        employee: true,
         project: HrmPlatformProjectAtSummaryTransformer.select(),
         task: HrmPlatformTaskAtSummaryTransformer.select(),
       },
@@ -44,14 +43,11 @@ export namespace HrmPlatformTimerAtSummaryTransformer {
     return {
       id: input.id,
       status: input.status,
-      lastTickAt: toISOStringSafe(input.last_tick_at),
-      durationSeconds: Number(input.duration_seconds),
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt:
-        input.deleted_at !== null && input.deleted_at !== undefined
-          ? toISOStringSafe(input.deleted_at)
-          : null,
+      lastTickAt: input.last_tick_at.toISOString(),
+      durationSeconds: input.duration_seconds,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
       project: input.project
         ? await HrmPlatformProjectAtSummaryTransformer.transform(input.project)
         : null,

@@ -25,6 +25,7 @@ export namespace HrmPlatformMemberTransformer {
       select: {
         id: true,
         email: true,
+        password_hash: true,
         display_name: true,
         avatar_uri: true,
         phone_number: true,
@@ -38,6 +39,13 @@ export namespace HrmPlatformMemberTransformer {
           HrmPlatformMemberPasswordResetAtSummaryTransformer.select(),
         emailVerifications:
           HrmPlatformMemberEmailVerificationAtSummaryTransformer.select(),
+        ownedOrganizations: true,
+        uploadedFiles: true,
+        employees: true,
+        employeeSnapshots: true,
+        taskHistories: true,
+        timesheetActions: true,
+        activityLogs: true,
       },
     } satisfies Prisma.hrm_platform_membersFindManyArgs;
   }

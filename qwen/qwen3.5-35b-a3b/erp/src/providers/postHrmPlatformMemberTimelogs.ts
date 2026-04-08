@@ -25,113 +25,121 @@ export async function postHrmPlatformMemberTimelogs(props: {
   member: MemberPayload;
   body: IHrmPlatformTimelog.ICreate;
 }): Promise<IHrmPlatformTimelog> {
-  // Parse datetime strings for validation (used only for comparison)
-  const startDateTime = new Date(props.body.start_datetime);
-  const endDateTime = new Date(props.body.end_datetime);
-  const now = new Date();
-  // Validate datetime constraints
-  if (startDateTime > now) {
+  const {
+    employee_id,
+    project_id,
+    task_id,
+    start_datetime,
+    end_datetime,
+    duration_minutes,
+    billable,
+  } = props.body;
+  const member_id: string & tags.Format<"uuid"> = props.member.id;
+  // Validate datetime range - ISO strings can be compared lexicographically
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  if (start_datetime >= now) {
     throw new HttpException("start_datetime must be in the past", 400);
   }
-  if (endDateTime <= startDateTime) {
-    throw new HttpException("end_datetime must be after start_datetime", 400);
-  }
-  if (endDateTime > now) {
+  if (end_datetime >= now) {
     throw new HttpException("end_datetime must be in the past", 400);
   }
-  if (props.body.duration_minutes <= 0) {
+  if (end_datetime <= start_datetime) {
+    throw new HttpException("end_datetime must be after start_datetime", 400);
+  }
+  if (duration_minutes <= 0) {
     throw new HttpException("duration_minutes must be greater than 0", 400);
   }
-  // Validate project exists and belongs to member's organization
-  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
-    {
-      where: { id: props.body.project_id },
-      select: { id: true, organization_id: true },
-    },
-  );
-  // Validate task exists and belongs to the project if provided
-  if (props.body.task_id !== null) {
-    const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
-      where: { id: props.body.task_id },
-      select: { id: true, project_id: true },
-    });
-    if (task.project_id !== props.body.project_id) {
-      throw new HttpException(
-        "task_id must belong to the specified project",
-        400,
-      );
-    }
-  }
-  // Validate employee belongs to the same organization as project
-  const employee =
+  // Verify employee exists with full organization and permissions
+  const employeeRaw =
     await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: { id: props.body.employee_id },
-      select: {
-        id: true,
-        hrm_platform_organization_id: true,
-        is_pending: true,
+      where: { id: employee_id },
+      include: {
+        department: true,
+        organization: true,
+        member: true,
+        role: {
+          include: {
+            organization: true,
+            permissions: true,
+          },
+        },
+        contracts: true,
+        projectMemberships: true,
+        assignedTasks: true,
+        timers: true,
+        timelogs: true,
+        timesheets: true,
       },
     });
-  if (employee.hrm_platform_organization_id !== project.organization_id) {
+  // Check for time:manage permission
+  const hasTimeManagePermission: boolean = employeeRaw.role.permissions.some(
+    (permission: { code: string }) => permission.code === "time:manage",
+  );
+  // Verify employee's member matches authenticated member or user has time:manage permission
+  if (employeeRaw.member.id !== member_id && !hasTimeManagePermission) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Verify project exists and belongs to same organization as employee
+  const projectRaw =
+    await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow({
+      where: { id: project_id },
+      include: {
+        tasks: true,
+        timelogs: true,
+        timers: true,
+        memberships: true,
+        organization: {
+          include: {
+            owner: true,
+          },
+        },
+      },
+    });
+  if (projectRaw.organization.id !== employeeRaw.organization.id) {
     throw new HttpException(
-      "employee must belong to the same organization as project",
+      "Project must belong to the same organization as employee",
       400,
     );
   }
-  if (employee.is_pending === true) {
-    throw new HttpException("Cannot create timelog for pending employee", 400);
-  }
-  // Check if member is allowed to create timelog for this employee
-  if (employee.id !== props.member.id) {
-    const memberSession =
-      await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
-        where: {
-          id: props.member.session_id,
-        },
-      });
-    if (memberSession === null) {
-      throw new HttpException(
-        "You do not have permission to create timelogs for other employees",
-        403,
-      );
-    }
-  }
-  // Calculate week period (Monday to Sunday) based on start_datetime
-  const startOfWeek = new Date(startDateTime);
-  const dayOfWeek = startOfWeek.getUTCDay() || 7;
-  startOfWeek.setUTCDate(startOfWeek.getUTCDate() - dayOfWeek + 1);
-  startOfWeek.setUTCHours(0, 0, 0, 0);
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setUTCDate(endOfWeek.getUTCDate() + 6);
-  endOfWeek.setUTCHours(23, 59, 59, 999);
-  // Check for existing timesheet in this week period for the employee
-  const existingTimesheet =
-    await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
-      where: {
-        employee: { id: employee.id },
-        start_date: { lte: startOfWeek },
-        end_date: { gte: startOfWeek },
+  // If task is provided, verify it belongs to the project
+  if (task_id !== undefined && task_id !== null) {
+    const taskRaw = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
+      where: { id: task_id },
+      select: {
+        id: true,
+        project_id: true,
       },
     });
-  if (existingTimesheet !== null) {
-    if (
-      existingTimesheet.status === "submitted" ||
-      existingTimesheet.status === "approved"
-    ) {
-      throw new HttpException(
-        "Cannot add timelog to submitted or approved timesheet",
-        400,
-      );
+    if (taskRaw.project_id !== project_id) {
+      throw new HttpException("Task must belong to the specified project", 400);
     }
   }
-  // Create timelog
-  const record = await MyGlobal.prisma.hrm_platform_timelogs.create({
+  // Check timesheet status for the week period - find timesheets that contain this date range
+  const submittedTimesheet =
+    await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
+      where: {
+        hrm_platform_employee_id: employee_id,
+        start_date: { lte: new Date(start_datetime) },
+        end_date: { gte: new Date(end_datetime) },
+        status: {
+          in: ["submitted", "approved"] as const,
+        },
+      },
+    });
+  if (submittedTimesheet !== null) {
+    throw new HttpException(
+      "Cannot add timelog to submitted or approved timesheet",
+      400,
+    );
+  }
+  // Create timelog using collector and transformer
+  const createdTimelog = await MyGlobal.prisma.hrm_platform_timelogs.create({
     data: await HrmPlatformTimelogCollector.collect({
       body: props.body,
     }),
     ...HrmPlatformTimelogTransformer.select(),
   });
-  return await HrmPlatformTimelogTransformer.transform(record);
+  return await HrmPlatformTimelogTransformer.transform(createdTimelog);
 }
 
 

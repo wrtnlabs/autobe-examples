@@ -11,6 +11,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { HrmPlatformDepartmentsSnapshotCollector } from "../collectors/HrmPlatformDepartmentsSnapshotCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
 import { HrmPlatformDepartmentsSnapshotTransformer } from "../transformers/HrmPlatformDepartmentsSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -22,34 +23,59 @@ export async function postHrmPlatformMemberOrganizationsOrganizationIdDepartment
   departmentId: string & tags.Format<"uuid">;
   body: IHrmPlatformDepartmentsSnapshot.ICreate;
 }): Promise<IHrmPlatformDepartmentsSnapshot> {
+  // Verify user session is valid and not expired
+  const session =
+    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
+      where: {
+        id: props.member.session_id,
+        expired_at: { gt: new Date() },
+        hrm_platform_member_id: props.member.id,
+        member: {
+          id: props.member.id,
+          is_active: true,
+          deleted_at: null,
+        },
+      },
+    });
+  // Validate organization exists and user has org:manage permission
+  const organization =
+    await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
+      where: { id: props.organizationId },
+      select: {
+        id: true,
+        permissions: {
+          where: {
+            code: "org:manage",
+          },
+          take: 1,
+        },
+      },
+    });
+  if (organization.permissions.length === 0) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Validate department exists and belongs to organization
   const department =
-    await MyGlobal.prisma.hrm_platform_departments.findFirstOrThrow({
+    await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
       where: {
         id: props.departmentId,
-        organization_id: props.organizationId,
+        organization: { id: props.organizationId },
       },
       select: {
         id: true,
         name: true,
-        parent_department_id: true,
         updated_at: true,
+        parent_department_id: true,
       },
     });
+  // Create snapshot by capturing current department state
   const record =
     await MyGlobal.prisma.hrm_platform_departments_snapshots.create({
-      data: {
-        id: v4(),
-        hrm_platform_department_id: department.id,
-        name: department.name,
-        description: null,
-        color: null,
-        parent_department_id: department.parent_department_id,
-        fiscal_start_month: null,
-        timezone: null,
-        status: "active",
-        created_at: new Date(),
-        updated_at: department.updated_at,
-      },
+      data: await HrmPlatformDepartmentsSnapshotCollector.collect({
+        body: props.body,
+        hrmPlatformDepartments: { id: props.departmentId } as IEntity,
+        hrmPlatformOrganizations: { id: props.organizationId } as IEntity,
+      }),
       ...HrmPlatformDepartmentsSnapshotTransformer.select(),
     });
   return await HrmPlatformDepartmentsSnapshotTransformer.transform(record);

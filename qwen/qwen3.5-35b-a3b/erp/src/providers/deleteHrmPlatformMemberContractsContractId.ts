@@ -17,43 +17,52 @@ export async function deleteHrmPlatformMemberContractsContractId(props: {
 }): Promise<void> {
   const contract =
     await MyGlobal.prisma.hrm_platform_contracts.findUniqueOrThrow({
-      where: {
-        id: props.contractId,
-        deleted_at: null,
-      },
+      where: { id: props.contractId },
       select: {
         id: true,
-        hrm_platform_employee_id: true,
-        hrm_platform_organization_id: true,
+        deleted_at: true,
         status: true,
+        hrm_platform_employee_id: true,
+        employee: {
+          select: {
+            hrm_platform_organization_id: true,
+            hrm_platform_member_id: true,
+            contracts: {
+              select: {
+                id: true,
+                status: true,
+              },
+            },
+          },
+        },
+        hrm_platform_organization_id: true,
       },
     });
-  // Verify member's session organization matches the contract's organization
+  if (contract.deleted_at !== null) {
+    throw new HttpException("Contract is already deleted", 400);
+  }
   const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
     where: {
       id: props.member.session_id,
-    },
-    select: {
-      organization_id: true,
-    },
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+      member: {
+        id: props.member.id,
+        is_active: true,
+        deleted_at: null,
+      },
+    } satisfies Prisma.hrm_platform_member_sessionsWhereInput,
   });
-  if (
-    !session ||
-    session.organization_id !== contract.hrm_platform_organization_id
-  ) {
+  if (session === null) {
     throw new HttpException("Forbidden", 403);
   }
   if (contract.status === "active") {
-    const remainingContracts =
-      await MyGlobal.prisma.hrm_platform_contracts.count({
-        where: {
-          hrm_platform_employee_id: contract.hrm_platform_employee_id,
-          id: { not: props.contractId },
-        },
-      });
-    if (remainingContracts === 0) {
+    const otherActiveContracts = contract.employee.contracts.filter(
+      (c) => c.id !== props.contractId && c.status === "active",
+    );
+    if (otherActiveContracts.length === 0) {
       throw new HttpException(
-        "Cannot delete active contract: employee would have no contracts",
+        "Cannot delete the last active contract for this employee",
         400,
       );
     }
@@ -62,7 +71,7 @@ export async function deleteHrmPlatformMemberContractsContractId(props: {
     where: { id: props.contractId },
     data: {
       deleted_at: new Date(),
-    },
+    } satisfies Prisma.hrm_platform_contractsUpdateInput,
   });
 }
 

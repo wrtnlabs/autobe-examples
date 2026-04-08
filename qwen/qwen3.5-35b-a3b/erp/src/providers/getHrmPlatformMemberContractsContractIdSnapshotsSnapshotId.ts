@@ -18,46 +18,50 @@ export async function getHrmPlatformMemberContractsContractIdSnapshotsSnapshotId
   contractId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformContractsSnapshot> {
-  const snapshot =
-    await MyGlobal.prisma.hrm_platform_contracts_snapshots.findFirstOrThrow({
-      ...HrmPlatformContractsSnapshotTransformer.select(),
+  const session =
+    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
       where: {
-        id: props.snapshotId,
-        hrm_platform_contract_id: props.contractId,
+        id: props.member.session_id,
+        expired_at: { gt: new Date() },
+        hrm_platform_member_id: props.member.id,
+        member: {
+          id: props.member.id,
+          is_active: true,
+          deleted_at: null,
+        },
+      },
+      select: {
+        id: true,
+        organization_id: true,
+        hrm_platform_member_id: true,
       },
     });
   const contract =
     await MyGlobal.prisma.hrm_platform_contracts.findUniqueOrThrow({
       where: { id: props.contractId },
       select: {
-        employee: { select: { id: true, hrm_platform_organization_id: true } },
+        id: true,
+        hrm_platform_employee_id: true,
+        hrm_platform_organization_id: true,
+        employee: { select: { hrm_platform_member_id: true } },
       },
     });
-  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
-    {
-      where: {
-        hrm_platform_member_id: props.member.id,
-        hrm_platform_organization_id:
-          contract.employee.hrm_platform_organization_id,
-        deleted_at: null,
-      },
-    },
-  );
-  const hasEmployeePermission = memberEmployee !== null;
-  if (!hasEmployeePermission) {
-    const memberPermission =
-      await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
-        where: {
-          hrm_platform_member_id: props.member.id,
-          organization: {
-            id: contract.employee.hrm_platform_organization_id,
-          },
-        },
-      });
-    if (memberPermission === null) {
-      throw new HttpException("Forbidden", 403);
-    }
+  if (contract.hrm_platform_organization_id !== session.organization_id) {
+    throw new HttpException("Forbidden", 403);
   }
+  const employeeMemberId = contract.employee.hrm_platform_member_id;
+  const isOwner = employeeMemberId === props.member.id;
+  if (!isOwner) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const snapshot =
+    await MyGlobal.prisma.hrm_platform_contracts_snapshots.findUniqueOrThrow({
+      where: {
+        id: props.snapshotId,
+        hrm_platform_contract_id: props.contractId,
+      },
+      ...HrmPlatformContractsSnapshotTransformer.select(),
+    });
   return await HrmPlatformContractsSnapshotTransformer.transform(snapshot);
 }
 

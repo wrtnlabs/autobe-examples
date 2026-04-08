@@ -37,7 +37,7 @@ export namespace HrmPlatformTaskHistoryAtSummaryTransformer {
         task: HrmPlatformTaskAtSummaryTransformer.select(),
         actor: HrmPlatformMemberAtSummaryTransformer.select(),
       },
-    };
+    } satisfies Prisma.hrm_platform_task_historiesFindManyArgs;
   }
   export async function transform(
     input: Payload,
@@ -50,8 +50,8 @@ export namespace HrmPlatformTaskHistoryAtSummaryTransformer {
       status_before: input.status_before ?? null,
       status_after: input.status_after ?? null,
       details: input.details ?? null,
-      changed_at: toISOStringSafe(input.changed_at),
-      created_at: toISOStringSafe(input.created_at),
+      changed_at: input.changed_at.toISOString(),
+      created_at: input.created_at.toISOString(),
     } satisfies IHrmPlatformTaskHistory.ISummary;
   }
 }
@@ -69,12 +69,15 @@ export namespace HrmPlatformTaskHistoryAtSummaryTransformer {
 //           select: {
 //             id: true,
 //             action_type: true,
-//             status_before: true,
-//             status_after: true,
 //             details: true,
-//             changed_at: true,
 //             created_at: true,
-//             ...
+//             updated_at: true,
+//             changed_at: true,
+//             deleted_at: true,
+//             status_after: true,
+//             status_before: true,
+//             task: HrmPlatformTaskAtSummaryTransformer.select(),
+//             actor: HrmPlatformMemberAtSummaryTransformer.select(),
 //           },
 //         } satisfies Prisma.hrm_platform_task_historiesFindManyArgs;
 //       }
@@ -82,8 +85,8 @@ export namespace HrmPlatformTaskHistoryAtSummaryTransformer {
 //       export async function transform(input: Payload): Promise<IHrmPlatformTaskHistory.ISummary> {
 //         return {
 //   id: {string},
-//   task: {IHrmPlatformTask.ISummary},
-//   actor: {IHrmPlatformMember.ISummary},
+//   task: await HrmPlatformTaskAtSummaryTransformer.transform(input.task),
+//   actor: await HrmPlatformMemberAtSummaryTransformer.transform(input.actor),
 //   action_type: {string},
 //   status_before: {string | null},
 //   status_after: {string | null},

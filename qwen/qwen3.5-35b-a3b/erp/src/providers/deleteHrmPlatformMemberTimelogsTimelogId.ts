@@ -15,84 +15,114 @@ export async function deleteHrmPlatformMemberTimelogsTimelogId(props: {
   member: MemberPayload;
   timelogId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Verify timelog exists and check if already deleted
-  const timelog = await MyGlobal.prisma.hrm_platform_timelogs.findUniqueOrThrow(
-    {
-      where: { id: props.timelogId },
-      select: {
-        id: true,
-        employee_id: true,
-        deleted_at: true,
-      },
-    },
-  );
-  // If already deleted, treat as 404
-  if (timelog.deleted_at !== null) {
-    throw new HttpException("Not found", 404);
-  }
-  // 2. Get organization from employee
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: { id: timelog.employee_id },
-      select: {
-        organization: {
-          select: { id: true },
+  const timelog = await MyGlobal.prisma.hrm_platform_timelogs.findUnique({
+    where: { id: props.timelogId },
+    select: {
+      id: true,
+      employee_id: true,
+      project_id: true,
+      task_id: true,
+      start_datetime: true,
+      end_datetime: true,
+      duration_minutes: true,
+      description: true,
+      billable: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      project: {
+        select: {
+          organization_id: true,
         },
       },
+    },
+  });
+  if (timelog === null || timelog.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
+  }
+  if (timelog.project === null) {
+    throw new HttpException("Not Found", 404);
+  }
+  const organizationId = timelog.project.organization_id;
+  const allSessions =
+    await MyGlobal.prisma.hrm_platform_member_sessions.findMany({
+      where: {
+        hrm_platform_member_id: props.member.id,
+        expired_at: { gt: new Date() },
+        organization_id: organizationId,
+      },
+      select: {
+        organization_id: true,
+      },
     });
-  // 3. Authorization check - only allow deletion of own timelogs
-  if (timelog.employee_id !== props.member.id) {
+  const hasActiveSession = allSessions.length > 0;
+  if (!hasActiveSession) {
     throw new HttpException("Forbidden", 403);
   }
-  // 4. Check timesheet associations
+  const timeManagePermission =
+    await MyGlobal.prisma.hrm_platform_permissions.findFirst({
+      where: {
+        code: "time:manage",
+        organization_id: organizationId,
+      },
+      select: { id: true },
+    });
+  const isTimeManageAllowed = timeManagePermission !== null;
+  if (!isTimeManageAllowed) {
+    const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+      where: {
+        hrm_platform_member_id: props.member.id,
+        hrm_platform_organization_id: organizationId,
+      },
+      select: { id: true },
+    });
+    if (employee === null) {
+      throw new HttpException("Forbidden", 403);
+    }
+    if (timelog.employee_id !== employee.id) {
+      throw new HttpException("Forbidden", 403);
+    }
+  }
   const timesheetTimelogs =
     await MyGlobal.prisma.hrm_platform_timesheet_timelogs.findMany({
       where: {
         hrm_platform_timelog_id: props.timelogId,
         deleted_at: null,
       },
-      include: {
-        timesheet: {
-          select: { status: true },
-        },
-        timelog: {
-          select: { employee_id: true },
-        },
-      },
+      select: { hrm_platform_timesheet_id: true },
     });
-  // Check if any associated timesheet has status submitted or approved
-  for (const timesheetTimelog of timesheetTimelogs) {
-    if (timesheetTimelog.deleted_at !== null) continue;
-    const status = timesheetTimelog.timesheet.status as string;
-    if (status === "submitted" || status === "approved") {
+  if (timesheetTimelogs.length > 0) {
+    const timesheetIds = timesheetTimelogs.map(
+      (tt) => tt.hrm_platform_timesheet_id,
+    );
+    const timesheets = await MyGlobal.prisma.hrm_platform_timesheets.findMany({
+      where: {
+        id: { in: timesheetIds },
+        status: { in: ["submitted", "approved"] },
+      },
+      select: { id: true },
+    });
+    if (timesheets.length > 0) {
       throw new HttpException("Conflict", 409);
     }
   }
-  // 5. Transaction: soft delete and log activity
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Soft delete the timelog
-    await tx.hrm_platform_timelogs.update({
-      where: { id: props.timelogId },
-      data: {
-        deleted_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
-    // Log the deletion in activity_logs
-    const activityId: string & tags.Format<"uuid"> = v4();
-    await tx.hrm_platform_activity_logs.create({
-      data: {
-        id: activityId,
-        member_id: props.member.id,
-        organization_id: employee.organization.id,
-        entity_type: "timelog",
-        entity_id: props.timelogId,
-        action_type: "delete",
-        action_name: "timelog.delete",
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
+  await MyGlobal.prisma.hrm_platform_timelogs.update({
+    where: { id: props.timelogId },
+    data: { deleted_at: new Date() },
+  });
+  await MyGlobal.prisma.hrm_platform_activity_logs.create({
+    data: {
+      id: v4(),
+      member_id: props.member.id,
+      organization_id: organizationId,
+      entity_type: "timelog",
+      entity_id: props.timelogId,
+      action_type: "delete",
+      action_name: "timelog.delete",
+      extra_data: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
   });
 }
 

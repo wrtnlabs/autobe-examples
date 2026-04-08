@@ -21,22 +21,57 @@ export async function putHrmPlatformMemberProfile(props: {
   member: MemberPayload;
   body: IHrmPlatformMember.IUpdate;
 }): Promise<IHrmPlatformMember> {
-  const updateData: Prisma.hrm_platform_membersUpdateInput = {
-    ...(props.body.display_name !== undefined && {
-      display_name: props.body.display_name,
-    }),
-    ...(props.body.avatar_uri !== undefined && {
-      avatar_uri: props.body.avatar_uri,
-    }),
-    ...(props.body.phone_number !== undefined && {
-      phone_number: props.body.phone_number,
-    }),
-    updated_at: new Date(),
-  };
+  const updated_at = toISOStringSafe(new Date());
+  const updateData: {
+    display_name?: (string & tags.MaxLength<255>) | null | undefined;
+    avatar_uri?:
+      | (string & tags.MaxLength<80000> & tags.Format<"uri">)
+      | null
+      | undefined;
+    phone_number?: (string & tags.Format<"uri">) | null | undefined;
+    updated_at: string & tags.Format<"date-time">;
+  } = { updated_at };
+  if (props.body.display_name !== undefined) {
+    updateData.display_name = props.body.display_name;
+  }
+  if (props.body.avatar_uri !== undefined) {
+    updateData.avatar_uri = props.body.avatar_uri;
+  }
+  if (props.body.phone_number !== undefined) {
+    updateData.phone_number = props.body.phone_number;
+  }
   await MyGlobal.prisma.hrm_platform_members.update({
     where: { id: props.member.id },
     data: updateData,
   });
+  const ownedOrg = await MyGlobal.prisma.hrm_platform_organizations.findFirst({
+    where: { owner_id: props.member.id },
+    select: { id: true },
+  });
+  await MyGlobal.prisma.hrm_platform_activity_logs.create({
+    data: {
+      id: v4() as string & tags.Format<"uuid">,
+      created_at: updated_at,
+      updated_at: updated_at,
+      entity_type: "HrmPlatformMember",
+      entity_id: props.member.id,
+      action_type: "UPDATE",
+      action_name: "putHrmPlatformMemberProfile",
+      member: { connect: { id: props.member.id } },
+      organization: ownedOrg
+        ? { connect: { id: ownedOrg.id } }
+        : { connect: { id: "00000000-0000-0000-0000-000000000000" } },
+    },
+  });
+  if (
+    updateData.display_name !== undefined &&
+    updateData.display_name !== null
+  ) {
+    await MyGlobal.prisma.hrm_platform_employees.updateMany({
+      where: { hrm_platform_member_id: props.member.id },
+      data: { display_name: updateData.display_name },
+    });
+  }
   const updated = await MyGlobal.prisma.hrm_platform_members.findUniqueOrThrow({
     where: { id: props.member.id },
     ...HrmPlatformMemberTransformer.select(),

@@ -24,16 +24,32 @@ export async function getHrmPlatformMemberProjectsProjectIdMembershipsMembership
   projectId: string & tags.Format<"uuid">;
   membershipId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformProjectMembership> {
-  const record =
+  // Verify the session is active and belongs to the authenticated member
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+    },
+  });
+  if (session === null || session.organization_id === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Retrieve the project membership with all required fields
+  const membership =
     await MyGlobal.prisma.hrm_platform_project_memberships.findUniqueOrThrow({
-      ...HrmPlatformProjectMembershipTransformer.select(),
       where: {
         id: props.membershipId,
+        organization_id: session.organization_id,
         deleted_at: null,
-        hrm_platform_project_id: props.projectId,
       },
+      ...HrmPlatformProjectMembershipTransformer.select(),
     });
-  return await HrmPlatformProjectMembershipTransformer.transform(record);
+  // Verify the membership belongs to the specified project
+  if (membership.project.id !== props.projectId) {
+    throw new HttpException("Not found", 404);
+  }
+  return await HrmPlatformProjectMembershipTransformer.transform(membership);
 }
 
 

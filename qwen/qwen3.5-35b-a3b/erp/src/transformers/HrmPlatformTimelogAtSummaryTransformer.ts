@@ -32,15 +32,13 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
         duration_minutes: true,
         billable: true,
         description: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
         employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
         project: HrmPlatformProjectAtSummaryTransformer.select(),
         task: HrmPlatformTaskAtSummaryTransformer.select(),
-        timesheetTimelogs: {
-          select: { id: true },
-        } satisfies Prisma.hrm_platform_timesheet_timelogsFindManyArgs,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        timesheetTimelogs: true,
       },
     } satisfies Prisma.hrm_platform_timelogsFindManyArgs;
   }
@@ -49,8 +47,8 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
   ): Promise<IHrmPlatformTimelog.ISummary> {
     return {
       id: input.id,
-      start_datetime: toISOStringSafe(input.start_datetime),
-      end_datetime: toISOStringSafe(input.end_datetime),
+      start_datetime: input.start_datetime.toISOString(),
+      end_datetime: input.end_datetime.toISOString(),
       duration_minutes: input.duration_minutes,
       billable: input.billable,
       description: input.description ?? undefined,
@@ -82,9 +80,14 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
 //             start_datetime: true,
 //             end_datetime: true,
 //             duration_minutes: true,
-//             billable: true,
 //             description: true,
-//             ...
+//             billable: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
+//             project: HrmPlatformProjectAtSummaryTransformer.select(),
+//             task: HrmPlatformTaskAtSummaryTransformer.select(),
 //           },
 //         } satisfies Prisma.hrm_platform_timelogsFindManyArgs;
 //       }
@@ -97,9 +100,9 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
 //   duration_minutes: {integer},
 //   billable: {boolean},
 //   description: {string | null},
-//   employee: {IHrmPlatformEmployee.ISummary},
-//   project: {IHrmPlatformProject.ISummary},
-//   task: {IHrmPlatformTask.ISummary | null},
+//   employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(input.employee),
+//   project: await HrmPlatformProjectAtSummaryTransformer.transform(input.project),
+//   task: input.task ? await HrmPlatformTaskAtSummaryTransformer.transform(input.task) : null,
 //         };
 //       }
 //     }

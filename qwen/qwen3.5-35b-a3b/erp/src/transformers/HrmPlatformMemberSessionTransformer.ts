@@ -43,10 +43,10 @@ export namespace HrmPlatformMemberSessionTransformer {
       refresh_token_expires_at: input.refresh_token_expires_at.toISOString(),
       ip_address: input.ip_address,
       user_agent: input.user_agent,
-      referrer: input.referrer?.toString() ?? null,
+      referrer: input.referrer ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      expired_at: input.expired_at.toISOString() ?? null,
+      expired_at: input.expired_at?.toISOString() ?? null,
     } satisfies IHrmPlatformMemberSession;
   }
 }

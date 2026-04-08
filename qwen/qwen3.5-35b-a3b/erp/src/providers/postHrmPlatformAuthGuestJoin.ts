@@ -16,129 +16,87 @@ export async function postHrmPlatformAuthGuestJoin(props: {
   ip: string;
   body: IHrmPlatformGuest.IJoin;
 }): Promise<IHrmPlatformGuest.IAuthorized> {
-  const nowTimestamp: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(),
-  );
-  const accessExpiresTimestamp: string & tags.Format<"date-time"> =
-    toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpiresTimestamp: string & tags.Format<"date-time"> =
-    toISOStringSafe(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  const { body, ip } = props;
+  if (body.email === undefined) {
+    throw new HttpException("Email is required", 400);
+  }
+  if (body.password === undefined) {
+    throw new HttpException("Password is required", 400);
+  }
+  if (body.name === undefined || body.name.length === 0) {
+    throw new HttpException("Name is required", 400);
+  }
+  if (body.href === undefined) {
+    throw new HttpException("Href is required", 400);
+  }
   const deviceIdentifier: string & tags.Format<"uuid"> = v4();
-  const existingGuest = await MyGlobal.prisma.hrm_platform_guests.findFirst({
-    where: {
-      device_identifier: deviceIdentifier,
-      deleted_at: null,
-    },
+  const sessionIp: string & tags.Format<"ipv4"> = body.ip ?? ip;
+  const now: string & tags.Format<"date-time"> = new Date().toISOString();
+  const existingGuest = await MyGlobal.prisma.hrm_platform_guests.findUnique({
+    where: { device_identifier: deviceIdentifier },
   });
-  if (existingGuest) {
-    const existingSession =
+  if (existingGuest !== null) {
+    const activeSession =
       await MyGlobal.prisma.hrm_platform_guest_sessions.findFirst({
         where: {
           hrm_platform_guest_id: existingGuest.id,
-          expired_at: { gt: new Date(accessExpiresTimestamp) },
+          expired_at: { gte: new Date() },
         },
+        orderBy: { created_at: "desc" },
       });
-    let sessionId: (string & tags.Format<"uuid">) | null =
-      existingSession?.id ?? null;
-    if (!sessionId) {
-      const newSessionId: string & tags.Format<"uuid"> = v4();
-      sessionId = newSessionId;
-      await MyGlobal.prisma.hrm_platform_guest_sessions.create({
-        data: {
-          id: newSessionId,
-          hrm_platform_guest_id: existingGuest.id,
-          session_token: await generateSessionToken({
-            guestId: existingGuest.id,
-            sessionId: newSessionId,
-          }),
-          ip: props.ip,
-          href: props.body.href,
-          referrer: props.body.referrer ?? null,
-          created_at: new Date(nowTimestamp),
-          expired_at: new Date(accessExpiresTimestamp),
-        },
-      });
+    if (activeSession !== null) {
+      throw new HttpException("Device already has active session", 409);
     }
-    const token: IAuthorizationToken = await generateGuestTokens({
-      guestId: existingGuest.id,
-      sessionId: sessionId,
+  } else {
+    await MyGlobal.prisma.hrm_platform_guests.create({
+      data: {
+        id: v4(),
+        device_identifier: deviceIdentifier,
+        ip_address: sessionIp,
+        user_agent: "",
+        created_at: new Date(now),
+        updated_at: new Date(now),
+        deleted_at: null,
+      },
     });
-    return {
-      id: existingGuest.id,
-      device_identifier: existingGuest.device_identifier,
-      ip_address: existingGuest.ip_address,
-      user_agent: existingGuest.user_agent,
-      created_at: toISOStringSafe(existingGuest.created_at),
-      updated_at: toISOStringSafe(existingGuest.updated_at),
-      deleted_at:
-        existingGuest.deleted_at != null
-          ? toISOStringSafe(existingGuest.deleted_at)
-          : null,
-      token,
-      session_id: sessionId,
-      organization_id: null,
-    } satisfies IHrmPlatformGuest.IAuthorized;
   }
-  const guestId: string & tags.Format<"uuid"> = v4();
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  const guest = await MyGlobal.prisma.hrm_platform_guests.create({
-    data: {
-      id: guestId,
-      device_identifier: deviceIdentifier,
-      ip_address: props.ip,
-      user_agent: "unknown",
-      created_at: new Date(nowTimestamp),
-      updated_at: new Date(nowTimestamp),
-      deleted_at: null,
+  const guest = await MyGlobal.prisma.hrm_platform_guests.findUniqueOrThrow({
+    where: { device_identifier: deviceIdentifier },
+    select: {
+      id: true,
+      device_identifier: true,
+      ip_address: true,
+      user_agent: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
     },
   });
-  await MyGlobal.prisma.hrm_platform_guest_sessions.create({
+  const accessExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 60 * 60 * 1000,
+  ).toISOString();
+  const refreshExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const session = await MyGlobal.prisma.hrm_platform_guest_sessions.create({
     data: {
-      id: sessionId,
-      hrm_platform_guest_id: guestId,
-      session_token: await generateSessionToken({
-        guestId,
-        sessionId,
-      }),
-      ip: props.ip,
-      href: props.body.href,
-      referrer: props.body.referrer ?? null,
-      created_at: new Date(nowTimestamp),
-      expired_at: new Date(accessExpiresTimestamp),
+      id: v4(),
+      hrm_platform_guest_id: guest.id,
+      session_token: v4(),
+      ip: sessionIp,
+      href: body.href,
+      referrer: body.referrer ?? null,
+      created_at: new Date(now),
+      expired_at: new Date(accessExpires),
     },
   });
-  const token: IAuthorizationToken = await generateGuestTokens({
-    guestId,
-    sessionId,
-  });
-  return {
-    id: guestId,
-    device_identifier: guest.device_identifier,
-    ip_address: guest.ip_address,
-    user_agent: guest.user_agent,
-    created_at: toISOStringSafe(guest.created_at),
-    updated_at: toISOStringSafe(guest.updated_at),
-    deleted_at:
-      guest.deleted_at != null ? toISOStringSafe(guest.deleted_at) : null,
-    token,
-    session_id: sessionId,
-    organization_id: null,
-  } satisfies IHrmPlatformGuest.IAuthorized;
-}
-async function generateGuestTokens(props: {
-  guestId: string & tags.Format<"uuid">;
-  sessionId: (string & tags.Format<"uuid">) | null;
-}): Promise<IAuthorizationToken> {
-  const nowTimestamp: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(),
-  );
-  return {
+  const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "guest",
-        id: props.guestId,
-        session_id: props.sessionId,
-        created_at: nowTimestamp,
+        id: guest.id,
+        session_id: session.id,
+        created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -146,34 +104,29 @@ async function generateGuestTokens(props: {
     refresh: jwt.sign(
       {
         type: "guest",
-        id: props.guestId,
-        session_id: props.sessionId,
+        id: guest.id,
+        session_id: session.id,
         tokenType: "refresh",
-        created_at: nowTimestamp,
+        created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000)),
-    refreshable_until: toISOStringSafe(
-      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    ),
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
-}
-async function generateSessionToken(props: {
-  guestId: string & tags.Format<"uuid">;
-  sessionId: string & tags.Format<"uuid">;
-}): Promise<string> {
-  return jwt.sign(
-    {
-      type: "session",
-      id: props.guestId,
-      session_id: props.sessionId,
-      created_at: toISOStringSafe(new Date()),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
+  return {
+    id: guest.id,
+    device_identifier: guest.device_identifier,
+    ip_address: guest.ip_address,
+    user_agent: guest.user_agent,
+    created_at: guest.created_at.toISOString(),
+    updated_at: guest.updated_at.toISOString(),
+    deleted_at: guest.deleted_at?.toISOString() ?? null,
+    token,
+    session_id: session.id,
+    organization_id: null,
+  } satisfies IHrmPlatformGuest.IAuthorized;
 }
 
 

@@ -23,109 +23,88 @@ export async function patchHrmPlatformMemberEmailVerifications(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const status = props.body.status;
-  const showDeleted = status === "deleted";
-  const nowDate: Date = new Date();
-  const whereFilters: Prisma.hrm_platform_member_email_verificationsWhereInput =
-    showDeleted ? {} : { deleted_at: null };
-  if (props.body.member_id !== undefined) {
-    whereFilters.hrm_platform_member_id = props.body.member_id;
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findUnique(
+    {
+      where: { id: props.member.session_id },
+    },
+  );
+  if (session === null) {
+    throw new HttpException("Session not found", 404);
   }
-  if (status !== undefined && status !== "deleted") {
-    const statusConditions: Prisma.hrm_platform_member_email_verificationsWhereInput[] =
-      [];
-    switch (status) {
-      case "pending":
-        statusConditions.push(
-          { used_at: null },
-          { expires_at: { gt: nowDate } },
-        );
-        break;
-      case "verified":
-        statusConditions.push({ used_at: { not: null } });
-        break;
-      case "expired":
-        statusConditions.push(
-          { expires_at: { lte: nowDate } },
-          { used_at: null },
-        );
-        break;
+  const isAdmin = session.organization_id === null;
+  const organizationId = isAdmin ? undefined : session.organization_id;
+  const whereConditions: Prisma.hrm_platform_member_email_verificationsWhereInput =
+    {};
+  if (props.body.member_id !== undefined) {
+    whereConditions.hrm_platform_member_id = props.body.member_id;
+    if (!isAdmin) {
+      const requestedMember =
+        await MyGlobal.prisma.hrm_platform_members.findUnique({
+          where: { id: props.body.member_id },
+        });
+      if (requestedMember === null) {
+        throw new HttpException("Member not found", 404);
+      }
     }
-    if (statusConditions.length > 0) {
-      whereFilters.AND = statusConditions;
+  }
+  if (props.body.status !== undefined) {
+    const status = props.body.status;
+    const now = new Date();
+    if (status === "pending") {
+      whereConditions.used_at = null;
+      whereConditions.expires_at = { gt: now };
+    } else if (status === "verified") {
+      whereConditions.used_at = { not: null };
+    } else if (status === "expired") {
+      whereConditions.expires_at = { lte: now };
+      whereConditions.used_at = null;
+    } else if (status === "deleted") {
+      whereConditions.deleted_at = { not: null };
     }
   }
   if (props.body.created_at_from !== undefined) {
-    const createdAtFrom = new Date(props.body.created_at_from);
-    if (whereFilters.created_at) {
-      const existingCreatedAt =
-        whereFilters.created_at as Prisma.DateTimeFilter;
-      whereFilters.created_at = {
-        gte: createdAtFrom,
-        ...existingCreatedAt,
-      };
-    } else {
-      whereFilters.created_at = {
-        gte: createdAtFrom,
-      };
-    }
+    whereConditions.created_at = {
+      gte: new Date(props.body.created_at_from),
+    };
   }
   if (props.body.created_at_to !== undefined) {
-    const createdAtTo = new Date(props.body.created_at_to);
-    if (whereFilters.created_at) {
-      const existingCreatedAt =
-        whereFilters.created_at as Prisma.DateTimeFilter;
-      whereFilters.created_at = {
-        lte: createdAtTo,
-        ...existingCreatedAt,
-      };
-    } else {
-      whereFilters.created_at = {
-        lte: createdAtTo,
-      };
-    }
+    const existing = whereConditions.created_at as
+      | Prisma.DateTimeFilter
+      | undefined;
+    whereConditions.created_at =
+      existing !== undefined
+        ? { ...existing, lte: new Date(props.body.created_at_to) }
+        : { lte: new Date(props.body.created_at_to) };
   }
   if (props.body.expires_at_from !== undefined) {
-    const expiresAtFrom = new Date(props.body.expires_at_from);
-    if (whereFilters.expires_at) {
-      const existingExpiresAt =
-        whereFilters.expires_at as Prisma.DateTimeFilter;
-      whereFilters.expires_at = {
-        gte: expiresAtFrom,
-        ...existingExpiresAt,
-      };
-    } else {
-      whereFilters.expires_at = {
-        gte: expiresAtFrom,
-      };
-    }
+    const existing = whereConditions.expires_at as
+      | Prisma.DateTimeFilter
+      | undefined;
+    whereConditions.expires_at =
+      existing !== undefined
+        ? { ...existing, gte: new Date(props.body.expires_at_from) }
+        : { gte: new Date(props.body.expires_at_from) };
   }
   if (props.body.expires_at_to !== undefined) {
-    const expiresAtTo = new Date(props.body.expires_at_to);
-    if (whereFilters.expires_at) {
-      const existingExpiresAt =
-        whereFilters.expires_at as Prisma.DateTimeFilter;
-      whereFilters.expires_at = {
-        lte: expiresAtTo,
-        ...existingExpiresAt,
-      };
-    } else {
-      whereFilters.expires_at = {
-        lte: expiresAtTo,
-      };
-    }
+    const existing = whereConditions.expires_at as
+      | Prisma.DateTimeFilter
+      | undefined;
+    whereConditions.expires_at =
+      existing !== undefined
+        ? { ...existing, lte: new Date(props.body.expires_at_to) }
+        : { lte: new Date(props.body.expires_at_to) };
   }
   const records =
     await MyGlobal.prisma.hrm_platform_member_email_verifications.findMany({
+      where: whereConditions,
       ...HrmPlatformMemberEmailVerificationAtSummaryTransformer.select(),
-      where: whereFilters,
+      orderBy: { created_at: "desc" },
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
     });
   const total =
     await MyGlobal.prisma.hrm_platform_member_email_verifications.count({
-      where: whereFilters,
+      where: whereConditions,
     });
   return {
     pagination: {
@@ -133,7 +112,7 @@ export async function patchHrmPlatformMemberEmailVerifications(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,
       HrmPlatformMemberEmailVerificationAtSummaryTransformer.transform,

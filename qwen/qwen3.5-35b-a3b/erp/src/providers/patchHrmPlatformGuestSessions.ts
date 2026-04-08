@@ -13,7 +13,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { GuestPayload } from "../decorators/payload/GuestPayload";
-import { HrmPlatformMemberSessionAtSummaryTransformer } from "../transformers/HrmPlatformMemberSessionAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,54 +20,94 @@ export async function patchHrmPlatformGuestSessions(props: {
   guest: GuestPayload;
   body: IHrmPlatformMemberSession.IRequest;
 }): Promise<IPageIHrmPlatformMemberSession.ISummary> {
-  const page: number & tags.Type<"int32"> & tags.Minimum<1> =
-    props.body.page ?? 1;
-  const limit: number &
-    tags.Type<"int32"> &
-    tags.Minimum<1> &
-    tags.Maximum<100> = props.body.limit ?? 20;
-  const skip: number = (page - 1) * limit;
-  const now: Date = new Date();
-  const whereInput: Prisma.hrm_platform_member_sessionsWhereInput = {
-    hrm_platform_member_id: props.guest.id,
-    ...(props.body.ip_address !== undefined && {
-      ip_address: { contains: props.body.ip_address },
-    }),
-    ...(props.body.user_agent !== undefined && {
-      user_agent: { contains: props.body.user_agent },
-    }),
-    ...(props.body.organization_id !== undefined &&
-      props.body.organization_id !== null && {
-        organization: { id: props.body.organization_id },
-      }),
-    ...(props.body.status === "active" && { expired_at: { gt: now } }),
-    ...(props.body.status === "expired" && { expired_at: { lte: now } }),
-  } satisfies Prisma.hrm_platform_member_sessionsWhereInput;
-  const orderByInput: Prisma.hrm_platform_member_sessionsOrderByWithRelationInput =
-    props.body.sort === "access_token_expires_at"
-      ? { access_token_expires_at: props.body.order === "ASC" ? "asc" : "desc" }
-      : props.body.sort === "refresh_token_expires_at"
-        ? {
-            refresh_token_expires_at:
-              props.body.order === "ASC" ? "asc" : "desc",
-          }
-        : { created_at: props.body.order === "ASC" ? "asc" : "desc" };
-  const data = await MyGlobal.prisma.hrm_platform_member_sessions.findMany({
-    where: whereInput,
-    skip: skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...HrmPlatformMemberSessionAtSummaryTransformer.select(),
-  });
-  const total: number =
-    await MyGlobal.prisma.hrm_platform_member_sessions.count({
-      where: whereInput,
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 20, 100);
+  const skip = (page - 1) * limit;
+  const now = new Date();
+  const guestSession =
+    await MyGlobal.prisma.hrm_platform_guest_sessions.findFirst({
+      where: {
+        id: props.guest.session_id,
+        expired_at: { gt: now },
+        hrm_platform_guest_id: props.guest.id,
+      },
+      select: {
+        id: true,
+      },
     });
-  const transformed: Array<IHrmPlatformMemberSession.ISummary> =
-    await ArrayUtil.asyncMap(
-      data,
-      HrmPlatformMemberSessionAtSummaryTransformer.transform,
-    );
+  if (guestSession === null) {
+    throw new HttpException("You're not enrolled", 403);
+  }
+  const filters: Prisma.hrm_platform_member_sessionsWhereInput = {};
+  if (props.body.search) {
+    filters.OR = [
+      { ip_address: { contains: props.body.search } },
+      {
+        user_agent: {
+          contains: props.body.search,
+          mode: "insensitive" as "insensitive",
+        },
+      },
+    ];
+  }
+  if (props.body.ip_address) {
+    filters.ip_address = { contains: props.body.ip_address };
+  }
+  if (props.body.user_agent) {
+    filters.user_agent = {
+      contains: props.body.user_agent,
+      mode: "insensitive" as "insensitive",
+    };
+  }
+  if (props.body.organization_id !== undefined) {
+    filters.organization_id =
+      props.body.organization_id === null ? null : props.body.organization_id;
+  }
+  if (props.body.status === "active") {
+    filters.access_token_expires_at = { gt: now };
+  } else if (props.body.status === "expired") {
+    filters.access_token_expires_at = { lte: now };
+  }
+  const sortOrder: Prisma.SortOrder =
+    props.body.order === "ASC"
+      ? "asc"
+      : props.body.order === "DESC"
+        ? "desc"
+        : "desc";
+  const orderByInput =
+    props.body.sort === "access_token_expires_at"
+      ? { access_token_expires_at: sortOrder }
+      : props.body.sort === "refresh_token_expires_at"
+        ? { refresh_token_expires_at: sortOrder }
+        : { created_at: sortOrder };
+  const [records, total] = await Promise.all([
+    MyGlobal.prisma.hrm_platform_member_sessions.findMany({
+      where: filters,
+      skip,
+      take: limit,
+      orderBy: orderByInput,
+      select: {
+        id: true,
+        ip_address: true,
+        user_agent: true,
+        created_at: true,
+        expired_at: true,
+      },
+    }),
+    MyGlobal.prisma.hrm_platform_member_sessions.count({
+      where: filters,
+    }),
+  ]);
+  const data = await ArrayUtil.asyncMap(records, async (record) => {
+    return {
+      id: record.id,
+      ip_address: record.ip_address,
+      user_agent: record.user_agent,
+      created_at: toISOStringSafe(record.created_at),
+      expired_at: record.expired_at ? toISOStringSafe(record.expired_at) : null,
+      organization: null,
+    } satisfies IHrmPlatformMemberSession.ISummary;
+  });
   return {
     pagination: {
       current: page,
@@ -76,7 +115,7 @@ export async function patchHrmPlatformGuestSessions(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformed,
+    data,
   } satisfies IPageIHrmPlatformMemberSession.ISummary;
 }
 

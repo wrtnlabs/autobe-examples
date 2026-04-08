@@ -47,12 +47,12 @@ export namespace HrmPlatformTaskHistoryTransformer {
       task: await HrmPlatformTaskAtSummaryTransformer.transform(input.task),
       actor: await HrmPlatformMemberAtSummaryTransformer.transform(input.actor),
       action_type: input.action_type,
-      status_before: input.status_before ?? undefined,
-      status_after: input.status_after ?? undefined,
-      details: input.details ?? undefined,
-      changed_at: toISOStringSafe(input.changed_at),
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
+      status_before: input.status_before ?? null,
+      status_after: input.status_after ?? null,
+      details: input.details ?? null,
+      changed_at: input.changed_at.toISOString(),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
     } satisfies IHrmPlatformTaskHistory;
   }

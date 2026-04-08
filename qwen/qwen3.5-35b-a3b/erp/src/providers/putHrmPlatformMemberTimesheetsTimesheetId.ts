@@ -28,48 +28,35 @@ export async function putHrmPlatformMemberTimesheetsTimesheetId(props: {
 }): Promise<IHrmPlatformTimesheet> {
   const timesheet =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-      where: { id: props.timesheetId },
+      where: {
+        id: props.timesheetId,
+        deleted_at: null,
+      },
       select: {
         id: true,
-        hrm_platform_employee_id: true,
         status: true,
-        deleted_at: true,
+        hrm_platform_employee_id: true,
+        employee: {
+          select: {
+            hrm_platform_member_id: true,
+          },
+        },
       },
     });
-  if (timesheet.deleted_at !== null) {
-    throw new HttpException("Timesheet not found", 404);
+  const employeeMemberId: string & tags.Format<"uuid"> =
+    timesheet.employee.hrm_platform_member_id;
+  if (employeeMemberId !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  if (timesheet.status !== "pending" && timesheet.status !== "rejected") {
-    throw new HttpException("Timesheet is locked", 409);
-  }
-  const isOwner = timesheet.hrm_platform_employee_id === props.member.id;
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: { id: timesheet.hrm_platform_employee_id },
-      select: { hrm_platform_organization_id: true },
-    });
-  if (!isOwner) {
-    const session =
-      await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
-        where: {
-          id: props.member.session_id,
-        },
-        select: {
-          organization_id: true,
-        },
-      });
-    if (!session) {
-      throw new HttpException("Session not found", 404);
-    }
-    if (session.organization_id !== employee.hrm_platform_organization_id) {
-      throw new HttpException("Forbidden", 403);
-    }
+  const updateableStatuses: readonly string[] = ["pending", "rejected"];
+  if (!updateableStatuses.includes(timesheet.status)) {
+    throw new HttpException("Timesheet is locked and cannot be modified", 409);
   }
   await MyGlobal.prisma.hrm_platform_timesheets.update({
     where: { id: props.timesheetId },
     data: {
-      ...(props.body.notes !== undefined && { notes: props.body.notes }),
-      updated_at: toISOStringSafe(new Date()),
+      notes: props.body.notes ?? null,
+      updated_at: new Date(),
     },
   });
   const updated =

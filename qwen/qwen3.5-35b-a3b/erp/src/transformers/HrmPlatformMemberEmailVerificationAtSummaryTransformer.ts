@@ -33,10 +33,7 @@ export namespace HrmPlatformMemberEmailVerificationAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IHrmPlatformMemberEmailVerification.ISummary> {
-    const isVerified = input.used_at !== null;
-    const isDeleted = input.deleted_at !== null;
-    const isExpired = !isDeleted && input.expires_at < new Date();
-    const isPending = !isVerified && !isExpired && !isDeleted;
+    const now = new Date();
     return {
       id: input.id,
       token: input.token,
@@ -48,11 +45,11 @@ export namespace HrmPlatformMemberEmailVerificationAtSummaryTransformer {
       member: await HrmPlatformMemberAtSummaryTransformer.transform(
         input.member,
       ),
-      is_pending: isPending,
-      is_verified: isVerified,
-      is_expired: isExpired,
-      is_deleted: isDeleted,
-    } satisfies IHrmPlatformMemberEmailVerification.ISummary;
+      is_pending: input.used_at === null && input.expires_at > now,
+      is_verified: input.used_at !== null,
+      is_expired: input.expires_at < now && input.used_at === null,
+      is_deleted: input.deleted_at !== null,
+    };
   }
 }
 

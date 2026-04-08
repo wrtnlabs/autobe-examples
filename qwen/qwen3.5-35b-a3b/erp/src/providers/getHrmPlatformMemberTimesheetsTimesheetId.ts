@@ -33,28 +33,48 @@ export async function getHrmPlatformMemberTimesheetsTimesheetId(props: {
         deleted_at: null,
       },
     });
-  const employee = timesheet.employee;
-  const isOwner = employee.member.id === props.member.id;
-  if (!isOwner) {
-    const requesterEmployee =
-      await MyGlobal.prisma.hrm_platform_employees.findFirst({
-        where: {
-          hrm_platform_member_id: props.member.id,
-          hrm_platform_organization_id: employee.organization.id,
-          deleted_at: null,
+  const employeeId = timesheet.timelogs[0]?.timelog?.employee?.id;
+  if (!employeeId) {
+    throw new HttpException("Timesheet has no employee association", 404);
+  }
+  if (employeeId === props.member.id) {
+    return await HrmPlatformTimesheetTransformer.transform(timesheet);
+  }
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      id: employeeId,
+    },
+    select: {
+      hrm_platform_organization_id: true,
+    },
+  });
+  if (!employee) {
+    throw new HttpException("Employee not found", 404);
+  }
+  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
+    {
+      where: {
+        hrm_platform_organization_id: employee.hrm_platform_organization_id,
+        hrm_platform_member_id: props.member.id,
+      },
+      select: {
+        hrm_platform_role_id: true,
+        role: {
+          select: {
+            name: true,
+          },
         },
-        include: { role: true },
-      });
-    if (!requesterEmployee) {
-      throw new HttpException("Forbidden", 403);
-    }
-    const requesterRole = requesterEmployee.role;
-    if (
-      requesterRole.role_kind !== "built_in" ||
-      (requesterRole.name !== "Manager" && requesterRole.name !== "Owner")
-    ) {
-      throw new HttpException("Forbidden", 403);
-    }
+      },
+    },
+  );
+  if (!memberEmployee || !memberEmployee.role) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (
+    memberEmployee.role.name !== "Owner" &&
+    memberEmployee.role.name !== "Manager"
+  ) {
+    throw new HttpException("Forbidden", 403);
   }
   return await HrmPlatformTimesheetTransformer.transform(timesheet);
 }

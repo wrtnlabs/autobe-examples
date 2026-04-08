@@ -25,53 +25,63 @@ export async function patchHrmPlatformMemberOrganizationsOrganizationIdDepartmen
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const sort = props.body.sort ?? "created_at";
-  const order = props.body.order ?? "desc";
+  const allowedSortFields = ["name", "created_at", "updated_at"] as const;
+  const sort =
+    props.body.sort && allowedSortFields.includes(props.body.sort)
+      ? props.body.sort
+      : "created_at";
+  const order: "asc" | "desc" = props.body.order ?? "desc";
   const whereInput: Prisma.hrm_platform_departmentsWhereInput = {
     organization_id: props.organizationId,
     deleted_at: null,
-    ...(props.body.search !== undefined && {
-      name: { contains: props.body.search },
-    }),
-    ...(props.body.parent_department_id !== undefined && {
-      parent_department_id: props.body.parent_department_id,
-    }),
-    ...(props.body.created_at_from !== undefined && {
-      created_at: { gte: props.body.created_at_from },
-    }),
-    ...(props.body.created_at_to !== undefined && {
-      created_at: { lte: props.body.created_at_to },
-    }),
-    ...(props.body.updated_at_from !== undefined && {
-      updated_at: { gte: props.body.updated_at_from },
-    }),
-    ...(props.body.updated_at_to !== undefined && {
-      updated_at: { lte: props.body.updated_at_to },
-    }),
   };
+  if (props.body.search !== undefined && props.body.search !== null) {
+    whereInput.name = { contains: props.body.search };
+  }
+  if (props.body.parent_department_id !== undefined) {
+    whereInput.parent_department_id = props.body.parent_department_id;
+  }
+  if (
+    props.body.created_at_from !== undefined ||
+    props.body.created_at_to !== undefined
+  ) {
+    whereInput.created_at = {
+      ...(props.body.created_at_from && { gte: props.body.created_at_from }),
+      ...(props.body.created_at_to && { lte: props.body.created_at_to }),
+    };
+  }
+  if (
+    props.body.updated_at_from !== undefined ||
+    props.body.updated_at_to !== undefined
+  ) {
+    whereInput.updated_at = {
+      ...(props.body.updated_at_from && { gte: props.body.updated_at_from }),
+      ...(props.body.updated_at_to && { lte: props.body.updated_at_to }),
+    };
+  }
   const orderByInput: Prisma.hrm_platform_departmentsOrderByWithRelationInput =
     {
       [sort]: order,
     };
-  const [records, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_departments.findMany({
-      where: whereInput,
-      orderBy: orderByInput,
-      skip,
-      take: limit,
-      ...HrmPlatformDepartmentAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_departments.count({ where: whereInput }),
-  ]);
+  const records = await MyGlobal.prisma.hrm_platform_departments.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: orderByInput,
+    ...HrmPlatformDepartmentAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.hrm_platform_departments.count({
+    where: whereInput,
+  });
   return {
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
     data: await HrmPlatformDepartmentAtSummaryTransformer.transformAll(records),
-  } satisfies IPageIHrmPlatformDepartment.ISummary;
+  };
 }
 
 

@@ -23,6 +23,10 @@ export namespace HrmPlatformDepartmentCollector {
       parentDepartment: props.body.parent_department_id
         ? { connect: { id: props.body.parent_department_id } }
         : undefined,
+      childDepartments: undefined,
+      snapshots: undefined,
+      employees: undefined,
+      employeeSnapshots: undefined,
     } satisfies Prisma.hrm_platform_departmentsCreateInput;
   }
 }

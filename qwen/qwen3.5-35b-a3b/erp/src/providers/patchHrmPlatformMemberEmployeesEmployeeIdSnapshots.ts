@@ -24,86 +24,110 @@ export async function patchHrmPlatformMemberEmployeesEmployeeIdSnapshots(props: 
   employeeId: string & tags.Format<"uuid">;
   body: IHrmPlatformEmployeesSnapshot.IRequest;
 }): Promise<IPageIHrmPlatformEmployeesSnapshot.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
-      where: {
-        id: props.employeeId,
-      },
+      where: { id: props.employeeId },
       select: {
         id: true,
-        organization: {
-          select: {
-            id: true,
-          },
-        },
+        hrm_platform_member_id: true,
+        hrm_platform_organization_id: true,
       },
     });
+  if (employee.hrm_platform_member_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
   const session =
     await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
       where: {
         id: props.member.session_id,
-      },
-      select: {
-        id: true,
-        organization: {
-          select: {
-            id: true,
-          },
+        expired_at: { gt: toISOStringSafe(new Date()) },
+        hrm_platform_member_id: props.member.id,
+        member: {
+          id: props.member.id,
+          is_active: true,
+          deleted_at: null,
         },
       },
+      include: {
+        organization: true,
+      },
     });
-  if (
-    !session.organization ||
-    employee.organization.id !== session.organization.id
-  ) {
-    throw new HttpException(
-      "Employee does not belong to your organization",
-      404,
-    );
+  if (!session.organization) {
+    throw new HttpException("Forbidden", 403);
   }
+  if (employee.hrm_platform_organization_id !== session.organization.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 20, 100);
+  const skip = (page - 1) * limit;
   const whereInput: Prisma.hrm_platform_employees_snapshotsWhereInput = {
     employee_id: props.employeeId,
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.employment_type !== undefined && {
-      employment_type: props.body.employment_type,
-    }),
-    ...(props.body.startDate !== undefined && {
-      created_at: { gte: props.body.startDate! },
-    }),
-    ...(props.body.endDate !== undefined && {
-      created_at: { lte: props.body.endDate! },
-    }),
   };
-  const orderBy: Prisma.hrm_platform_employees_snapshotsOrderByWithRelationInput[] =
-    [
-      {
-        created_at: props.body.sortOrder === "asc" ? "asc" : "desc",
-      },
-    ];
-  const records =
-    await MyGlobal.prisma.hrm_platform_employees_snapshots.findMany({
+  if (props.body.status !== undefined) {
+    whereInput.status = props.body.status;
+  }
+  if (props.body.employment_type !== undefined) {
+    whereInput.employment_type = props.body.employment_type;
+  }
+  if (props.body.startDate !== undefined || props.body.endDate !== undefined) {
+    if (
+      props.body.startDate !== undefined &&
+      props.body.endDate !== undefined
+    ) {
+      whereInput.created_at = {
+        AND: [
+          {
+            gte: props.body.startDate,
+          } as Prisma.DateTimeFilter<"hrm_platform_employees_snapshots">,
+          {
+            lte: props.body.endDate,
+          } as Prisma.DateTimeFilter<"hrm_platform_employees_snapshots">,
+        ],
+      } as Prisma.DateTimeFilter<"hrm_platform_employees_snapshots">;
+    } else if (props.body.startDate !== undefined) {
+      whereInput.created_at = { gte: props.body.startDate };
+    } else if (props.body.endDate !== undefined) {
+      whereInput.created_at = { lte: props.body.endDate };
+    }
+  }
+  const sortOrder: "asc" | "desc" =
+    props.body.sortOrder === "asc" ? "asc" : "desc";
+  const defaultOrderBy: Prisma.hrm_platform_employees_snapshotsOrderByWithRelationInput =
+    { created_at: "desc" };
+  const orderByInput: Prisma.hrm_platform_employees_snapshotsOrderByWithRelationInput =
+    props.body.sortBy === "created_at"
+      ? { created_at: sortOrder }
+      : props.body.sortBy === "id"
+        ? { id: sortOrder }
+        : props.body.sortBy === "position"
+          ? { position: sortOrder }
+          : props.body.sortBy === "employment_type"
+            ? { employment_type: sortOrder }
+            : props.body.sortBy === "status"
+              ? { status: sortOrder }
+              : defaultOrderBy;
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.hrm_platform_employees_snapshots.findMany({
       where: whereInput,
       skip,
       take: limit,
-      orderBy: orderBy,
+      orderBy: orderByInput,
       ...HrmPlatformEmployeesSnapshotAtSummaryTransformer.select(),
-    });
-  const total = await MyGlobal.prisma.hrm_platform_employees_snapshots.count({
-    where: whereInput,
-  });
-  const pagination: IPage.IPagination = {
-    current: page,
-    limit: limit,
-    records: total,
-    pages: Math.ceil(total / limit),
-  };
+    }),
+    MyGlobal.prisma.hrm_platform_employees_snapshots.count({
+      where: whereInput,
+    }),
+  ]);
   return {
-    pagination,
+    pagination: {
+      current: page,
+      limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      records,
+      data,
       HrmPlatformEmployeesSnapshotAtSummaryTransformer.transform,
     ),
   };

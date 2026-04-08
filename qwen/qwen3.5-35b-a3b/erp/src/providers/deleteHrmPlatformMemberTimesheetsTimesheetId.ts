@@ -19,42 +19,31 @@ export async function deleteHrmPlatformMemberTimesheetsTimesheetId(props: {
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
       where: { id: props.timesheetId },
     });
-  if (timesheet.deleted_at !== null) {
-    throw new HttpException("Timesheet already deleted", 403);
-  }
   const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        id: timesheet.hrm_platform_employee_id,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
+      where: { id: timesheet.hrm_platform_employee_id },
     });
   const isOwner = employee.hrm_platform_member_id === props.member.id;
-  const role = await MyGlobal.prisma.hrm_platform_roles.findFirstOrThrow({
-    where: {
-      id: employee.hrm_platform_role_id,
-      deleted_at: null,
-    },
+  const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
+    where: { id: employee.hrm_platform_role_id },
   });
-  const permission = await MyGlobal.prisma.hrm_platform_permissions.findFirst({
-    where: {
-      role_id: role.id,
-      organization_id: role.organization_id,
-      code: "time:manage",
-      deleted_at: null,
-    },
-  });
-  const hasTimeManagePermission = permission !== null;
-  if (!isOwner && !hasTimeManagePermission) {
+  const hasManagePermission =
+    (await MyGlobal.prisma.hrm_platform_permissions.findFirst({
+      where: {
+        role_id: role.id,
+        code: "time:manage",
+        organization_id: employee.hrm_platform_organization_id,
+      },
+    })) !== null;
+  if (!isOwner && !hasManagePermission) {
     throw new HttpException("Forbidden", 403);
   }
-  if (isOwner && timesheet.status === "approved") {
-    throw new HttpException("Cannot delete approved timesheet", 403);
+  if (timesheet.status === "approved" && !hasManagePermission) {
+    throw new HttpException("Forbidden", 403);
   }
-  const deletedAt: string & tags.Format<"date-time"> = new Date().toISOString();
   await MyGlobal.prisma.hrm_platform_timesheets.update({
     where: { id: props.timesheetId },
-    data: { deleted_at: deletedAt },
+    data: { deleted_at: new Date() },
   });
 }
 

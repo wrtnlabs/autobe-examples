@@ -15,78 +15,78 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postHrmPlatformAuthGuestRefresh(props: {
   body: IHrmPlatformGuest.IRefresh;
 }): Promise<IHrmPlatformGuest.IAuthorized> {
-  // 1. Verify refresh token with JWT
-  type IJwtPayload = {
-    type: "guest";
+  const verifyResult = jwt.verify(
+    props.body.refresh_token,
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      issuer: "autobe",
+      subject: "guest_refresh",
+    },
+  );
+  type GuestRefreshPayload = {
+    type: string;
     id: string & tags.Format<"uuid">;
     session_id: string & tags.Format<"uuid">;
+    created_at: string & tags.Format<"date-time">;
+    tokenType?: string;
   };
-  let decoded: IJwtPayload;
-  try {
-    decoded = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        issuer: "autobe",
-      },
-    ) as IJwtPayload;
-  } catch {
-    throw new HttpException("Invalid or expired refresh token", 401);
+  const jwtPayload: GuestRefreshPayload = verifyResult as GuestRefreshPayload;
+  if (jwtPayload.type !== "guest") {
+    throw new HttpException("Invalid token type", 401);
   }
-  // 2. Validate session exists and is active
+  const nowIso: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const sessionWhere: Prisma.hrm_platform_guest_sessionsWhereInput = {
+    id: jwtPayload.session_id,
+    hrm_platform_guest_id: jwtPayload.id,
+    expired_at: { gt: new Date() },
+  };
   const session = await MyGlobal.prisma.hrm_platform_guest_sessions.findFirst({
-    where: {
-      id: decoded.session_id,
-      hrm_platform_guest_id: decoded.id,
-    },
+    where: sessionWhere,
   });
-  if (!session) {
-    throw new HttpException("Session not found", 401);
+  if (session === null) {
+    throw new HttpException("Session expired or revoked", 401);
   }
-  const nowIso = toISOStringSafe(new Date());
-  const sessionExpired = new Date(session.expired_at) <= new Date(nowIso);
-  if (sessionExpired) {
-    throw new HttpException("Session expired", 401);
-  }
-  // 3. Validate guest account not deleted
   const guest = await MyGlobal.prisma.hrm_platform_guests.findUniqueOrThrow({
-    where: { id: decoded.id },
+    where: { id: jwtPayload.id },
   });
   if (guest.deleted_at !== null) {
-    throw new HttpException("Guest account has been deleted", 404);
+    throw new HttpException("Guest account has been deleted", 403);
   }
-  // 4. Generate new tokens with fresh expiration
-  const accessExpiresTime = Date.parse(nowIso) + 60 * 60 * 1000;
-  const refreshExpiresTime = Date.parse(nowIso) + 7 * 24 * 60 * 60 * 1000;
-  const accessExpiresIso = toISOStringSafe(new Date(accessExpiresTime));
-  const refreshExpiresIso = toISOStringSafe(new Date(refreshExpiresTime));
-  const access: string = jwt.sign(
+  const accessExpiresIso: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiresIso: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const newSessionToken: string & tags.Format<"uuid"> = v4();
+  const newAccessToken: string = jwt.sign(
     {
       type: "guest",
-      id: decoded.id,
-      session_id: decoded.session_id,
+      id: jwtPayload.id,
+      session_id: jwtPayload.session_id,
       created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
-  ) satisfies string;
-  const refresh: string = jwt.sign(
+  );
+  const newRefreshToken: string = jwt.sign(
     {
       type: "guest",
-      id: decoded.id,
-      session_id: decoded.session_id,
+      id: jwtPayload.id,
+      session_id: jwtPayload.session_id,
       tokenType: "refresh",
       created_at: nowIso,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
-  ) satisfies string;
-  // 5. Update session with new expiration
+  );
   await MyGlobal.prisma.hrm_platform_guest_sessions.update({
-    where: { id: decoded.session_id },
-    data: { expired_at: new Date(refreshExpiresIso) },
+    where: { id: jwtPayload.session_id },
+    data: {
+      session_token: newSessionToken,
+      expired_at: new Date(refreshExpiresIso),
+    },
   });
-  // 6. Return IAuthorized response
   return {
     id: guest.id,
     device_identifier: guest.device_identifier,
@@ -94,16 +94,16 @@ export async function postHrmPlatformAuthGuestRefresh(props: {
     user_agent: guest.user_agent,
     created_at: toISOStringSafe(guest.created_at),
     updated_at: toISOStringSafe(guest.updated_at),
-    deleted_at: guest.deleted_at ? toISOStringSafe(guest.deleted_at) : null,
+    deleted_at: null,
     token: {
-      access,
-      refresh,
+      access: newAccessToken,
+      refresh: newRefreshToken,
       expired_at: accessExpiresIso,
       refreshable_until: refreshExpiresIso,
     },
-    session_id: session.id,
+    session_id: jwtPayload.session_id,
     organization_id: null,
-  };
+  } satisfies IHrmPlatformGuest.IAuthorized;
 }
 
 

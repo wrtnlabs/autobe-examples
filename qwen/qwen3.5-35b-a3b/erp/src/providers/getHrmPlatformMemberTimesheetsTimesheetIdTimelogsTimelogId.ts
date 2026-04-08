@@ -20,27 +20,89 @@ import { HrmPlatformTimelogTransformer } from "../transformers/HrmPlatformTimelo
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
-export async function getHrmPlatformMemberTimesheetsTimesheetIdTimelogsTimelogsTimelogId(props: {
+export async function getHrmPlatformMemberTimesheetsTimesheetIdTimelogsTimelogId(props: {
   member: MemberPayload;
   timesheetId: string & tags.Format<"uuid">;
   timelogId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTimelog> {
+  // Verify the timesheet exists and is active
+  const timesheet =
+    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+      where: {
+        id: props.timesheetId,
+        deleted_at: null,
+      },
+    });
+  // Verify the timelog exists and is associated with the timesheet
+  // through the junction table with deleted_at is NULL
+  const timesheetTimelog =
+    await MyGlobal.prisma.hrm_platform_timesheet_timelogs.findFirstOrThrow({
+      where: {
+        hrm_platform_timesheet_id: props.timesheetId,
+        hrm_platform_timelog_id: props.timelogId,
+        deleted_at: null,
+      },
+      include: {
+        timelog: true,
+      },
+    });
+  // Verify the timelog is not soft-deleted
+  if (timesheetTimelog.timelog.deleted_at !== null) {
+    throw new HttpException("Not found", 404);
+  }
+  // Get the timelog employee and timesheet employee for access control
+  const timelogEmployeeId = timesheetTimelog.timelog.employee_id;
+  const timesheetEmployeeId = timesheet.hrm_platform_employee_id;
+  // Retrieve session to check permissions
+  const session =
+    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
+      where: {
+        id: props.member.session_id,
+        hrm_platform_member_id: props.member.id,
+        expired_at: { gt: toISOStringSafe(new Date()) },
+      },
+    });
+  // Fetch employee record to get role and permissions for access control
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: { hrm_platform_member_id: props.member.id },
-      select: { id: true },
+      where: {
+        hrm_platform_member_id: props.member.id,
+        deleted_at: null,
+      },
+      include: {
+        role: {
+          include: {
+            permissions: true,
+          },
+        },
+      },
     });
-  const timelog = await MyGlobal.prisma.hrm_platform_timelogs.findFirstOrThrow({
+  // Check permissions
+  const hasTimeManage = employee.role.permissions.some(
+    (p) => p.code === "time:manage",
+  );
+  const hasTimeApprove = employee.role.permissions.some(
+    (p) => p.code === "time:approve",
+  );
+  // Determine if user owns the timelog or timesheet
+  const isTimelogOwner = timelogEmployeeId === props.member.id;
+  const isTimesheetOwner = timesheetEmployeeId === props.member.id;
+  const isOwner = isTimelogOwner || isTimesheetOwner;
+  // Access control logic:
+  // - time:manage permission: unrestricted access to all timelogs
+  // - time:approve permission: access to any timelog in the organization
+  // - otherwise: only access to timelogs/timesheets they own
+  if (!hasTimeManage && !hasTimeApprove && !isOwner) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Retrieve the timelog with full data using the transformer
+  const record = await MyGlobal.prisma.hrm_platform_timelogs.findUniqueOrThrow({
     where: {
       id: props.timelogId,
-      deleted_at: null,
     },
     ...HrmPlatformTimelogTransformer.select(),
   });
-  if (timelog.employee === null || timelog.employee.id !== employee.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  return await HrmPlatformTimelogTransformer.transform(timelog);
+  return await HrmPlatformTimelogTransformer.transform(record);
 }
 
 

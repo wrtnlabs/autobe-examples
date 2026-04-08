@@ -19,6 +19,11 @@ export namespace HrmPlatformPermissionAtSummaryTransformer {
         id: true,
         code: true,
         description: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        role: true,
+        organization: true,
       },
     } satisfies Prisma.hrm_platform_permissionsFindManyArgs;
   }

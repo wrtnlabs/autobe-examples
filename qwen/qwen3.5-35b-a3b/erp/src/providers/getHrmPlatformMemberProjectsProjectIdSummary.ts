@@ -17,23 +17,14 @@ export async function getHrmPlatformMemberProjectsProjectIdSummary(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformProject.ISummary> {
-  const project = await MyGlobal.prisma.hrm_platform_projects.findFirstOrThrow({
+  const record = await MyGlobal.prisma.hrm_platform_projects.findFirstOrThrow({
     ...HrmPlatformProjectAtSummaryTransformer.select(),
     where: {
       id: props.projectId,
       deleted_at: null,
-      memberships: {
-        some: {
-          employee: {
-            member: {
-              id: props.member.id,
-            },
-          },
-        },
-      },
-    } satisfies Prisma.hrm_platform_projectsWhereInput,
+    },
   });
-  return await HrmPlatformProjectAtSummaryTransformer.transform(project);
+  return await HrmPlatformProjectAtSummaryTransformer.transform(record);
 }
 
 

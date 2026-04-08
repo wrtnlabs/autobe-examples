@@ -27,22 +27,28 @@ export async function postHrmPlatformMemberProjects(props: {
   member: MemberPayload;
   body: IHrmPlatformProject.ICreate;
 }): Promise<IHrmPlatformProject> {
-  const session =
-    await MyGlobal.prisma.hrm_platform_member_sessions.findFirstOrThrow({
-      where: {
-        id: props.member.session_id,
-      },
-    });
-  const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findFirstOrThrow({
-      where: {
-        id: session.organization_id!,
-      },
-    });
+  const session = await MyGlobal.prisma.hrm_platform_member_sessions.findFirst({
+    where: {
+      id: props.member.session_id,
+      expired_at: { gt: new Date() },
+      hrm_platform_member_id: props.member.id,
+    },
+    include: {
+      organization: true,
+    },
+  });
+  if (session === null) {
+    throw new HttpException("Unauthorized", 401);
+  }
+  if (session.organization === null) {
+    throw new HttpException("Unauthorized", 401);
+  }
   const record = await MyGlobal.prisma.hrm_platform_projects.create({
     data: await HrmPlatformProjectCollector.collect({
       body: props.body,
-      hrmPlatformOrganizations: organization,
+      hrmPlatformOrganizations: {
+        id: session.organization.id,
+      },
     }),
     ...HrmPlatformProjectTransformer.select(),
   });

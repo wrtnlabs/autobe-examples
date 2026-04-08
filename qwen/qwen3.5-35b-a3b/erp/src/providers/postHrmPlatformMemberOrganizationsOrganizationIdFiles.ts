@@ -22,15 +22,19 @@ export async function postHrmPlatformMemberOrganizationsOrganizationIdFiles(prop
   body: IHrmPlatformOrganizationFile.ICreate;
 }): Promise<IHrmPlatformOrganizationFile> {
   const organization =
-    await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-      where: { id: props.organizationId, deleted_at: null },
-      select: { id: true },
+    await MyGlobal.prisma.hrm_platform_organizations.findFirst({
+      where: { id: props.organizationId },
     });
+  if (organization === null) {
+    throw new HttpException("Organization not found", 404);
+  }
   const record = await MyGlobal.prisma.hrm_platform_organization_files.create({
     data: await HrmPlatformOrganizationFileCollector.collect({
       body: props.body,
+      hrmPlatformMembers: {
+        id: props.member.id,
+      },
       hrmPlatformOrganizations: organization,
-      hrmPlatformMembers: { id: props.member.id },
     }),
     ...HrmPlatformOrganizationFileTransformer.select(),
   });

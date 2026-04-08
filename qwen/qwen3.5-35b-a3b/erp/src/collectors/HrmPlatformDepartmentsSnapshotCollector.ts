@@ -11,9 +11,11 @@ export namespace HrmPlatformDepartmentsSnapshotCollector {
   export async function collect(props: {
     body: IHrmPlatformDepartmentsSnapshot.ICreate;
     hrmPlatformDepartments: IEntity;
+    hrmPlatformOrganizations: IEntity;
   }) {
-    const id: string = v4();
-    // Query only available fields from source department table
+    // Query the department to get current snapshot data
+    // Note: hrm_platform_departments doesn't have description, color, fiscal_start_month, timezone, status
+    // These snapshot-specific fields will be set to null/default values
     const department =
       await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
         where: { id: props.hrmPlatformDepartments.id },
@@ -21,12 +23,11 @@ export namespace HrmPlatformDepartmentsSnapshotCollector {
           id: true,
           name: true,
           parent_department_id: true,
-          created_at: true,
           updated_at: true,
         },
       });
     return {
-      id,
+      id: v4(),
       name: department.name,
       description: null,
       color: null,
@@ -36,7 +37,7 @@ export namespace HrmPlatformDepartmentsSnapshotCollector {
       status: "active",
       created_at: new Date(),
       updated_at: department.updated_at,
-      department: { connect: { id: department.id } },
+      department: { connect: { id: props.hrmPlatformDepartments.id } },
     } satisfies Prisma.hrm_platform_departments_snapshotsCreateInput;
   }
 }
@@ -49,6 +50,7 @@ export namespace HrmPlatformDepartmentsSnapshotCollector {
 //         export async function collect(props: {
 //           body: IHrmPlatformDepartmentsSnapshot.ICreate;
 //           hrmPlatformDepartments: IEntity; // from path parameter departmentId
+// hrmPlatformOrganizations: IEntity; // from path parameter organizationId
 //           
 //           
 //         }) {

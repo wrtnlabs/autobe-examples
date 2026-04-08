@@ -19,63 +19,69 @@ export async function patchHrmPlatformGuests(props: {
 }): Promise<IPageIHrmPlatformGuest.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  if (limit < 1 || limit > 100) {
-    throw new HttpException("Limit must be between 1 and 100", 400);
+  // Build where filter
+  const where: Prisma.hrm_platform_guestsWhereInput = {};
+  // deleted_at filter
+  if (props.body.deleted_at === true) {
+    // Include all records regardless of soft-delete status
+  } else {
+    // Exclude soft-deleted records (default behavior)
+    where.deleted_at = null;
   }
+  // device_identifier pattern match
+  if (props.body.device_identifier) {
+    where.device_identifier = { contains: props.body.device_identifier };
+  }
+  // ip_address pattern match
+  if (props.body.ip_address) {
+    where.ip_address = { contains: props.body.ip_address };
+  }
+  // user_agent pattern match
+  if (props.body.user_agent) {
+    where.user_agent = { contains: props.body.user_agent };
+  }
+  // created_at date range filter
+  if (props.body.created_at) {
+    const created_at: Prisma.DateTimeFilter = {};
+    if (props.body.created_at.gte) {
+      created_at.gte = new Date(props.body.created_at.gte);
+    }
+    if (props.body.created_at.lte) {
+      created_at.lte = new Date(props.body.created_at.lte);
+    }
+    where.created_at = created_at;
+  }
+  // updated_at date range filter
+  if (props.body.updated_at) {
+    const updated_at: Prisma.DateTimeFilter = {};
+    if (props.body.updated_at.gte) {
+      updated_at.gte = new Date(props.body.updated_at.gte);
+    }
+    if (props.body.updated_at.lte) {
+      updated_at.lte = new Date(props.body.updated_at.lte);
+    }
+    where.updated_at = updated_at;
+  }
+  // Build orderBy
+  const sortBy = props.body.sortBy ?? "created_at";
+  const sortOrder = props.body.sortOrder ?? "DESC";
+  const orderBy: Prisma.hrm_platform_guestsOrderByWithRelationInput = {
+    [sortBy]: sortOrder === "ASC" ? "asc" : "desc",
+  };
+  // Calculate pagination
   const skip = (page - 1) * limit;
-  const where: Prisma.hrm_platform_guestsWhereInput = {
-    deleted_at: props.body.deleted_at === true ? undefined : null,
-    ...(props.body.device_identifier && {
-      device_identifier: { equals: props.body.device_identifier },
-    }),
-    ...(props.body.ip_address && {
-      ip_address: { equals: props.body.ip_address },
-    }),
-    ...(props.body.user_agent && {
-      user_agent: { contains: props.body.user_agent, mode: "insensitive" },
-    }),
-    ...(props.body.created_at && {
-      created_at: {
-        ...(props.body.created_at.gte && {
-          gte: new Date(props.body.created_at.gte),
-        }),
-        ...(props.body.created_at.lte && {
-          lte: new Date(props.body.created_at.lte),
-        }),
-      },
-    }),
-    ...(props.body.updated_at && {
-      updated_at: {
-        ...(props.body.updated_at.gte && {
-          gte: new Date(props.body.updated_at.gte),
-        }),
-        ...(props.body.updated_at.lte && {
-          lte: new Date(props.body.updated_at.lte),
-        }),
-      },
-    }),
-  } satisfies Prisma.hrm_platform_guestsWhereInput;
-  const orderBy = (
-    props.body.sortBy === "ip_address"
-      ? { ip_address: (props.body.sortOrder ?? "desc") as "asc" | "desc" }
-      : props.body.sortBy === "device_identifier"
-        ? {
-            device_identifier: (props.body.sortOrder ?? "desc") as
-              | "asc"
-              | "desc",
-          }
-        : { created_at: (props.body.sortOrder ?? "desc") as "asc" | "desc" }
-  ) satisfies Prisma.hrm_platform_guestsOrderByWithRelationInput;
-  const [records, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_guests.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy,
-      ...HrmPlatformGuestAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_guests.count({ where }),
-  ]);
+  // Execute findMany query
+  const data = await MyGlobal.prisma.hrm_platform_guests.findMany({
+    where,
+    orderBy,
+    skip,
+    take: limit,
+    ...HrmPlatformGuestAtSummaryTransformer.select(),
+  });
+  // Execute count query
+  const total = await MyGlobal.prisma.hrm_platform_guests.count({
+    where,
+  });
   return {
     pagination: {
       current: page,
@@ -84,10 +90,10 @@ export async function patchHrmPlatformGuests(props: {
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      records,
+      data,
       HrmPlatformGuestAtSummaryTransformer.transform,
     ),
-  } satisfies IPageIHrmPlatformGuest.ISummary;
+  };
 }
 
 

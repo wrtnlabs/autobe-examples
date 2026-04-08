@@ -25,7 +25,6 @@ export namespace HrmPlatformTimelogCollector {
       task: props.body.task_id
         ? { connect: { id: props.body.task_id } }
         : undefined,
-      timesheetTimelogs: undefined,
     } satisfies Prisma.hrm_platform_timelogsCreateInput;
   }
 }

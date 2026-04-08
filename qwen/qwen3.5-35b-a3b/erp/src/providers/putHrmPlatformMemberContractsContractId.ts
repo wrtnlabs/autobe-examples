@@ -23,34 +23,78 @@ export async function putHrmPlatformMemberContractsContractId(props: {
   contractId: string & tags.Format<"uuid">;
   body: IHrmPlatformContract.IUpdate;
 }): Promise<IHrmPlatformContract> {
-  const currentContract =
+  // Find contract and validate it exists
+  const existing =
     await MyGlobal.prisma.hrm_platform_contracts.findUniqueOrThrow({
       where: { id: props.contractId },
-      select: {
-        id: true,
-        status: true,
-        hrm_platform_employee_id: true,
-        end_date: true,
-        start_date: true,
-        hrm_platform_organization_id: true,
-      },
+      ...HrmPlatformContractTransformer.select(),
     });
-  if (currentContract.status !== "active") {
+  // Reject if contract status is ended (past contracts are immutable)
+  if (existing.status === "ended") {
     throw new HttpException("Cannot update ended contract", 409);
   }
-  const now = new Date();
-  const updateData: Prisma.hrm_platform_contractsUpdateInput = {
-    updated_at: now,
+  // Determine the start date to use for overlap validation
+  const effectiveStartDate: string & tags.Format<"date-time"> =
+    props.body.start_date !== undefined
+      ? props.body.start_date
+      : (toISOStringSafe(existing.start_date) satisfies string);
+  // Validate no overlapping active contracts when end_date is being changed
+  if (props.body.end_date !== undefined && props.body.end_date !== null) {
+    const overlappingContracts =
+      await MyGlobal.prisma.hrm_platform_contracts.findMany({
+        where: {
+          hrm_platform_employee_id: existing.employee.id,
+          id: { not: props.contractId },
+          status: "active",
+          deleted_at: null,
+        },
+        ...HrmPlatformContractTransformer.select(),
+      });
+    for (const otherContract of overlappingContracts) {
+      const proposedEndDate: string & tags.Format<"date-time"> =
+        props.body.end_date;
+      const otherStartDate: string & tags.Format<"date-time"> = toISOStringSafe(
+        otherContract.start_date,
+      ) satisfies string;
+      const otherEndDate: (string & tags.Format<"date-time">) | null =
+        otherContract.end_date !== null
+          ? (toISOStringSafe(otherContract.end_date) satisfies string)
+          : null;
+      // Overlap occurs if: proposed_end > other_start AND (other_end is null OR other_end > proposed_start)
+      if (
+        proposedEndDate > otherStartDate &&
+        (otherEndDate === null || effectiveStartDate < otherEndDate)
+      ) {
+        throw new HttpException(
+          "Cannot update contract: overlapping active contract exists",
+          409,
+        );
+      }
+    }
+  }
+  // Build update data with only updatable fields
+  const currentTime: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(),
+  );
+  const updateData: {
+    title?: string;
+    start_date?: string & tags.Format<"date-time">;
+    end_date?: (string & tags.Format<"date-time">) | null;
+    compensation_amount?: number | null;
+    compensation_currency?: string | null;
+    notes?: string | null;
+    updated_at: string & tags.Format<"date-time">;
+  } = {
+    updated_at: currentTime,
   };
   if (props.body.title !== undefined) {
     updateData.title = props.body.title;
   }
   if (props.body.start_date !== undefined) {
-    updateData.start_date = new Date(props.body.start_date);
+    updateData.start_date = props.body.start_date;
   }
   if (props.body.end_date !== undefined) {
-    updateData.end_date =
-      props.body.end_date === null ? null : new Date(props.body.end_date);
+    updateData.end_date = props.body.end_date;
   }
   if (props.body.compensation_amount !== undefined) {
     updateData.compensation_amount = props.body.compensation_amount;
@@ -61,36 +105,17 @@ export async function putHrmPlatformMemberContractsContractId(props: {
   if (props.body.notes !== undefined) {
     updateData.notes = props.body.notes;
   }
-  if (updateData.end_date !== undefined) {
-    const newEndDate: Date | null = updateData.end_date as Date | null;
-    const conflictingContracts =
-      await MyGlobal.prisma.hrm_platform_contracts.findMany({
-        where: {
-          hrm_platform_employee_id: currentContract.hrm_platform_employee_id,
-          status: "active",
-          id: { not: props.contractId },
-          AND: [
-            {
-              start_date: { lt: newEndDate as Date },
-            },
-            {
-              OR: [
-                { end_date: null },
-                { end_date: { gte: newEndDate as Date } },
-              ],
-            },
-          ],
-        },
-      });
-    if (conflictingContracts.length > 0) {
-      throw new HttpException("Conflicting active contract exists", 409);
-    }
-  }
-  const updated = await MyGlobal.prisma.hrm_platform_contracts.update({
+  // Update the contract
+  await MyGlobal.prisma.hrm_platform_contracts.update({
     where: { id: props.contractId },
     data: updateData,
-    ...HrmPlatformContractTransformer.select(),
   });
+  // Retrieve updated contract and transform
+  const updated =
+    await MyGlobal.prisma.hrm_platform_contracts.findUniqueOrThrow({
+      where: { id: props.contractId },
+      ...HrmPlatformContractTransformer.select(),
+    });
   return await HrmPlatformContractTransformer.transform(updated);
 }
 

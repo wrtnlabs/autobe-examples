@@ -11,12 +11,16 @@ export namespace HrmPlatformProjectMembershipCollector {
   export async function collect(props: {
     body: IHrmPlatformProjectMembership.ICreate;
     hrmPlatformProjects: IEntity;
-    hrmPlatformOrganizations: IEntity;
   }) {
+    // Query project to get organization_id (not available on IEntity)
+    const project =
+      await MyGlobal.prisma.hrm_platform_projects.findFirstOrThrow({
+        where: { id: props.hrmPlatformProjects.id },
+      });
     const id: string = v4();
     return {
       id,
-      organization_id: props.hrmPlatformOrganizations.id,
+      organization_id: project.organization_id,
       role: props.body.role,
       created_at: new Date(),
       updated_at: new Date(),
@@ -35,7 +39,6 @@ export namespace HrmPlatformProjectMembershipCollector {
 //         export async function collect(props: {
 //           body: IHrmPlatformProjectMembership.ICreate;
 //           hrmPlatformProjects: IEntity; // from path parameter projectId
-// hrmPlatformOrganizations: IEntity; // from authorized session
 //           
 //           
 //         }) {

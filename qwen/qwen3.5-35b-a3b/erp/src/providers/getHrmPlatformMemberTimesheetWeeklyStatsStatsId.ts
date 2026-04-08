@@ -21,9 +21,7 @@ export async function getHrmPlatformMemberTimesheetWeeklyStatsStatsId(props: {
     await MyGlobal.prisma.hrm_platform_timesheet_weekly_stats.findUniqueOrThrow(
       {
         ...HrmPlatformTimesheetWeeklyStatTransformer.select(),
-        where: {
-          id: props.statsId,
-        },
+        where: { id: props.statsId },
       },
     );
   return await HrmPlatformTimesheetWeeklyStatTransformer.transform(record);

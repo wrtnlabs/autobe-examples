@@ -15,31 +15,48 @@ export async function deleteHrmPlatformMemberRolesRoleId(props: {
   member: MemberPayload;
   roleId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  // Step 1: Verify the role exists and is not soft-deleted
   const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
     where: {
       id: props.roleId,
       deleted_at: null,
     },
-  });
-  if (role.role_kind === "built_in") {
-    throw new HttpException("Cannot delete built-in role", 403);
-  }
-  const employeeCount = await MyGlobal.prisma.hrm_platform_employees.count({
-    where: {
-      hrm_platform_role_id: props.roleId,
-      deleted_at: null,
+    select: {
+      id: true,
+      organization_id: true,
+      role_kind: true,
+      deleted_at: true,
     },
   });
-  if (employeeCount > 0) {
+  // Step 2: Check role_kind field - reject if built-in role
+  if (role.role_kind === "built_in") {
     throw new HttpException(
-      "Cannot delete role with assigned employees. Reassign employees first.",
+      "Cannot delete built-in roles. Only custom roles can be deleted.",
+      403,
+    );
+  }
+  // Step 3: Count assigned employees
+  const assignedEmployeeCount =
+    await MyGlobal.prisma.hrm_platform_employees.count({
+      where: {
+        hrm_platform_role_id: props.roleId,
+        deleted_at: null,
+      },
+    });
+  // Step 4: If any employee is assigned, reject deletion
+  if (assignedEmployeeCount > 0) {
+    throw new HttpException(
+      "Cannot delete role. All employees assigned to this role must be reassigned first.",
       400,
     );
   }
+  // Step 5: Perform soft delete by setting deleted_at to current timestamp
   await MyGlobal.prisma.hrm_platform_roles.update({
-    where: { id: props.roleId },
+    where: {
+      id: props.roleId,
+    },
     data: {
-      deleted_at: toISOStringSafe(new Date()),
+      deleted_at: new Date(),
     },
   });
 }

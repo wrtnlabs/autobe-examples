@@ -16,59 +16,98 @@ export async function deleteHrmPlatformMemberProjectsProjectIdMembershipsMembers
   projectId: string & tags.Format<"uuid">;
   membershipId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
-    {
-      where: { id: props.projectId, deleted_at: null },
-      select: { id: true, organization_id: true },
-    },
-  );
-  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
-    {
-      where: {
-        hrm_platform_organization_id: project.organization_id,
-        deleted_at: null,
-      },
-      include: {
-        member: {
-          select: { id: true },
-        },
-      },
-    },
-  );
-  if (memberEmployee === null) {
-    throw new HttpException("Member not found in organization", 404);
-  }
-  if (memberEmployee.member.id !== props.member.id) {
-    throw new HttpException("Member mismatch", 400);
-  }
+  // Fetch membership record with project association
   const membership =
-    await MyGlobal.prisma.hrm_platform_project_memberships.findUniqueOrThrow({
+    await MyGlobal.prisma.hrm_platform_project_memberships.findFirst({
       where: {
         id: props.membershipId,
+        deleted_at: null,
         hrm_platform_project_id: props.projectId,
+      },
+      include: {
+        employee: true,
+        project: true,
+      },
+    });
+  if (membership === null) {
+    throw new HttpException("Project membership not found", 404);
+  }
+  // Verify employee matches current user
+  if (membership.employee.hrm_platform_member_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Verify employee is active
+  if (membership.employee.status !== "active") {
+    throw new HttpException("Employee is not active", 404);
+  }
+  if (membership.employee.deleted_at !== null) {
+    throw new HttpException("Employee record has been deleted", 404);
+  }
+  // Verify project exists
+  if (membership.project.deleted_at !== null) {
+    throw new HttpException("Project has been deleted", 404);
+  }
+  // Check project:manage permission for the project organization
+  const hasManagePermission =
+    await MyGlobal.prisma.hrm_platform_permissions.findFirst({
+      where: {
+        code: "project:manage",
+        organization_id: membership.project.organization_id,
         deleted_at: null,
       },
-      select: { organization_id: true, hrm_platform_employee_id: true },
     });
-  if (membership.organization_id !== project.organization_id) {
-    throw new HttpException("Invalid membership", 400);
+  if (hasManagePermission === null) {
+    throw new HttpException(
+      "Project management permission not configured",
+      500,
+    );
   }
-  const role = await MyGlobal.prisma.hrm_platform_roles.findFirst({
+  // Verify user has the permission through their role
+  const userRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
     where: {
-      organization_id: project.organization_id,
-      employees: {
+      organization_id: membership.project.organization_id,
+      deleted_at: null,
+      permissions: {
         some: {
-          id: memberEmployee.id,
+          id: hasManagePermission.id,
         },
       },
     },
   });
-  if (role === null) {
+  if (userRole === null) {
     throw new HttpException("Forbidden", 403);
   }
+  // Verify the employee has the role with permission
+  const employeeMembership = await MyGlobal.prisma.hrm_platform_roles.findFirst(
+    {
+      where: {
+        organization_id: membership.project.organization_id,
+        deleted_at: null,
+        employees: {
+          some: {
+            id: membership.employee.id,
+          },
+        },
+        permissions: {
+          some: {
+            id: hasManagePermission.id,
+          },
+        },
+      },
+    },
+  );
+  if (employeeMembership === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Perform soft delete
   await MyGlobal.prisma.hrm_platform_project_memberships.update({
-    where: { id: props.membershipId },
-    data: { deleted_at: new Date() },
+    where: {
+      id: props.membershipId,
+    },
+    data: {
+      deleted_at: toISOStringSafe(new Date()),
+      updated_at: toISOStringSafe(new Date()),
+    },
   });
 }
 

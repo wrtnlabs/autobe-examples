@@ -24,79 +24,74 @@ export async function patchHrmPlatformMemberOrganizationsOrganizationIdDepartmen
   departmentId: string & tags.Format<"uuid">;
   body: IHrmPlatformDepartmentsSnapshot.IRequest;
 }): Promise<IPageIHrmPlatformDepartmentsSnapshot.ISummary> {
-  // Validate organization exists
-  await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
-    where: { id: props.organizationId, deleted_at: null },
+  await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
+    where: {
+      id: props.departmentId,
+      organization_id: props.organizationId,
+    },
+    select: { id: true },
   });
-  // Validate department exists within organization
-  const department =
-    await MyGlobal.prisma.hrm_platform_departments.findUniqueOrThrow({
-      where: {
-        id: props.departmentId,
-        organization_id: props.organizationId,
-      },
-    });
-  // Build where clause with filters
-  const whereInput = {
-    hrm_platform_department_id: props.departmentId,
-    ...(props.body.search !== undefined && {
-      name: { contains: props.body.search, mode: "insensitive" as const },
-    }),
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.fiscal_start_month !== undefined && {
-      fiscal_start_month: props.body.fiscal_start_month,
-    }),
-    ...((props.body.created_at_from !== undefined ||
-      props.body.created_at_to !== undefined) && {
-      created_at: {
-        ...(props.body.created_at_from !== undefined && {
-          gte: new Date(props.body.created_at_from),
-        }),
-        ...(props.body.created_at_to !== undefined && {
-          lte: new Date(props.body.created_at_to),
-        }),
-      },
-    }),
-  } satisfies Prisma.hrm_platform_departments_snapshotsWhereInput;
-  // Build orderBy input
-  const orderByInput =
-    props.body.sort_by !== undefined && props.body.sort_order !== undefined
-      ? ({
-          [props.body.sort_by]:
-            props.body.sort_order === "asc" ? "asc" : "desc",
-        } satisfies Prisma.hrm_platform_departments_snapshotsOrderByWithRelationInput)
-      : ({
-          created_at: "desc",
-        } satisfies Prisma.hrm_platform_departments_snapshotsOrderByWithRelationInput);
-  // Get page and limit
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Query data
-  const data =
+  const whereFilter: Prisma.hrm_platform_departments_snapshotsWhereInput = {
+    hrm_platform_department_id: props.departmentId,
+  };
+  if (props.body.status !== undefined) {
+    whereFilter.status = props.body.status;
+  }
+  if (props.body.fiscal_start_month !== undefined) {
+    whereFilter.fiscal_start_month = props.body.fiscal_start_month;
+  }
+  if (
+    props.body.created_at_from !== undefined ||
+    props.body.created_at_to !== undefined
+  ) {
+    whereFilter.created_at = {
+      ...(props.body.created_at_from !== undefined && {
+        gte: toISOStringSafe(props.body.created_at_from),
+      }),
+      ...(props.body.created_at_to !== undefined && {
+        lte: toISOStringSafe(props.body.created_at_to),
+      }),
+    } as Prisma.DateTimeFilter<"hrm_platform_departments_snapshots">;
+  }
+  const orderByInput: Prisma.hrm_platform_departments_snapshotsOrderByWithRelationInput =
+    (() => {
+      const sortBy = props.body.sort_by ?? "created_at";
+      const sortOrder = props.body.sort_order ?? "desc";
+      const orderDir =
+        sortOrder === "asc" ? ("asc" as const) : ("desc" as const);
+      if (sortBy === "name") {
+        return { name: orderDir };
+      }
+      if (sortBy === "fiscal_start_month") {
+        return { fiscal_start_month: orderDir };
+      }
+      return { created_at: orderDir };
+    })();
+  const records =
     await MyGlobal.prisma.hrm_platform_departments_snapshots.findMany({
-      where: whereInput,
-      orderBy: orderByInput,
+      where: whereFilter,
       skip,
       take: limit,
+      orderBy: orderByInput,
       ...HrmPlatformDepartmentsSnapshotAtSummaryTransformer.select(),
     });
-  // Count total
   const total = await MyGlobal.prisma.hrm_platform_departments_snapshots.count({
-    where: whereInput,
+    where: whereFilter,
   });
-  // Transform and return
   return {
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages: limit > 0 ? Math.ceil(total / limit) : 0,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: await HrmPlatformDepartmentsSnapshotAtSummaryTransformer.transformAll(
-      data,
+      records,
     ),
-  } satisfies IPageIHrmPlatformDepartmentsSnapshot.ISummary;
+  };
 }
 
 
